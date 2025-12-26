@@ -163,12 +163,6 @@ class TitleState extends MusicBeatState
 		var blackBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(blackBG);
 
-		skipText = new FlxText(0, FlxG.height - 50, FlxG.width, "", 24);
-		skipText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		skipText.borderSize = 2;
-		skipText.alpha = 0;
-		add(skipText);
-
 		introVideo = new FlxVideoSprite();
 		introVideo.bitmap.onEndReached.add(function() {
 			onIntroFinished();
@@ -183,8 +177,6 @@ class TitleState extends MusicBeatState
 
 			new FlxTimer().start(1, function(tmr:FlxTimer) {
 				canSkip = true;
-				FlxTween.tween(skipText, {alpha: 1}, 0.5);
-				updateSkipText();
 			});
 		}
 		else
@@ -192,19 +184,6 @@ class TitleState extends MusicBeatState
 			trace('Intro video not found, skipping to normal intro');
 			onIntroFinished();
 		}
-	}
-	
-	function updateSkipText():Void
-	{
-		if (!showingIntro || !canSkip) return;
-		
-		#if mobile
-		skipText.text = Language.getPhrase("press_a_to_skip", "Press A to Skip");
-		#else
-		skipText.text = Language.getPhrase("press_enter_to_skip", "Press Enter to Skip");
-		#end
-
-		skipText.scale.set(1 + Math.sin(skipTimer * 5) * 0.05, 1 + Math.sin(skipTimer * 5) * 0.05);
 	}
 	
 	function onIntroFinished():Void
@@ -220,12 +199,6 @@ class TitleState extends MusicBeatState
 		{
 			introVideo.destroy();
 			introVideo = null;
-		}
-
-		if (skipText != null)
-		{
-			remove(skipText);
-			skipText = null;
 		}
 
 		#if FREEPLAY
@@ -250,19 +223,6 @@ class TitleState extends MusicBeatState
 		if (!showingIntro || !canSkip) return;
 
 		FlxG.sound.play(Paths.sound('cancelMenu'), 0.7);
-
-		if (skipText != null)
-		{
-			FlxTween.tween(skipText, {alpha: 0}, 0.3, {
-				onComplete: function(twn:FlxTween) {
-					if (skipText != null)
-					{
-						remove(skipText);
-						skipText = null;
-					}
-				}
-			});
-		}
 
 		if (introVideo != null)
 		{
