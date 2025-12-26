@@ -77,7 +77,6 @@ class TitleState extends MusicBeatState
 	#end
 
 	var introVideo:FlxVideoSprite;
-	var skipText:FlxText;
 	var showingIntro:Bool = false;
 	var introFinished:Bool = false;
 	var skipTimer:Float = 0;
@@ -464,11 +463,6 @@ class TitleState extends MusicBeatState
 
 	override function update(elapsed:Float)
 	{
-		if (showingIntro && canSkip)
-		{
-			skipTimer += elapsed;
-			updateSkipText();
-		}
 
 		if (showingIntro && canSkip)
 		{
