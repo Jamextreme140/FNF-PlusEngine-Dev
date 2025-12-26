@@ -1,6 +1,6 @@
-- New visual options: Gradient Time Bar and Intro Video
-- New gameplay option: Heavy Charts Mode
-- New graphic options: Enable Preloader & Color Accessibility (Very useful for colorblind people)
+- New visual options: Gradient Time Bar
+- New gameplay option: Heavy Charts Mode (may be cause bugs in hold notes)
+- New graphic options: Enable Preloader (beta test) & Color Accessibility (Very useful for colorblind people)
 - New gameplay changers option: Little Timmy Mode (Very useful for people who are not good at playing the game)
 - You can now turn off the hold animation on characters when pressing hold notes through the options (if you prefer V-Slice/Base Game)
 - You can now hide the sustain note splash via the options (most psych mods turn off the RGB notes in songs, so the color on the sustain note splash will be red when pressing the hold note because the RGB notes are turned off in the chart editor)
@@ -11,10 +11,7 @@
 - Removal of the Epic rating (due to a request from the owner of Troll Engine in issue #31) and replace with the Flawless rating as a replacement for the Epic rating
 - New app icons
 - New SFXs when unlocking achievements and during custom fade transition
-- Fixed Wide Screen Mode in Mobile Options and refactor of StorageUtil
 - CopyState has now been revamped so that when a file fails to be copied, the system will retry to copy the failed file with one attempt
 - Dropdown can now be scrollable in the character editor and chart editor without having to type on mobile
 - Fixed when exiting the character editor and pressing the button to return to the main menu caused an error
 - Added support for JSON V-Slice/Base Game format when loading characters
-- Added audio visualization feature
-- Fixed noteskins and vanilla note splash
