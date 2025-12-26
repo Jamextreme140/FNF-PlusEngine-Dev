@@ -537,10 +537,6 @@ class IdID
         "psych_engine_version" => "Mesin Psych v",
         "fnf_version" => "Malam Jumat Funkin\' v",
 
-        // Title State
-        "press_a_to_skip" => "Tekan A untuk Lewati",
-        "press_enter_to_skip" => "Tekan Enter untuk Lewati",
-
         // Judgment counters  
         "judgement_flawlesss" => "Mulus",
         "judgement_sicks" => "Sick", 
