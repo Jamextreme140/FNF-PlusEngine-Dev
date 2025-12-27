@@ -33,7 +33,7 @@ class MobileOptionsSubState extends BaseOptionsMenu
 
 	public function new()
 	{
-		title = Language.getPhrase('options_mobile_menu', 'Mobile Options');
+		title = Language.getPhrase('mobile_options_menu', 'Mobile Options');
 		rpcTitle = 'Mobile Options Menu'; // for Discord Rich Presence, fuck it
 
 		option = new Option('Extra Controls', 'Select how many extra buttons you prefer to have?\nThey can be used for mechanics with LUA or HScript.',
