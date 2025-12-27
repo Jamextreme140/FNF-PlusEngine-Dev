@@ -72,7 +72,6 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		//optionsArray.push(new GameplayOption('Opponent Mode', 'opponentplay', BOOL, false)); -- in manteinance
 		optionsArray.push(new GameplayOption('No Drop Penalty', 'nodroppenalty', BOOL, false));
 		optionsArray.push(new GameplayOption('Botplay', 'botplay', BOOL, false));
-		optionsArray.push(new GameplayOption('Little Timmy Mode', 'littletimmymode', BOOL, false));
 	}
 
 	public function getOptionByName(name:String)
