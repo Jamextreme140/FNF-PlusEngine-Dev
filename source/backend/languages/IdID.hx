@@ -222,7 +222,7 @@ class IdID
         "key_fullscreen" => "Layar Penuh",
         "controls_rebinding" => "Perekat ulang {1}",
         "controls_rebinding2" => "Tahan ESC untuk Batalkan\nTahan Backspace untuk Hapus",
-        "reset_to_default_keys" => "Kembalikan ke\nDefault Keys",
+        "reset_to_default_keys" => "Kembalikan ke\nKeys Bawaan",
 
         // Gameplay Changers
         "setting_scroll_type" => "Jenis Gulungan",
@@ -238,7 +238,6 @@ class IdID
         "setting_opponent_mode" => "Mode Lawan",
         "setting_no_drop_penalty" => "Tidak Ada Denda",
         "setting_botplay" => "Botplay",
-        "setting_little_timmy_mode" => "Mode Timmy Kecil",
 
         // Graphics Settings
         "setting_low_quality" => "Kualitas Rendah",
@@ -426,6 +425,9 @@ class IdID
 
         // Mobile Options
         "setting_extra_controls" => "Kontrol Ekstra",
+        "setting_extra_controls-none" => "TIDAK ADA",
+        "setting_extra_controls-single" => "TUNGGAL",
+        "setting_extra_controls-double" => "GANDA",
         "description_extra_controls" => "Pilih berapa banyak kontrol ekstra yang Anda inginkan di layar.\nDapat digunakan untuk mekanik dengan LUA atau HSCRIPT.",
         "setting_mobile_controls_opacity" => "Opasitas Kontrol Ponsel",
         "description_mobile_controls_opacity" => "Pilih tingkat opasitas untuk tombol-tombol pada perangkat ponsel (hati-hati jangan sampai mengaturnya ke 0 dan kehilangan jejak tombol-tombol Anda).",
@@ -434,6 +436,10 @@ class IdID
         "setting_wide_screen_mode" => "Mode Layar Lebar",
         "description_wide_screen_mode" => "Jika dicentang, permainan akan diperluas untuk mengisi seluruh layar Anda. (PERINGATAN: Dapat menyebabkan tampilan yang buruk dan merusak beberapa mod yang mengubah ukuran permainan/kamera)",
         "setting_hitbox_design" => "Desain Hitbox:",
+        "setting_hitbox_design-no_gradient" => "Tanpa Gradasi",
+        "setting_hitbox_design-no_gradient_old" => "Tanpa Gradasi (Lama)",
+        "setting_hitbox_design-gradient" => "Gradasi",
+        "setting_hitbox_design-hidden" => "Tersembunyi",
         "description_hitbox_design" => "Pilih bagaimana tampilan hitbox Anda.",
         "setting_hitbox_position" => "Posisi Hitbox",
         "description_hitbox_position" => "Jika dicentang, hitbox akan ditempatkan di bagian bawah layar, jika tidak, akan tetap di bagian atas.",
@@ -520,7 +526,7 @@ class IdID
         "dialogue_editor" => "Editor Dialog",
         "dialogue_portrait_editor" => "Editor Portret Dialog",
         "note_splash_editor" => "Editor Note Splash",
-        "no_mod_directory_loaded" => "< Tidak ada direktori mod yang dimuat >",
+        "no_mod_directory_loaded" => "< Tidak ada direktori mod yang dimuat. >",
         "loaded_mod_directory" => "< Direktori Mod yang Diisi: {1} >",
 
         "time_hours" => "jam",
@@ -562,9 +568,7 @@ class IdID
         "images/good" => "images/id-ID/good",
         "images/flawless" => "images/id-ID/flawless",
         "images/menu_tracks" => "images/id-ID/Menu_Tracks",
-        "images/miss" => "images/id-ID/miss",
         "images/ready" => "images/id-ID/ready",
-        "images/set" => "images/set",
         "images/shit" => "images/id-ID/shit",
         "images/sick" => "images/sick",
 
@@ -572,11 +576,9 @@ class IdID
         "images/pixelUI/bad-pixel" => "images/id-ID/pixelUI/bad-pixel",
         "images/pixelUI/good-pixel" => "images/id-ID/pixelUI/good-pixel",
         "images/pixelUI/flawless-pixel" => "images/id-ID/pixelUI/flawless-pixel",
-        "images/pixelUI/ready-pixel" => "images/id-ID/pixelUI/ready-pixel",
-        "images/pixelUI/set-pixel" => "images/pixelUI/set-pixel", 
+        "images/pixelUI/ready-pixel" => "images/id-ID/pixelUI/ready-pixel", 
         "images/pixelUI/shit-pixel" => "images/id-ID/pixelUI/shit-pixel",
         "images/pixelUI/date-pixel" => "images/id-ID/pixelUI/date-pixel",
-        "images/pixelUI/sick-pixel" => "images/pixelUI/sick-pixel",
         "images/pixelUI/combo" => "images/id-ID/pixelUI/combo",
         "images/pixelUI/conboBroken" => "images/id-ID/pixelUI/comboBroken",
 
