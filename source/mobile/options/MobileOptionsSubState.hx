@@ -63,7 +63,7 @@ class MobileOptionsSubState extends BaseOptionsMenu
 		option = new Option('Wide Screen Mode',
 			'If checked, The game will stetch to fill your whole screen. (WARNING: Can result in bad visuals & break some mods that resizes the game/cameras)',
 			'wideScreen', BOOL);
-		option.onChange = () -> FlxG.scaleMode = new MobileScaleMode();
+		option.onChange = () -> FlxG.scaleMode = new mobile.backend.MobileScaleMode();
 		addOption(option);
 		#end
 

@@ -26,6 +26,7 @@ import states.editors.content.*;
 import backend.Song;
 import backend.StageData;
 import backend.Difficulty;
+import backend.Highscore;
 
 import objects.Character;
 import objects.HealthIcon;

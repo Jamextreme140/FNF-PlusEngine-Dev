@@ -28,6 +28,7 @@ import lime.graphics.Image;
 import states.CopyState;
 #end
 import backend.Highscore;
+import lime.system.System as LimeSystem;
 
 // NATIVE API STUFF, YOU CAN IGNORE THIS AND SCROLL //
 #if (linux && !debug)
@@ -173,7 +174,7 @@ class Main extends Sprite
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new MobileScaleMode();
+			FlxG.scaleMode = new mobile.backend.MobileScaleMode();
 		});
 		#end
 		

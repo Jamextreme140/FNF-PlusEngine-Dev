@@ -2,6 +2,8 @@
 
 package lime.media;
 
+import haxe.Timer;
+import lime._internal.backend.native.NativeCFFI;
 import backend.ALSoftConfig;
 #if (js && html5)
 import js.Browser;
