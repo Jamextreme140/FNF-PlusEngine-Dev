@@ -1,17 +1,5 @@
-- New visual options: Gradient Time Bar
-- New gameplay option: Heavy Charts Mode (may be cause bugs in hold notes)
-- New graphic options: Enable Preloader (beta test) & Color Accessibility (Very useful for colorblind people)
-- New gameplay changers option: Little Timmy Mode (Very useful for people who are not good at playing the game)
-- You can now turn off the hold animation on characters when pressing hold notes through the options (if you prefer V-Slice/Base Game)
-- You can now hide the sustain note splash via the options (most psych mods turn off the RGB notes in songs, so the color on the sustain note splash will be red when pressing the hold note because the RGB notes are turned off in the chart editor)
-- The B and PAUSE images on the mobile button no longer have black and white dot pixels, making them appear clearer
-- The text and arrow images on mobile buttons have been revamped to make them look clearer and better
-- The animated icon button that overlapped with the Allow vocals button in the chart editor has now been fixed so that the buttons are positioned separately and do not overlap
-- The date and time in the pause menu and results screen will now automatically change format based on device settings
-- Removal of the Epic rating (due to a request from the owner of Troll Engine in issue #31) and replace with the Flawless rating as a replacement for the Epic rating
-- New app icons
-- New SFXs when unlocking achievements and during custom fade transition
-- CopyState has now been revamped so that when a file fails to be copied, the system will retry to copy the failed file with one attempt
-- Dropdown can now be scrollable in the character editor and chart editor without having to type on mobile
-- Fixed when exiting the character editor and pressing the button to return to the main menu caused an error
-- Added support for JSON V-Slice/Base Game format when loading characters
+- Fixed vanilla note splashes
+- New & added credit icons of sir, lenin and slushi in CreditsState
+- Updated Indonesian translation
+- Removed Little Timmy Mode from Gameplay Changers due to its useless and didn't work
+- Refactor PauseSubState and ResultsState where the date and time detection has been moved to the backend in the form of a hx file named LocaleUtils
