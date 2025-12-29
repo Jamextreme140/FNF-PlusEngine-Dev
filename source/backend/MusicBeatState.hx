@@ -188,6 +188,14 @@ class MusicBeatState extends FlxState
 
 		if(FlxG.save.data != null) FlxG.save.data.fullscreen = FlxG.fullscreen;
 		
+		// Screenshot support with F5
+		#if desktop
+		if (FlxG.keys.justPressed.F5)
+		{
+			Screenshot.capture();
+		}
+		#end
+		
 		stagesFunc(function(stage:BaseStage) {
 			stage.update(elapsed);
 		});

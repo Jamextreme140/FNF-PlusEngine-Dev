@@ -5,6 +5,7 @@ import debug.TraceDisplay;
 import debug.TraceButton;
 import debug.DebugButton;
 import backend.ClientPrefs;
+import backend.Screenshot;
 import flixel.FlxGame;
 import flixel.FlxState;
 import openfl.Lib;
@@ -242,6 +243,7 @@ class Main extends Sprite
 		
 		#if desktop 
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_UP, toggleFullScreen);
+		Screenshot.init(); // Initialize screenshot folder
 		#end
 
 		#if mobile
