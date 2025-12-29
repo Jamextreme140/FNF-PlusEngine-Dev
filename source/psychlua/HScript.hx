@@ -250,7 +250,7 @@ class HScript extends Iris
 			// Si es un VideoHandler o MP4Handler, guardarlo por separado
 			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
 				Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
-				MusicBeatState.getVideoHandlers().set(name, value);
+				MusicBeatState.getVariables('Video').set(name, value);
 			} else {
 			MusicBeatState.getVariables().set(name, value);
 			}
@@ -264,8 +264,8 @@ class HScript extends Iris
 				result = get(name);
 			}
 			// Luego buscar en videoHandlers
-			else if(MusicBeatState.getVideoHandlers().exists(name)) {
-				result = MusicBeatState.getVideoHandlers().get(name);
+			else if(MusicBeatState.getVariables('Video').exists(name)) {
+				result = MusicBeatState.getVariables('Video').get(name);
 			} 
 			// Finalmente en variables globales
 			else if(MusicBeatState.getVariables().exists(name)) {
@@ -276,9 +276,9 @@ class HScript extends Iris
 		set('removeVar', function(name:String)
 		{
 			var removed = false;
-			if(MusicBeatState.getVideoHandlers().exists(name))
+			if(MusicBeatState.getVariables('Video').exists(name))
 			{
-				MusicBeatState.getVideoHandlers().remove(name);
+				MusicBeatState.getVariables('Video').remove(name);
 				removed = true;
 				trace('HScript: Removed VideoHandler: $name');
 			}
@@ -978,8 +978,8 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return MusicBeatState.getVariables().get(id);
 		}
 		
-		if(MusicBeatState.getVideoHandlers().exists(id)) {
-			return MusicBeatState.getVideoHandlers().get(id);
+		if(MusicBeatState.getVariables('Video').exists(id)) {
+			return MusicBeatState.getVariables('Video').get(id);
 		}
 
 		error(EUnknownVariable(id));
@@ -994,8 +994,8 @@ class CustomInterp extends crowplexus.hscript.Interp
 			if(MusicBeatState.getVariables().exists(field)) {
 				return MusicBeatState.getVariables().get(field);
 			}
-			if(MusicBeatState.getVideoHandlers().exists(field)) {
-				return MusicBeatState.getVideoHandlers().get(field);
+			if(MusicBeatState.getVariables('Video').exists(field)) {
+				return MusicBeatState.getVariables('Video').get(field);
 			}
 			// Mostrar warning en lugar de error
 			var warnMsg = 'Null reference: trying to access "$field" on null object';
@@ -1059,8 +1059,8 @@ class CustomInterp extends crowplexus.hscript.Interp
 					if(MusicBeatState.getVariables().exists(field))
 						return MusicBeatState.getVariables().get(field);
 					
-					if(MusicBeatState.getVideoHandlers().exists(field))
-						return MusicBeatState.getVideoHandlers().get(field);
+					if(MusicBeatState.getVariables('Video').exists(field))
+						return MusicBeatState.getVariables('Video').get(field);
 					
 					return null; // Devolver null en lugar de error para compatibilidad
 				}
@@ -1073,8 +1073,8 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return MusicBeatState.getVariables().get(field);
 		}
 		
-		if(MusicBeatState.getVideoHandlers().exists(field)) {
-			return MusicBeatState.getVideoHandlers().get(field);
+		if(MusicBeatState.getVariables('Video').exists(field)) {
+			return MusicBeatState.getVariables('Video').get(field);
 		}
 		
 		// Para compatibilidad con objetos dinámicos/anónimos, intentar getProperty
@@ -1104,7 +1104,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 			// Fallback: guardar en variables globales
 			var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 			if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
-				MusicBeatState.getVideoHandlers().set(field, value);
+				MusicBeatState.getVariables('Video').set(field, value);
 			} else {
 				MusicBeatState.getVariables().set(field, value);
 			}
@@ -1150,7 +1150,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 						// Guardar en variables globales como fallback
 						var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 						if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
-							MusicBeatState.getVideoHandlers().set(field, value);
+							MusicBeatState.getVariables('Video').set(field, value);
 						} else {
 							MusicBeatState.getVariables().set(field, value);
 						}
@@ -1176,7 +1176,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 		// Si todo falla, guardar en variables globales como fallback
 		var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 		if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
-			MusicBeatState.getVideoHandlers().set(field, value);
+			MusicBeatState.getVariables('Video').set(field, value);
 		} else {
 			MusicBeatState.getVariables().set(field, value);
 		}
@@ -1204,3 +1204,4 @@ class HScript
 	#end
 }
 #end
+

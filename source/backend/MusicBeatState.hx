@@ -104,6 +104,12 @@ class MusicBeatState extends FlxState
 		removeTouchPad();
 		removeMobileControls();
 		
+		// Clear state scripts
+		#if HSCRIPT_ALLOWED
+		StateScriptHandler.callOnStateScripts('onDestroy', []);
+		StateScriptHandler.clearStateScripts();
+		#end
+		
 		// Cleanup TraceDisplay si esta es la última instancia
 		if(traceDisplay != null) {
 			// Solo destruir si no hay otros estados activos
@@ -115,16 +121,82 @@ class MusicBeatState extends FlxState
 
 	var _psychCameraInitialized:Bool = false;
 
-	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
-	public var videoHandlers:Map<String, Dynamic> = new Map<String, Dynamic>(); // Separar videos de variables normales
+	// Categorized variables system (Slushi-style)
+	public var variables:Map<String, Map<String, Dynamic>> = [
+		"Video" => [],          // For video sprites objects
+		"Text" => [],           // For text type objects
+		"Camera" => [],         // For camera type objects
+		"Character" => [],      // For character type objects
+		"Icon" => [],           // For icon type objects
+		"Sound" => [],          // For sound type objects
+		"Graphic" => [],        // For graphic, animated, image objects
+		"Tween" => [],          // For tweens
+		"Timer" => [],          // For timers
+		"Custom" => [],         // For custom variables set with setVar/getVar
+		"Instance" => [],       // For instance objects
+		"Shader" => [],         // For shaders objects
+		"Save" => [],           // For save objects
+		"Group" => []           // For group objects
+	];
 
 	public static var traceDisplay:TraceDisplay;
 	
-	public static function getVariables()
-		return getState().variables;
-		
-	public static function getVideoHandlers()
-		return getState().videoHandlers;
+	// Helper functions for categorized variables
+	public static function getVariables(?type:String = "Custom")
+		return getState().variables.get(type);
+	
+	public static function variableObj(obj:String, ?types:Array<String> = null):Dynamic
+	{
+		if (types == null) types = grabDefaultTypes();
+		for (varType in types)
+		{
+			if (getVariables(varType).exists(obj)) 
+				return getVariables(varType).get(obj);
+		}
+		return null;
+	}
+
+	public static function variableMap(obj:String, ?types:Array<String> = null)
+	{
+		if (types == null) types = grabDefaultTypes();
+		for (varType in types)
+		{
+			if (getVariables(varType).exists(obj)) 
+				return getVariables(varType);
+		}
+		return null;
+	}
+
+	public static function findVariable(obj:String, ?types:Array<String> = null):{found:Bool, type:String}
+	{
+		if (types == null) types = grabDefaultTypes();
+		for (varType in types)
+		{
+			if (getVariables(varType).exists(obj)) 
+				return {found: true, type: varType};
+		}
+		return {found: false, type: ""};
+	}
+
+	public static function findVariableObj(obj:String, ?types:Array<String> = null):Bool
+	{
+		if (types == null) types = grabDefaultTypes();
+		return findVariable(obj, types).found;
+	}
+
+	public static function getVariableType(obj:String, ?types:Array<String> = null):String
+	{
+		if (types == null) types = grabDefaultTypes();
+		return findVariable(obj, types).type;
+	}
+
+	public static function grabDefaultTypes():Array<String>
+	{
+		var list:Array<String> = [];
+		for (key in getState().variables.keys())
+			list.push(key);
+		return list;
+	}
 
 	override function create() {
 		var skip:Bool = FlxTransitionableState.skipNextTransOut;
@@ -142,6 +214,12 @@ class MusicBeatState extends FlxState
 			// Usar la instancia existente
 			traceDisplay = TraceDisplay.instance;
 		}
+
+		// Load state-specific scripts
+		#if HSCRIPT_ALLOWED
+		var stateName:String = Type.getClassName(Type.getClass(this)).split('.').pop();
+		StateScriptHandler.loadStateScripts(stateName);
+		#end
 
 		super.create();
 
@@ -171,6 +249,11 @@ class MusicBeatState extends FlxState
 
 		updateCurStep();
 		updateBeat();
+
+		// Update state scripts
+		#if HSCRIPT_ALLOWED
+		StateScriptHandler.updateStateScripts(elapsed);
+		#end
 
 		if (oldStep != curStep)
 		{
@@ -295,6 +378,12 @@ class MusicBeatState extends FlxState
 			stage.stepHit();
 		});
 
+		#if HSCRIPT_ALLOWED
+		StateScriptHandler.setOnStateScripts('curStep', curStep);
+		StateScriptHandler.setOnStateScripts('curDecStep', curDecStep);
+		StateScriptHandler.callOnStateScripts('onStepHit', []);
+		#end
+
 		if (curStep % 4 == 0)
 			beatHit();
 	}
@@ -308,6 +397,12 @@ class MusicBeatState extends FlxState
 			stage.curDecBeat = curDecBeat;
 			stage.beatHit();
 		});
+
+		#if HSCRIPT_ALLOWED
+		StateScriptHandler.setOnStateScripts('curBeat', curBeat);
+		StateScriptHandler.setOnStateScripts('curDecBeat', curDecBeat);
+		StateScriptHandler.callOnStateScripts('onBeatHit', []);
+		#end
 	}
 
 	public function sectionHit():Void
@@ -317,6 +412,11 @@ class MusicBeatState extends FlxState
 			stage.curSection = curSection;
 			stage.sectionHit();
 		});
+
+		#if HSCRIPT_ALLOWED
+		StateScriptHandler.setOnStateScripts('curSection', curSection);
+		StateScriptHandler.callOnStateScripts('onSectionHit', []);
+		#end
 	}
 
 	function stagesFunc(func:BaseStage->Void)

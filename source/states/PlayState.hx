@@ -138,8 +138,15 @@ class PlayState extends MusicBeatState
 	public var dadMap:Map<String, Character> = new Map<String, Character>();
 	public var gfMap:Map<String, Character> = new Map<String, Character>();
 
+	// Script arrays - supporting multiple script types
+	#if LUA_ALLOWED
+	public var luaArray:Array<FunkinLua> = [];
+	#end
+
 	#if HSCRIPT_ALLOWED
-	public var hscriptArray:Array<HScript> = [];
+	public var hscriptArray:Array<HScript> = [];          // Psych HScript (Iris)
+	public var scHSArray:Array<lenin.slushithings.scripting.SCScript> = [];  // Slushi Custom HScript (SC)
+	public var codeNameScripts:lenin.slushithings.codenameengine.scripting.ScriptPack;  // CodeName Engine HScript
 	#end
 
 	#if LUA_ALLOWED
@@ -406,7 +413,6 @@ class PlayState extends MusicBeatState
 
 	// Lua shit
 	public static var instance:PlayState;
-	#if LUA_ALLOWED public var luaArray:Array<FunkinLua> = []; #end
 
 	#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 	private var luaDebugGroup:FlxTypedGroup<psychlua.DebugLuaText>;
@@ -695,7 +701,7 @@ class PlayState extends MusicBeatState
 			var list:Map<String, FlxSprite> = StageData.addObjectsToState(stageData.objects, !stageData.hide_girlfriend ? gfGroup : null, dadGroup, boyfriendGroup, this);
 			for (key => spr in list)
 				if(!StageData.reservedNames.contains(key))
-					variables.set(key, spr);
+					MusicBeatState.getVariables('Graphic').set(key, spr);
 		}
 		else
 		{
@@ -4941,14 +4947,36 @@ class PlayState extends MusicBeatState
 		#end
 
 		#if HSCRIPT_ALLOWED
+		// Destroy all HScript arrays
 		for (script in hscriptArray)
 			if(script != null)
 			{
 				if(script.exists('onDestroy')) script.call('onDestroy');
 				script.destroy();
 			}
-
 		hscriptArray = null;
+
+		// Destroy SCScript array
+		for (script in scHSArray)
+			if(script != null)
+			{
+				if(script.existsVar('onDestroy')) script.callFunc('onDestroy');
+				script.destroy();
+			}
+		scHSArray = null;
+
+		// Destroy CodeName scripts
+		if(codeNameScripts != null)
+		{
+			for (script in codeNameScripts.scripts)
+				if(script != null && script.active)
+				{
+					script.call('onDestroy');
+					script.destroy();
+				}
+			codeNameScripts.destroy();
+			codeNameScripts = null;
+		}
 		#end
 		stagesFunc(function(stage:BaseStage) stage.destroy());
 
@@ -5259,6 +5287,70 @@ class PlayState extends MusicBeatState
 		{
 			if(newScript != null)
 				newScript.destroy();
+		}
+	}
+
+	// SC Script functions
+	public function startSCHSNamed(scriptFile:String)
+	{
+		#if MODS_ALLOWED
+		var scriptToLoad:String = Paths.modFolders(scriptFile);
+		if(!FileSystem.exists(scriptToLoad))
+			scriptToLoad = Paths.getSharedPath(scriptFile);
+		#else
+		var scriptToLoad:String = Paths.getSharedPath(scriptFile);
+		#end
+
+		if(FileSystem.exists(scriptToLoad))
+		{
+			for (script in scHSArray)
+				if(script.hsCode != null && script.hsCode.path == scriptToLoad) return false;
+
+			initSCHS(scriptToLoad);
+			return true;
+		}
+		return false;
+	}
+
+	public function initSCHS(file:String)
+	{
+		var newScript:lenin.slushithings.scripting.SCScript = null;
+		try
+		{
+			var times:Float = Date.now().getTime();
+			newScript = new lenin.slushithings.scripting.SCScript();
+			newScript.loadScript(file);
+			newScript.executeFunc('onCreate');
+			scHSArray.push(newScript);
+			trace('Initialized SCHScript successfully: $file (${Std.int(Date.now().getTime() - times)}ms)');
+		}
+		catch (e:Dynamic)
+		{
+			trace('ERROR ON LOADING SCScript ($file) - $e');
+			if (newScript != null) newScript.destroy();
+		}
+	}
+
+	// CodeName Script functions
+	public function initCodeNameScript(scriptFile:String)
+	{
+		var times:Float = Date.now().getTime();
+		var script = lenin.slushithings.codenameengine.scripting.Script.create(scriptFile);
+		if (!(script is lenin.slushithings.codenameengine.scripting.DummyScript))
+		{
+			if(codeNameScripts == null)
+				codeNameScripts = new lenin.slushithings.codenameengine.scripting.ScriptPack("PlayState Scripts");
+				
+			codeNameScripts.add(script);
+
+			// Set the things first
+			script.set("SONG", SONG);
+
+			// Then CALL SCRIPT
+			script.load();
+			script.call('onCreate');
+			
+			trace('Initialized CodeName script successfully: $scriptFile (${Std.int(Date.now().getTime() - times)}ms)');
 		}
 	}
 	#end
@@ -5804,11 +5896,11 @@ class PlayState extends MusicBeatState
 	public function makeLuaTouchPad(DPadMode:String, ActionMode:String) {
 		if(members.contains(luaTouchPad)) return;
 
-		if(!variables.exists("luaTouchPad"))
-			variables.set("luaTouchPad", luaTouchPad);
-
 		luaTouchPad = new TouchPad(DPadMode, ActionMode, NONE);
 		luaTouchPad.alpha = ClientPrefs.data.controlsAlpha;
+		
+		if(!MusicBeatState.getVariables('Custom').exists("luaTouchPad"))
+			MusicBeatState.getVariables('Custom').set("luaTouchPad", luaTouchPad);
 	}
 	
 	public function addLuaTouchPad() {

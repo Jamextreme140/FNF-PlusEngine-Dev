@@ -183,7 +183,7 @@ class SScriptCompat extends SScript
 				// Si es un VideoHandler o MP4Handler, guardarlo por separado
 				if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
 					Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
-					MusicBeatState.getVideoHandlers().set(name, value);
+					MusicBeatState.getVariables('Video').set(name, value);
 				} else {
 					MusicBeatState.getVariables().set(name, value);
 				}
@@ -198,8 +198,8 @@ class SScriptCompat extends SScript
 		set('getVar', function(name:String) {
 			var result:Dynamic = null;
 			// Primero buscar en videoHandlers
-			if(MusicBeatState.getVideoHandlers().exists(name)) {
-				result = MusicBeatState.getVideoHandlers().get(name);
+			if(MusicBeatState.getVariables('Video').exists(name)) {
+				result = MusicBeatState.getVariables('Video').get(name);
 			}
 			// Luego en variables globales
 			else if(MusicBeatState.getVariables().exists(name)) {
@@ -210,9 +210,9 @@ class SScriptCompat extends SScript
 		set('removeVar', function(name:String)
 		{
 			var removed = false;
-			if(MusicBeatState.getVideoHandlers().exists(name))
+			if(MusicBeatState.getVariables('Video').exists(name))
 			{
-				MusicBeatState.getVideoHandlers().remove(name);
+				MusicBeatState.getVariables('Video').remove(name);
 				removed = true;
 			}
 			if(MusicBeatState.getVariables().exists(name))
@@ -663,3 +663,4 @@ class SScriptCompat
 	#end
 }
 #end
+

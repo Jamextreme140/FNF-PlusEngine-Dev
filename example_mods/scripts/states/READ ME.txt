@@ -1,0 +1,60 @@
+State Scripts - Custom/Scriptable States
+==========================================
+
+State scripts allow you to add custom functionality to any game state (MainMenuState, FreeplayState, etc.)
+
+FOLDER STRUCTURE:
+-----------------
+scripts/states/[StateName]/          - Regular scripts (Psych HScript & SC)
+scripts/states/[StateName]/sc/       - SC scripts only
+scripts/states/[StateName]/advanced/ - CodeName HScript (advanced, supports classes)
+
+SUPPORTED SCRIPT TYPES:
+-----------------------
+1. Psych HScript (.hx, .hxs, .hsc, .hscript) - Compatible with Psych Engine scripts
+2. SC Scripts (.hx in /sc/ folder) - Slushi Custom HScript with extended presets
+3. CodeName HScript (.hx in /advanced/ folder) - Advanced HScript with class support (requires hscript-improved)
+
+EXAMPLE USAGE:
+--------------
+To add scripts to MainMenuState:
+  - scripts/states/MainMenuState/myScript.hx         (Psych HScript)
+  - scripts/states/MainMenuState/sc/myScript.hx      (SC Script)
+  - scripts/states/MainMenuState/advanced/myClass.hx (CodeName - can use classes)
+
+CALLBACKS AVAILABLE:
+--------------------
+function onCreate()
+  Called when the state is created
+
+function onUpdate(elapsed:Float)
+  Called every frame before state update
+
+function onUpdatePost(elapsed:Float)
+  Called every frame after state update
+
+function onStepHit()
+  Called every step (only if song is playing)
+
+function onBeatHit()
+  Called every beat (only if song is playing)
+
+function onSectionHit()
+  Called every section change (only if song is playing)
+
+function onDestroy()
+  Called when the state is destroyed
+
+VARIABLES AVAILABLE IN SCRIPTS:
+--------------------------------
+- FlxG - Access to FlxG
+- state - The current state instance
+- All classes from SCScript.presetVariables()
+- curStep, curBeat, curSection (when applicable)
+
+NOTES:
+------
+- State scripts are automatically loaded when entering a state
+- Scripts are cleared when leaving the state
+- Use advanced/ folder for complex scripts that need classes
+- SC scripts have 50+ preset engine classes available
