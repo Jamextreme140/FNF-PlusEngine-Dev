@@ -38,6 +38,7 @@ import states.TitleState;
 	public var flashing:Bool = true;
 	public var autoPause:Bool = true;
 	public var antialiasing:Bool = true;
+	public var changeWindowBorderColorWithNoteHit:Bool = false; // Changes window border color on note hit (Windows 11 only)
 	public var noteSkin:String = 'Default';
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
@@ -93,6 +94,8 @@ import states.TitleState;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
 	public var hitsoundVolume:Float = 0;
+	public var hitSounds:String = "None";
+	public var hitsoundType:String = "None";
 	public var pauseMusic:String = 'Tea Time';
 	public var showIntroVideo:Bool = true;
 	public var checkForUpdates:Bool = true;

@@ -1,54 +1,53 @@
 package psychlua;
 
-#if (WINDOWS_FUNCTIONS_ALLOWED && GDI_ENABLED)
-import winapi.gdi.WindowsGDI;
-import winapi.gdi.WindowsGDIThread;
+#if WINDOWS_FUNCTIONS_ALLOWED
+import lenin.slushithings.windows.WindowsAPI;
 #end
 
 class WindowsGDIFunctions
 {
 	public static function implement(funk:FunkinLua) {
-		#if (WINDOWS_FUNCTIONS_ALLOWED && GDI_ENABLED)
+		#if WINDOWS_FUNCTIONS_ALLOWED
 		var lua = funk.lua;
 
 		Lua_helper.add_callback(lua, "initGDIThread", function() {
-			WindowsGDIThread.initWindowsGDIThread();
+			WindowsAPI.initGDIThread();
 		});
 
 		Lua_helper.add_callback(lua, "stopGDIThread", function() {
-			WindowsGDIThread.stopWindowsGDIThread();
+			WindowsAPI.stopGDIThread();
 		});
 
 		Lua_helper.add_callback(lua, "pauseGDIThread", function(pause:Bool) {
-			WindowsGDIThread.temporarilyPaused = pause;
+			WindowsAPI.pauseGDIThread(pause);
 		});
 
 		Lua_helper.add_callback(lua, "isGDIThreadRunning", function() {
-			return WindowsGDIThread.runningThread;
+			return WindowsAPI.isGDIThreadRunning();
 		});
 
 		Lua_helper.add_callback(lua, "getGDIElapsedTime", function() {
-			return WindowsGDIThread.elapsedTime;
+			return WindowsAPI.getGDIElapsedTime();
 		});
 
 		Lua_helper.add_callback(lua, "prepareGDIEffect", function(effect:String, ?wait:Float = 0) {
-			WindowsGDI.prepareGDIEffect(effect, wait);
+			WindowsAPI.prepareGDIEffect(effect, wait);
 		});
 
 		Lua_helper.add_callback(lua, "enableGDIEffect", function(effect:String, ?enabled:Bool = true) {
-			WindowsGDI.enableGDIEffect(effect, enabled);
+			WindowsAPI.enableGDIEffect(effect, enabled);
 		});
 
 		Lua_helper.add_callback(lua, "removeGDIEffect", function(effect:String) {
-			WindowsGDI.removeGDIEffect(effect);
+			WindowsAPI.removeGDIEffect(effect);
 		});
 
 		Lua_helper.add_callback(lua, "setGDIEffectWaitTime", function(effect:String, wait:Float) {
-			WindowsGDI.setGDIEffectWaitTime(effect, wait);
+			WindowsAPI.setGDIEffectWaitTime(effect, wait);
 		});
 
 		Lua_helper.add_callback(lua, "setGDIElapsedTime", function(elapsed:Float) {
-			WindowsGDI.setElapsedTime(elapsed);
+			WindowsAPI.setGDIElapsedTime(elapsed);
 		});
 
 		#end

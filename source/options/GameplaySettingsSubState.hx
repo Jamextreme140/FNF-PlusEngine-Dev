@@ -79,6 +79,13 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		var option:Option = new Option('Hitsound in what way',
+			'If checked, note and keys do a hitsound when pressed!, else just when notes are hit!',
+			'hitsoundType',
+			STRING,
+			['None', 'Keys', 'Notes']);
+		addOption(option);
+		
 		var option:Option = new Option('Hitsound Volume',
 			'Funny notes does \"Tick!\" when you hit them.',
 			'hitsoundVolume',
@@ -90,6 +97,14 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		option.changeValue = 0.1;
 		option.decimals = 1;
 		option.onChange = onChangeHitsoundVolume;
+
+		var option:Option = new Option('Hitsound',
+			'Funny notes does \"Any Sound\" when you hit them.',
+			'hitSounds',
+			STRING,
+			['None', 'quaver', 'osu', 'clap', 'camellia', 'stepmania', '21st century humor', 'vine boom', 'sexus']);
+		addOption(option);
+		option.onChange = onChangeHitsound;
 
 		var option:Option = new Option('Rating Offset',
 			'Changes how late/early you have to hit for a "flawless!!"\nHigher values mean you have to hit later.',
@@ -179,8 +194,29 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		super();
 	}
 
+	var daHitSound:FlxSound = new FlxSound();
+
+	function onChangeHitsound()
+	{
+		if (ClientPrefs.data.hitSounds != "None" && ClientPrefs.data.hitsoundVolume != 0)
+		{
+			daHitSound.loadEmbedded(Paths.sound('hitsounds/${ClientPrefs.data.hitSounds}'));
+			daHitSound.volume = ClientPrefs.data.hitsoundVolume;
+			daHitSound.play();
+		}
+	}
+
 	function onChangeHitsoundVolume()
-		FlxG.sound.play(Paths.sound('hitsound'), ClientPrefs.data.hitsoundVolume);
+	{
+		if (ClientPrefs.data.hitSounds != "None")
+		{
+			daHitSound.loadEmbedded(Paths.sound('hitsounds/${ClientPrefs.data.hitSounds}'));
+			daHitSound.volume = ClientPrefs.data.hitsoundVolume;
+			daHitSound.play();
+		}
+		else
+			FlxG.sound.play(Paths.sound('hitsound'), ClientPrefs.data.hitsoundVolume);
+	}
 
 	function onChangeAutoPause()
 		FlxG.autoPause = ClientPrefs.data.autoPause;

@@ -50,6 +50,10 @@ import lenin.PreloadedChartNote;
 import lenin.HeavyChartManager;
 import lenin.NoteSpawner;
 
+#if windows
+import lenin.slushithings.windows.WindowsAPI;
+#end
+
 #if LUA_ALLOWED
 import psychlua.*;
 #else
@@ -357,6 +361,12 @@ class PlayState extends MusicBeatState
 	var endCountdownText:FlxText = null;
 	var lastEndCountdown:Int = -1;
 	var lastJudName:String = "None";
+	
+	#if windows
+	// Window border color tween system (Slushi Engine method)
+	var windowBorderColorTween:flixel.tweens.misc.NumTween;
+	var defaultBorderColor:Array<Int> = [128, 41, 182]; // Purple from Main.hx
+	#end
 	
 	// Modchart warning variables
 	var modchartWarningShown:Bool = false;
@@ -1048,7 +1058,8 @@ class PlayState extends MusicBeatState
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
 
 		//PRECACHING THINGS THAT GET USED FREQUENTLY TO AVOID LAGSPIKES
-		if(ClientPrefs.data.hitsoundVolume > 0) Paths.sound('hitsound');
+		if(ClientPrefs.data.hitsoundVolume > 0 && ClientPrefs.data.hitSounds != "None") 
+			Paths.sound('hitsounds/' + ClientPrefs.data.hitSounds);
 		if(!ClientPrefs.data.ghostTapping) for (i in 1...4) Paths.sound('missnote$i');
 		Paths.image('alphabet');
 
@@ -4019,6 +4030,69 @@ class PlayState extends MusicBeatState
 			}
 		}
 
+		// Change window border color on note hit (Windows 11 only) - Using Slushi Engine method
+		#if windows
+		if (ClientPrefs.data.changeWindowBorderColorWithNoteHit && !cpuControlled) {
+			// Get note color from RGB shader or default arrow colors
+			var noteColor:FlxColor = FlxColor.WHITE;
+			var noteData:Int = note.noteData % 4;
+			
+			// Try to get color from RGB shader first
+			if (note.rgbShader != null && note.rgbShader.enabled) {
+				noteColor = note.rgbShader.r;
+			} else {
+				// Fallback to default arrow colors
+				var colorArray:Array<FlxColor> = isPixelStage ? ClientPrefs.data.arrowRGBPixel[noteData] : ClientPrefs.data.arrowRGB[noteData];
+				if (colorArray != null && colorArray.length > 0) {
+					noteColor = colorArray[0]; // Use main color
+				}
+			}
+			
+			// Cancel any existing tween
+			if (windowBorderColorTween != null) {
+				windowBorderColorTween.cancel();
+				windowBorderColorTween = null;
+			}
+			
+			// Convert note color to RGB array
+			var noteRGB:Array<Int> = [noteColor.red, noteColor.green, noteColor.blue];
+			
+			// Tween to note color using Slushi Engine interpolation method
+			windowBorderColorTween = FlxTween.num(0, 1, 0.1, {
+				ease: FlxEase.cubeOut,
+				onComplete: function(twn:FlxTween) {
+					// After reaching note color, tween back to default
+					windowBorderColorTween = FlxTween.num(0, 1, 0.2, {
+						ease: FlxEase.cubeInOut,
+						onComplete: function(twn:FlxTween) {
+							windowBorderColorTween = null;
+						}
+					});
+					
+					windowBorderColorTween.onUpdate = function(twn:FlxTween) {
+						var interpolatedColor:Array<Int> = [];
+						for (i in 0...3) {
+							var newValue:Int = noteRGB[i] + Std.int((defaultBorderColor[i] - noteRGB[i]) * windowBorderColorTween.value);
+							newValue = Std.int(Math.max(0, Math.min(255, newValue)));
+							interpolatedColor.push(newValue);
+						}
+						WindowsAPI.setWindowBorderColor(interpolatedColor[0], interpolatedColor[1], interpolatedColor[2]);
+					};
+				}
+			});
+			
+			windowBorderColorTween.onUpdate = function(twn:FlxTween) {
+				var interpolatedColor:Array<Int> = [];
+				for (i in 0...3) {
+					var newValue:Int = defaultBorderColor[i] + Std.int((noteRGB[i] - defaultBorderColor[i]) * windowBorderColorTween.value);
+					newValue = Std.int(Math.max(0, Math.min(255, newValue)));
+					interpolatedColor.push(newValue);
+				}
+				WindowsAPI.setWindowBorderColor(interpolatedColor[0], interpolatedColor[1], interpolatedColor[2]);
+			};
+		}
+		#end
+
 		if(!cpuControlled) {
 			songScore += score;
 			if(!note.ratingDisabled)
@@ -4274,6 +4348,12 @@ class PlayState extends MusicBeatState
 		// Opponent Mode: Check the correct character's stunned state
 		var controlledChar:Character = playOpponent ? dad : boyfriend;
 		if(cpuControlled || paused || inCutscene || key < 0 || key >= playerStrums.length || !generatedMusic || endingSong || controlledChar.stunned) return;
+
+		// Play hitsound on key press if enabled (Keys mode)
+		if (ClientPrefs.data.hitsoundType == 'Keys' && ClientPrefs.data.hitsoundVolume > 0 && ClientPrefs.data.hitSounds != "None")
+		{
+			FlxG.sound.play(Paths.sound('hitsounds/' + ClientPrefs.data.hitSounds), ClientPrefs.data.hitsoundVolume).pitch = playbackRate;
+		}
 
 		// Key Viewer
 		if(keyViewer != null) {
@@ -4732,8 +4812,9 @@ class PlayState extends MusicBeatState
 
 		note.wasGoodHit = true;
 
-		if (note.hitsoundVolume > 0 && !note.hitsoundDisabled)
-			FlxG.sound.play(Paths.sound(note.hitsound), note.hitsoundVolume);
+		// Play hitsound if enabled (Notes mode) - only for normal notes, not sustains
+		if (!note.isSustainNote && ClientPrefs.data.hitsoundType == 'Notes' && ClientPrefs.data.hitsoundVolume > 0 && ClientPrefs.data.hitSounds != "None")
+			FlxG.sound.play(Paths.sound('hitsounds/' + ClientPrefs.data.hitSounds), ClientPrefs.data.hitsoundVolume);
 
 		if(!note.hitCausesMiss) //Common notes
 		{

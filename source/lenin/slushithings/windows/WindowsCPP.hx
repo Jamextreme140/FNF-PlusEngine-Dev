@@ -5,8 +5,11 @@ package lenin.slushithings.windows;
  * Based on Slushi Engine implementation
  */
 @:buildXml('
+<compilerflag value="/DelayLoad:ComCtl32.dll"/>
+
 <target id="haxe">
     <lib name="dwmapi.lib" if="windows" />
+    <lib name="shell32.lib" if="windows" />
     <lib name="gdi32.lib" if="windows" />
     <lib name="user32.lib" if="windows" />
 </target>
@@ -17,16 +20,52 @@ package lenin.slushithings.windows;
 #define SCREENSHOT_CPP_INCLUDED
 
 #include <Windows.h>
+#include <windowsx.h>
+#include <cstdio>
+#include <iostream>
+#include <tchar.h>
 #include <wingdi.h>
 #include <winuser.h>
 #include <dwmapi.h>
+#include <winternl.h>
+#include <Shlobj.h>
+#include <commctrl.h>
+#include <string>
+
+#include <chrono>
+#include <thread>
+
+#define UNICODE
 
 #pragma comment(lib, "Dwmapi")
+#pragma comment(lib, "ntdll.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "Shell32.lib")
+#pragma comment(lib, "gdi32.lib")
+
+// This is so that all window-related functions ALWAYS apply to the engine window.
+static std::string globalWindowTitle = "Friday Night Funkin\': Plus Engine";
 
 // Get the active window handle
 static HWND GET_WINDOW() {
     return GetForegroundWindow();
 }
+
+// Get the engine window by title
+static HWND GET_ENGINE_WINDOW() {
+	HWND hwnd = GetForegroundWindow();
+    char windowTitle[256];
+
+    GetWindowTextA(hwnd, windowTitle, sizeof(windowTitle));
+
+    if (globalWindowTitle == windowTitle) {
+        return hwnd;
+    }
+
+    return FindWindowA(NULL, globalWindowTitle.c_str());
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static BOOL SaveToFile(HBITMAP hBitmap3, LPCTSTR lpszFileName)
 {   
@@ -139,6 +178,104 @@ class WindowsCPP
 {
 	#if windows
 	/**
+	 * Detects if running under Wine (Linux/Mac emulation)
+	 * @return True if running under Wine, false otherwise
+	 */
+	@:functionCode('
+		HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+		if (ntdll) {
+			void* wine_get_version = GetProcAddress(ntdll, "wine_get_version");
+			if (wine_get_version) {
+				return true;
+			}
+		}
+		return false;
+	')
+	public static function detectWine():Bool
+	{
+		return false;
+	}
+
+	/**
+	 * Shows a native Windows MessageBox
+	 * @param caption Title of the message box
+	 * @param message Content of the message box
+	 * @param icon Icon type (MSG_ERROR, MSG_WARNING, MSG_INFORMATION, MSG_QUESTION)
+	 */
+	@:functionCode('
+		MessageBox(GET_ENGINE_WINDOW(), message, caption, icon | MB_SETFOREGROUND);
+	')
+	public static function showMessageBox(caption:String, message:String, icon:MessageBoxIcon = MSG_WARNING)
+	{
+	}
+
+	/**
+	 * Plays a beep sound through the default audio device
+	 * @param freq Frequency in Hz
+	 * @param duration Duration in milliseconds
+	 */
+	@:functionCode('
+		Beep(freq, duration);
+	')
+	public static function beep(freq:Int, duration:Int)
+	{
+	}
+
+	/**
+	 * Redefines the main window title for finding the window
+	 * @param windowTitle New window title to track
+	 */
+	@:functionCode('
+		globalWindowTitle = windowTitle;
+	')
+	public static function reDefineEngineWindowTitle(windowTitle:String)
+	{
+	}
+
+	/**
+	 * Shows or hides the main window
+	 * @param show True to show, false to hide
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (show) {
+			ShowWindow(hwnd, SW_SHOW);
+		} else {
+			ShowWindow(hwnd, SW_HIDE);
+		}
+    ')
+	public static function setWindowVisible(show:Bool)
+	{
+	}
+
+	/**
+	 * Checks if the application is running with administrator privileges
+	 * @return True if running as admin, false otherwise
+	 */
+	@:functionCode('
+		BOOL isAdmin = FALSE;
+		SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+		PSID adminGroup = nullptr;
+
+		if (AllocateAndInitializeSid(&ntAuthority, 2,
+			SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
+			0, 0, 0, 0, 0, 0, &adminGroup)) {
+
+			if (!CheckTokenMembership(nullptr, adminGroup, &isAdmin)) {
+				isAdmin = FALSE;
+			}
+
+			FreeSid(adminGroup);
+		}
+
+		return isAdmin == TRUE;
+	')
+	public static function isRunningAsAdmin():Bool
+	{
+		return false;
+	}
+
+	/**
 	 * Captures the full screen and saves it to a file
 	 * @param path The path where to save the screenshot (must be absolute path)
 	 */
@@ -156,6 +293,7 @@ class WindowsCPP
 	 * Must be called before using setWindowAlpha
 	 */
 	@:functionCode('
+		
 		HWND window = GET_WINDOW();
 		if (window) {
 			SetWindowLong(window, GWL_EXSTYLE, GetWindowLong(window, GWL_EXSTYLE) ^ WS_EX_LAYERED);
@@ -219,7 +357,7 @@ class WindowsCPP
 	 * @param b Blue component (0-255)
 	 */
 	@:functionCode('
-		HWND window = GET_WINDOW();
+		HWND window = GET_ENGINE_WINDOW();
 		if (window) {
 			auto color = RGB(r, g, b);
 			
@@ -237,5 +375,256 @@ class WindowsCPP
 	public static function setWindowBorderColor(r:Int, g:Int, b:Int):Void
 	{
 	}
+
+	/**
+	 * Sets Slushi\'s signature color to the window border (Windows 11 only)
+	 */
+	@:functionCode('
+        HWND window = GET_ENGINE_WINDOW();
+		auto color = RGB(214, 243, 222);
+		
+        if (S_OK != DwmSetWindowAttribute(window, 35, &color, sizeof(COLORREF))) {
+            DwmSetWindowAttribute(window, 35, &color, sizeof(COLORREF));
+        }
+
+		if (S_OK != DwmSetWindowAttribute(window, 34, &color, sizeof(COLORREF))) {
+            DwmSetWindowAttribute(window, 34, &color, sizeof(COLORREF));
+        }
+
+        UpdateWindow(window);
+    ')
+	public static function setSlushiWindowColor()
+	{
+	}
+
+	// === Desktop and System Control Functions ===
+
+	/**
+	 * Hides or shows the Windows taskbar
+	 * @param hide True to hide, false to show
+	 */
+	@:functionCode('
+		bool value = hide;
+		HWND hwnd = FindWindowA("Shell_traywnd", nullptr);
+		HWND hwnd2 = FindWindowA("Shell_SecondaryTrayWnd", nullptr);
+	
+		if (value == true) {
+			ShowWindow(hwnd, SW_HIDE);
+			ShowWindow(hwnd2, SW_HIDE);
+		} else {
+			ShowWindow(hwnd, SW_SHOW);
+			ShowWindow(hwnd2, SW_SHOW);
+		}
+    ')
+	public static function hideTaskbar(hide:Bool)
+	{
+	}
+
+	/**
+	 * Sets the Windows desktop wallpaper
+	 * @param path Absolute path to the wallpaper image
+	 */
+	@:functionCode('
+		const char* filepath = path;
+	
+		int uiAction = SPIF_UPDATEINIFILE | SPIF_SENDCHANGE;
+		char filepathBuffer[MAX_PATH];
+		strcpy_s(filepathBuffer, filepath);
+	
+		SystemParametersInfoA(SPI_SETDESKWALLPAPER, 0, filepathBuffer, uiAction);	
+    ')
+	public static function setWallpaper(path:String)
+	{
+	}
+
+	/**
+	 * Hides or shows desktop icons
+	 * @param hide True to hide, false to show
+	 */
+	@:functionCode('
+		bool value = hide;
+		HWND hProgman = FindWindowW (L"Progman", L"Program Manager");
+		HWND hChild = GetWindow (hProgman, GW_CHILD);
+		
+		if (value == true) {
+			ShowWindow (hChild, SW_HIDE);
+		} else {
+			ShowWindow (hChild, SW_SHOW);
+		}
+    ')
+	public static function hideDesktopIcons(hide:Bool)
+	{
+	}
+
+	/**
+	 * Moves desktop icons horizontally
+	 * @param x X position
+	 */
+	@:functionCode('
+		HWND hd;
+		hd = FindWindowA("Progman", NULL);
+		hd = FindWindowEx(hd, 0, "SHELLDLL_DefView", NULL);
+		hd = FindWindowEx(hd, 0, "SysListView32", NULL);
+		SetWindowPos(hd, NULL, x, NULL, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+    ')
+	public static function moveDesktopWindowsInX(x:Int)
+	{
+	}
+
+	/**
+	 * Moves desktop icons vertically
+	 * @param y Y position
+	 */
+	@:functionCode('
+		HWND hd;
+		hd = FindWindowA("Progman", NULL);
+		hd = FindWindowEx(hd, 0, "SHELLDLL_DefView", NULL);
+		hd = FindWindowEx(hd, 0, "SysListView32", NULL);
+		SetWindowPos(hd, NULL, NULL, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+    ')
+	public static function moveDesktopWindowsInY(y:Int)
+	{
+	}
+
+	/**
+	 * Moves desktop icons to a specific position
+	 * @param x X position
+	 * @param y Y position
+	 */
+	@:functionCode('
+		HWND hd;
+		hd = FindWindowA("Progman", NULL);
+		hd = FindWindowEx(hd, 0, "SHELLDLL_DefView", NULL);
+		hd = FindWindowEx(hd, 0, "SysListView32", NULL);
+		SetWindowPos(hd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+    ')
+	public static function moveDesktopWindowsInXY(x:Int, y:Int)
+	{
+	}
+
+	/**
+	 * Gets the X position of desktop icons
+	 * @return X position
+	 */
+	@:functionCode('
+		HWND hd;
+		hd = FindWindowA("Progman", NULL);
+		hd = FindWindowEx(hd, 0, "SHELLDLL_DefView", NULL);
+		hd = FindWindowEx(hd, 0, "SysListView32", NULL);
+		RECT rect;
+		GetWindowRect(hd, &rect);
+		int x = rect.left;
+		return x;
+	')
+	public static function getDesktopWindowsXPos():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the Y position of desktop icons
+	 * @return Y position
+	 */
+	@:functionCode('
+		HWND hd;
+		hd = FindWindowA("Progman", NULL);
+		hd = FindWindowEx(hd, 0, "SHELLDLL_DefView", NULL);
+		hd = FindWindowEx(hd, 0, "SysListView32", NULL);
+		RECT rect;
+		GetWindowRect(hd, &rect);
+		int y = rect.top;
+		return y;
+	')
+	public static function getDesktopWindowsYPos():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Sets the transparency of desktop icons
+	 * @param alpha Alpha value from 0.0 (fully transparent) to 1.0 (fully opaque)
+	 */
+	@:functionCode('
+		HWND hProgman = FindWindowW(L"Progman", L"Program Manager");
+		HWND hChild = GetWindow(hProgman, GW_CHILD);
+
+		float a = alpha;
+		if (alpha > 1) {
+			a = 1;
+		} 
+		if (alpha < 0) {
+			a = 0;
+		}
+
+       	SetLayeredWindowAttributes(hChild, 0, (255 * (a * 100)) / 100, LWA_ALPHA);
+    ')
+	public static function setDesktopWindowsAlpha(alpha:Float)
+	{
+	}
+
+	/**
+	 * Sets the transparency of the taskbar
+	 * @param alpha Alpha value from 0.0 (fully transparent) to 1.0 (fully opaque)
+	 */
+	@:functionCode('
+		HWND hwnd = FindWindowA("Shell_traywnd", nullptr);
+		HWND hwnd2 = FindWindowA("Shell_SecondaryTrayWnd", nullptr);
+
+		float a = alpha;
+		if (alpha > 1) {
+			a = 1;
+		} 
+		if (alpha < 0) {
+			a = 0;
+		}
+
+       	SetLayeredWindowAttributes(hwnd, 0, (255 * (a * 100)) / 100, LWA_ALPHA);
+		SetLayeredWindowAttributes(hwnd2, 0, (255 * (a * 100)) / 100, LWA_ALPHA);
+    ')
+	public static function setTaskBarAlpha(alpha:Float)
+	{
+	}
+
+	/**
+	 * Sets window layered mode for desktop or taskbar
+	 * @param numberMode 0 for desktop, 1 for taskbar
+	 */
+	@:functionCode('
+		HWND window;
+		HWND window2;
+
+		switch (numberMode) {
+			case 0:
+				window = FindWindowW(L"Progman", L"Program Manager");
+				window = GetWindow(window, GW_CHILD);
+				break;
+			case 1:
+				window = FindWindowA("Shell_traywnd", nullptr);
+				window2 = FindWindowA("Shell_SecondaryTrayWnd", nullptr);
+				break;
+		}
+
+		if (numberMode != 1) {
+			SetWindowLong(window, GWL_EXSTYLE, GetWindowLong(window, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+		}
+		else {
+			SetWindowLong(window, GWL_EXSTYLE, GetWindowLong(window, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+			SetWindowLong(window2, GWL_EXSTYLE, GetWindowLong(window2, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+		}
+	')
+	public static function setWindowLayeredMode(numberMode:Int)
+	{
+	}
 	#end
+}
+
+/**
+ * MessageBox icon types for showMessageBox function
+ */
+enum abstract MessageBoxIcon(Int)
+{
+	var MSG_ERROR = 0x00000010;
+	var MSG_QUESTION = 0x00000020;
+	var MSG_WARNING = 0x00000030;
+	var MSG_INFORMATION = 0x00000040;
 }

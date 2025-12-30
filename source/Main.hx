@@ -60,6 +60,12 @@ class Main extends Sprite
 	public static var watermarkSprite:Sprite = null;
 	public static var watermark:Bitmap = null;
 
+	// Window focus management
+	public static var focused:Bool = true;
+	var oldVol:Float = 1.0;
+	var newVol:Float = 0.2;
+	public static var focusMusicTween:FlxTween;
+
 	// You can pretty much ignore everything from here on - your code should go in your states.
 
 	public static function main():Void
@@ -87,6 +93,8 @@ class Main extends Sprite
 		backend.Native.fixScaling();
 		// Initialize window transparency support
 		WindowsAPI.setWindowLayered();
+		// Set window border color to purple (128, 41, 182)
+		WindowsAPI.setWindowBorderColor(128, 41, 182);
 		#end
 
 		#if VIDEOS_ALLOWED
@@ -266,6 +274,9 @@ class Main extends Sprite
 		#if (cpp && windows)
 		// Add window close handler for fade out effect
 		Application.current.window.onClose.add(onWindowClose);
+		// Add window focus handlers
+		Application.current.window.onFocusIn.add(onWindowFocusIn);
+		Application.current.window.onFocusOut.add(onWindowFocusOut);
 		#end
 
 		// shader coords fix
@@ -337,6 +348,43 @@ class Main extends Sprite
 	function onWindowClose():Void
 	{
 		lenin.slushithings.windows.WindowsAPI.fadeOutAndExit();
+	}
+
+	function onWindowFocusOut():Void
+	{
+		focused = false;
+
+		oldVol = FlxG.sound.volume;
+		if (oldVol > 0.3)
+		{
+			newVol = 0.3;
+		}
+		else
+		{
+			if (oldVol > 0.1)
+			{
+				newVol = 0.1;
+			}
+			else
+			{
+				newVol = 0;
+			}
+		}
+
+		if (focusMusicTween != null) focusMusicTween.cancel();
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: newVol}, 0.5);
+	}
+
+	function onWindowFocusIn():Void
+	{
+		new FlxTimer().start(0.2, function(tmr:FlxTimer) {
+			focused = true;
+		});
+
+		// Normal global volume when focused
+		if (focusMusicTween != null) focusMusicTween.cancel();
+
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5);
 	}
 	#end
 

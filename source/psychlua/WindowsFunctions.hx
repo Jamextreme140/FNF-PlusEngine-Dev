@@ -142,14 +142,6 @@ class WindowsFunctions
 			WindowTweens.setTaskBarTransparency(alpha);
 		});
 		
-		// System Information Functions
-		Lua_helper.add_callback(lua, "getCursorPosition", function() {
-			return WindowTweens.getCursorPosition();
-		});
-		
-		Lua_helper.add_callback(lua, "getSystemRAM", function() {
-			return WindowTweens.getSystemRAM();
-		});
 		
 		// System Notification Functions
 		Lua_helper.add_callback(lua, "showNotification", function(title:String, message:String) {
@@ -160,117 +152,70 @@ class WindowsFunctions
 		Lua_helper.add_callback(lua, "resetSystemChanges", function() {
 			WindowTweens.resetSystemChanges();
 		});
-
+		
 		Lua_helper.add_callback(lua, "getDesktopWindowsXPos", function() {
 			return WindowTweens.getDesktopWindowsXPos();
 		});
-
+		
 		Lua_helper.add_callback(lua, "getDesktopWindowsYPos", function() {
 			return WindowTweens.getDesktopWindowsYPos();
 		});
-
+		
 		Lua_helper.add_callback(lua, "setWindowBorderColor", function(r:Int, g:Int, b:Int) {
 			WindowTweens.setWindowBorderColor(r, g, b);
 		});
-
+		
 		Lua_helper.add_callback(lua, "setWindowOpacity", function(alpha:Float) {
 			WindowTweens.setWindowOpacity(alpha);
 		});
-
+		
 		Lua_helper.add_callback(lua, "getWindowOpacity", function() {
 			return WindowTweens.getWindowOpacity();
 		});
-
-		Lua_helper.add_callback(lua, "setWindowVisible", function(visible:Bool) {
-			WindowTweens.setWindowVisible(visible);
-		});
-
-		Lua_helper.add_callback(lua, "showMessageBox", function(message:String, caption:String, ?icon:String = "WARNING") {
-			WindowTweens.showMessageBox(message, caption, icon);
-		});
-
+		
 		Lua_helper.add_callback(lua, "changeWindowsWallpaper", function(path:String) {
 			WindowTweens.changeWindowsWallpaper(path);
 		});
-
+		
 		Lua_helper.add_callback(lua, "saveCurrentWallpaper", function() {
 			WindowTweens.saveCurrentWallpaper();
 		});
-
+		
 		Lua_helper.add_callback(lua, "restoreOldWallpaper", function() {
 			WindowTweens.restoreOldWallpaper();
 		});
-
-		Lua_helper.add_callback(lua, "reDefineMainWindowTitle", function(title:String) {
-			WindowTweens.reDefineMainWindowTitle(title);
+		
+		Lua_helper.add_callback(lua, "captureScreenshot", function(path:String) {
+			WindowTweens.captureScreenshot(path);
 		});
-
-		Lua_helper.add_callback(lua, "allocConsole", function() {
-			WindowTweens.allocConsole();
+		
+		Lua_helper.add_callback(lua, "getWindowsVersion", function() {
+			return WindowTweens.getWindowsVersion();
 		});
-
-		Lua_helper.add_callback(lua, "clearTerminal", function() {
-			WindowTweens.clearTerminal();
+		
+		// Optimized Tween Functions using FlxTween.num
+		Lua_helper.add_callback(lua, "tweenWindowBorderColor", function(fromR:Int, fromG:Int, fromB:Int, toR:Int, toG:Int, toB:Int, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenWindowBorderColor(fromR, fromG, fromB, toR, toG, toB, duration, ease);
 		});
-
-		Lua_helper.add_callback(lua, "hideMainWindow", function() {
-			WindowTweens.hideMainWindow();
+		
+		Lua_helper.add_callback(lua, "tweenWindowOpacity", function(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenWindowOpacity(fromAlpha, toAlpha, duration, ease);
 		});
-
-		Lua_helper.add_callback(lua, "setConsoleTitle", function(title:String) {
-			WindowTweens.setConsoleTitle(title);
+		
+		Lua_helper.add_callback(lua, "tweenDesktopX", function(toX:Int, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenDesktopX(toX, duration, ease);
 		});
-
-		Lua_helper.add_callback(lua, "setConsoleWindowIcon", function(path:String) {
-			WindowTweens.setConsoleWindowIcon(path);
+		
+		Lua_helper.add_callback(lua, "tweenDesktopY", function(toY:Int, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenDesktopY(toY, duration, ease);
 		});
-
-		Lua_helper.add_callback(lua, "centerConsoleWindow", function() {
-			WindowTweens.centerConsoleWindow();
+		
+		Lua_helper.add_callback(lua, "tweenDesktopAlpha", function(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenDesktopAlpha(fromAlpha, toAlpha, duration, ease);
 		});
-
-		Lua_helper.add_callback(lua, "disableResizeConsoleWindow", function() {
-			WindowTweens.disableResizeConsoleWindow();
-		});
-
-		Lua_helper.add_callback(lua, "disableCloseConsoleWindow", function() {
-			WindowTweens.disableCloseConsoleWindow();
-		});
-
-		Lua_helper.add_callback(lua, "maximizeConsoleWindow", function() {
-			WindowTweens.maximizeConsoleWindow();
-		});
-
-		Lua_helper.add_callback(lua, "getConsoleWindowWidth", function() {
-			return WindowTweens.getConsoleWindowWidth();
-		});
-
-		Lua_helper.add_callback(lua, "getConsoleWindowHeight", function() {
-			return WindowTweens.getConsoleWindowHeight();
-		});
-
-		Lua_helper.add_callback(lua, "setConsoleCursorPosition", function(x:Int, y:Int) {
-			WindowTweens.setConsoleCursorPosition(x, y);
-		});
-
-		Lua_helper.add_callback(lua, "getConsoleCursorPositionX", function() {
-			return WindowTweens.getConsoleCursorPositionX();
-		});
-
-		Lua_helper.add_callback(lua, "getConsoleCursorPositionY", function() {
-			return WindowTweens.getConsoleCursorPositionY();
-		});
-
-		Lua_helper.add_callback(lua, "setConsoleWindowPositionX", function(posX:Int) {
-			WindowTweens.setConsoleWindowPositionX(posX);
-		});
-
-		Lua_helper.add_callback(lua, "setConsoleWindowPositionY", function(posY:Int) {
-			WindowTweens.setConsoleWindowPositionY(posY);
-		});
-
-		Lua_helper.add_callback(lua, "hideConsoleWindow", function() {
-			WindowTweens.hideConsoleWindow();
+		
+		Lua_helper.add_callback(lua, "tweenTaskBarAlpha", function(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear") {
+			WindowTweens.tweenTaskBarAlpha(fromAlpha, toAlpha, duration, ease);
 		});
 		
 		Lua_helper.add_callback(lua, "hideWindowBorder", function(enable:Bool) {

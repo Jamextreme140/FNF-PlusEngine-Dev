@@ -250,6 +250,14 @@ class VisualsSettingsSubState extends BaseOptionsMenu
         option.decimals = 0;
 		addOption(option);
 
+		#if windows
+		var option:Option = new Option('Change Window Border Color With Note Hit', 
+			'Can change the color of the window border when you hit a note.\\n(Only for Windows 11, sry)', 
+			'changeWindowBorderColorWithNoteHit', 
+			BOOL);
+		addOption(option);
+		#end
+
 		super();
 		add(notes);
 		add(splashes);

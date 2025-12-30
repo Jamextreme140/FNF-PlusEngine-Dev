@@ -39,6 +39,7 @@ class DiscordClient
 	{
 		isInitialized = false;
 		Discord.Shutdown();
+		trace("Discord Client shutdown");
 	}
 	
 	private static function onReady(request:cpp.RawConstPointer<DiscordUser>):Void

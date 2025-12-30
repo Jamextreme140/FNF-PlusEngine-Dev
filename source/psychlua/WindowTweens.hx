@@ -3,17 +3,20 @@ package psychlua;
 import openfl.Lib;
 import openfl.system.Capabilities;
 import flixel.FlxG;
+import flixel.math.FlxMath;
 import flixel.tweens.FlxTween;
+import flixel.tweens.misc.NumTween;
 import flixel.tweens.FlxEase;
 import flixel.system.scaleModes.RatioScaleMode;
 import flixel.util.FlxColor;
 import states.PlayState;
 
 #if windows
-import winapi.WindowsAPI;
+import lenin.slushithings.windows.WindowsAPI;
 #end
 
-// Thanks Slushi for these functions =p
+// Window tweening utilities using optimized FlxTween.num method
+// Based on Slushi Engine implementation
 
 class WindowTweens {
     public static function winTweenX(tag:String, targetX:Int, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
@@ -24,28 +27,29 @@ class WindowTweens {
         if(tag != null) {
             var originalTag:String = tag;
             tag = LuaUtils.formatVariable('wintween_$tag');
-            variables.set(tag, FlxTween.num(startX, targetX, duration, {
+            var tween:NumTween = FlxTween.num(startX, targetX, duration, {
                 ease: LuaUtils.getTweenEaseByString(ease),
-                onUpdate: function(tween:FlxTween) {
-                    window.x = Std.int(FlxMath.lerp(startX, targetX, tween.percent));
-                },
                 onComplete: function(_) {
                     variables.remove(tag);
                     if (onComplete != null) onComplete();
                     if(PlayState.instance != null) PlayState.instance.callOnLuas('onTweenCompleted', [originalTag, 'window.x']);
                 }
-            }));
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                window.x = Std.int(tween.value);
+            };
+            variables.set(tag, tween);
             return tag;
         } else {
-            FlxTween.num(startX, targetX, duration, {
+            var tween:NumTween = FlxTween.num(startX, targetX, duration, {
                 ease: LuaUtils.getTweenEaseByString(ease),
-                onUpdate: function(tween:FlxTween) {
-                    window.x = Std.int(FlxMath.lerp(startX, targetX, tween.percent));
-                },
                 onComplete: function(_) {
                     if (onComplete != null) onComplete();
                 }
             });
+            tween.onUpdate = function(t:FlxTween) {
+                window.x = Std.int(tween.value);
+            };
         }
         #end
         return null;
@@ -59,38 +63,39 @@ class WindowTweens {
         if(tag != null) {
             var originalTag:String = tag;
             tag = LuaUtils.formatVariable('wintween_$tag');
-            variables.set(tag, FlxTween.num(startY, targetY, duration, {
+            var tween:NumTween = FlxTween.num(startY, targetY, duration, {
                 ease: LuaUtils.getTweenEaseByString(ease),
-                onUpdate: function(tween:FlxTween) {
-                    window.y = Std.int(FlxMath.lerp(startY, targetY, tween.percent));
-                },
                 onComplete: function(_) {
                     variables.remove(tag);
                     if (onComplete != null) onComplete();
                     if(PlayState.instance != null) PlayState.instance.callOnLuas('onTweenCompleted', [originalTag, 'window.y']);
                 }
-            }));
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                window.y = Std.int(tween.value);
+            };
+            variables.set(tag, tween);
             return tag;
         } else {
-            FlxTween.num(startY, targetY, duration, {
+            var tween:NumTween = FlxTween.num(startY, targetY, duration, {
                 ease: LuaUtils.getTweenEaseByString(ease),
-                onUpdate: function(tween:FlxTween) {
-                    window.y = Std.int(FlxMath.lerp(startY, targetY, tween.percent));
-                },
                 onComplete: function(_) {
                     if (onComplete != null) onComplete();
                 }
             });
+            tween.onUpdate = function(t:FlxTween) {
+                window.y = Std.int(tween.value);
+            };
         }
         #end
         return null;
     }
     
     public static function setWindowBorderless(enable:Bool) {
-    #if windows
-    var window = Lib.current.stage.window;
-    window.borderless = enable;
-    #end
+        #if windows
+        var window = Lib.current.stage.window;
+        window.borderless = enable;
+        #end
     }
 
     public static function setWindowX(x:Int) {
@@ -203,11 +208,9 @@ class WindowTweens {
         var screenWidth = Capabilities.screenResolutionX;
         var screenHeight = Capabilities.screenResolutionY;
         
-        // Use screen bounds if not specified
-    if (maxX == -1) maxX = Std.int(screenWidth - window.width);
-    if (maxY == -1) maxY = Std.int(screenHeight - window.height);
+        if (maxX == -1) maxX = Std.int(screenWidth - window.width);
+        if (maxY == -1) maxY = Std.int(screenHeight - window.height);
         
-        // Ensure mins don't exceed maxs
         minX = Std.int(Math.min(minX, maxX));
         minY = Std.int(Math.min(minY, maxY));
         
@@ -287,22 +290,21 @@ class WindowTweens {
         var startW = window.width;
         var startH = window.height;
 
-        // Cambia el modo de escala para que el juego se estire con la ventana
         FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
 
-        FlxTween.num(0, 1, duration, {
+        var tween:NumTween = FlxTween.num(0, 1, duration, {
             ease: LuaUtils.getTweenEaseByString(ease),
-            onUpdate: function(tween:FlxTween) {
-                window.resize(
-                    Std.int(FlxMath.lerp(startW, targetW, tween.percent)),
-                    Std.int(FlxMath.lerp(startH, targetH, tween.percent))
-                );
-                FlxG.resizeGame(window.width, window.height);
-            },
             onComplete: function(_) {
                 if (onComplete != null) onComplete();
             }
         });
+        tween.onUpdate = function(t:FlxTween) {
+            window.resize(
+                Std.int(FlxMath.lerp(startW, targetW, tween.value)),
+                Std.int(FlxMath.lerp(startH, targetH, tween.value))
+            );
+            FlxG.resizeGame(window.width, window.height);
+        };
         #end
     }
 
@@ -344,7 +346,6 @@ class WindowTweens {
     public static function getWindowState():String {
         #if windows
         try {
-            // Función simplificada sin acceso directo a Windows API
             var window = Lib.current.stage.window;
             if (window.fullscreen) return "fullscreen";
             return "normal";
@@ -360,7 +361,7 @@ class WindowTweens {
     public static function setDesktopWallpaper(path:String) {
         #if windows
         try {
-            WindowsAPI.setWallpaper(path);
+            WindowsAPI.changeWindowsWallpaper(path);
         } catch (e:Dynamic) {
             trace('Error setting wallpaper: $e');
         }
@@ -380,7 +381,7 @@ class WindowTweens {
     public static function hideTaskBar(hide:Bool) {
         #if windows
         try {
-            WindowsAPI.hideTaskbar(hide);
+            WindowsAPI.hideTaskBar(hide);
         } catch (e:Dynamic) {
             trace('Error hiding taskbar: $e');
         }
@@ -390,9 +391,51 @@ class WindowTweens {
     public static function moveDesktopElements(x:Int, y:Int) {
         #if windows
         try {
-            WindowsAPI.moveDesktopWindowsInXY(x, y);
+            WindowsAPI.moveDesktopElements(x, y);
         } catch (e:Dynamic) {
             trace('Error moving desktop elements: $e');
+        }
+        #end
+    }
+
+    // Tween desktop icons X position using FlxTween.num (optimized)
+    public static function tweenDesktopX(toX:Int, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
+        #if windows
+        try {
+            var startX:Int = WindowsAPI.getDesktopWindowsXPos();
+            var tween:NumTween = FlxTween.num(startX, toX, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                var currentY:Int = WindowsAPI.getDesktopWindowsYPos();
+                WindowsAPI.moveDesktopElements(Std.int(tween.value), currentY);
+            };
+        } catch (e:Dynamic) {
+            trace('Error tweening desktop X: $e');
+        }
+        #end
+    }
+
+    // Tween desktop icons Y position using FlxTween.num (optimized)
+    public static function tweenDesktopY(toY:Int, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
+        #if windows
+        try {
+            var startY:Int = WindowsAPI.getDesktopWindowsYPos();
+            var tween:NumTween = FlxTween.num(startY, toY, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                var currentX:Int = WindowsAPI.getDesktopWindowsXPos();
+                WindowsAPI.moveDesktopElements(currentX, Std.int(tween.value));
+            };
+        } catch (e:Dynamic) {
+            trace('Error tweening desktop Y: $e');
         }
         #end
     }
@@ -401,7 +444,7 @@ class WindowTweens {
         #if windows
         try {
             var clampedAlpha = Math.max(0.0, Math.min(1.0, alpha));
-            WindowsAPI.setDesktopWindowsAlpha(clampedAlpha);
+            WindowsAPI.setDesktopTransparency(clampedAlpha);
         } catch (e:Dynamic) {
             trace('Error setting desktop transparency: $e');
         }
@@ -412,58 +455,49 @@ class WindowTweens {
         #if windows
         try {
             var clampedAlpha = Math.max(0.0, Math.min(1.0, alpha));
-            WindowsAPI.setTaskBarAlpha(clampedAlpha);
+            WindowsAPI.setTaskBarTransparency(clampedAlpha);
         } catch (e:Dynamic) {
             trace('Error setting taskbar transparency: $e');
         }
         #end
     }
 
-    public static function getCursorPosition():{x:Int, y:Int} {
+    // Tween desktop transparency using FlxTween.num (optimized)
+    public static function tweenDesktopAlpha(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
         #if windows
         try {
-            return {
-                x: WindowsAPI.getCursorPositionX(),
-                y: WindowsAPI.getCursorPositionY()
+            var tween:NumTween = FlxTween.num(fromAlpha, toAlpha, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                var clampedAlpha = Math.max(0.0, Math.min(1.0, tween.value));
+                WindowsAPI.setDesktopTransparency(clampedAlpha);
             };
         } catch (e:Dynamic) {
-            trace('Error getting cursor position: $e');
-            return {x: 0, y: 0};
-        }
-        #else
-        return {x: 0, y: 0};
-        #end
-    }
-
-    public static function getSystemRAM():Int {
-        #if windows
-        try {
-            return WindowsAPI.obtainRAM();
-        } catch (e:Dynamic) {
-            trace('Error getting system RAM: $e');
-            return 0;
-        }
-        #else
-        return 0;
-        #end
-    }
-
-    public static function showNotification(title:String, message:String) {
-        #if windows
-        try {
-            WindowsAPI.sendWindowsNotification(title, message);
-        } catch (e:Dynamic) {
-            trace('Error showing notification: $e');
+            trace('Error tweening desktop transparency: $e');
         }
         #end
     }
 
-    public static function resetSystemChanges() {
+    // Tween taskbar transparency using FlxTween.num (optimized)
+    public static function tweenTaskBarAlpha(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
         #if windows
         try {
-            WindowsAPI.resetWindowsFuncs();
+            var tween:NumTween = FlxTween.num(fromAlpha, toAlpha, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                var clampedAlpha = Math.max(0.0, Math.min(1.0, tween.value));
+                WindowsAPI.setTaskBarTransparency(clampedAlpha);
+            };
         } catch (e:Dynamic) {
-            trace('Error resetting system changes: $e');
+            trace('Error tweening taskbar transparency: $e');
         }
         #end
     }
@@ -504,6 +538,35 @@ class WindowTweens {
         #end
     }
 
+    // Tween window border color using FlxTween.num (optimized, Slushi Engine method)
+    public static function tweenWindowBorderColor(fromR:Int, fromG:Int, fromB:Int, toR:Int, toG:Int, toB:Int, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
+        #if windows
+        try {
+            var fromColor:Array<Int> = [fromR, fromG, fromB];
+            var toColor:Array<Int> = [toR, toG, toB];
+            
+            var tween:NumTween = FlxTween.num(0, 1, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            
+            tween.onUpdate = function(t:FlxTween) {
+                var interpolatedColor:Array<Int> = [];
+                for (i in 0...3) {
+                    var newValue:Int = fromColor[i] + Std.int((toColor[i] - fromColor[i]) * tween.value);
+                    newValue = Std.int(Math.max(0, Math.min(255, newValue)));
+                    interpolatedColor.push(newValue);
+                }
+                WindowsAPI.setWindowBorderColor(interpolatedColor[0], interpolatedColor[1], interpolatedColor[2]);
+            };
+        } catch (e:Dynamic) {
+            trace('Error tweening window border color: $e');
+        }
+        #end
+    }
+
     public static function setWindowOpacity(alpha:Float) {
         #if windows
         try {
@@ -528,28 +591,50 @@ class WindowTweens {
         #end
     }
 
-    public static function setWindowVisible(visible:Bool) {
+    // Tween window opacity using FlxTween.num (optimized)
+    public static function tweenWindowOpacity(fromAlpha:Float, toAlpha:Float, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {
         #if windows
         try {
-            WindowsAPI.setWindowVisible(visible);
+            var tween:NumTween = FlxTween.num(fromAlpha, toAlpha, duration, {
+                ease: LuaUtils.getTweenEaseByString(ease),
+                onComplete: function(_) {
+                    if (onComplete != null) onComplete();
+                }
+            });
+            tween.onUpdate = function(t:FlxTween) {
+                var clampedAlpha = Math.max(0.0, Math.min(1.0, tween.value));
+                WindowsAPI.setWindowOppacity(clampedAlpha);
+            };
         } catch (e:Dynamic) {
-            trace('Error setting window visibility: $e');
+            trace('Error tweening window opacity: $e');
         }
         #end
     }
 
-    public static function showMessageBox(message:String, caption:String, icon:String = "WARNING") {
+    public static function showNotification(title:String, message:String) {
         #if windows
         try {
-            var iconType = switch(icon.toUpperCase()) {
-                case "ERROR": winapi.WindowsAPI.MessageBoxIcon.ERROR;
-                case "QUESTION": winapi.WindowsAPI.MessageBoxIcon.QUESTION;
-                case "INFORMATION": winapi.WindowsAPI.MessageBoxIcon.INFORMATION;
-                default: winapi.WindowsAPI.MessageBoxIcon.WARNING;
-            }
-            WindowsAPI.showMessageBox(message, caption, iconType);
+            WindowsAPI.sendWindowsNotification(message, title);
         } catch (e:Dynamic) {
-            trace('Error showing message box: $e');
+            trace('Error showing notification: $e');
+        }
+        #end
+    }
+
+    public static function resetSystemChanges() {
+        #if windows
+        try {
+            WindowsAPI.hideDesktopIcons(false);
+            WindowsAPI.hideTaskBar(false);
+            WindowsAPI.moveDesktopElements(0, 0);
+            WindowsAPI.setDesktopTransparency(1.0);
+            WindowsAPI.setTaskBarTransparency(1.0);
+            
+            if (WindowsAPI.changedWallpaper) {
+                WindowsAPI.setOldWindowsWallpaper();
+            }
+        } catch (e:Dynamic) {
+            trace('Error resetting system changes: $e');
         }
         #end
     }
@@ -584,195 +669,21 @@ class WindowTweens {
         #end
     }
 
-    public static function reDefineMainWindowTitle(title:String) {
+    public static function captureScreenshot(path:String) {
         #if windows
         try {
-            WindowsAPI.reDefineMainWindowTitle(title);
+            WindowsAPI.capture(path);
         } catch (e:Dynamic) {
-            trace('Error redefining main window title: $e');
+            trace('Error capturing screenshot: $e');
         }
         #end
     }
 
-    public static function allocConsole() {
+    public static function getWindowsVersion():Int {
         #if windows
-        try {
-            WindowsAPI.allocConsole();
-        } catch (e:Dynamic) {
-            trace('Error allocating console: $e');
-        }
-        #end
-    }
-
-    public static function clearTerminal() {
-        #if windows
-        try {
-            WindowsAPI.clearTerminal();
-        } catch (e:Dynamic) {
-            trace('Error clearing terminal: $e');
-        }
-        #end
-    }
-
-    public static function hideMainWindow() {
-        #if windows
-        try {
-            WindowsAPI.hideMainWindow();
-        } catch (e:Dynamic) {
-            trace('Error hiding main window: $e');
-        }
-        #end
-    }
-
-    public static function setConsoleTitle(title:String) {
-        #if windows
-        try {
-            WindowsAPI.setConsoleTitle(title);
-        } catch (e:Dynamic) {
-            trace('Error setting console title: $e');
-        }
-        #end
-    }
-
-    public static function setConsoleWindowIcon(path:String) {
-        #if windows
-        try {
-            WindowsAPI.setConsoleWindowIcon(path);
-        } catch (e:Dynamic) {
-            trace('Error setting console window icon: $e');
-        }
-        #end
-    }
-
-    public static function centerConsoleWindow() {
-        #if windows
-        try {
-            WindowsAPI.centerConsoleWindow();
-        } catch (e:Dynamic) {
-            trace('Error centering console window: $e');
-        }
-        #end
-    }
-
-    public static function disableResizeConsoleWindow() {
-        #if windows
-        try {
-            WindowsAPI.disableResizeConsoleWindow();
-        } catch (e:Dynamic) {
-            trace('Error disabling console resize: $e');
-        }
-        #end
-    }
-
-    public static function disableCloseConsoleWindow() {
-        #if windows
-        try {
-            WindowsAPI.disableCloseConsoleWindow();
-        } catch (e:Dynamic) {
-            trace('Error disabling console close: $e');
-        }
-        #end
-    }
-
-    public static function maximizeConsoleWindow() {
-        #if windows
-        try {
-            WindowsAPI.maximizeConsoleWindow();
-        } catch (e:Dynamic) {
-            trace('Error maximizing console window: $e');
-        }
-        #end
-    }
-
-    public static function getConsoleWindowWidth():Int {
-        #if windows
-        try {
-            return WindowsAPI.getConsoleWindowWidth();
-        } catch (e:Dynamic) {
-            trace('Error getting console width: $e');
-            return 0;
-        }
+        return WindowsAPI.getWindowsVersion();
         #else
         return 0;
-        #end
-    }
-
-    public static function getConsoleWindowHeight():Int {
-        #if windows
-        try {
-            return WindowsAPI.getConsoleWindowHeight();
-        } catch (e:Dynamic) {
-            trace('Error getting console height: $e');
-            return 0;
-        }
-        #else
-        return 0;
-        #end
-    }
-
-    public static function setConsoleCursorPosition(x:Int, y:Int) {
-        #if windows
-        try {
-            WindowsAPI.setConsoleCursorPosition(x, y);
-        } catch (e:Dynamic) {
-            trace('Error setting console cursor position: $e');
-        }
-        #end
-    }
-
-    public static function getConsoleCursorPositionX():Int {
-        #if windows
-        try {
-            return WindowsAPI.getConsoleCursorPositionInX();
-        } catch (e:Dynamic) {
-            trace('Error getting console cursor X: $e');
-            return 0;
-        }
-        #else
-        return 0;
-        #end
-    }
-
-    public static function getConsoleCursorPositionY():Int {
-        #if windows
-        try {
-            return WindowsAPI.getConsoleCursorPositionInY();
-        } catch (e:Dynamic) {
-            trace('Error getting console cursor Y: $e');
-            return 0;
-        }
-        #else
-        return 0;
-        #end
-    }
-
-    public static function setConsoleWindowPositionX(posX:Int) {
-        #if windows
-        try {
-            WindowsAPI.setConsoleWindowPositionX(posX);
-        } catch (e:Dynamic) {
-            trace('Error setting console X position: $e');
-        }
-        #end
-    }
-
-    public static function setConsoleWindowPositionY(posY:Int) {
-        #if windows
-        try {
-            WindowsAPI.setConsoleWindowPositionY(posY);
-        } catch (e:Dynamic) {
-            trace('Error setting console Y position: $e');
-        }
-        #end
-    }
-
-    public static function hideConsoleWindow() {
-        #if windows
-        try {
-            WindowsAPI.hideConsoleWindow();
-        } catch (e:Dynamic) {
-            trace('Error hiding console window: $e');
-        }
         #end
     }
 }
