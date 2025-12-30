@@ -118,21 +118,24 @@
 	<!-- _______________________________ Libraries ______________________________ -->
 
 	<haxelib name="flixel"/>
-	<haxelib name="flixel-ui" version="2.6.2"/>
-	<haxelib name="flixel-addons" version="3.3.2"/>
+	<haxelib name="flixel-addons" />
 	<haxelib name="tjson" version="1.4.0"/>
 	<haxelib name="moonchart" unless="mac | ios"/>
 
 	<!--Psych stuff needed-->
 	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
 	<haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
-	<haxelib name="hscript-improved" if="HSCRIPT_ALLOWED"/>
+	<haxelib name="hscript-improved" />
 	<!--Compatibility with older mods-->
 	<haxelib name="sscript-parch" version="git" if="SSCRIPT_ALLOWED"/>
 	<!--end-->
 	<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
 	<haxelib name="hxdiscord_rpc" if="DISCORD_ALLOWED"/>
 	<haxelib name="flxanimate"/>
+	
+	<!-- Define for hscript-improved -->
+	<define name="HScriptImproved" if="hscript-improved"/>
+	<define name="CUSTOM_CLASSES" />
 
 	<!-- Disable Discord IO Thread -->
 	<haxedef name="DISCORD_DISABLE_IO_THREAD" if="hxdiscord_rpc" />
@@ -143,6 +146,7 @@
 
 	<!-- Force C99 standard for macOS/iOS to fix zlib compilation with Xcode 16.4 -->
 	<haxedef name="HXCPP_CFLAGS" value="-std=c99 -Wno-error=deprecated-non-prototype -Wno-deprecated-declarations -Wno-unused-command-line-argument -Wno-macro-redefined" if="macos || ios" />
+	<haxeflag name="-D" value="no-deprecation-warnings"/>
 
 	<!-- Enables a terminal log prompt on debug builds -->
 	<haxelib name="hxcpp-debug-server" if="debug"/>
@@ -222,6 +226,9 @@
 	<haxeflag name="--macro" value="include('my.pack')" />
 
 	<haxedef name="hscriptPos" if="HSCRIPT_ALLOWED" />
+
+	<!-- Enable all classes compilation for hscript -->
+	<haxeflag name="--macro" value="include('flixel', true, [ 'flixel.addons.editors.spine.*', 'flixel.addons.nape.*', 'flixel.system.macros.*' ])" />
 
 	<!-- ____________________________ Modcharts? _______________________________ -->
 

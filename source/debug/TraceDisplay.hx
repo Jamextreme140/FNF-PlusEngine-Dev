@@ -146,7 +146,7 @@ class TraceDisplay extends Sprite
             // Formatear para la consola/terminal con estilo limpio
             if (infos != null) {
                 var fileName = extractFileName(infos.fileName);
-                Sys.println('[$fileName]: ${Std.string(v)}');
+                Sys.println('[$fileName - ${infos.lineNumber}]: ${Std.string(v)}');
             } else {
                 Sys.println(Std.string(v));
             }
@@ -188,7 +188,7 @@ class TraceDisplay extends Sprite
         
         if (infos != null) {
             var fileName = extractFileName(infos.fileName);
-            traceText = '${fileName} - ${infos.lineNumber}: ${Std.string(value)}';
+            traceText = '($fileName - ${infos.lineNumber}): ${Std.string(value)}';
         } else {
             traceText = Std.string(value);
         }

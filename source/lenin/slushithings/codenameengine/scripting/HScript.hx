@@ -1,9 +1,9 @@
 package lenin.slushithings.codenameengine.scripting;
 
 import haxe.io.Path;
-import hscript.Interp;
-import hscript.Parser;
-import hscript.Expr;
+import _hscript.Interp;
+import _hscript.Parser;
+import _hscript.Expr;
 #if sys
 import sys.io.File;
 import sys.FileSystem;
@@ -18,6 +18,8 @@ class HScript extends Script
 	public var parser:Parser;
 	public var expr:Expr;
 	public var code:String;
+
+	var __importedPaths:Array<String>;
 
 	public static function initParser()
 	{
@@ -47,8 +49,16 @@ class HScript extends Script
 		}
 		
 		parser = initParser();
+		__importedPaths = [path];
 
 		interp.errorHandler = _errorHandler;
+		interp.importFailedCallback = importFailedCallback;
+		interp.staticVariables = Script.staticVariables;
+		interp.allowStaticVariables = interp.allowPublicVariables = true;
+
+		// Inject default variables (Flixel classes, etc.)
+		for (k => v in Script.getDefaultVariables(this))
+			interp.variables.set(k, v);
 
 		interp.variables.set("trace", Reflect.makeVarArgs((args) -> {
 			var v:String = Std.string(args.shift());
@@ -59,7 +69,7 @@ class HScript extends Script
 
 		if (GlobalScript != null)
 			GlobalScript.call("onScriptCreated", [this, "hscript"]);
-			
+		
 		loadFromString(code);
 	}
 
@@ -78,6 +88,40 @@ class HScript extends Script
 		return this;
 	}
 
+	private function importFailedCallback(cl:Array<String>):Bool
+	{
+		#if sys
+		var assetsPath = 'mods/scripts/${cl.join("/")}';
+		for (hxExt in ["hx", "hscript", "hsc", "hxs"])
+		{
+			var p = '$assetsPath.$hxExt';
+			if (__importedPaths.contains(p)) return true; // already imported
+			if (FileSystem.exists(p))
+			{
+				var code = File.getContent(p);
+				var expr:Expr = null;
+				try
+				{
+					if (code != null && code.trim() != "")
+						expr = parser.parseString(code, Path.withoutDirectory(cl.join("/") + "." + hxExt));
+				}
+				catch (e:Dynamic)
+				{
+					_errorHandler(e);
+				}
+				if (expr != null)
+				{
+					@:privateAccess
+					interp.exprReturn(expr);
+					__importedPaths.push(p);
+				}
+				return true;
+			}
+		}
+		#end
+		return false;
+	}
+
 	private function _errorHandler(error:Dynamic)
 	{
 		var errorMsg = Std.string(error);
@@ -91,12 +135,14 @@ class HScript extends Script
 
 	public override function setParent(parent:Dynamic)
 	{
-		// Set parent for script context
-		interp.variables.set("this", parent);
+		// Set parent for script context (scriptObject in CodenameEngine)
+		interp.scriptObject = parent;
 	}
 
 	public override function onLoad()
 	{
+		@:privateAccess
+		interp.execute(parser.mk(EBlock([]), 0, 0));
 		if (expr != null)
 		{
 			try
@@ -114,6 +160,7 @@ class HScript extends Script
 	public override function reload()
 	{
 		// Save variables
+		interp.allowStaticVariables = interp.allowPublicVariables = false;
 		var savedVariables:Map<String, Dynamic> = new Map<String, Dynamic>();
 		if (interp != null && interp.variables != null)
 		{
@@ -125,14 +172,20 @@ class HScript extends Script
 			}
 		}
 		
-		var oldParent = interp != null ? interp.variables.get("this") : null;
+		var oldParent = interp != null ? interp.scriptObject : null;
 		onCreate(path);
+
+		// Re-inject default variables after recreating the interpreter
+		for (k => v in Script.getDefaultVariables(this))
+			interp.variables.set(k, v);
 
 		load();
 		if (oldParent != null) setParent(oldParent);
 
 		for (k in savedVariables.keys())
 			interp.variables.set(k, savedVariables.get(k));
+		
+		interp.allowStaticVariables = interp.allowPublicVariables = true;
 	}
 
 	public override function call(funcName:String, ?parameters:Array<Dynamic>):Dynamic

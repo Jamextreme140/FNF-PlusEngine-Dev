@@ -23,6 +23,47 @@ class Script extends FlxBasic
 	public static var curScript:Script = null;
 
 	/**
+	 * Returns the default variables injected into HScript context
+	 * @param script Optional script instance for context-specific variables
+	 * @return Map of variable names to their values
+	 */
+	public static function getDefaultVariables(?script:Script):Map<String, Dynamic>
+	{
+		return [
+			// Haxe related stuff
+			"Std" => Std,
+			"Math" => Math,
+			"Reflect" => Reflect,
+			"StringTools" => StringTools,
+			"Json" => haxe.Json,
+
+			// OpenFL & Lime related stuff
+			"Assets" => openfl.utils.Assets,
+			"Application" => lime.app.Application,
+			"Main" => Main,
+			"window" => lime.app.Application.current.window,
+
+			// Flixel related stuff
+			"FlxG" => flixel.FlxG,
+			"FlxSprite" => flixel.FlxSprite,
+			"FlxBasic" => flixel.FlxBasic,
+			"FlxCamera" => flixel.FlxCamera,
+			"state" => flixel.FlxG.state,
+			"FlxEase" => flixel.tweens.FlxEase,
+			"FlxTween" => flixel.tweens.FlxTween,
+			"FlxSound" => flixel.sound.FlxSound,
+			"FlxAssets" => flixel.system.FlxAssets,
+			"FlxMath" => flixel.math.FlxMath,
+			"FlxGroup" => flixel.group.FlxGroup,
+			"FlxTypedGroup" => flixel.group.FlxGroup.FlxTypedGroup,
+			"FlxSpriteGroup" => flixel.group.FlxSpriteGroup,
+			"FlxText" => flixel.text.FlxText,
+			"FlxTimer" => flixel.util.FlxTimer,
+			"FlxColor" => psychlua.HScript.CustomFlxColor,
+		];
+	}
+
+	/**
 	 * Script name (with extension)
 	 */
 	public var fileName:String;

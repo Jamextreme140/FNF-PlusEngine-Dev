@@ -10,6 +10,7 @@ class CoolUtil
 {
 	public static var hasUpdate:Bool = false;
 	public static var latestVersion:String = "";
+	public static final haxeExtensions:Array<String> = ["hx", "hscript", "hsc", "hxs"];
 
 	public static function checkForUpdates(url:String = null):String {
 		if (url == null || url.length == 0)

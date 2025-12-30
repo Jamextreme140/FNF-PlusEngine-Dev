@@ -8,9 +8,9 @@ import backend.Mods;
 #if HSCRIPT_ALLOWED
 import psychlua.HScript;
 import crowplexus.iris.Iris;
-import scripting.SCScript;
-import codenameengine.scripting.HScriptCode;
-import codenameengine.scripting.ScriptPack;
+import lenin.slushithings.scripting.SCScript;
+import lenin.slushithings.codenameengine.scripting.Script;
+import lenin.slushithings.codenameengine.scripting.ScriptPack;
 #end
 
 /**
@@ -36,6 +36,7 @@ class StateScriptHandler
 		#if HSCRIPT_ALLOWED
 		clearStateScripts();
 		
+		var haxeExtensions:Array<String> = ["hx", "hscript", "hsc", "hxs"];
 		var stateFolder:String = 'scripts/states/$stateName/';
 		var advancedFolder:String = 'scripts/states/$stateName/advanced/';
 		
@@ -52,7 +53,7 @@ class StateScriptHandler
 				if (FileSystem.isDirectory(fullPath)) continue;
 				
 				// Check for HScript files
-				for (ext in CoolUtil.haxeExtensions)
+				for (ext in haxeExtensions)
 				{
 					if (file.toLowerCase().endsWith('.$ext'))
 					{
@@ -78,7 +79,7 @@ class StateScriptHandler
 				var fullPath:String = folder + file;
 				if (FileSystem.isDirectory(fullPath)) continue;
 				
-				for (ext in CoolUtil.haxeExtensions)
+				for (ext in haxeExtensions)
 				{
 					if (file.toLowerCase().endsWith('.$ext'))
 					{
@@ -99,7 +100,7 @@ class StateScriptHandler
 				var fullPath:String = folder + file;
 				if (FileSystem.isDirectory(fullPath)) continue;
 				
-				for (ext in CoolUtil.haxeExtensions)
+				for (ext in haxeExtensions)
 				{
 					if (file.toLowerCase().endsWith('.$ext'))
 					{
@@ -122,20 +123,22 @@ class StateScriptHandler
 		{
 			if (Iris.instances.exists(path))
 			{
-				trace('State HScript already loaded: $path');
+				trace('[$stateName][HScript] Script already loaded: $path');
 				return;
 			}
 			
 			var script:HScript = new HScript(null, path);
 			if (script != null)
 			{
+				// Inject helper functions
+				injectScriptHelpers(script, path);
 				stateHScripts.push(script);
-				trace('Loaded State HScript: $path for $stateName');
+				trace('[$stateName][HScript] Script loaded: $path');
 			}
 		}
 		catch (e:Dynamic)
 		{
-			trace('Error loading State HScript ($path): $e');
+			trace('[$stateName][HScript] Error loading script: $path - $e');
 		}
 	}
 	
@@ -145,12 +148,13 @@ class StateScriptHandler
 		{
 			var script:SCScript = new SCScript();
 			script.loadScript(path);
+			// SC scripts already have helper functions
 			stateSCScripts.push(script);
-			trace('Loaded State SC Script: $path for $stateName');
+			trace('[$stateName][SCScript] Script loaded: $path');
 		}
 		catch (e:Dynamic)
 		{
-			trace('Error loading State SC Script ($path): $e');
+			trace('[$stateName][SCScript] Error loading script: $path - $e');
 		}
 	}
 	
@@ -158,18 +162,220 @@ class StateScriptHandler
 	{
 		try
 		{
-			var script = HScriptCode.create(path);
-			if (!(script is codenameengine.scripting.DummyScript))
+			// Create HScript directly to inject variables BEFORE parsing
+			if (path.toLowerCase().endsWith('.hx') || path.toLowerCase().endsWith('.hscript') || 
+				path.toLowerCase().endsWith('.hsc') || path.toLowerCase().endsWith('.hxs'))
 			{
-				stateCodeNameScripts.add(script);
-				script.load();
-				trace('Loaded State CodeName Script: $path for $stateName');
+				var hscript:lenin.slushithings.codenameengine.scripting.HScript = 
+					new lenin.slushithings.codenameengine.scripting.HScript(path);
+				
+				// Inject variables BEFORE loadFromString is called
+				injectCodeNameScriptHelpers(hscript, path);
+				
+				// Now load and parse
+				if (!(hscript is lenin.slushithings.codenameengine.scripting.DummyScript))
+				{
+					stateCodeNameScripts.add(hscript);
+					hscript.load();
+					trace('[$stateName][CodeNameScript] Script loaded: $path');
+				}
+			}
+			else
+			{
+				// Fall back to generic Script.create for non-HScript files
+				var script = Script.create(path);
+				if (!(script is lenin.slushithings.codenameengine.scripting.DummyScript))
+				{
+					injectCodeNameScriptHelpers(script, path);
+					stateCodeNameScripts.add(script);
+					script.load();
+					trace('[$stateName][CodeNameScript] Script loaded: $path');
+				}
 			}
 		}
 		catch (e:Dynamic)
 		{
-			trace('Error loading State CodeName Script ($path): $e');
+			trace('[$stateName][CodeNameScript] Error loading script: $path - $e');
 		}
+	}
+	
+	/**
+	 * Injects helper functions into HScript
+	 */
+	private static function injectScriptHelpers(script:HScript, scriptPath:String):Void
+	{
+		// Global variables and classes
+		script.set('FlxG', FlxG);
+		script.set('FlxSprite', flixel.FlxSprite);
+		script.set('FlxText', flixel.text.FlxText);
+		script.set('FlxColor', psychlua.HScript.CustomFlxColor);
+		script.set('FlxTimer', flixel.util.FlxTimer);
+		script.set('FlxTween', flixel.tweens.FlxTween);
+		script.set('FlxEase', flixel.tweens.FlxEase);
+		script.set('FlxCamera', flixel.FlxCamera);
+		script.set('PsychCamera', backend.PsychCamera);
+		script.set('FlxFlicker', flixel.effects.FlxFlicker);
+		script.set('FlxAxes', psychlua.HScript.CustomFlxAxes);
+		script.set('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
+		script.set('FlxTypedGroup', flixel.group.FlxTypedGroup);
+		script.set('FlxGroup', flixel.group.FlxGroup);
+		script.set('Alphabet', objects.Alphabet);
+		script.set('StringTools', StringTools);
+		script.set('Math', Math);
+		script.set('Type', Type);
+		
+		// Text alignment and styling constants
+		script.set('LEFT', flixel.text.FlxText.FlxTextAlign.LEFT);
+		script.set('CENTER', flixel.text.FlxText.FlxTextAlign.CENTER);
+		script.set('RIGHT', flixel.text.FlxText.FlxTextAlign.RIGHT);
+		script.set('JUSTIFY', flixel.text.FlxText.FlxTextAlign.JUSTIFY);
+		script.set('OUTLINE', flixel.text.FlxText.FlxTextBorderStyle.OUTLINE);
+		script.set('SHADOW', flixel.text.FlxText.FlxTextBorderStyle.SHADOW);
+		script.set('OUTLINE_FAST', flixel.text.FlxText.FlxTextBorderStyle.OUTLINE_FAST);
+		
+		// Game state shortcuts
+		script.set('game', FlxG.state);
+		script.set('state', FlxG.state);
+		
+		script.set('setVar', function(name:String, value:Dynamic) {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+				MusicBeatState.getVariables('Custom').set(name, value);
+		});
+		
+		script.set('getVar', function(name:String):Dynamic {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			{
+				var map = MusicBeatState.getVariables('Custom');
+				if (map.exists(name))
+					return map.get(name);
+			}
+			return null;
+		});
+		
+		script.set('removeVar', function(name:String):Bool {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			{
+				var map = MusicBeatState.getVariables('Custom');
+				if (map.exists(name))
+				{
+					map.remove(name);
+					return true;
+				}
+			}
+			return false;
+		});
+		
+		// Keyboard helpers
+		script.set('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));
+		script.set('keyboardPressed', function(name:String) return Reflect.getProperty(FlxG.keys.pressed, name));
+		script.set('keyboardReleased', function(name:String) return Reflect.getProperty(FlxG.keys.justReleased, name));
+		
+		// Gamepad helpers
+		script.set('anyGamepadJustPressed', function(name:String) return FlxG.gamepads.anyJustPressed(name));
+		script.set('anyGamepadPressed', function(name:String) return FlxG.gamepads.anyPressed(name));
+		script.set('anyGamepadReleased', function(name:String) return FlxG.gamepads.anyJustReleased(name));
+	}
+	
+	/**
+	 * Injects helper functions and global variables into CodeName Script
+	 * This includes actual class types that can be extended in scripts
+	 */
+	private static function injectCodeNameScriptHelpers(script:Script, scriptPath:String):Void
+	{
+		// For HScript, inject directly into interp.variables before parsing
+		var hscript:lenin.slushithings.codenameengine.scripting.HScript = null;
+		if (Std.isOfType(script, lenin.slushithings.codenameengine.scripting.HScript))
+		{
+			hscript = cast(script, lenin.slushithings.codenameengine.scripting.HScript);
+		}
+		
+		// Helper function to set variables
+		var setVar = function(key:String, value:Dynamic) {
+			script.set(key, value);
+			// Also set in HScript interp if available
+			if (hscript != null && hscript.interp != null)
+				hscript.interp.variables.set(key, value);
+		};
+		
+		// Actual Haxe classes for inheritance support
+		setVar('FlxSprite', flixel.FlxSprite);
+		setVar('FlxText', flixel.text.FlxText);
+		setVar('FlxGroup', flixel.group.FlxGroup);
+		setVar('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
+		setVar('FlxTypedGroup', flixel.group.FlxTypedGroup);
+		setVar('FlxBasic', flixel.FlxBasic);
+		setVar('FlxObject', flixel.FlxObject);
+		setVar('FlxCamera', flixel.FlxCamera);
+		setVar('Alphabet', objects.Alphabet);
+		
+		// Static classes and utilities
+		setVar('FlxG', FlxG);
+		setVar('FlxTimer', flixel.util.FlxTimer);
+		setVar('FlxTween', flixel.tweens.FlxTween);
+		setVar('FlxEase', flixel.tweens.FlxEase);
+		setVar('PsychCamera', backend.PsychCamera);
+		setVar('FlxFlicker', flixel.effects.FlxFlicker);
+		setVar('StringTools', StringTools);
+		setVar('Math', Math);
+		setVar('Type', Type);
+		setVar('Std', Std);
+		setVar('Reflect', Reflect);
+		
+		// Color and styling wrappers
+		setVar('FlxColor', psychlua.HScript.CustomFlxColor);
+		setVar('FlxAxes', psychlua.HScript.CustomFlxAxes);
+		
+		// Text formatting constants
+		setVar('LEFT', flixel.text.FlxText.FlxTextAlign.LEFT);
+		setVar('CENTER', flixel.text.FlxText.FlxTextAlign.CENTER);
+		setVar('RIGHT', flixel.text.FlxText.FlxTextAlign.RIGHT);
+		setVar('JUSTIFY', flixel.text.FlxText.FlxTextAlign.JUSTIFY);
+		setVar('OUTLINE', flixel.text.FlxText.FlxTextBorderStyle.OUTLINE);
+		setVar('SHADOW', flixel.text.FlxText.FlxTextBorderStyle.SHADOW);
+		setVar('OUTLINE_FAST', flixel.text.FlxText.FlxTextBorderStyle.OUTLINE_FAST);
+		
+		// Game state shortcuts
+		setVar('game', FlxG.state);
+		setVar('state', FlxG.state);
+		
+		// Helper functions for variable management
+		setVar('setVar', function(name:String, value:Dynamic) {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+				MusicBeatState.getVariables('Custom').set(name, value);
+		});
+		
+		setVar('getVar', function(name:String):Dynamic {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			{
+				var map = MusicBeatState.getVariables('Custom');
+				if (map.exists(name))
+					return map.get(name);
+			}
+			return null;
+		});
+		
+		setVar('removeVar', function(name:String):Bool {
+			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			{
+				var map = MusicBeatState.getVariables('Custom');
+				if (map.exists(name))
+				{
+					map.remove(name);
+					return true;
+				}
+			}
+			return false;
+		});
+		
+		// Keyboard helpers
+		setVar('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));
+		setVar('keyboardPressed', function(name:String) return Reflect.getProperty(FlxG.keys.pressed, name));
+		setVar('keyboardReleased', function(name:String) return Reflect.getProperty(FlxG.keys.justReleased, name));
+		
+		// Gamepad helpers
+		setVar('anyGamepadJustPressed', function(name:String) return FlxG.gamepads.anyJustPressed(name));
+		setVar('anyGamepadPressed', function(name:String) return FlxG.gamepads.anyPressed(name));
+		setVar('anyGamepadReleased', function(name:String) return FlxG.gamepads.anyJustReleased(name));
 	}
 	#end
 	
@@ -195,7 +401,7 @@ class StateScriptHandler
 			}
 			catch (e:Dynamic)
 			{
-				trace('Error calling $funcName on State HScript: $e');
+				trace('[HScript] Error in function "$funcName": $e');
 			}
 		}
 		
@@ -212,7 +418,7 @@ class StateScriptHandler
 			}
 			catch (e:Dynamic)
 			{
-				trace('Error calling $funcName on State SC Script: $e');
+				trace('[SCScript] Error in function "$funcName": $e');
 			}
 		}
 		
@@ -221,13 +427,17 @@ class StateScriptHandler
 		{
 			try
 			{
-				var ret:Dynamic = stateCodeNameScripts.call(funcName, args);
-				if (ret != null && ret != psychlua.LuaUtils.Function_Continue)
-					returnVal = ret;
+				// CodeName HScript runs its own onCreate during load; avoid calling it twice.
+				if (funcName != 'onCreate')
+				{
+					var ret:Dynamic = stateCodeNameScripts.call(funcName, args);
+					if (ret != null && ret != psychlua.LuaUtils.Function_Continue)
+						returnVal = ret;
+				}
 			}
 			catch (e:Dynamic)
 			{
-				trace('Error calling $funcName on State CodeName Scripts: $e');
+				trace('[CodeNameScript] Error in function "$funcName": $e');
 			}
 		}
 		
