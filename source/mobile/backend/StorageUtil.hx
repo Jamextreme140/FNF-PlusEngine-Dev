@@ -22,8 +22,6 @@
 
 package mobile.backend;
 
-import haxe.io.Path;
-
 /**
  * A storage class for mobile.
  * @author Karim Akra and Homura Akemi (HomuHomu833)
@@ -32,155 +30,83 @@ class StorageUtil
 {
 	#if sys
 	public static function getStorageDirectory():String
-	{
-		return #if android 
-			Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) 
-		#elseif ios 
-			lime.system.System.documentsDirectory 
-		#else 
-			Sys.getCwd() 
-		#end;
-	}
+		return #if android haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) #elseif ios lime.system.System.documentsDirectory #else Sys.getCwd() #end;
 
 	public static function getSMDirectory():String
-	{
-		final baseDir = #if android 
-			getExternalStorageDirectory() 
-		#else 
-			'./' 
-		#end;
-		return Path.join([baseDir, 'sm']);
-	}
+		return #if android '/sdcard/.PlusEngine/sm/' #else './sm/' #end;
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
-		final baseDir = #if android 
-			getExternalStorageDirectory() 
-		#else 
-			Sys.getCwd() 
-		#end;
-		
-		final folder = Path.join([baseDir, 'saves']);
-		final filePath = Path.join([folder, fileName]);
-		
+		final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
 		try
 		{
 			if (!FileSystem.exists(folder))
 				FileSystem.createDirectory(folder);
 
-			File.saveContent(filePath, fileData);
+			File.saveContent('$folder/$fileName', fileData);
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
 		}
 		catch (e:Dynamic)
-		{
-			final errorMsg = Std.string(e);
 			if (alert)
-				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, errorMsg]), Language.getPhrase('mobile_error', "Error!"));
+				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, e.message]), Language.getPhrase('mobile_error', "Error!"));
 			else
-				trace('$fileName couldn\'t be saved. ($errorMsg)');
-		}
+				trace('$fileName couldn\'t be saved. (${e.message})');
 	}
 
 	#if android
+	// always force path due to haxe
 	public static function getExternalStorageDirectory():String
-	{
-		var basePath = AndroidEnvironment.getExternalStorageDirectory();
-		if (basePath == null || basePath == '') {
-			basePath = '/sdcard';
-		}
-		return Path.join([basePath, '.PlusEngine']);
-	}
-
-	private static function ensureDirectory(path:String):Bool
-	{
-		try
-		{
-			if (!FileSystem.exists(path)) {
-				FileSystem.createDirectory(path);
-				trace('Created directory: $path');
-			}
-			return true;
-		}
-		catch (e:Dynamic)
-		{
-			trace('Failed to create directory $path: ${Std.string(e)}');
-			return false;
-		}
-	}
-
-	private static function hasRequiredPermissions():Bool
-	{
-		final granted = AndroidPermissions.getGrantedPermissions();
-		
-		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU) {
-			return granted.contains('android.permission.READ_MEDIA_IMAGES') ||
-				   granted.contains('android.permission.READ_MEDIA_VIDEO');
-		} else {
-			return granted.contains('android.permission.READ_EXTERNAL_STORAGE') ||
-				   granted.contains('android.permission.WRITE_EXTERNAL_STORAGE');
-		}
-	}
+		return '/sdcard/.PlusEngine/';
 
 	public static function requestPermissions():Void
 	{
-		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU) {
-			AndroidPermissions.requestPermissions([
-				'READ_MEDIA_IMAGES', 
-				'READ_MEDIA_VIDEO', 
-				'READ_MEDIA_AUDIO'
-			]);
-		} else {
-			AndroidPermissions.requestPermissions([
-				'READ_EXTERNAL_STORAGE', 
-				'WRITE_EXTERNAL_STORAGE'
-			]);
+		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU)
+			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO', 'READ_MEDIA_VISUAL_USER_SELECTED']);
+		else
+			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
+
+		if (!AndroidEnvironment.isExternalStorageManager())
+			AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
+
+		if ((AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU
+			&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_MEDIA_IMAGES'))
+			|| (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU
+				&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_EXTERNAL_STORAGE')))
+			CoolUtil.showPopUp(Language.getPhrase('permissions_message', 'If you accepted the permissions you are all good!\nIf you didn\'t then expect a crash\nPress OK to see what happens'),
+				Language.getPhrase('mobile_notice', "Notice!"));
+
+		try
+		{
+			if (!FileSystem.exists(StorageUtil.getStorageDirectory()))
+				FileSystem.createDirectory(StorageUtil.getStorageDirectory());
+		}
+		catch (e:Dynamic)
+		{
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			lime.system.System.exit(1);
 		}
 
-		if (AndroidVersion.SDK_INT >= AndroidVersionCode.R && 
-			!AndroidEnvironment.isExternalStorageManager()) {
-			AndroidSettings.requestSetting('MANAGE_EXTERNAL_STORAGE');
+		try
+		{
+			if (!FileSystem.exists(StorageUtil.getExternalStorageDirectory() + 'mods'))
+				FileSystem.createDirectory(StorageUtil.getExternalStorageDirectory() + 'mods');
+		}
+		catch (e:Dynamic)
+		{
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getExternalStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			lime.system.System.exit(1);
 		}
 
-		if (!hasRequiredPermissions()) {
-			CoolUtil.showPopUp(
-				Language.getPhrase('permissions_message', 
-					'Storage permissions are required for saving game data and mods.\n' +
-					'Please grant the requested permissions when prompted.'),
-				Language.getPhrase('mobile_notice', "Notice!")
-			);
+		try
+		{
+			if (!FileSystem.exists(StorageUtil.getSMDirectory()))
+				FileSystem.createDirectory(StorageUtil.getSMDirectory());
 		}
-
-		initializeStorageDirectories();
-	}
-
-	private static function initializeStorageDirectories():Void
-	{
-		final directories = [
-			getStorageDirectory(),
-			Path.join([getExternalStorageDirectory(), 'mods']),
-			getSMDirectory(),
-			Path.join([getExternalStorageDirectory(), 'saves'])
-		];
-
-		var allDirectoriesCreated = true;
-		var failedDirectories = [];
-		
-		for (dir in directories) {
-			if (!ensureDirectory(dir)) {
-				allDirectoriesCreated = false;
-				failedDirectories.push(dir);
-			}
-		}
-
-		if (!allDirectoriesCreated) {
-			final errorMsg = Language.getPhrase('create_directory_error', 
-				'Failed to create the following directories:\n{1}\n' +
-				'Please check storage permissions or available space.\n' +
-				'The app may not function correctly without these directories.',
-				[failedDirectories.join('\n')]);
-			
-			CoolUtil.showPopUp(errorMsg, Language.getPhrase('mobile_warning', "Warning!"));
+		catch (e:Dynamic)
+		{
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getSMDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			lime.system.System.exit(1);
 		}
 	}
 	#end

@@ -217,7 +217,7 @@ class EsLA
         "setting_instakill_on_miss" => "Muerte al perder notas",
         "setting_practice_mode" => "Modo Práctica",
         "setting_perfect_mode" => "Modo Perfecto",
-        "opponent_mode" => "Modo Oponente",
+        "setting_opponent_mode" => "Modo Oponente",
         "setting_no_drop_penalty" => "No fallas al soltar holds",
         "setting_botplay" => "Modo Automático",
 
@@ -544,6 +544,16 @@ class EsLA
         "editorplaystate_score" => "Notas: {1} | Perdidas: {2}",
         
         // Language example text
-        "language_example_text" => "Este es un ejemplo de texto en el idioma Español Latinoamérica"
+        "language_example_text" => "Este es un ejemplo de texto en el idioma Español Latinoamérica",
+
+        //Android Helpers
+        "files_missing" => "Parece que faltan algunos archivos que son necesarios para ejecutar el juego.\nPresione OK para comenzar el copiado.",
+        "file_save_success" => "{1} se guardó con éxito.",
+        "file_save_fail" => "{1} no se pudo guardar.\n({2})",
+        "mobile_error" => "Hubo un error!",
+        "permissions_message" => "Si aceptaste todos los permisos, todo ira bien.\nSi no puede causar crash\nPresiona OK para ver que sucede.",
+        "create_directory_error" => "Por favor crea la carpeta en\n{1}\nPresiona OK para cerrar el juego.",
+        "mobile_notice" => "Aviso!",
+
     ];
 }
