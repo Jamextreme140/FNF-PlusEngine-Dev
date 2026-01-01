@@ -31,6 +31,7 @@ class HScript extends Iris
 	public var filePath:String;
 	public var modFolder:String;
 	public var returnValue:Dynamic;
+	public var scriptName:String = '';
 
 	#if LUA_ALLOWED
 	public var parentLua:FunkinLua;
@@ -898,10 +899,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 	override function fcall(o:Dynamic, funcToRun:String, args:Array<Dynamic>):Dynamic {
 		// Capturar null reference antes de continuar
 		if (o == null) {
-			var warnMsg = 'Null reference: trying to call "$funcToRun()" on null object';
-			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('WARNING ($scriptName): $warnMsg', FlxColor.YELLOW);
-			trace('WARNING ($scriptName): $warnMsg');
+			// Silently return null to avoid spam
 			return null;
 		}
 
@@ -914,11 +912,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 		var f = get(o, funcToRun);
 
 		if (f == null) {
-			// Mostrar warning en lugar de error
-			var warnMsg = 'Tried to call null function $funcToRun';
-			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('WARNING ($scriptName): $warnMsg', FlxColor.YELLOW);
-			trace('WARNING ($scriptName): $warnMsg');
+			// Silently return null to avoid spam
 			return null;
 		}
 
@@ -1096,10 +1090,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 	override function set(o:Dynamic, field:String, value:Dynamic):Dynamic {
 		// Si el objeto es null, mostrar warning y guardar en variables globales
 		if (o == null) {
-			var warnMsg = 'Null reference: trying to set "$field" on null object, saving to global variables instead';
-			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('WARNING ($scriptName): $warnMsg', FlxColor.YELLOW);
-			trace('WARNING ($scriptName): $warnMsg');
+			// Silently save to global variables to avoid spam
 			
 			// Fallback: guardar en variables globales
 			var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;

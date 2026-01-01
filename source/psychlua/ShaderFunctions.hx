@@ -232,7 +232,7 @@ class ShaderFunctions
 			var shader:FlxRuntimeShader = getShader(obj);
 			if(shader == null)
 			{
-				FunkinLua.luaTrace("setShaderFloatArray: Shader is not FlxRuntimeShader!", false, false, FlxColor.RED);
+				// Silently return false instead of spamming errors
 				return false;
 			}
 
@@ -279,10 +279,22 @@ class ShaderFunctions
 
 		if(target == null)
 		{
-			FunkinLua.luaTrace('Error on getting shader: Object $obj not found', false, false, FlxColor.RED);
+			// Silently return null instead of spamming errors
 			return null;
 		}
-		return cast (target.shader, FlxRuntimeShader);
+		
+		if(target.shader == null)
+		{
+			// Silently return null instead of spamming errors
+			return null;
+		}
+		
+		try {
+			return cast (target.shader, FlxRuntimeShader);
+		} catch(e:Dynamic) {
+			// Silently return null instead of spamming errors
+			return null;
+		}
 	}
 	#end
 }

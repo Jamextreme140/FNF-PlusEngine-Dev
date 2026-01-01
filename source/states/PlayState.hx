@@ -4600,9 +4600,13 @@ class PlayState extends MusicBeatState
 				invalidateNote(note);
 		});
 
-		final end:Note = daNote.isSustainNote ? daNote.parent.tail[daNote.parent.tail.length - 1] : daNote.tail[daNote.tail.length - 1];
-		if (end != null && end.extraData['holdSplash'] != null) {
-			end.extraData['holdSplash'].visible = false;
+		// Safely check for parent and tail
+		var parentNote:Note = daNote.isSustainNote ? daNote.parent : daNote;
+		if (parentNote != null && parentNote.tail != null && parentNote.tail.length > 0) {
+			final end:Note = parentNote.tail[parentNote.tail.length - 1];
+			if (end != null && end.extraData != null && end.extraData['holdSplash'] != null) {
+				end.extraData['holdSplash'].visible = false;
+			}
 		}
 
 		noteMissCommon(daNote.noteData, daNote);
