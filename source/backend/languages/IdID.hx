@@ -430,6 +430,7 @@ class IdID
         "file_save_fail" => "{1} tidak dapat disimpan.\n({2})",
         "permissions_message" => "Izin penyimpanan diperlukan untuk menyimpan data game dan mod.\nSilakan berikan izin yang diminta saat diminta.",
         "create_directory_error" => "Gagal membuat direktori berikut:\n{1}\nSilakan periksa izin penyimpanan atau ruang yang tersedia.\nAplikasi mungkin tidak berfungsi dengan benar tanpa direktori-direktori ini.",
+        "changed_storage_type" => "Jenis Penyimpanan telah diubah dan Anda perlu me-restart permainan!!\nTekan OK untuk menutup permainan.",
 
         // Mobile Options
         "setting_extra_controls" => "Kontrol Ekstra",
@@ -453,6 +454,10 @@ class IdID
         "description_hitbox_position" => "Jika dicentang, hitbox akan ditempatkan di bagian bawah layar, jika tidak, akan tetap di bagian atas.",
         "setting_dynamic_controls_color" => "Warna Kontrol Dinamis",
         "description_dynamic_controls_color" => "Jika dicentang, warna kontrol ponsel akan disetel ke warna note di pengaturan Anda.\n(berlaku hanya selama bermain game)",
+        "setting_storage_type" => "Jenis Penyimpanan",
+        "setting_storage_type-external_data" => "EKSTERNAL_DATA",
+        "setting_storage_type-external" => "EKSTERNAL",
+        "description_storage_type" => "Folder mana yang harus digunakan oleh Plus Engine?\n(MENGUBAH INI AKAN MENGHAPUS FOLDER LAMA ANDA!!)",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
