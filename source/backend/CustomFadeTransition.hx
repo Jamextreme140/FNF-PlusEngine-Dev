@@ -247,7 +247,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
         
         // Sonido de apertura
         try {
-            FlxG.sound.play(Paths.sound('FadeTransition'), 0.4);
+            FlxG.sound.play(Paths.sound('assets/sounds/FadeTransition'), 0.4);
         } catch(e:Dynamic) {}
         
         // Tweens de apertura
