@@ -66,14 +66,16 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		final pathAlpha = canUseLast ? __lastAlpha : instance.getPercent('arrowPathAlpha', fn);
 		final pathThickness = canUseLast ? __lastThickness : instance.getPercent('arrowPathThickness', fn);
 
-		if (pathAlpha <= 0 || pathThickness <= 0)
+		if (pathAlpha <= 0.01 || pathThickness <= 0.1)
 			return;
 
 		__lastAlpha = pathAlpha;
 		__lastThickness = pathThickness;
 		__lastPlayer = fn;
 
-		final divisions = Std.int(20 * Config.ARROW_PATHS_CONFIG.RESOLUTION);
+		// LOD: reduce divisions for distant paths (performance optimization)
+		final baseDivisions = Std.int(20 * Config.ARROW_PATHS_CONFIG.RESOLUTION);
+		final divisions = Std.int(Math.max(10, baseDivisions * 0.7)); // 30% reduction
 		final limit = 1500 + Config.ARROW_PATHS_CONFIG.LENGTH;
 		final interval = limit / divisions;
 		final songPos = Adapter.instance.getSongPosition();
@@ -104,6 +106,12 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 				player: fn,
 				isTapArrow: true
 			});
+			
+			// Early skip: cull off-screen segments
+			if (output.pos.y < -300 || output.pos.y > FlxG.height + 300) {
+				lastOutput = output;
+				continue;
+			}
 
 			if (lastOutput != null) {
 				final p0 = lastOutput;
@@ -158,6 +166,7 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 
 		var newInstruction:FMDrawInstruction = {};
 		newInstruction.extra = [vertices, indices, uvt, transforms];
+		newInstruction.item = item; // Store receptor for z-depth
 		queue[count++] = newInstruction;
 	}
 
@@ -169,6 +178,11 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		for (instruction in queue) {
 			if (instruction == null)
 				continue;
+			
+			// Set z-depth to render paths below everything (higher z = further back)
+			if (instruction.item != null) {
+				instruction.item._z = instruction.item._z + 200;
+			}
 			final vertices:DrawData<Float> = cast instruction.extra[0];
 			final indices:DrawData<Int> = cast instruction.extra[1];
 			final uvt:DrawData<Float> = cast instruction.extra[2];

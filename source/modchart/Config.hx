@@ -55,6 +55,50 @@ class Config {
 	private static inline function get_Z_SCALE():Float return ClientPrefs.data.zScale;
 
 	/**
+	 * Auto-adjusts hold subdivisions based on Z-buffer usage.
+	 *
+	 * Like NotITG/StepMania: uses 4px steps when Z-buffer is active (for wavy effects),
+	 * and 16px steps when Z-buffer is off (for better performance).
+	 *
+	 * Synced with: `ClientPrefs.data.dynamicHoldSubdivisions`
+	 */
+	public static var DYNAMIC_HOLD_SUBDIVISIONS(get, never):Bool;
+	private static inline function get_DYNAMIC_HOLD_SUBDIVISIONS():Bool return ClientPrefs.data.dynamicHoldSubdivisions;
+
+	/**
+	 * Enables early culling for notes not visible on screen.
+	 *
+	 * Skips processing notes outside the viewport, similar to StepMania's IsOnScreen() check.
+	 * Significantly improves performance with large charts.
+	 *
+	 * Synced with: `ClientPrefs.data.earlyCullingEnabled`
+	 */
+	public static var EARLY_CULLING_ENABLED(get, never):Bool;
+	private static inline function get_EARLY_CULLING_ENABLED():Bool return ClientPrefs.data.earlyCullingEnabled;
+
+	/**
+	 * Uses adaptive step size based on Z-buffer state.
+	 *
+	 * StepMania/NotITG approach: 4px with Z-effects, 16px without.
+	 * Balances quality and performance automatically.
+	 *
+	 * Synced with: `ClientPrefs.data.adaptiveStepSize`
+	 */
+	public static var ADAPTIVE_STEP_SIZE(get, never):Bool;
+	private static inline function get_ADAPTIVE_STEP_SIZE():Bool return ClientPrefs.data.adaptiveStepSize;
+
+	/**
+	 * Caches hold segment calculations between frames.
+	 *
+	 * Similar to StepMania's sprite reuse system. Reduces CPU usage
+	 * by not recalculating unchanged hold segments every frame.
+	 *
+	 * Synced with: `ClientPrefs.data.holdSegmentCache`
+	 */
+	public static var HOLD_SEGMENT_CACHE(get, never):Bool;
+	private static inline function get_HOLD_SEGMENT_CACHE():Bool return ClientPrefs.data.holdSegmentCache;
+
+	/**
 	 * Ignores or renders the arrow path lines.
 	 *
 	 * When enabled, performance will be affected

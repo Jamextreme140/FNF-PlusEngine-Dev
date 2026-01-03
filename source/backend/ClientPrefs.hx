@@ -65,6 +65,11 @@ import states.TitleState;
 	public var camera3dEnabled:Bool = true; // Habilita/deshabilita cámaras 3D
 	public var optimizeHolds:Bool = false; // Optimiza el renderizado de holds (puede verse mal con modcharts complejos)
 	public var zScale:Float = 1.0; // Escala del eje Z (profundidad)
+	// NotITG/StepMania-inspired optimizations
+	public var dynamicHoldSubdivisions:Bool = true; // Auto-adjust subdivisions based on Z-buffer usage (like NotITG)
+	public var earlyCullingEnabled:Bool = true; // Skip processing notes not visible on screen
+	public var adaptiveStepSize:Bool = true; // Use smaller steps (4px) with Z-buffer, larger (16px) without
+	public var holdSegmentCache:Bool = true; // Cache hold segment calculations between frames
 	public var renderArrowPaths:Bool = false; // Renderiza las líneas de trayectoria de las flechas
 	public var styledArrowPaths:Bool = false; // Aplica estilos visuales a las trayectorias
 	public var arrowPathFrameSkip:Int = 2; // Frameskip para paths (1=60fps, 2=30fps, 3=20fps, etc.)

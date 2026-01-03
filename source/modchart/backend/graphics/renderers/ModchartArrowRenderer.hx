@@ -1,5 +1,9 @@
 package modchart.backend.graphics.renderers;
 
+#if cpp
+import modchart.backend.native.ModchartNative;
+#end
+
 final matrix:Matrix = new Matrix();
 final fMatrix:FlxMatrix = new FlxMatrix();
 final rotationVector = new Vector3();
@@ -46,7 +50,6 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
 		}
 
 		final arrowPosition = helperVector;
-
 		final player = Adapter.instance.getPlayerFromArrow(arrow);
 
 		// setup the position
@@ -94,6 +97,26 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
 		}
 
 		__lastPlayer = player;
+
+		// Early culling optimization after position calculation
+		if (Config.EARLY_CULLING_ENABLED) {
+			var yPos = arrowPosition.y;
+			var cullMargin = 200; // Extra margin for safety
+			
+			#if cpp
+			if (ModchartNative.isNativeAvailable()) {
+				if (!ModchartNative.isOnScreen(yPos, FlxG.height, -cullMargin, FlxG.height + cullMargin)) {
+					return; // Note is off-screen, skip expensive rendering
+				}
+			} else {
+			#end
+				if (yPos < -cullMargin || yPos > FlxG.height + cullMargin) {
+					return;
+				}
+			#if cpp
+			}
+			#end
+		}
 
 		// prepare the instruction for drawing
 		final projectionDepth = arrowPosition.z;
