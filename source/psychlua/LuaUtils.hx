@@ -42,14 +42,6 @@ class LuaUtils
 
 	public static function setVarInArray(instance:Dynamic, variable:String, value:Dynamic, allowMaps:Bool = false):Any
 	{
-		if(instance == null) {
-			#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
-			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('setVarInArray: Instance is null!', FlxColor.RED);
-			#end
-			return null;
-		}
-		
 		var splitProps:Array<String> = variable.split('[');
 		if(splitProps.length > 1)
 		{
@@ -61,14 +53,6 @@ class LuaUtils
 					target = retVal;
 			}
 			else target = Reflect.getProperty(instance, splitProps[0]);
-
-			if(target == null) {
-				#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
-				if(PlayState.instance != null)
-					PlayState.instance.addTextToDebug('setVarInArray: Property "${splitProps[0]}" is null!', FlxColor.RED);
-				#end
-				return null;
-			}
 
 			for (i in 1...splitProps.length)
 			{
@@ -98,8 +82,6 @@ class LuaUtils
 	}
 	public static function getVarInArray(instance:Dynamic, variable:String, allowMaps:Bool = false):Any
 	{
-		if(instance == null) return null;
-		
 		var splitProps:Array<String> = variable.split('[');
 		if(splitProps.length > 1)
 		{
@@ -113,13 +95,10 @@ class LuaUtils
 			else
 				target = Reflect.getProperty(instance, splitProps[0]);
 
-			if(target == null) return null;
-
 			for (i in 1...splitProps.length)
 			{
 				var j:Dynamic = splitProps[i].substr(0, splitProps[i].length - 1);
 				target = target[j];
-				if(target == null) return null;
 			}
 			return target;
 		}
@@ -222,17 +201,11 @@ class LuaUtils
 	}
 
 	public static function setGroupStuff(leArray:Dynamic, variable:String, value:Dynamic, ?allowMaps:Bool = false) {
-		if(leArray == null) return null;
-		
 		var split:Array<String> = variable.split('.');
 		if(split.length > 1) {
 			var obj:Dynamic = Reflect.getProperty(leArray, split[0]);
-			if(obj == null) return null;
-			
-			for (i in 1...split.length-1) {
+			for (i in 1...split.length-1)
 				obj = Reflect.getProperty(obj, split[i]);
-				if(obj == null) return null;
-			}
 
 			leArray = obj;
 			variable = split[split.length-1];
@@ -242,17 +215,11 @@ class LuaUtils
 		return value;
 	}
 	public static function getGroupStuff(leArray:Dynamic, variable:String, ?allowMaps:Bool = false) {
-		if(leArray == null) return null;
-		
 		var split:Array<String> = variable.split('.');
 		if(split.length > 1) {
 			var obj:Dynamic = Reflect.getProperty(leArray, split[0]);
-			if(obj == null) return null;
-			
-			for (i in 1...split.length-1) {
+			for (i in 1...split.length-1)
 				obj = Reflect.getProperty(obj, split[i]);
-				if(obj == null) return null;
-			}
 
 			leArray = obj;
 			variable = split[split.length-1];
@@ -265,15 +232,10 @@ class LuaUtils
 	public static function getPropertyLoop(split:Array<String>, ?getProperty:Bool=true, ?allowMaps:Bool = false):Dynamic
 	{
 		var obj:Dynamic = getObjectDirectly(split[0]);
-		if(obj == null) return null;
-		
 		var end = split.length;
 		if(getProperty) end = split.length-1;
 
-		for (i in 1...end) {
-			obj = getVarInArray(obj, split[i], allowMaps);
-			if(obj == null) return null;
-		}
+		for (i in 1...end) obj = getVarInArray(obj, split[i], allowMaps);
 		return obj;
 	}
 
