@@ -140,10 +140,27 @@ class Paths
 
 	inline static function destroyGraphic(graphic:FlxGraphic)
 	{
-		// free some gpu memory
-		if (graphic != null && graphic.bitmap != null && graphic.bitmap.__texture != null)
-			graphic.bitmap.__texture.dispose();
-		FlxG.bitmap.remove(graphic);
+		// Check if legacy mode is enabled
+		if (ClientPrefs.data.legacyMemoryManagement)
+		{
+			// Psych 0.7.3 style cleanup (no GPU disposal)
+			@:privateAccess
+			if (graphic != null)
+			{
+				openfl.Assets.cache.removeBitmapData(graphic.key);
+				FlxG.bitmap._cache.remove(graphic.key);
+				graphic.persist = false;
+				graphic.destroyOnNoUse = true;
+				graphic.destroy();
+			}
+		}
+		else
+		{
+			// Modern style with GPU memory cleanup
+			if (graphic != null && graphic.bitmap != null && graphic.bitmap.__texture != null)
+				graphic.bitmap.__texture.dispose();
+			FlxG.bitmap.remove(graphic);
+		}
 	}
 
 	static public var currentLevel:String;
@@ -647,6 +664,9 @@ class Paths
 	public static function readDirectory(directory:String):Array<String>
 	{
 		#if MODS_ALLOWED
+		// Legacy mode: direct FileSystem access (Psych 0.7.3 style)
+		if (ClientPrefs.data.legacyFileSystemAccess)
+			return FileSystem.readDirectory(directory);
 		return FileSystem.readDirectory(directory);
 		#else
 		var dirs:Array<String> = [];
