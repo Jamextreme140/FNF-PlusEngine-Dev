@@ -66,7 +66,7 @@ class KeyViewer extends FlxSpriteGroup
 			var keyName:String = getKeyName(i);
 			var keyText = new FlxText(keyButton.x, keyButton.y, keySize, keyName, 14); 
 			var textColor = FlxColor.WHITE;
-			keyText.setFormat(Paths.font("vcr.ttf"), 14, textColor, CENTER);
+			keyText.setFormat(Paths.font("phantom.ttf"), 14, textColor, CENTER);
 			keyText.y += (keySize - keyText.height) / 2; 
 			keyText.alpha = 0.6; 
 			keyTexts.push(keyText);
@@ -81,12 +81,12 @@ class KeyViewer extends FlxSpriteGroup
 		}
 		
 		kpsText = new FlxText(0, keySize + 10, totalWidth, "KPS: 0", 14);
-		kpsText.setFormat(Paths.font("vcr.ttf"), 14, FlxColor.WHITE, CENTER);
+		kpsText.setFormat(Paths.font("phantom.ttf"), 14, FlxColor.WHITE, CENTER);
 		kpsText.alpha = 0.8;
 		add(kpsText);
 		
 		totalText = new FlxText(0, keySize + 28, totalWidth, "Total: " + total, 14);
-		totalText.setFormat(Paths.font("vcr.ttf"), 14, FlxColor.WHITE, CENTER);
+		totalText.setFormat(Paths.font("phantom.ttf"), 14, FlxColor.WHITE, CENTER);
 		totalText.alpha = 0.8;
 		add(totalText);
 	}

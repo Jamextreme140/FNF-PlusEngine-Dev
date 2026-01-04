@@ -112,7 +112,7 @@ class Screenshot
         if (FlxG.state != null)
         {
             var text:flixel.text.FlxText = new flixel.text.FlxText(0, 50, FlxG.width, message);
-            text.setFormat(Paths.font('vcr.ttf'), 24, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
+            text.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
             text.scrollFactor.set();
             text.cameras = [FlxG.camera];
             FlxG.state.add(text);

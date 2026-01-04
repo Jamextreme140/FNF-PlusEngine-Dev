@@ -130,12 +130,12 @@ class FunkinPreloader extends MusicBeatState
 		
 		// Stage text (what we're currently doing)
 		stageText = new FlxText(0, loadingBar.y - 55, FlxG.width, "Initializing...", 20);
-		stageText.setFormat(Paths.font("vcr.ttf"), 20, FlxColor.YELLOW, CENTER);
+		stageText.setFormat(Paths.font("phantom.ttf"), 20, FlxColor.YELLOW, CENTER);
 		add(stageText);
 		
 		// Loading text (current item)
 		loadedText = new FlxText(0, loadingBar.y - 30, FlxG.width, "Loading...", 16);
-		loadedText.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, CENTER);
+		loadedText.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, CENTER);
 		add(loadedText);
 		
 		// Collect assets

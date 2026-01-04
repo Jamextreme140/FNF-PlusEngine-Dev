@@ -37,7 +37,7 @@ class OutdatedSubState extends MusicBeatSubstate
         titleText = new FlxText(0, 50, FlxG.width, 
             Language.getPhrase('update_available_title', "Update Available!")
         );
-        titleText.setFormat(Paths.font('vcr.ttf'), 48, FlxColor.YELLOW, CENTER);
+        titleText.setFormat(Paths.font('phantom.ttf'), 48, FlxColor.YELLOW, CENTER);
         titleText.scrollFactor.set();
         titleText.alpha = 0.0;
         add(titleText);
@@ -47,7 +47,7 @@ class OutdatedSubState extends MusicBeatSubstate
             Language.getPhrase('version_comparison', "Current Version: {1} => New Version: {2}", 
                 [MainMenuState.plusEngineVersion, updateVersion])
         );
-        versionText.setFormat(Paths.font('vcr.ttf'), 24, FlxColor.WHITE, CENTER);
+        versionText.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER);
         versionText.scrollFactor.set();
         versionText.alpha = 0.0;
         add(versionText);
@@ -56,7 +56,7 @@ class OutdatedSubState extends MusicBeatSubstate
         changelogText = new FlxText(50, 180, FlxG.width - 100,
             Language.getPhrase('loading_changelog', "Loading changelog...")
         );
-        changelogText.setFormat(Paths.font('vcr.ttf'), 22, FlxColor.CYAN, LEFT);
+        changelogText.setFormat(Paths.font('phantom.ttf'), 22, FlxColor.CYAN, LEFT);
         changelogText.scrollFactor.set();
         changelogText.alpha = 0.0;
         add(changelogText);
@@ -75,7 +75,7 @@ class OutdatedSubState extends MusicBeatSubstate
             )
         );
         #end
-        controlsText.setFormat(Paths.font('vcr.ttf'), 20, FlxColor.WHITE, CENTER);
+        controlsText.setFormat(Paths.font('phantom.ttf'), 20, FlxColor.WHITE, CENTER);
         controlsText.scrollFactor.set();
         controlsText.alpha = 0.0;
         add(controlsText);

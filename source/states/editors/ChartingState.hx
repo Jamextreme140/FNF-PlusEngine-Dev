@@ -411,7 +411,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		add(dragDropOverlay);
 
 		dragDropText = new FlxText(0, 0, FlxG.width - 40, 'Drop JSON file here\nto load chart or events', 36);
-		dragDropText.setFormat(Paths.font('vcr.ttf'), 36, FlxColor.WHITE, CENTER);
+		dragDropText.setFormat(Paths.font('phantom.ttf'), 36, FlxColor.WHITE, CENTER);
 		dragDropText.setBorderStyle(OUTLINE, FlxColor.BLACK, 3);
 		dragDropText.scrollFactor.set();
 		dragDropText.screenCenter();
@@ -524,7 +524,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		add(tipBg);
 		
 		fullTipText = new FlxText(0, 0, FlxG.width - 200);
-		fullTipText.setFormat(Paths.font('vcr.ttf'), 24, FlxColor.WHITE, CENTER);
+		fullTipText.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER);
 		fullTipText.cameras = [camUI];
 		fullTipText.scrollFactor.set();
 		fullTipText.visible = fullTipText.active = false;

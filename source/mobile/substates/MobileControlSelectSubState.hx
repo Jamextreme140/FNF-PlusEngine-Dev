@@ -97,7 +97,7 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 		add(rightArrow);
 
 		positionText = new FlxText(0, FlxG.height, FlxG.width / 4, '');
-		positionText.setFormat(Paths.font("vcr.ttf"), 18, FlxColor.WHITE, FlxTextAlign.LEFT);
+		positionText.setFormat(Paths.font("phantom.ttf"), 18, FlxColor.WHITE, FlxTextAlign.LEFT);
 		positionText.visible = false;
 
 		positionTextBg = FlxGradient.createGradientFlxSprite(250, 150, [FlxColor.BLACK, FlxColor.BLACK, FlxColor.BLACK, FlxColor.TRANSPARENT], 1, 360);
@@ -115,7 +115,7 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 			if (options[curOption] == 'Pad-Extra')
 			{
 				var nuhuh = new FlxText(0, 0, FlxG.width / 2, Language.getPhrase('pad-extra_save', 'Pad-Extra Is Just A Binding Option\nPlease Select A Different Option To Exit.'));
-				nuhuh.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, FlxTextAlign.CENTER);
+				nuhuh.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, FlxTextAlign.CENTER);
 				nuhuh.screenCenter();
 				nuhuh.cameras = [ui];
 				add(nuhuh);
@@ -141,7 +141,7 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 		exit.setGraphicSize(Std.int(exit.width) * 3);
 		exit.updateHitbox();
 		exit.x = FlxG.width - exit.width - 70;
-		exit.label.setFormat(Paths.font('vcr.ttf'), 28, FlxColor.WHITE, FlxTextAlign.CENTER);
+		exit.label.setFormat(Paths.font('phantom.ttf'), 28, FlxColor.WHITE, FlxTextAlign.CENTER);
 		exit.label.fieldWidth = exit.width;
 		exit.label.x = ((exit.width - exit.label.width) / 2) + exit.x;
 		exit.label.offset.y = -10; // WHY THE FUCK I CAN'T CHANGE THE LABEL Y
@@ -156,7 +156,7 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 		reset.color = FlxColor.RED;
 		reset.setGraphicSize(Std.int(reset.width) * 3);
 		reset.updateHitbox();
-		reset.label.setFormat(Paths.font('vcr.ttf'), 28, FlxColor.WHITE, FlxTextAlign.CENTER);
+		reset.label.setFormat(Paths.font('phantom.ttf'), 28, FlxColor.WHITE, FlxTextAlign.CENTER);
 		reset.label.fieldWidth = reset.width;
 		reset.label.x = ((reset.width - reset.label.width) / 2) + reset.x;
 		reset.label.offset.y = -10;

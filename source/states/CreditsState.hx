@@ -176,7 +176,7 @@ class CreditsState extends MusicBeatState
 		add(descBg);
 
 		descText = new FlxText(50, FlxG.height + offsetThing - 25, 1180, "", 32);
-		descText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER);
+		descText.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, CENTER);
 		descText.scrollFactor.set();
 		descText.borderStyle = OUTLINE;
 		descText.borderColor = FlxColor.BLACK;
@@ -184,7 +184,7 @@ class CreditsState extends MusicBeatState
 		add(descText);
 
 		linkHint = new FlxText(20, FlxG.height - 40, FlxG.width - 40, Language.getPhrase("link_hint", "Press A/ENTER to open link | B/ESC to go back"), 20);
-		linkHint.setFormat(Paths.font("vcr.ttf"), 20, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		linkHint.setFormat(Paths.font("phantom.ttf"), 20, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		linkHint.borderSize = 2;
 		linkHint.scrollFactor.set();
 		linkHint.alpha = 0;
