@@ -428,14 +428,6 @@ class IdID
         "description_column_specific_modifiers" => "Jika dicentang, memungkinkan menerapkan modifier khusus ke kolom individual.\nMenonaktifkan dapat meningkatkan kinerja dengan mengurangi perhitungan.",
         "setting_holds_behind_strums" => "Hold di Belakang Petikan",
         "description_holds_behind_strums" => "Menampilkan note yang dipertahankan di belakang garis petikan.\nOpsi preferensi visual.",
-        "setting_dynamic_hold_subdivisions" => "Pembagian Subdivisi Dinamis",
-        "description_dynamic_hold_subdivisions" => "Menyesuaikan secara otomatis pembagian hold berdasarkan penggunaan Z-buffer.\n(Teknik NotITG/StepMania)\nResolusi tinggi (4px) dengan efek bergelombang, resolusi rendah (16px) tanpa efek.\nMENINGKATKAN FPS secara signifikan dengan banyak hold.",
-        "setting_early_culling" => "Pemilihan Awal",
-        "description_early_culling" => "Melewati catatan pemrosesan yang tidak terlihat di layar.\n(Teknik StepMania IsOnScreen())\nMengurangi penggunaan CPU sebesar 40-60% pada grafik yang berat.\nDIREKOMENDASIKAN: Tetap aktifkan.",
-        "setitng_adaptive_step_size" => "Ukuran Langkah Adaptif",
-        "description_adaptive_step_size" => "Menggunakan ukuran langkah variabel berdasarkan keadaan Z-buffer.\n(Pendekatan NotITG: 4 piksel dengan efek Z, 16 piksel tanpa efek Z)\nMenyeimbangkan kualitas dan kinerja secara otomatis.\nBekerja terbaik dengan Pembagian Subdivisi Dinamis.",
-        "setting_hold_segment_cache" => "Simpan Cache Segmen",
-        "description_hold_segment_cache" => "Cache menyimpan perhitungan segmen antara frame.\n(Sistem daur ulang sprite StepMania)\nMengurangi perhitungan berulang pada posisi statis.\nPeningkatan memori yang sedikit untuk kinerja CPU yang lebih baik.",
 
         // Mobile
         "mobile_notice" => "Pemberitahuan!",
