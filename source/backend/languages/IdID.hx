@@ -416,8 +416,6 @@ class IdID
         "description_render_arrow_paths" => "Menghasilkan garis jalur untuk panah notes.\nPERINGATAN: Ini mempengaruhi kinerja karena perhitungan jalur.",
         "setting_styled_arrow_paths" => "Jalur Panah Bergaya",
         "description_styled_arrow_paths" => "Menerapkan gaya visual pada jalur panah.\nMemerlukan 'Render Jalur Panah' diaktifkan.",
-        "setting_arrow_path_quality" => "Kualitas Jalur Panah",
-        "description_arrow_path_quality" => "Menyesuaikan frekuensi rendering jalur panah.\nRendah = Jalur halus (Kualitas lebih baik, fps rendah)\nTinggi = Jalur bergerigi (Kualitas lebih buruk, fps tinggi)",
         "setting_arrow_path_boundary" => "Batas Jalur Panah",
         "description_arrow_path_boundary" => "Menentukan jarak maksimum jalur panah dirender.\nNilai lebih tinggi meningkatkan jangkauan, tetapi dapat mempengaruhi kinerja.\n(Disarankan: 300)",
         "setting_hold_end_scale" => "Skala Akhir Hold",
