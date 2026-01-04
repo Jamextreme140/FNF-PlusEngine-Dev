@@ -1,0 +1,250 @@
+package states.stages.erect;
+
+import objects.Character;
+import shaders.RainShader;
+
+class SpookyMansionErect extends BaseStage
+{
+	var halloweenBG:BGSprite;
+	var halloweenBGLight:BGSprite;
+
+	var shader:RainShader;
+	var halloweenWindow:BGSprite;
+
+	var stairsDark:BGSprite;
+	var stairsLight:BGSprite;
+
+	var boyfriendGhost:Character;
+	var gfGhost:Character;
+	var dadGhost:Character;
+
+	override function create()
+	{
+		var bg:BGSprite = new BGSprite(null, -300, -500);
+		bg.makeGraphic(2400, 2000, 0xFF242336);
+		add(bg);
+
+		halloweenBG = new BGSprite('erect/bgDark', -560, -220);
+		halloweenBGLight = new BGSprite('erect/bgLight', -560, -220);
+		halloweenBGLight.alpha = 0;
+
+		stairsDark = new BGSprite('erect/stairsDark', 966, -225);
+		stairsLight = new BGSprite('erect/stairsLight', 966, -225);
+		stairsLight.alpha = 0;
+
+		halloweenWindow = new BGSprite('erect/bgtrees', 200, 50, 0.8, 0.8, ['bgtrees0'], true);
+		halloweenWindow.animation.curAnim.frameRate = 5;
+
+		add(halloweenWindow);
+		add(halloweenBG);
+		add(halloweenBGLight);
+
+		// PRECACHE SOUNDS
+		Paths.sound('thunder_1');
+		Paths.sound('thunder_2');
+	}
+
+	override function createPost()
+	{
+		super.createPost();
+		if(ClientPrefs.data.shaders)
+		{
+			shader = new RainShader();
+			shader.scale = FlxG.height / 200 * 2;
+			shader.intensity = 0.4;
+			halloweenWindow.shader = shader;
+		}
+
+		halloweenWindow.animation.play('bgtrees0');
+		if(!ClientPrefs.data.lowQuality)
+			makeChars();
+		add(stairsDark);
+		add(stairsLight);
+	}
+
+	override function update(elapsed:Float)
+	{
+		if(ClientPrefs.data.shaders && shader != null)
+		{
+			shader.update(elapsed);
+		}
+		super.update(elapsed);
+	}
+
+	var lightningStrikeBeat:Int = 0;
+	var lightningOffset:Int = 8;
+
+	override function beatHit()
+	{
+		super.beatHit();
+		if(ClientPrefs.data.lowQuality) return;
+		
+		if(curBeat == 4 && songName == 'spookeez-erect')
+			lightningStrikeShit(false);
+			
+		if(FlxG.random.bool(10) && curBeat > lightningStrikeBeat + lightningOffset)
+		{
+			lightningStrikeShit();
+		}
+
+		if(curBeat % game.boyfriend.danceEveryNumBeats == 0 && !boyfriend.getAnimationName().startsWith('sing') && !game.boyfriend.stunned)
+			boyfriendGhost.dance();
+			
+		if(curBeat % game.dad.danceEveryNumBeats == 0 && !dad.getAnimationName().startsWith('sing') && !game.dad.stunned)
+			dadGhost.dance();
+			
+		if(curBeat % game.gf.danceEveryNumBeats == 0 && !gf.getAnimationName().startsWith('sing') && !game.gf.stunned)
+			gfGhost.dance();
+	}
+
+	override function goodNoteHit(note:objects.Note)
+	{
+		var anims:Array<String> = ['singLEFT', 'singDOWN', 'singUP', 'singRIGHT'];
+		if(boyfriendGhost != null)
+			boyfriendGhost.playAnim(anims[note.noteData], true);
+		super.goodNoteHit(note);
+	}
+
+	override function noteMiss(note:objects.Note)
+	{
+		var anims:Array<String> = ['singLEFT', 'singDOWN', 'singUP', 'singRIGHT'];
+		if(boyfriendGhost != null)
+			boyfriendGhost.playAnim(anims[note.noteData] + 'miss', true);
+		super.noteMiss(note);
+	}
+
+	override function opponentNoteHit(note:objects.Note)
+	{
+		var anims:Array<String> = ['singLEFT', 'singDOWN', 'singUP', 'singRIGHT'];
+		if(dadGhost != null)
+			dadGhost.playAnim(anims[note.noteData], true);
+	}
+
+	override function eventCalled(eventName:String, value1:String, value2:String, flValue1:Null<Float>, flValue2:Null<Float>, strumTime:Float)
+	{
+		switch(eventName)
+		{
+			case 'Play Animation':
+				var char:Character = dadGhost;
+				switch(value2.toLowerCase().trim())
+				{
+					case 'bf' | 'boyfriend':
+						char = boyfriendGhost;
+					case 'gf' | 'girlfriend':
+						char = gfGhost;
+					default:
+						if(flValue2 == null) flValue2 = 0;
+						switch(Math.round(flValue2))
+						{
+							case 1: char = boyfriend;
+							case 2: char = gf;
+						}
+				}
+
+				if(char != null)
+				{
+					char.playAnim(value1, true);
+					char.specialAnim = true;
+				}
+		}
+	}
+
+	function lightningStrikeShit(playSound:Bool = true):Void
+	{
+		if(playSound)
+			FlxG.sound.play(Paths.soundRandom('thunder_', 1, 2));
+			
+		new FlxTimer().start(0.06, function(tmr:FlxTimer)
+		{
+			halloweenBGLight.alpha = 0;
+			stairsLight.alpha = 0;
+			boyfriend.alpha = 1;
+			dad.alpha = 1;
+			gf.alpha = 1;
+
+			if(gfGhost != null) gfGhost.alpha = 0;
+			if(boyfriendGhost != null) boyfriendGhost.alpha = 0;
+			if(dadGhost != null) dadGhost.alpha = 0;
+		});
+		
+		new FlxTimer().start(0.12, function(tmr:FlxTimer)
+		{
+			if(boyfriend.hasAnimation('scared'))
+				boyfriend.playAnim('scared', true);
+
+			if(dad.hasAnimation('scared'))
+				dad.playAnim('scared', true);
+
+			if(gf != null && gf.hasAnimation('scared'))
+				gf.playAnim('scared', true);
+				
+			if(ClientPrefs.data.flashing)
+			{
+				boyfriend.alpha = 0;
+				dad.alpha = 0;
+				gf.alpha = 0;
+				halloweenBGLight.alpha = 1;
+				stairsLight.alpha = 1;
+
+				if(gfGhost != null) gfGhost.alpha = 1;
+				if(boyfriendGhost != null) boyfriendGhost.alpha = 1;
+				if(dadGhost != null) dadGhost.alpha = 1;
+				
+				if(boyfriendGhost != null)
+					FlxTween.tween(boyfriendGhost, {alpha: 0}, 1.5);
+				if(gfGhost != null)
+					FlxTween.tween(gfGhost, {alpha: 0}, 1.5);
+				if(dadGhost != null)
+					FlxTween.tween(dadGhost, {alpha: 0}, 1.5);
+
+				FlxTween.tween(halloweenBGLight, {alpha: 0}, 1.5);
+				FlxTween.tween(stairsLight, {alpha: 0}, 1.5);
+
+				FlxTween.tween(boyfriend, {alpha: 1}, 1.5);
+				FlxTween.tween(gf, {alpha: 1}, 1.5);
+				FlxTween.tween(dad, {alpha: 1}, 1.5);
+			}
+		});
+
+		lightningStrikeBeat = curBeat;
+		lightningOffset = FlxG.random.int(8, 24);
+
+		if(ClientPrefs.data.camZooms)
+		{
+			FlxG.camera.zoom += 0.015;
+			camHUD.zoom += 0.03;
+
+			if(!game.camZooming)
+			{
+				// Just a way for preventing it to be permanently zoomed until Skid & Pump hits a note
+				FlxTween.tween(FlxG.camera, {zoom: defaultCamZoom}, 0.5);
+				FlxTween.tween(camHUD, {zoom: 1}, 0.5);
+			}
+		}
+	}
+
+	function makeChars():Void
+	{
+		var bfName:String = game.boyfriend.curCharacter.split('-')[0];
+		var dadName:String = game.dad.curCharacter.split('-')[0];
+		if(bfName == 'pico') bfName = 'pico-playable';
+
+		var gfMode:String = game.gf.curCharacter.split('-')[0];
+		gfGhost = new Character(game.gf.x, game.gf.y, gfMode);
+		game.add(gfGhost);
+		gfGhost.dance();
+
+		boyfriendGhost = new Character(game.boyfriend.x, game.boyfriend.y, bfName, true);
+		game.add(boyfriendGhost);
+		boyfriendGhost.dance();
+
+		dadGhost = new Character(game.dad.x, game.dad.y, dadName, true);
+		dadGhost.flipX = false;
+		game.add(dadGhost);
+		dadGhost.dance();
+
+		boyfriendGhost.alpha = 0;
+		gfGhost.alpha = 0;
+		dadGhost.alpha = 0;
+	}
+}

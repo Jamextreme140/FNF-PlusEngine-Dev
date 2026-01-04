@@ -260,6 +260,15 @@ class PlayState extends MusicBeatState
 	public var camZooming:Bool = false;
 	public var camZoomingMult:Float = 1;
 	public var camZoomingDecay:Float = 1;
+	
+	// Camera events from P-Slice
+	public var cameraBopEnabled:Bool = false;
+	public var cameraBopFrequency:Float = 1;
+	public var cameraBopIntensity:Float = 1;
+	private var targetCamZoom:Null<Float> = null;
+	private var camZoomTween:FlxTween = null;
+	private var camFollowTween:FlxTween = null;
+	
 	private var curSong:String = "";
 
 	public var gfSpeed:Int = 1;
@@ -347,9 +356,6 @@ class PlayState extends MusicBeatState
 	var popupVisible:Bool = false;
 	var turnValue:Int = 10;
 	public var displayedScore:Int = 0;
-	var cameraBopFrequency:Float = 1;
-	var cameraBopIntensity:Float = 1;
-	var cameraBopEnabled:Bool = false;
 	
 	// Variables para animación de íconos DNB
 	var iconTurnValue:Float = 10;
@@ -669,8 +675,20 @@ class PlayState extends MusicBeatState
 			case 'phillyStreets': new PhillyStreets(); 	//Weekend 1 - Darnell, Lit Up, 2Hot
 			case 'phillyBlazin': new PhillyBlazin();	//Weekend 1 - Blazin
 			case 'notitg': new NotITG();				//StepMania NotITG stage - Stage negro vacío
+			// Erect Stages
+			case 'mainStageErect': new states.stages.erect.MainStageErect();
+			case 'spookyMansionErect': new states.stages.erect.SpookyMansionErect();
+			case 'phillyTrainErect': new states.stages.erect.PhillyTrainErect();
+			case 'limoRideErect': new states.stages.erect.LimoRideErect();
+			case 'mallXmasErect': new states.stages.erect.MallXmasErect();
+			case 'schoolErect': new states.stages.erect.SchoolErect();
+			case 'schoolEvilErect': new states.stages.erect.SchoolEvilErect();
+			case 'tankmanBattlefieldErect': new states.stages.erect.TankErect();
+			case 'phillyStreetsErect': new states.stages.erect.PhillyStreetsErect();
 		}
 		if(isPixelStage) introSoundsSuffix = '-pixel';
+
+		trace("You are in stage " + curStage);
 
 
 		if (!isNotITG) {
@@ -3470,19 +3488,109 @@ class PlayState extends MusicBeatState
 					trace('BPM changed to: ' + newBPM + ' at time: ' + strumTime);
 				}
 
-						// ...existing code...
-			case "Set Camera Bopping":
-				// Value 1: frecuencia (en beats), Value 2: intensidad (1 = default)
+			case 'Target Camera':
+				// Value1: target (0=dad, 1=bf, 2=custom), Value2: "x,y,duration,ease"
+				var target:Int = 0;
+				if(flValue1 != null) target = Std.int(flValue1);
+				
+				var params:Array<String> = value2.split(',');
+				var offsetX:Float = 0;
+				var offsetY:Float = 0;
+				var duration:Float = 1;
+				var easeName:String = 'linear';
+				
+				if(params.length > 0 && params[0] != '') offsetX = Std.parseFloat(params[0]);
+				if(params.length > 1 && params[1] != '') offsetY = Std.parseFloat(params[1]);
+				if(params.length > 2 && params[2] != '') duration = Std.parseFloat(params[2]) / Conductor.bpm * 60; // Convert beats to seconds
+				if(params.length > 3) easeName = params[3].trim();
+				
+				var targetChar:Character = null;
+				switch(target) {
+					case 0: targetChar = dad;
+					case 1: targetChar = boyfriend;
+					case 2: targetChar = gf;
+				}
+				
+				if(targetChar != null && camFollow != null) {
+					var targetX:Float = targetChar.getMidpoint().x + 150 + targetChar.cameraPosition[0] + offsetX;
+					var targetY:Float = targetChar.getMidpoint().y - 100 + targetChar.cameraPosition[1] + offsetY;
+					
+					if(camFollowTween != null) camFollowTween.cancel();
+					
+					if(duration <= 0) {
+						camFollow.setPosition(targetX, targetY);
+					} else {
+						var ease:EaseFunction = FlxEase.linear;
+						switch(easeName.toLowerCase()) {
+							case 'linear': ease = FlxEase.linear;
+							case 'classic' | 'cubeout': ease = FlxEase.cubeOut;
+							case 'cubein': ease = FlxEase.cubeIn;
+							case 'cubeinout': ease = FlxEase.cubeInOut;
+							case 'expout': ease = FlxEase.expoOut;
+							case 'expin': ease = FlxEase.expoIn;
+							case 'expoinout': ease = FlxEase.expoInOut;
+							case 'quadout': ease = FlxEase.quadOut;
+							case 'quadin': ease = FlxEase.quadIn;
+							case 'quadinout': ease = FlxEase.quadInOut;
+							case 'smoothstepout': ease = FlxEase.smoothStepOut;
+						}
+						camFollowTween = FlxTween.tween(camFollow, {x: targetX, y: targetY}, duration, {ease: ease});
+					}
+				}
+
+			case 'Zoom Camera':
+				// Value1: "duration,zoom", Value2: ease
+				var params:Array<String> = value1.split(',');
+				var duration:Float = 1;
+				var zoom:Float = defaultCamZoom;
+				
+				if(params.length > 0 && params[0] != '') duration = Std.parseFloat(params[0]) / Conductor.bpm * 60; // Convert beats to seconds
+				if(params.length > 1 && params[1] != '') zoom = Std.parseFloat(params[1]);
+				
+				var easeName:String = value2.trim();
+				var ease:EaseFunction = FlxEase.linear;
+				
+				switch(easeName.toLowerCase()) {
+					case 'linear': ease = FlxEase.linear;
+					case 'classic' | 'cubeout': ease = FlxEase.cubeOut;
+					case 'cubein': ease = FlxEase.cubeIn;
+					case 'cubeinout': ease = FlxEase.cubeInOut;
+					case 'expout' | 'expoout': ease = FlxEase.expoOut;
+					case 'expin': ease = FlxEase.expoIn;
+					case 'expoinout' | 'expinout': ease = FlxEase.expoInOut;
+					case 'quadout': ease = FlxEase.quadOut;
+					case 'quadin': ease = FlxEase.quadIn;
+					case 'quadinout': ease = FlxEase.quadInOut;
+					case 'smoothstepout': ease = FlxEase.smoothStepOut;
+				}
+				
+				if(camZoomTween != null) camZoomTween.cancel();
+				
+				if(duration <= 0) {
+					defaultCamZoom = zoom;
+					FlxG.camera.zoom = zoom;
+				} else {
+					targetCamZoom = zoom;
+					camZoomTween = FlxTween.tween(this, {defaultCamZoom: zoom}, duration, {
+						ease: ease,
+						onComplete: function(twn:FlxTween) {
+							targetCamZoom = null;
+							camZoomTween = null;
+						}
+					});
+				}
+
+			case 'Set Camera Bopping':
+				// Value1: frequency (in beats), Value2: intensity (1 = default)
 				var freq:Float = 1;
 				var intensity:Float = 1;
-				if (value1 != null && value1.trim() != "") freq = Std.parseFloat(value1);
-				if (value2 != null && value2.trim() != "") intensity = Std.parseFloat(value2);
-			
-				// Guarda los valores en variables de la clase para usarlas en el update/beatHit
+				
+				if(flValue1 != null) freq = flValue1;
+				if(flValue2 != null) intensity = flValue2;
+				
 				cameraBopFrequency = freq;
 				cameraBopIntensity = intensity;
-				cameraBopEnabled = true;
-			// ...existing code...
+				cameraBopEnabled = (intensity > 0);
 		}
 
 		stagesFunc(function(stage:BaseStage) stage.eventCalled(eventName, value1, value2, flValue1, flValue2, strumTime));

@@ -147,12 +147,12 @@ class Song
 		_lastPath = Paths.json('$formattedFolder/$formattedSong');
 
 		#if MODS_ALLOWED
-		// Compatibilidad con Psych 0.7.3: Si el chart no existe,
-		// intenta cargar con sufijo "-normal" para mods antiguos
+		// Psych 0.7.3 compatibility: if chart doesn't exist,
+		// try loading with "-normal" suffix for older mods
 		var pathExists:Bool = FileSystem.exists(_lastPath);
 		if(!pathExists)
 		{
-			// Verifica si el jsonInput ya tiene un sufijo de dificultad
+			// Check if jsonInput already has a difficulty suffix
 			var hasDifficultySuffix:Bool = false;
 			for(diff in Difficulty.list)
 			{
@@ -164,7 +164,7 @@ class Song
 				}
 			}
 			
-			// Si no tiene sufijo, intenta con "-normal" (compatibilidad 0.7.3)
+			// If it doesn't have suffix, try "-normal" (0.7.3 compatibility)
 			if(!hasDifficultySuffix)
 			{
 				var normalDiff:String = Paths.formatToSongPath(Difficulty.getDefault()); // "normal"
@@ -176,13 +176,99 @@ class Song
 					trace('Psych 0.7.3 Compatibility: Using "$formattedSong-$normalDiff" chart');
 				}
 			}
+
+			// Fallback for engines/mods that store difficulty charts in a suffixed folder
+			// Example: data/bopeebo-erect/bopeebo-erect.json instead of data/bopeebo/bopeebo-erect.json
+			if(!pathExists)
+			{
+				var suffixedFolder:String = formattedSong; // use the song+difficulty as folder
+				var altPath2:String = Paths.json('$suffixedFolder/$formattedSong');
+				if(FileSystem.exists(altPath2))
+				{
+					_lastPath = altPath2;
+					pathExists = true;
+					trace('Chart fallback: Using suffixed folder "$suffixedFolder/$formattedSong"');
+				}
+			}
+
+			// P-Slice style: charts stored inside "<base>-erect" folder with filenames like "<base>-erect-erect.json" or "<base>-erect-nightmare.json"
+			if(!pathExists && formattedSong.indexOf('-') > -1)
+			{
+				var baseName:String = formattedFolder; // folder param is the base song name
+				var diffSuffix:String = formattedSong.substr(baseName.length + 1);
+				var erectFolder:String = baseName + '-erect';
+				var pSlicePath:String = Paths.json('$erectFolder/$baseName-erect-$diffSuffix');
+				if(FileSystem.exists(pSlicePath))
+				{
+					_lastPath = pSlicePath;
+					pathExists = true;
+					trace('Chart fallback: Using P-Slice style path "$erectFolder/$baseName-erect-$diffSuffix"');
+				}
+			}
+
+			// Additional fallback for double-suffix charts (e.g., base-erect-nightmare)
+			if(!pathExists && formattedSong.indexOf('-') > -1)
+			{
+				var baseName:String = formattedSong.substr(0, formattedSong.indexOf('-'));
+				var diffSuffix:String = formattedSong.substr(baseName.length + 1);
+				var doubleSuffixedFolder:String = baseName + '-erect-' + diffSuffix;
+				var altPath3:String = Paths.json('$doubleSuffixedFolder/$baseName-erect-$diffSuffix');
+				if(FileSystem.exists(altPath3))
+				{
+					_lastPath = altPath3;
+					pathExists = true;
+					trace('Chart fallback: Using double-suffixed folder "$doubleSuffixedFolder/$baseName-erect-$diffSuffix"');
+				}
+			}
 		}
 		
 		if(pathExists)
 			rawData = File.getContent(_lastPath);
 		else
 		#end
+		{
+			// Non-mods build: use OpenFL assets and try suffixed-folder fallback if needed
+			var openflPath:String = _lastPath;
+			if(!Assets.exists(openflPath))
+			{
+				var suffixedFolder:String = formattedSong;
+				var altPath2:String = Paths.json('$suffixedFolder/$formattedSong');
+				if(Assets.exists(altPath2))
+				{
+					_lastPath = altPath2;
+					trace('Chart fallback (OpenFL): Using suffixed folder "$suffixedFolder/$formattedSong"');
+				}
+
+				// P-Slice style: charts stored inside "<base>-erect" folder with filenames like "<base>-erect-erect.json" or "<base>-erect-nightmare.json"
+				if(_lastPath == openflPath && formattedSong.indexOf('-') > -1)
+				{
+					var baseName:String = formattedFolder; // folder param is the base song name
+					var diffSuffix:String = formattedSong.substr(baseName.length + 1);
+					var erectFolder:String = baseName + '-erect';
+					var pSlicePath:String = Paths.json('$erectFolder/$baseName-erect-$diffSuffix');
+					if(Assets.exists(pSlicePath))
+					{
+						_lastPath = pSlicePath;
+						trace('Chart fallback (OpenFL): Using P-Slice style path "$erectFolder/$baseName-erect-$diffSuffix"');
+					}
+				}
+
+				// Additional fallback for double-suffix charts (e.g., base-erect-nightmare)
+				if(_lastPath == openflPath && formattedSong.indexOf('-') > -1)
+				{
+					var baseName:String = formattedSong.substr(0, formattedSong.indexOf('-'));
+					var diffSuffix:String = formattedSong.substr(baseName.length + 1);
+					var doubleSuffixedFolder:String = baseName + '-erect-' + diffSuffix;
+					var altPath3:String = Paths.json('$doubleSuffixedFolder/$baseName-erect-$diffSuffix');
+					if(Assets.exists(altPath3))
+					{
+						_lastPath = altPath3;
+						trace('Chart fallback (OpenFL): Using double-suffixed folder "$doubleSuffixedFolder/$baseName-erect-$diffSuffix"');
+					}
+				}
+			}
 			rawData = Assets.getText(_lastPath);
+		}
 
 		return rawData != null ? parseJSON(rawData, jsonInput) : null;
 	}

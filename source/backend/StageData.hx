@@ -96,20 +96,40 @@ class StageData {
 		{
 			case 'spookeez' | 'south' | 'monster':
 				return 'spooky';
+			case 'spookeez-erect':
+				return 'spookyMansionErect';
 			case 'pico' | 'blammed' | 'philly' | 'philly-nice':
 				return 'philly';
+			case 'pico-erect' | 'blammed-erect' | 'philly-nice-erect':
+				return 'phillyTrainErect';
 			case 'milf' | 'satin-panties' | 'high':
 				return 'limo';
+			case 'satin-panties-erect' | 'high-erect':
+				return 'limoRideErect';
 			case 'cocoa' | 'eggnog':
 				return 'mall';
+			case 'cocoa-erect' | 'eggnog-erect':
+				return 'mallXmasErect';
 			case 'winter-horrorland':
 				return 'mallEvil';
 			case 'senpai' | 'roses':
 				return 'school';
+			case 'senpai-erect' | 'roses-erect':
+				return 'schoolErect';
 			case 'thorns':
 				return 'schoolEvil';
+			case 'thorns-erect':
+				return 'schoolEvilErect';
 			case 'ugh' | 'guns' | 'stress':
 				return 'tank';
+			case 'ugh-erect' | 'guns-erect' | 'stress-erect':
+				return 'tankmanBattlefieldErect';
+			case 'darnell' | 'lit-up' | '2hot' | 'blazin':
+				return 'phillyStreets';
+			case 'darnell-erect' | 'lit-up-erect' | '2hot-erect' | 'blazin-erect':
+				return 'phillyStreetsErect';
+			case 'dadbattle-erect':
+				return 'mainStageErect';
 		}
 		return 'stage';
 	}

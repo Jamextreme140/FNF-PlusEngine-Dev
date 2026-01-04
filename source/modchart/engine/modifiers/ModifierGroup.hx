@@ -9,7 +9,6 @@ import modchart.backend.core.ModifierOutput;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.PercentArray;
 import modchart.backend.core.VisualParameters;
-import modchart.backend.core.ModifierCache;
 import modchart.backend.macros.ModifiersMacro;
 import modchart.backend.util.ModchartUtil;
 import modchart.engine.modifiers.Modifier;
@@ -112,12 +111,6 @@ final class ModifierGroup {
 		final hitTime = data.hitTime + posDiff;
 		final distance = data.distance + posDiff;
 		
-		// Try cache first (StepMania optimization)
-		final cached = ModifierCache.get(data.player, data.lane, hitTime, distance);
-		if (cached != null) {
-			return cached.output;
-		}
-		
 		var visuals:VisualParameters = {};
 
 		final songPos = Adapter.instance.getSongPosition();
@@ -154,9 +147,6 @@ final class ModifierGroup {
 			pos: pos,
 			visuals: visuals
 		};
-
-		// Store in cache for reuse
-		ModifierCache.set(data.player, data.lane, hitTime, distance, output);
 
 		return output;
 	}
