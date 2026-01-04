@@ -45,11 +45,9 @@ class IdID
         // Gameplay
         "score_text" => "Skor: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
         "score_text_instakill" => "Skor: {1} | Rating: {2} | TPS: {3}/{4}",
-        "botplay" => "Botplay",
         "practice_mode" => "Mode Latihan",
         "perfect_mode" => "Mode Sempurna",
         "opponent_mode" => "Mode Lawan",
-        "misses" => "Misses",
         "combo_breaks" => "Kombo Istirahat",
 
         // Ratings
@@ -97,12 +95,12 @@ class IdID
         "storyname_weekend1" => "Utang yang Harus Dibayar",
 
         // Freeplay
-        "personal_best" => "REKOR PRIBADI:\n{1} ({2}%)",
-        "freeplay_tip" => "Tekan SPACE untuk mendengarkan lagu / Tekan CTRL untuk membuka menu Gameplay Changers / Tekan RESET untuk mereset skor dan akurasi anda.",
+        "freeplay_tip" => "Tekan {1} untuk mendengarkan lagu / Tekan {2} untuk membuka menu Gameplay Changers / Tekan {3} untuk mereset skor dan akurasi Anda.",
         "musicplayer_playing" => "MEMAINKAN: {1}",
         "musicplayer_paused" => "MEMAINKAN: {1} (DIJEDA)",
-        "musicplayer_tip" => "Tekan SPACE untuk jeda / Tekan ESCAPE untuk keluar / Tekan R untuk mereset lagu",
-        "no_score" => "Tidak ada skor.",
+        "musicplayer_tip" => "Tekan {1} untuk Menjeda / Tekan {2} untuk Keluar / Tekan {3} untuk Mereset Lagu",
+        "score_accuracy" => "Skor: {1}\nAkurasi: {2}% ({3})",
+        "no_score" => "Tidak ada skor",
 
         // Mods Menu
         "no_mods_installed" => "TIDAK ADA MOD YANG DIINSTAL\nTEKAN TOMBOL KEMBALI UNTUK KELUAR ATAU INSTAL MOD",
@@ -113,6 +111,8 @@ class IdID
         "disable_all_button" => "MATIKAN SEMUA",
 
         // Credits
+        "credits_title" => "KREDIT",
+        "link_hint" => "Tekan A/ENTER untuk membuka tautan | B/ESC untuk kembali",
         "description_shadow_mario" => "Tim Psych Engine",
 
         // Reset Score/Achievement
@@ -164,6 +164,7 @@ class IdID
         "options_controls" => "Controls",
         "options_adjust_delay_and_combo" => "Sesuaikan Delay dan Kombo",
         "options_gameplay" => "Gameplay",
+        "options_compatibility" => "Kompatibilitas",
         "options_visuals" => "Visuals",
         "options_graphics" => "Grafik",
         "options_modchart" => "Modchart",
@@ -172,6 +173,7 @@ class IdID
         "graphics_menu" => "Pengaturan Grafik",
         "visuals_menu" => "Pengaturan Visuals",
         "gameplay_menu" => "Pengaturan Gameplay",
+        "compatibility_menu" => "Pengaturan Kompatibilitas",
         "modchart_menu" => "Pengaturan Modchart",
         "language_menu" => "Pengaturan Bahasa",
         "mobile_options_menu" => "Pengaturan Ponsel",
@@ -393,6 +395,14 @@ class IdID
         "setting_heavy_charts_mode" => "Mode Charts Berat",
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
+        // Compatibility Settings
+        "setting_use_sscript_for_psych_0.7.3_mods" => "Gunakan SScript untuk Mod Psych 0.7.3",
+        "description_use_sscript_for_psych_0.7.3_mods" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
+        "setting_legacy_memory_management" => "Manajemen Memori Lama",
+        "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
+        "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
+        "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
+
         // Modchart Settings
         "setting_hold_subdivisions" => "Tahan Subdivisi",
         "description_hold_subdivisions" => "Membagi ekor hold/menyusut untuk tampilan yang lebih halus.\nNilai yang lebih tinggi meningkatkan kualitas tetapi dapat mengurangi kinerja.",
@@ -418,6 +428,14 @@ class IdID
         "description_column_specific_modifiers" => "Jika dicentang, memungkinkan menerapkan modifier khusus ke kolom individual.\nMenonaktifkan dapat meningkatkan kinerja dengan mengurangi perhitungan.",
         "setting_holds_behind_strums" => "Hold di Belakang Petikan",
         "description_holds_behind_strums" => "Menampilkan note yang dipertahankan di belakang garis petikan.\nOpsi preferensi visual.",
+        "setting_dynamic_hold_subdivisions" => "Pembagian Subdivisi Dinamis",
+        "description_dynamic_hold_subdivisions" => "Menyesuaikan secara otomatis pembagian hold berdasarkan penggunaan Z-buffer.\n(Teknik NotITG/StepMania)\nResolusi tinggi (4px) dengan efek bergelombang, resolusi rendah (16px) tanpa efek.\nMENINGKATKAN FPS secara signifikan dengan banyak hold.",
+        "setting_early_culling" => "Pemilihan Awal",
+        "description_early_culling" => "Melewati catatan pemrosesan yang tidak terlihat di layar.\n(Teknik StepMania IsOnScreen())\nMengurangi penggunaan CPU sebesar 40-60% pada grafik yang berat.\nDIREKOMENDASIKAN: Tetap aktifkan.",
+        "setitng_adaptive_step_size" => "Ukuran Langkah Adaptif",
+        "description_adaptive_step_size" => "Menggunakan ukuran langkah variabel berdasarkan keadaan Z-buffer.\n(Pendekatan NotITG: 4 piksel dengan efek Z, 16 piksel tanpa efek Z)\nMenyeimbangkan kualitas dan kinerja secara otomatis.\nBekerja terbaik dengan Pembagian Subdivisi Dinamis.",
+        "setting_hold_segment_cache" => "Simpan Cache Segmen",
+        "description_hold_segment_cache" => "Cache menyimpan perhitungan segmen antara frame.\n(Sistem daur ulang sprite StepMania)\nMengurangi perhitungan berulang pada posisi statis.\nPeningkatan memori yang sedikit untuk kinerja CPU yang lebih baik.",
 
         // Mobile
         "mobile_notice" => "Pemberitahuan!",
