@@ -111,8 +111,6 @@ class IdID
         "disable_all_button" => "MATIKAN SEMUA",
 
         // Credits
-        "credits_title" => "KREDIT",
-        "link_hint" => "Tekan A/ENTER untuk membuka tautan | B/ESC untuk kembali",
         "description_shadow_mario" => "Tim Psych Engine",
 
         // Reset Score/Achievement
