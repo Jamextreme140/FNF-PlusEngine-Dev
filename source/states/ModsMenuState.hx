@@ -2,6 +2,7 @@ package states;
 
 import backend.WeekData;
 import backend.Mods;
+import backend.scripting.ModState;
 
 import flixel.FlxBasic;
 import flixel.graphics.FlxGraphic;
@@ -344,8 +345,16 @@ class ModsMenuState extends MusicBeatState
 			exiting = true;
 			saveTxt();
 
+			#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
+			// Check if the top mod has state scripts (TitleState, FlashingState, etc.)
+			var hasModStates:Bool = ModState.hasScript('TitleState') || ModState.hasScript('FlashingState');
+			#else
+			var hasModStates:Bool = false;
+			#end
+
 			FlxG.sound.play(Paths.sound('cancelMenu'));
-			if(waitingToRestart)
+			// Restart game if mod needs restart OR if mod has custom state scripts
+			if(waitingToRestart || hasModStates)
 			{
 				//MusicBeatState.switchState(new TitleState());
 				TitleState.initialized = false;

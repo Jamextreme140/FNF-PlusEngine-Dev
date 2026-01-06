@@ -85,7 +85,6 @@ class TitleState extends MusicBeatState
 
 		if(!initialized)
 		{
-			ClientPrefs.loadPrefs();
 			Language.reloadPhrases();
 			shaders.ColorblindFilter.UpdateColors();
 		}
@@ -103,7 +102,6 @@ class TitleState extends MusicBeatState
 			}
 			persistentUpdate = true;
 			persistentDraw = true;
-			if(!initialized) MobileData.init();
 		}
 
 		if (FlxG.save.data.weekCompleted != null)

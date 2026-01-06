@@ -15,6 +15,7 @@ import openfl.display.BitmapData;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
 import states.TitleState;
+import states.InitialState;
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;
 import psychlua.HScript.HScriptInfos;
@@ -186,11 +187,6 @@ class Main extends Sprite
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
 
-		// Initialize Global Scripts system
-		#if HSCRIPT_ALLOWED
-		lenin.slushithings.codenameengine.scripting.GlobalScript.init();
-		#end
-
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
 			FlxG.scaleMode = new mobile.backend.MobileScaleMode();
@@ -198,7 +194,8 @@ class Main extends Sprite
 		#end
 		
 		// Determine initial state based on preloader preference
-		var initialState:Class<FlxState> = game.initialState;
+		// InitialState will check for mod states and redirect accordingly
+		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
 		if (!CopyState.checkExistingFiles()) {
 			initialState = CopyState;
@@ -219,6 +216,9 @@ class Main extends Sprite
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
 		
+		ClientPrefs.loadPrefs();
+		MobileData.init();
+
 		// Agregar los botones de TraceDisplay y Debug para móvil
 		#if mobile
 		traceButton = new TraceButton();
