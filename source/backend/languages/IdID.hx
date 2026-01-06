@@ -162,7 +162,7 @@ class IdID
         "options_controls" => "Controls",
         "options_adjust_delay_and_combo" => "Sesuaikan Delay dan Kombo",
         "options_gameplay" => "Gameplay",
-        "options_compatibility" => "Kompatibilitas",
+        "options_legacy" => "Warisan",
         "options_visuals" => "Visuals",
         "options_graphics" => "Grafik",
         "options_modchart" => "Modchart",
@@ -171,7 +171,7 @@ class IdID
         "graphics_menu" => "Pengaturan Grafik",
         "visuals_menu" => "Pengaturan Visuals",
         "gameplay_menu" => "Pengaturan Gameplay",
-        "compatibility_menu" => "Pengaturan Kompatibilitas",
+        "legacy_menu" => "Pengaturan Warisan",
         "modchart_menu" => "Pengaturan Modchart",
         "language_menu" => "Pengaturan Bahasa",
         "mobile_options_menu" => "Pengaturan Ponsel",
@@ -324,8 +324,6 @@ class IdID
         "setting_pause_music-breakfast" => "Sarapan",
         "setting_pause_music-breakfast_(pico)" => "Sarapan (Pico)",
         "description_pause_music" => "Lagu apa yang Anda sukai untuk layar jeda?",
-        "setting_vanilla_ransition" => "Transisi Vanila",
-        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi Psych Engine standar daripada yang kustom.",
         "setting_check_for_updates" => "Periksa Pembaruan",
         "description_check_for_updates" => "Pada versi rilis, aktifkan opsi ini untuk memeriksa pembaruan saat Anda memulai game.",
         "setting_change_window_border_color_with_note_hit" => "Ubah Warna Bingkai Jendela dengan Hit Note",
@@ -393,13 +391,17 @@ class IdID
         "setting_heavy_charts_mode" => "Mode Charts Berat",
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
-        // Compatibility Settings
+        // Legacy Settings
         "setting_use_sscript_for_psych_0.7.3_mods" => "Gunakan SScript untuk Mod Psych 0.7.3",
         "description_use_sscript_for_psych_0.7.3_mods" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
         "setting_legacy_memory_management" => "Manajemen Memori Lama",
         "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
         "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
         "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
+        "setting_vanilla_ransition" => "Transisi Vanila",
+        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi Psych Engine standar daripada yang kustom.",
+        "setting_use_legacy_font" => "Gunakan Font Warisan",
+        "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
 
         // Modchart Settings
         "setting_hold_subdivisions" => "Tahan Subdivisi",
