@@ -22,6 +22,7 @@ class Language
         ItIT,    // Italiano (Italia)
         DeDE,    // Deutsch (Deutschland)
         NlNL,    // Nederlands (Nederland)
+		ViVN,    // Vietnamese (Vietnam)
         //ZhCN,    // Chinese (Mainland) - needs more support
         //ZhHK,    // Chinese (Hong Kong) - needs more support
         //JpJP,     // Japanese (Japan) - needs more support
