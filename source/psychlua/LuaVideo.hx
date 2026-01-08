@@ -58,6 +58,12 @@ class LuaVideo {
             videoSprite.load(backend.Paths.video(path), null);
             videoSprite.play();
             
+            // Set initial playback rate to match current song speed
+            #if FLX_PITCH
+            if(PlayState.instance != null)
+                videoSprite.bitmap.rate = PlayState.instance.playbackRate;
+            #end
+            
             new flixel.util.FlxTimer().start(2.0, function(tmr:flixel.util.FlxTimer) {
                 allowDestroy.set(tag, true);
             });
@@ -137,6 +143,21 @@ class LuaVideo {
                 return haxe.Int64.toInt(video.bitmap.time) / 1000.0;
             }
             return 0;
+        });
+        
+        Lua_helper.add_callback(lua, "setLuaVideoRate", function(tag:String, rate:Float) {
+            var video = getLuaVideo(tag);
+            if(video != null) {
+                video.bitmap.rate = rate;
+            }
+        });
+        
+        Lua_helper.add_callback(lua, "getLuaVideoRate", function(tag:String):Float {
+            var video = getLuaVideo(tag);
+            if(video != null) {
+                return video.bitmap.rate;
+            }
+            return 1.0;
         });
         
         #else
@@ -221,6 +242,16 @@ class LuaVideo {
         for(tag => video in activeVideos) {
             if(video != null && !video.bitmap.isPlaying) {
                 video.resume();
+            }
+        }
+        #end
+    }
+    
+    public static function setAllVideosRate(rate:Float):Void {
+        #if VIDEOS_ALLOWED
+        for(tag => video in activeVideos) {
+            if(video != null && video.bitmap != null) {
+                video.bitmap.rate = rate;
             }
         }
         #end

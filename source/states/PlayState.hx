@@ -1362,6 +1362,10 @@ class PlayState extends MusicBeatState
 		Conductor.safeZoneOffset = (ClientPrefs.data.safeFrames / 60) * 1000 * value;
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null) videoCutscene.videoSprite.bitmap.rate = value;
+		#if LUA_ALLOWED
+		// Update all Lua videos rate
+		psychlua.LuaVideo.setAllVideosRate(playbackRate);
+		#end
 		#end
 		setOnScripts('playbackRate', playbackRate);
 		#else
