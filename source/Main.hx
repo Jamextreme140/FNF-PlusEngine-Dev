@@ -281,7 +281,8 @@ class Main extends Sprite
 		#end
 
 		// shader coords fix
-		FlxG.signals.gameResized.add(function (w, h) {
+		var resizeDebounceTimer:FlxTimer = null;
+		function handleGameResized():Void {
 			// Only reposition the FPS counter, no scaling.
 			if(fpsVar != null) {
 				var marginX = 10;
@@ -312,6 +313,16 @@ class Main extends Sprite
 
 			if (FlxG.game != null)
 			resetSpriteCache(FlxG.game);
+		}
+
+		FlxG.signals.gameResized.add(function (w, h) {
+			if(resizeDebounceTimer == null) {
+				resizeDebounceTimer = new FlxTimer();
+			}
+			// Debounce window scripts so we only run heavy work once the resize settles.
+			resizeDebounceTimer.start(0.05, function(_) {
+				handleGameResized();
+			});
 		});
 
 		setupGame();

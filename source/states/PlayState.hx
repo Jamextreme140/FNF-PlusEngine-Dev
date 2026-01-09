@@ -370,22 +370,6 @@ class PlayState extends MusicBeatState
 	var lastEndCountdown:Int = -1;
 	var lastJudName:String = "None";
 	
-	// Advanced elapsed control system
-	var lastElapsed:Float = 0.0;
-	var elapsedSmooth:Float = 0.0;
-	var lagSpikeCount:Int = 0;
-	var consecutiveLagFrames:Int = 0;
-	
-	// Auto Quality Scaling system for continuous FPS degradation
-	var fpsHistory:Array<Int> = [];
-	var fpsCheckTimer:Float = 0.0;
-	var fpsCheckInterval:Float = 1.0; // Check every second
-	var lowFpsFrameCount:Int = 0;
-	var qualityLevel:Int = 0; // 0 = full quality, 1-3 = progressive degradation
-	var qualityScalingEnabled:Bool = true; // Can be disabled in settings
-	var lastQualityChange:Float = 0.0;
-	var qualityChangeDelay:Float = 3.0; // Wait 3 seconds before changing quality again
-	
 	#if windows
 	// Window border color tween system (Slushi Engine method)
 	var windowBorderColorTween:flixel.tweens.misc.NumTween;
@@ -2661,106 +2645,6 @@ class PlayState extends MusicBeatState
 
 	override public function update(elapsed:Float)
 	{
-		// Advanced elapsed control system for smooth gameplay on low-end devices
-		// Calculate dynamic max elapsed based on target framerate
-		var targetFramerate:Float = ClientPrefs.data.framerate > 0 ? ClientPrefs.data.framerate : 60;
-		var targetFrameTime:Float = 1.0 / targetFramerate; // Expected time per frame
-		var maxElapsed:Float = targetFrameTime * 3; // Allow up to 3x the expected frame time (e.g., 20 FPS minimum for 60 FPS target)
-		
-		// Clamp elapsed to prevent extreme lag spikes
-		var originalElapsed:Float = elapsed;
-		if (elapsed > maxElapsed) {
-			elapsed = maxElapsed;
-			lagSpikeCount++;
-			consecutiveLagFrames++;
-			
-			// If lag persists for multiple frames, reduce quality temporarily
-			if (consecutiveLagFrames > 5 && ClientPrefs.data.antialiasing) {
-				// Temporary quality reduction could be implemented here
-				// For now, just track it
-			}
-		} else {
-			consecutiveLagFrames = 0;
-		}
-		
-		// Smooth elapsed for better consistency (lerp between frames)
-		// This reduces micro-stuttering on variable framerate
-		if (lastElapsed == 0.0) lastElapsed = elapsed;
-		elapsedSmooth = lastElapsed + (elapsed - lastElapsed) * 0.5; // 50% smoothing
-		lastElapsed = elapsed;
-		
-		// Use smoothed elapsed for non-critical updates
-		var smoothElapsed:Float = elapsedSmooth;
-		
-		// Auto Quality Scaling - Monitor FPS and adjust quality dynamically
-		if (qualityScalingEnabled && generatedMusic && !paused) {
-			fpsCheckTimer += elapsed;
-			
-			if (fpsCheckTimer >= fpsCheckInterval) {
-				fpsCheckTimer = 0.0;
-				
-				// Get current FPS
-				var currentFPS:Int = 0;
-				#if cpp
-				if (Main.fpsVar != null) {
-					currentFPS = Main.fpsVar.currentFPS;
-				}
-				#end
-				
-				// Track FPS history (last 5 seconds)
-				fpsHistory.push(currentFPS);
-				if (fpsHistory.length > 5) {
-					fpsHistory.shift();
-				}
-				
-				// Calculate average FPS
-				var avgFPS:Float = 0;
-				for (fps in fpsHistory) {
-					avgFPS += fps;
-				}
-				avgFPS = avgFPS / fpsHistory.length;
-				
-				// Define FPS thresholds based on target framerate
-				var targetFPS:Float = ClientPrefs.data.framerate > 0 ? ClientPrefs.data.framerate : 60;
-				var criticalFPS:Float = targetFPS * 0.5; // 50% of target
-				var lowFPS:Float = targetFPS * 0.7; // 70% of target
-				var goodFPS:Float = targetFPS * 0.85; // 85% of target
-				
-				var timeSinceLastChange:Float = haxe.Timer.stamp() - lastQualityChange;
-				
-				// Check if we need to reduce quality (FPS too low for extended time)
-				if (avgFPS < criticalFPS && qualityLevel < 3 && timeSinceLastChange > qualityChangeDelay) {
-					// Critical FPS - aggressive quality reduction
-					qualityLevel++;
-					applyQualityLevel(qualityLevel);
-					lastQualityChange = haxe.Timer.stamp();
-					trace('Auto Quality: Reduced to level $qualityLevel (FPS: ${Math.floor(avgFPS)}/${Math.floor(targetFPS)})');
-				}
-				else if (avgFPS < lowFPS && qualityLevel < 3 && timeSinceLastChange > qualityChangeDelay) {
-					// Low FPS - gradual quality reduction
-					lowFpsFrameCount++;
-					if (lowFpsFrameCount >= 3) { // 3 seconds of low FPS
-						qualityLevel++;
-						applyQualityLevel(qualityLevel);
-						lastQualityChange = haxe.Timer.stamp();
-						lowFpsFrameCount = 0;
-						trace('Auto Quality: Reduced to level $qualityLevel (FPS: ${Math.floor(avgFPS)}/${Math.floor(targetFPS)})');
-					}
-				}
-				// Check if we can restore quality (FPS improved)
-				else if (avgFPS > goodFPS && qualityLevel > 0 && timeSinceLastChange > qualityChangeDelay * 1.5) {
-					lowFpsFrameCount = 0;
-					qualityLevel--;
-					applyQualityLevel(qualityLevel);
-					lastQualityChange = haxe.Timer.stamp();
-					trace('Auto Quality: Improved to level $qualityLevel (FPS: ${Math.floor(avgFPS)}/${Math.floor(targetFPS)})');
-				}
-				else {
-					lowFpsFrameCount = 0;
-				}
-			}
-		}
-		
 		if(!inCutscene && !paused && !freezeCamera) {
 			FlxG.camera.followLerp = 0.04 * cameraSpeed * playbackRate;
 			var idleAnim:Bool = (boyfriend.getAnimationName().startsWith('idle') || boyfriend.getAnimationName().startsWith('danceLeft') || boyfriend.getAnimationName().startsWith('danceRight'));
@@ -2818,10 +2702,16 @@ class PlayState extends MusicBeatState
 			Conductor.songPosition += elapsed * 1000 * playbackRate;
 			if (Conductor.songPosition >= Conductor.offset)
 			{
-				Conductor.songPosition = FlxMath.lerp(FlxG.sound.music.time + Conductor.offset, Conductor.songPosition, Math.exp(-elapsed * 5));
-				var timeDiff:Float = Math.abs((FlxG.sound.music.time + Conductor.offset) - Conductor.songPosition);
-				if (timeDiff > 1000 * playbackRate)
-					Conductor.songPosition = Conductor.songPosition + 1000 * FlxMath.signOf(timeDiff);
+				var targetPos:Float = FlxG.sound.music.time + Conductor.offset;
+				var diff:Float = targetPos - Conductor.songPosition;
+				if (Math.abs(diff) > 1000 * playbackRate)
+				{
+					Conductor.songPosition += diff; // snap back in sync when lag spikes happen
+				}
+				else
+				{
+					Conductor.songPosition = FlxMath.lerp(targetPos, Conductor.songPosition, Math.exp(-elapsed * 5));
+				}
 			}
 		}
 
@@ -3192,96 +3082,6 @@ class PlayState extends MusicBeatState
 				if (iconP2 != null) iconP2.animation.curAnim.curFrame = (healthBar.percent > 80) ? 1 : 0; //If health is over 80%, change opponent icon to frame 1 (losing icon), otherwise, frame 0 (normal)
 			}
 		}
-	}
-
-	/**
-	 * Apply quality level adjustments to improve performance
-	 * Level 0 = Full quality
-	 * Level 1 = Disable note splashes & reduce antialiasing
-	 * Level 2 = Disable camera zooms & animations
-	 * Level 3 = Minimal quality (survival mode)
-	 */
-	function applyQualityLevel(level:Int):Void
-	{
-		switch(level) {
-			case 0: // Full quality - restore everything
-				// Restore note splashes
-				grpNoteSplashes.visible = true;
-				grpHoldSplashes.visible = true;
-				
-				// Restore camera zooms (use client preference)
-				camZooming = ClientPrefs.data.camZooms;
-				
-				// Restore antialiasing for key objects
-				if (boyfriend != null) boyfriend.antialiasing = ClientPrefs.data.antialiasing;
-				if (dad != null) dad.antialiasing = ClientPrefs.data.antialiasing;
-				if (gf != null) gf.antialiasing = ClientPrefs.data.antialiasing;
-				
-				// Show debug info
-				if (Main.fpsVar != null) {
-					Main.fpsVar.modAuthor = "";
-				}
-				
-			case 1: // Light degradation - disable splashes
-				// Disable note splashes (saves CPU on hit animations)
-				grpNoteSplashes.visible = false;
-				grpHoldSplashes.visible = false;
-				
-				// Reduce antialiasing on characters
-				if (boyfriend != null) boyfriend.antialiasing = false;
-				if (dad != null) dad.antialiasing = false;
-				if (gf != null) gf.antialiasing = false;
-				
-				// Show quality warning
-				if (Main.fpsVar != null) {
-					Main.fpsVar.modAuthor = "Auto Quality: Light";
-				}
-				
-			case 2: // Medium degradation - disable camera effects
-				// Keep level 1 changes
-				grpNoteSplashes.visible = false;
-				grpHoldSplashes.visible = false;
-				if (boyfriend != null) boyfriend.antialiasing = false;
-				if (dad != null) dad.antialiasing = false;
-				if (gf != null) gf.antialiasing = false;
-				
-				// Disable camera zooms
-				camZooming = false;
-				
-				// Disable icon animations
-				iconsAnimations = false;
-				
-				if (Main.fpsVar != null) {
-					Main.fpsVar.modAuthor = "Auto Quality: Medium";
-				}
-				
-			case 3: // Heavy degradation - survival mode
-				// Keep level 2 changes
-				grpNoteSplashes.visible = false;
-				grpHoldSplashes.visible = false;
-				if (boyfriend != null) boyfriend.antialiasing = false;
-				if (dad != null) dad.antialiasing = false;
-				if (gf != null) gf.antialiasing = false;
-				camZooming = false;
-				iconsAnimations = false;
-				
-				// Disable character animations on holds (more aggressive)
-				if (!ClientPrefs.data.disableHoldAnimations) {
-					// Temporarily disable hold animations
-				}
-				
-				// Hide combo sprites to save memory
-				if (ClientPrefs.data.showCombo) {
-					// Could hide combo temporarily
-				}
-				
-				if (Main.fpsVar != null) {
-					Main.fpsVar.modAuthor = "Auto Quality: Survival";
-				}
-		}
-		
-		// Call script callback
-		callOnScripts('onQualityLevelChanged', [level]);
 	}
 
 	function openPauseMenu()
