@@ -19,6 +19,9 @@ class PathModifier extends Modifier {
 
 	private var __boundDiv:Float;
 
+	// Per-lane paths: Map<Lane, Vector<PathNode>>
+	private var __lanePaths:Map<Int, Vector<PathNode>> = new Map<Int, Vector<PathNode>>();
+
 	function set___pathBound(value:Float):Float {
 		if (value <= 0) {
 			__boundDiv = 0;
@@ -53,12 +56,28 @@ class PathModifier extends Modifier {
 		__path = Vector.fromArrayCopy(newPath);
 	}
 
+	public function loadPathForLane(newPath:Array<PathNode>, lane:Int) {
+		if (newPath == null || newPath.length <= 0) {
+			__lanePaths.remove(lane);
+			return;
+		}
+		__lanePaths.set(lane, Vector.fromArrayCopy(newPath));
+	}
+
+	public function getPathForLane(lane:Int):Vector<PathNode> {
+		if (__lanePaths.exists(lane))
+			return __lanePaths.get(lane);
+		return __path; // fallback to global path
+	}
+
 	public function computePath(pos:Vector3, params:ModifierParameters, percent:Float) {
-		final __path_length = __path.length;
+		// Get the appropriate path for this lane
+		final activePath = getPathForLane(params.lane);
+		final __path_length = activePath.length;
 		if (__path_length <= 0)
 			return pos;
 		if (__path_length == 1) {
-			final pathNode = __path[0];
+			final pathNode = activePath[0];
 			return new Vector3(pathNode.x, pathNode.y, pathNode.z);
 		}
 
@@ -72,8 +91,8 @@ class PathModifier extends Modifier {
 		final nextNodeIndex = FlxMath.minInt(thisNodeIndex + 1, __path_length - 1);
 		final nextNodeRatio = nodeProgress - thisNodeIndex;
 
-		final thisNode = __path[thisNodeIndex];
-		final nextNode = __path[nextNodeIndex];
+		final thisNode = activePath[thisNodeIndex];
+		final nextNode = activePath[nextNodeIndex];
 
 		return pos.interpolate(new Vector3(FlxMath.lerp(thisNode.x, nextNode.x, nextNodeRatio), FlxMath.lerp(thisNode.y, nextNode.y, nextNodeRatio),
 			FlxMath.lerp(thisNode.z, nextNode.z, nextNodeRatio)).add(pathOffset),

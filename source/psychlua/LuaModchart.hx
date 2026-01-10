@@ -152,7 +152,7 @@ class LuaModchart
         });
 
 		// PathModifier helpers (works for any modifier that extends PathModifier, e.g. arrowshape, luapath)
-		Lua_helper.add_callback(lua, "setModifierPath", function(modName:String, nodes:Array<Dynamic>, ?field:Int = 0) {
+		Lua_helper.add_callback(lua, "setModifierPath", function(modName:String, nodes:Array<Dynamic>, ?field:Int = 0, ?lane:Int = -1) {
 			if (Manager.instance == null)
 				return;
 			final pf = Manager.instance.playfields[field];
@@ -172,7 +172,13 @@ class LuaModchart
 			}
 
 			final parsed = parsePathNodes(nodes);
-			cast(mod, PathModifier).loadPath(parsed);
+			if (lane >= 0) {
+				// Set path for specific lane
+				cast(mod, PathModifier).loadPathForLane(parsed, lane);
+			} else {
+				// Set global path (affects all lanes without specific paths)
+				cast(mod, PathModifier).loadPath(parsed);
+			}
 		});
 
 		Lua_helper.add_callback(lua, "setModifierPathOffset", function(modName:String, x:Float, y:Float, ?z:Float = 0, ?field:Int = 0) {
