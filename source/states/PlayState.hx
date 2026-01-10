@@ -61,6 +61,10 @@ import psychlua.LuaUtils;
 import psychlua.HScript;
 #end
 
+#if PY_ALLOWED
+import pao_py.*;
+#end
+
 #if mobile
 import mobile.backend.StorageUtil;
 #end
@@ -149,6 +153,10 @@ class PlayState extends MusicBeatState
 	// Script arrays - supporting multiple script types
 	#if LUA_ALLOWED
 	public var luaArray:Array<FunkinLua> = [];
+	#end
+
+	#if PY_ALLOWED
+	public var pythonArray:Array<FunkinPython> = [];
 	#end
 
 	#if HSCRIPT_ALLOWED
@@ -786,10 +794,11 @@ class PlayState extends MusicBeatState
 				gf.visible = false;
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
 		// STAGE SCRIPTS
 		#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
 		#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
+		#if PY_ALLOWED startPythonsNamed('stages/' + curStage + '.py'); #end
 
 		// CHARACTER SCRIPTS
 		if(gf != null) startCharacterScripts(gf.curCharacter);
@@ -995,6 +1004,13 @@ class PlayState extends MusicBeatState
 			startHScriptsNamed('custom_notetypes/' + notetype + '.hx');
 		for (event in eventsPushed)
 			startHScriptsNamed('custom_events/' + event + '.hx');
+		#end
+
+		#if PY_ALLOWED
+		for (notetype in noteTypes)
+			startPythonsNamed('custom_notetypes/' + notetype + '.py');
+		for (event in eventsPushed)
+			startPythonsNamed('custom_events/' + event + '.py');
 		#end
 		noteTypes = null;
 		eventsPushed = null;
@@ -5182,6 +5198,16 @@ class PlayState extends MusicBeatState
 		FunkinLua.customFunctions.clear();
 		#end
 
+		#if PY_ALLOWED
+		for (py in pythonArray)
+		{
+			py.call('onDestroy', []);
+			py.stop();
+		}
+		pythonArray = null;
+		FunkinPython.customFunctions.clear();
+		#end
+
 		#if HSCRIPT_ALLOWED
 		// Destroy all HScript arrays
 		for (script in hscriptArray)
@@ -5469,6 +5495,55 @@ class PlayState extends MusicBeatState
 		}
 	}
 	#end
+
+	#if PY_ALLOWED
+	public function startPythonsNamed(pyFile:String)
+	{
+		#if MODS_ALLOWED
+		var pyToLoad:String = Paths.modFolders(pyFile);
+		if(!FileSystem.exists(pyToLoad))
+			pyToLoad = Paths.getSharedPath(pyFile);
+		#else
+		var pyToLoad:String = Paths.getSharedPath(pyFile);
+		#end
+
+		if(FileSystem.exists(pyToLoad))
+		{
+			for (script in pythonArray)
+				if(script.scriptName == pyToLoad) return false;
+
+			initPython(pyToLoad);
+			return true;
+		}
+		return false;
+	}
+
+	public function initPython(file:String)
+	{
+		var newScript:FunkinPython = null;
+		try
+		{
+			newScript = new FunkinPython(file);
+			if (newScript != null)
+			{
+				// Load and execute the Python file
+				newScript.executeFile(file);
+				
+				// Call onCreate if it exists
+				var result = newScript.call('onCreate', []);
+				
+				trace('Python file loaded successfully: $file');
+			}
+		}
+		catch(e:Dynamic)
+		{
+			trace('ERROR loading Python file ($file): $e');
+			addTextToDebug('ERROR loading Python: $file', FlxColor.RED);
+			if(newScript != null)
+				newScript.stop();
+		}
+	}
+	#end
 	
 	// Método para actualizar estadísticas de scripts en el FPSCounter
 	function updateScriptStats()
@@ -5483,6 +5558,16 @@ class PlayState extends MusicBeatState
 		
 		// Contar scripts Lua fallidos
 		Main.fpsVar.luaScriptsFailed = FunkinLua.lua_Errors;
+		#end
+
+		#if PY_ALLOWED
+		// Contar scripts Python cargados
+		//if (pythonArray != null) {
+		//	Main.fpsVar.pythonScriptsLoaded = pythonArray.length;
+		//}
+		
+		// Contar scripts Python fallidos
+		//Main.fpsVar.pythonScriptsFailed = FunkinPython.py_Errors;
 		#end
 		
 		#if HSCRIPT_ALLOWED
@@ -5509,6 +5594,7 @@ class PlayState extends MusicBeatState
 
 		var result:Dynamic = callOnLuas(funcToCall, args, ignoreStops, exclusions, excludeValues);
 		if(result == null || excludeValues.contains(result)) result = callOnHScript(funcToCall, args, ignoreStops, exclusions, excludeValues);
+		if(result == null || excludeValues.contains(result)) result = callOnPythons(funcToCall, args, ignoreStops, exclusions, excludeValues);
 		return result;
 	}
 
@@ -5589,10 +5675,50 @@ class PlayState extends MusicBeatState
 		return returnVal;
 	}
 
+	public function callOnPythons(funcToCall:String, args:Array<Dynamic> = null, ignoreStops = false, exclusions:Array<String> = null, excludeValues:Array<Dynamic> = null):Dynamic {
+		var returnVal:Dynamic = PythonUtils.Function_Continue;
+		#if PY_ALLOWED
+		if(args == null) args = [];
+		if(exclusions == null) exclusions = [];
+		if(excludeValues == null) excludeValues = [PythonUtils.Function_Continue];
+
+		var arr:Array<FunkinPython> = [];
+		for (script in pythonArray)
+		{
+			if(script.closed)
+			{
+				arr.push(script);
+				continue;
+			}
+
+			if(exclusions.contains(script.scriptName))
+				continue;
+
+			var myValue:Dynamic = script.call(funcToCall, args);
+			if((myValue == PythonUtils.Function_StopPy || myValue == PythonUtils.Function_Stop) && !excludeValues.contains(myValue) && !ignoreStops)
+			{
+				returnVal = myValue;
+				break;
+			}
+
+			if(myValue != null && !excludeValues.contains(myValue))
+				returnVal = myValue;
+
+			if(script.closed) arr.push(script);
+		}
+
+		if(arr.length > 0)
+			for (script in arr)
+				pythonArray.remove(script);
+		#end
+		return returnVal;
+	}
+
 	public function setOnScripts(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
 		if(exclusions == null) exclusions = [];
 		setOnLuas(variable, arg, exclusions);
 		setOnHScript(variable, arg, exclusions);
+		setOnPythons(variable, arg, exclusions);
 	}
 
 	public function setOnLuas(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
@@ -5612,6 +5738,18 @@ class PlayState extends MusicBeatState
 		if(exclusions == null) exclusions = [];
 		for (script in hscriptArray) {
 			if(exclusions.contains(script.origin))
+				continue;
+
+			script.set(variable, arg);
+		}
+		#end
+	}
+
+	public function setOnPythons(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
+		#if PY_ALLOWED
+		if(exclusions == null) exclusions = [];
+		for (script in pythonArray) {
+			if(exclusions.contains(script.scriptName))
 				continue;
 
 			script.set(variable, arg);
