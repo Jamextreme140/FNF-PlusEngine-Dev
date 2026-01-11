@@ -411,6 +411,10 @@ class Note extends FlxSprite
 				offsetX += _lastNoteOffX;
 				_lastNoteOffX = (width - 7) * (PlayState.daPixelZoom / 2);
 				offsetX -= _lastNoteOffX;
+				
+				// Reapply RGB shader for pixel sustain notes
+				if(rgbShader != null && !skin.toLowerCase().contains('notitg'))
+					shader = rgbShader.parent.shader;
 			}
 		} else {
 			frames = Paths.getSparrowAtlas(skin);

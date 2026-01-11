@@ -3554,7 +3554,7 @@ class PlayState extends MusicBeatState
 					var targetY:Float = 0;
 					
 					if(targetChar == boyfriend) {
-						targetX = boyfriend.getMidpoint().x + 150 - boyfriend.cameraPosition[0] + boyfriendCameraOffset[0] + offsetX;
+						targetX = boyfriend.getMidpoint().x - 100 - boyfriend.cameraPosition[0] + boyfriendCameraOffset[0] + offsetX;
 						targetY = boyfriend.getMidpoint().y - 100 + boyfriend.cameraPosition[1] + boyfriendCameraOffset[1] + offsetY;
 					}
 					else if(targetChar == dad) {
@@ -3562,8 +3562,17 @@ class PlayState extends MusicBeatState
 						targetY = dad.getMidpoint().y - 100 + dad.cameraPosition[1] + opponentCameraOffset[1] + offsetY;
 					}
 					else if(targetChar == gf) {
-						targetX = gf.getMidpoint().x + gf.cameraPosition[0] - girlfriendCameraOffset[0] + offsetX;
-						targetY = gf.getMidpoint().y + gf.cameraPosition[1] - girlfriendCameraOffset[1] + offsetY;
+						var gfOffsetX:Float = offsetX;
+						var gfOffsetY:Float = offsetY;
+						
+						// In pixel stages, multiply offsets to match scale
+						if(isPixelStage) {
+							gfOffsetX *= 6.5;
+							gfOffsetY *= 6.5;
+						}
+						
+						targetX = gf.getMidpoint().x + gf.cameraPosition[0] + girlfriendCameraOffset[0] + gfOffsetX;
+						targetY = gf.getMidpoint().y + gf.cameraPosition[1] + girlfriendCameraOffset[1] - gfOffsetY;
 					}
 
 					if(camFollowTween != null) camFollowTween.cancel();
@@ -4357,7 +4366,10 @@ class PlayState extends MusicBeatState
 			
 			// Position aligned with numbers
 			comboSpr.x = placement + (43 * 1.5) - 90 + ClientPrefs.data.comboOffset[2];
-			comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 60;
+			if (!isPixelStage)
+				comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 70;
+			else
+				comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 50 + (comboSpr.height * 0.5);
 			comboSpr.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showCombo && combo > 10);
 			comboSpr.velocity.x += FlxG.random.int(1, 10) * playbackRate;
 			comboGroup.add(rating);
