@@ -5636,7 +5636,6 @@ class PlayState extends MusicBeatState
 
 		var result:Dynamic = callOnLuas(funcToCall, args, ignoreStops, exclusions, excludeValues);
 		if(result == null || excludeValues.contains(result)) result = callOnHScript(funcToCall, args, ignoreStops, exclusions, excludeValues);
-		if(result == null || excludeValues.contains(result)) result = callOnPythons(funcToCall, args, ignoreStops, exclusions, excludeValues);
 		return result;
 	}
 
@@ -5717,50 +5716,10 @@ class PlayState extends MusicBeatState
 		return returnVal;
 	}
 
-	public function callOnPythons(funcToCall:String, args:Array<Dynamic> = null, ignoreStops = false, exclusions:Array<String> = null, excludeValues:Array<Dynamic> = null):Dynamic {
-		var returnVal:Dynamic = PythonUtils.Function_Continue;
-		#if PY_ALLOWED
-		if(args == null) args = [];
-		if(exclusions == null) exclusions = [];
-		if(excludeValues == null) excludeValues = [PythonUtils.Function_Continue];
-
-		var arr:Array<FunkinPython> = [];
-		for (script in pythonArray)
-		{
-			if(script.closed)
-			{
-				arr.push(script);
-				continue;
-			}
-
-			if(exclusions.contains(script.scriptName))
-				continue;
-
-			var myValue:Dynamic = script.call(funcToCall, args);
-			if((myValue == PythonUtils.Function_StopPy || myValue == PythonUtils.Function_Stop) && !excludeValues.contains(myValue) && !ignoreStops)
-			{
-				returnVal = myValue;
-				break;
-			}
-
-			if(myValue != null && !excludeValues.contains(myValue))
-				returnVal = myValue;
-
-			if(script.closed) arr.push(script);
-		}
-
-		if(arr.length > 0)
-			for (script in arr)
-				pythonArray.remove(script);
-		#end
-		return returnVal;
-	}
-
 	public function setOnScripts(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
 		if(exclusions == null) exclusions = [];
 		setOnLuas(variable, arg, exclusions);
 		setOnHScript(variable, arg, exclusions);
-		setOnPythons(variable, arg, exclusions);
 	}
 
 	public function setOnLuas(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
