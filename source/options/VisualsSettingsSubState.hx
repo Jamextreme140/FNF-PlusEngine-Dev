@@ -174,6 +174,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		option.onChange = onChangeVSync;
 		addOption(option);
+
+		var option:Option = new Option('Fullscreen Mode:',
+			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
+			'fullscreenMode',
+			STRING,
+			['Borderless', 'Exclusive']);
+		addOption(option);
 		#end
 		
 		var option:Option = new Option('Pause Music:',

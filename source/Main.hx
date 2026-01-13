@@ -340,7 +340,7 @@ class Main extends Sprite
 
 	function toggleFullScreen(event:KeyboardEvent) {
 		if (Controls.instance.justReleased('fullscreen'))
-			backend.WindowMode.toggleBorderlessFullscreen();
+			backend.WindowMode.toggleFullscreen();
 	}
 
 	function positionWatermark():Void {

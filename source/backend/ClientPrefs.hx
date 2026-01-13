@@ -23,6 +23,7 @@ import states.TitleState;
 	public var vsync:Bool = false;
 	public var gameOverVibration:Bool = false;
 	public var fpsRework:Bool = false;
+	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
 	
 	// Sistema de Accuracy/Rating
 	public var accuracySystem:String = 'Wife3'; // 'Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'
