@@ -179,8 +179,8 @@ class ResultsState extends MusicBeatState
         add(accText);
 
         // Create hit precision graph - positioned higher on screen
-        var graphX = FlxG.width - 510;
-        var graphY = FlxG.height * 0.35; // Middle of screen, slightly higher
+        var graphX = FlxG.width - 550;
+        var graphY = 240; // Middle of screen, slightly higher
         
         graphBackground = new FlxSprite(graphX, graphY).makeGraphic(460, 250, FlxColor.BLACK);
         graphBackground.alpha = 0.6;
@@ -204,7 +204,7 @@ class ResultsState extends MusicBeatState
             }
         }
 
-        graphSprite = new OFLSprite(FlxG.width - 500, Std.int(graphY + 10), 450, 240, graph);
+        graphSprite = new OFLSprite(FlxG.width - 545, Std.int(graphY + 5), 450, 240, graph);
         graphSprite.alpha = 1;
         add(graphSprite);
         

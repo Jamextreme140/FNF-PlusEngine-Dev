@@ -248,6 +248,7 @@ class Main extends Sprite
 		FlxG.mouse.visible = false;
 		#else
 		// Apply autoPause setting from ClientPrefs for non-HTML5 platforms
+		// This is now set AFTER loadPrefs() is called above
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
 

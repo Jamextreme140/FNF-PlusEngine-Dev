@@ -180,6 +180,33 @@ class Note extends FlxSprite
 
 	public function defaultRGB()
 	{
+		// Apply quantization color if enabled
+		if (ClientPrefs.data.colorQuantization)
+		{
+			var beatTime:Float = strumTime;
+			
+			if (isSustainNote)
+			{
+				// Sustain note: inherit beat from parent note
+				if (parent != null)
+					beatTime = parent.strumTime;
+				else if (prevNote != null && !prevNote.isSustainNote)
+					beatTime = prevNote.strumTime;
+			}
+			
+			var beat:Float = Conductor.getBeat(beatTime);
+			var quantColors:Array<FlxColor> = getQuantizationRGB(beat);
+			
+			if (quantColors != null)
+			{
+				rgbShader.r = quantColors[0];
+				rgbShader.g = quantColors[1];
+				rgbShader.b = quantColors[2];
+				return;
+			}
+		}
+
+		// Default colors (no quantization)
 		var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[noteData];
 		if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[noteData];
 
@@ -331,6 +358,80 @@ class Note extends FlxSprite
 			centerOrigin();
 		}
 		x += offsetX;
+	}
+
+	/**
+	 * Calculate note quantization RGB colors based on beat position
+	 * Returns RGB array for Simply Love (StepMania) quantization colors
+	 * Format: [fill_color, white_highlight, black_outline]
+	 */
+	public static function getQuantizationRGB(beat:Float):Array<FlxColor>
+	{
+		if (!ClientPrefs.data.colorQuantization) return null;
+		
+		// Simply Love quantization colors (only changes fill, keeps white/black constant):
+		// 4th notes = RED
+		// 8th notes = BLUE
+		// 12th notes = PURPLE (triplets)
+		// 16th notes = YELLOW
+		// 24th notes = PINK
+		// 32nd notes = ORANGE
+		// 48th notes = CYAN
+		// 64th notes = GREEN
+		
+		var beatRow:Int = Math.round(beat * 48);
+		
+		// Check quantization from most specific to least specific
+		// Format: [fill_color, white_highlight, black_outline]
+		if (beatRow % (192 / 4) == 0)       // 4th notes - RED
+			return [0xFFF9393F, 0xFFFFFFFF, 0xFF651038];
+		else if (beatRow % (192 / 8) == 0)  // 8th notes - BLUE
+			return [0xFF00FFFF, 0xFFFFFFFF, 0xFF1542B7];
+		else if (beatRow % (192 / 12) == 0) // 12th notes - PURPLE
+			return [0xFFC24B99, 0xFFFFFFFF, 0xFF3C1F56];
+		else if (beatRow % (192 / 16) == 0) // 16th notes - YELLOW
+			return [0xFFFFFF00, 0xFFFFFFFF, 0xFF666600];
+		else if (beatRow % (192 / 24) == 0) // 24th notes - PINK
+			return [0xFFFF00FF, 0xFFFFFFFF, 0xFF660066];
+		else if (beatRow % (192 / 32) == 0) // 32nd notes - ORANGE
+			return [0xFFFF8800, 0xFFFFFFFF, 0xFF663300];
+		else if (beatRow % (192 / 48) == 0) // 48th notes - CYAN
+			return [0xFF00FFFF, 0xFFFFFFFF, 0xFF006666];
+		else if (beatRow % (192 / 64) == 0) // 64th notes - GREEN
+			return [0xFF12FA05, 0xFFFFFFFF, 0xFF0A4447];
+		
+		return null; // Fallback to default colors
+	}
+
+	/**
+	 * Calculate note quantization based on beat position (legacy function)
+	 * Returns color index (0-3) based on note subdivision
+	 */
+	public static function getQuantizationColor(beat:Float, originalNoteData:Int):Int
+	{
+		if (!ClientPrefs.data.colorQuantization) return originalNoteData;
+		
+		var beatRow:Int = Math.round(beat * 48);
+		
+		// Check quantization from most specific to least specific
+		if (beatRow % (192 / 4) == 0)       // 4th notes
+			return 3; // RED
+		else if (beatRow % (192 / 8) == 0)  // 8th notes  
+			return 1; // BLUE
+		else if (beatRow % (192 / 12) == 0) // 12th notes (triplets)
+			return 0; // PURPLE
+		else if (beatRow % (192 / 16) == 0) // 16th notes
+			return 2; // GREEN
+		else if (beatRow % (192 / 24) == 0) // 24th notes
+			return 0; // PURPLE
+		else if (beatRow % (192 / 32) == 0) // 32nd notes
+			return 3; // RED
+		else if (beatRow % (192 / 48) == 0) // 48th notes
+			return 1; // BLUE
+		else if (beatRow % (192 / 64) == 0) // 64th notes
+			return 2; // GREEN
+		
+		return originalNoteData; // Fallback to original
 	}
 
 	public static function initializeGlobalRGBShader(noteData:Int)

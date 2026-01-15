@@ -90,9 +90,9 @@ class HitGraph extends Sprite
 		var gfx:Graphics = graphics;
 		gfx.lineStyle(1, color, 0.3);
 
-		var range:Float = Math.max(maxValue - minValue, maxValue * 0.1);
-		var value = (ms - minValue) / range;
-		var pointY = _axis.y + ((-value * _height - 1) + _height);
+		// Match NovaFlare's formula: Y = height/2 + (height/2) * (ms / maxValue)
+		// Positive ms (late) goes down, negative ms (early) goes up
+		var pointY = _axis.y + (_height / 2) + (_height / 2) * (ms / maxValue);
 		var graphX = _axis.x + 1;
 
 		gfx.drawRect(graphX, pointY, _width - 12, 1);
@@ -131,8 +131,6 @@ class HitGraph extends Sprite
 			var judge = history[i][1];
 			var songTime = history[i][2];
 
-			var value = (ms - minValue) / range;
-
 			switch (judge)
 			{
 				case "sick":
@@ -149,7 +147,11 @@ class HitGraph extends Sprite
 					gfx.beginFill(0xFFFFFF);
 			}
 
-			var pointY = ((-value * _height - 1) + _height);
+			// Match NovaFlare's formula: Y = height/2 + (height/2) * 0.8 * (ms / maxValue)
+			// The 0.8 factor (MoveSize) prevents hits from reaching graph edges
+			// Positive ms (late) goes down, negative ms (early) goes up
+			var moveSize = 0.8;
+			var pointY = (_height / 2) + (_height / 2) * moveSize * (ms / maxValue);
 			var pointX = fitX(songTime);
 			
 			gfx.drawRect(pointX, pointY, 4, 4);

@@ -5,18 +5,23 @@ import backend.StageData;
 
 class OptionsState extends MusicBeatState
 {
-	var options:Array<String> = [
-		'Note Colors',
-		'Controls',
-		'Adjust Delay and Combo',
-		'Graphics',
-		'Visuals',
-		'Gameplay',
-		'Legacy',
-		#if MODCHARTS_NOTITG_ALLOWED 'Modchart' #end,
-		#if TRANSLATIONS_ALLOWED 'Language' #end,
-		#if mobile 'Mobile Options' #end
-	];
+	var options:Array<String> = [];
+	
+	function buildOptions():Array<String> {
+		var opts:Array<String> = [];
+		if (ClientPrefs.data.colorQuantization == false) opts.push('Note Colors');
+		opts.push('Controls');
+		opts.push('Adjust Delay and Combo');
+		opts.push('Graphics');
+		opts.push('Visuals');
+		opts.push('Gameplay');
+		opts.push('Legacy');
+		#if MODCHARTS_NOTITG_ALLOWED opts.push('Modchart'); #end
+		#if TRANSLATIONS_ALLOWED opts.push('Language'); #end
+		#if mobile opts.push('Mobile Options'); #end
+		return opts;
+	}
+	
 	private var grpOptions:FlxTypedGroup<Alphabet>;
 	private static var curSelected:Int = 0;
 	var lerpSelected:Float = 0;
@@ -31,7 +36,9 @@ class OptionsState extends MusicBeatState
 		switch(label)
 		{
 			case 'Note Colors':
+			if (ClientPrefs.data.colorQuantization == false) {
 				openSubState(new options.NotesColorSubState());
+			}
 			case 'Controls':
 				openSubState(new options.ControlsSubState());
 			case 'Graphics':
@@ -61,6 +68,8 @@ class OptionsState extends MusicBeatState
 		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("Options Menu", null);
 		#end
+		
+		options = buildOptions();
 
 		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;

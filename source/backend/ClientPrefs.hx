@@ -46,6 +46,7 @@ import states.TitleState;
 	public var noteSkin:String = 'Default';
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
+	public var colorQuantization:Bool = false; // StepMania-style color quantization
 	public var lowQuality:Bool = false;
 	public var shaders:Bool = true;
 	public var colorblindMode:String = 'None';

@@ -78,6 +78,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = playNoteSplashes;
 
+		var option:Option = new Option('Color Quantization',
+			'If checked, notes will be colored by their rhythm subdivision (4th, 8th, 12th, 16th) like StepMania.\nOverrides default arrow colors.',
+			'colorQuantization',
+			BOOL);
+		addOption(option);
+		option.onChange = onChangeQuantization;
+
 		var option:Option = new Option('Hide HUD',
 			'If checked, hides most HUD elements.',
 			'hideHud',
@@ -418,6 +425,45 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		if(PlayState.instance != null && PlayState.instance.keyViewer != null)
 		{
 			PlayState.instance.keyViewer.updateKeyColors();
+		}
+	}
+
+	function onChangeQuantization()
+	{
+		// Update displayed notes with quantization colors
+		for (note in notes)
+		{
+			// NotITG uses default colors without shaders, skip quantization for them
+			if(!note.useRGBShader)
+				continue;
+
+			note.rgbShader.enabled = true;
+			if (ClientPrefs.data.colorQuantization)
+			{
+				// Use quantization RGB colors based on note position
+				// Each note represents a different beat subdivision for preview
+				var simulatedBeat:Float = note.ID * 0.25;
+				var quantColors:Array<FlxColor> = Note.getQuantizationRGB(simulatedBeat);
+				
+				if (quantColors != null)
+				{
+					note.rgbShader.r = quantColors[0];
+					note.rgbShader.g = quantColors[1];
+					note.rgbShader.b = quantColors[2];
+				}
+			}
+			else
+			{
+				// Restore default colors
+				var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[note.ID];
+				
+				if (arr != null && note.ID > -1 && note.ID < arr.length)
+				{
+					note.rgbShader.r = arr[0];
+					note.rgbShader.g = arr[1];
+					note.rgbShader.b = arr[2];
+				}
+			}
 		}
 	}
 
