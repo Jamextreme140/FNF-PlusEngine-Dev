@@ -114,7 +114,8 @@ You need to have:
 
 - Variables for window and system management in Lua: Many variables were added, whether to hide the taskbar or window borders, etc.
 - Key Viewer
-- Modchart settings.
+- Modchart support and settings.
+<video src="docs/img/videos/modchart.mp4" controls width="720"></video>
 - New Gameplay Changers (Opponent Mode, No Drop Penalty, Perfect Only).
 - You can choose your default accuracy system. ITG, Psych, DJMax, Wife3, osu!, Simple
 - Added the songs "erect" and "nightmare," BUT without stages and events, only levels
