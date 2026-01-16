@@ -102,13 +102,9 @@ class Main extends Sprite
 		hxvlc.util.Handle.init(#if (hxvlc >= "1.8.0")  ['--no-lua'] #end);
 		#end
 
-		#if LUA_ALLOWED
-		Mods.pushGlobalMods();
-		#end
-		Mods.loadTopMod();
+		// Mod loading moved to InitialState to centralize startup logic.
 
-		FlxG.save.bind('funkin', CoolUtil.getSavePath());
-		Highscore.load();
+		// Save binding and Highscore load moved to InitialState.
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {
@@ -193,8 +189,7 @@ class Main extends Sprite
 		});
 		#end
 		
-		// Determine initial state based on preloader preference
-		// InitialState will check for mod states and redirect accordingly
+		// Determine initial state. InitialState will load mods and redirect accordingly.
 		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
 		if (!CopyState.checkExistingFiles()) {
@@ -202,10 +197,7 @@ class Main extends Sprite
 		} else
 		#end
 		{
-			// Load prefs early to check preloader setting
-			if (ClientPrefs.data.enablePreloader) {
-				initialState = FunkinPreloader;
-			}
+			// Preloader removed: always start at InitialState
 		}
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
@@ -216,9 +208,7 @@ class Main extends Sprite
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
 		
-		// Load preferences BEFORE MobileData to ensure framerate is set correctly
-		ClientPrefs.loadPrefs();
-		MobileData.init();
+		// Preferences and MobileData initialization moved to InitialState.
 
 		// Agregar los botones de TraceDisplay y Debug para móvil
 		#if mobile
@@ -246,10 +236,6 @@ class Main extends Sprite
 		#if html5
 		FlxG.autoPause = false;
 		FlxG.mouse.visible = false;
-		#else
-		// Apply autoPause setting from ClientPrefs for non-HTML5 platforms
-		// This is now set AFTER loadPrefs() is called above
-		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
 
 		FlxG.fixedTimestep = false;
@@ -274,7 +260,7 @@ class Main extends Sprite
 		LimeSystem.allowScreenTimeout = ClientPrefs.data.screensaver;
 		#end
 
-		Application.current.window.vsync = ClientPrefs.data.vsync;
+		// VSync application moved to InitialState after preferences load.
 
 		#if (cpp && windows)
 		// Add window close handler for fade out effect

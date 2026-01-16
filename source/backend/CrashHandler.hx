@@ -3,6 +3,9 @@ package backend;
 import openfl.events.UncaughtErrorEvent;
 import openfl.events.ErrorEvent;
 import openfl.errors.Error;
+import flixel.FlxG;
+import states.TitleState;
+import states.FreeplayState;
 #if sys
 import sys.FileSystem;
 import sys.io.File;
@@ -133,7 +136,27 @@ class CrashHandler
 		var errorMsg = '$m\n\n$stackLabel\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Error!");
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
-		lime.system.System.exit(1);
+        
+		// Prepare a clean restart: reset TitleState flags and fade out audio
+		TitleState.initialized = false;
+		TitleState.closedState = false;
+		if (FlxG.sound != null && FlxG.sound.music != null) {
+			try { FlxG.sound.music.fadeOut(0.3); } catch (_:Dynamic) {}
+		}
+		#if (!flash)
+		if (FreeplayState.vocals != null) {
+			try { FreeplayState.vocals.fadeOut(0.3); } catch (_:Dynamic) {}
+			FreeplayState.vocals = null;
+		}
+		#end
+
+		// Restart the game instead of exiting
+		if (FlxG.game != null) {
+			FlxG.resetGame();
+		} else {
+			// Fallback: if FlxG isn't ready yet, exit to avoid undefined state
+			lime.system.System.exit(1);
+		}
 	}
 
 	#if (cpp || hl)
@@ -166,7 +189,27 @@ class CrashHandler
 		var errorMsg = '$errorLog\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Critical Error!");
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
-		lime.system.System.exit(1);
+        
+		// Prepare a clean restart: reset TitleState flags and fade out audio
+		TitleState.initialized = false;
+		TitleState.closedState = false;
+		if (FlxG.sound != null && FlxG.sound.music != null) {
+			try { FlxG.sound.music.fadeOut(0.3); } catch (_:Dynamic) {}
+		}
+		#if (!flash)
+		if (FreeplayState.vocals != null) {
+			try { FreeplayState.vocals.fadeOut(0.3); } catch (_:Dynamic) {}
+			FreeplayState.vocals = null;
+		}
+		#end
+
+		// Restart the game instead of exiting
+		if (FlxG.game != null) {
+			FlxG.resetGame();
+		} else {
+			// Fallback: if FlxG isn't ready yet, exit to avoid undefined state
+			lime.system.System.exit(1);
+		}
 	}
 	#end
 

@@ -45,9 +45,9 @@ class TitleState extends MusicBeatState
 	public static var volumeUpKeys:Array<FlxKey> = [FlxKey.NUMPADPLUS, FlxKey.PLUS];
 
 	public static var initialized:Bool = false;
-	public static var fromSubstate:Bool = false; // Variable para detectar si viene del substate
+	public static var fromSubstate:Bool = false; // Flag to detect if coming from a substate
 	
-	var forceShowIntro:Bool = false; // Si debe forzar mostrar la intro
+	var forceShowIntro:Bool = false; // Whether to force showing the intro
 
 	var credGroup:FlxGroup = new FlxGroup();
 	var textGroup:FlxGroup = new FlxGroup();
@@ -85,7 +85,7 @@ class TitleState extends MusicBeatState
 
 		if(!initialized)
 		{
-			Language.reloadPhrases();
+			// Language phrases are reloaded in InitialState; only update colorblind filter here.
 			shaders.ColorblindFilter.UpdateColors();
 		}
 
