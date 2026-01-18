@@ -54,7 +54,7 @@ jobs:
           name: linuxBuild
           path: 'export/release/linux/bin'
           
-  buildWindows:
+  buildWindows32:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
@@ -81,14 +81,81 @@ jobs:
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
       - name: Compile
-        run: haxelib run lime build windows --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+        run: haxelib run lime build windows -32bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: windowsBuild
+          name: windowsBuild32
           path: export/release/windows/bin
 
-  buildMac:
+  buildWindows64:
+    if: contains(github.event.head_commit.message, 'wd')
+    runs-on: windows-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      # Runs a set of commands using the runners shell
+      - name: Install Haxelib
+        run: |
+          haxelib setup C:/haxelib
+          haxelib install hxcpp > /dev/null --quiet
+          .\"setup/windows-lib.bat"
+        shell: cmd
+      - name: Skip SScript setup mode
+        run: |
+          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
+          type %USERPROFILE%\settings.cocoa
+        shell: cmd
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      - name: Compile
+        run: haxelib run lime build windows -64bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: windowsBuild64
+          path: export/release/windows/bin
+
+  buildMacIntel:
+    if: contains(github.event.head_commit.message, 'wd')
+    runs-on: macos-13
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      # Runs a set of commands using the runners shell
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          chmod +x ./setup/unish-lib.sh
+          sh ./setup/unish-lib.sh
+      - name: Skip SScript setup mode
+        run: |
+          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
+
+          cat ~/settings.cocoa
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      - name: Compile
+        run: haxelib run lime build mac -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: macBuildIntel
+          path: export/release/macos/bin
+
+  buildMacARM:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-15
 
@@ -114,11 +181,11 @@ jobs:
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
       - name: Compile
-        run: haxelib run lime build mac --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: macBuild
+          name: macBuildARM
           path: export/release/macos/bin
 
   buildAndroid:
