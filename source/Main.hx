@@ -102,9 +102,12 @@ class Main extends Sprite
 		hxvlc.util.Handle.init(#if (hxvlc >= "1.8.0")  ['--no-lua'] #end);
 		#end
 
-		// Mod loading moved to InitialState to centralize startup logic.
+		#if LUA_ALLOWED
+		Mods.pushGlobalMods();
+		#end
+		Mods.loadTopMod();
 
-		// Save binding and Highscore load moved to InitialState.
+		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {

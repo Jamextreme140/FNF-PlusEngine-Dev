@@ -156,14 +156,6 @@ class MainMenuState extends MusicBeatState
 	var timeNotMoving:Float = 0;
 	override function update(elapsed:Float)
 	{
-		// Crash test: press F10 to force an exception and verify CrashHandler reset
-		#if !html5 // avoid breaking web builds
-		if (FlxG.keys.justPressed.F10)
-		{
-			throw new openfl.errors.Error("Crash Test: MainMenu forced exception");
-		}
-		#end
-
 		if (FlxG.sound.music.volume < 0.8)
 			FlxG.sound.music.volume = Math.min(FlxG.sound.music.volume + 0.5 * elapsed, 0.8);
 

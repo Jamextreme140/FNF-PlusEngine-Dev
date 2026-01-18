@@ -76,13 +76,6 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 			'fpsRework',
 			BOOL);
 		addOption(option);
-
-		var option:Option = new Option('Enable Preloader',
-		"If checked, preloads common assets (images, sounds, music) on startup to improve performance.\nMay increase initial loading time.",
-		'enablePreloader',
-		BOOL);
-		addOption(option);
-
 		super();
 		insert(1, boyfriend);
 	}

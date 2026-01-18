@@ -2,7 +2,6 @@ package states;
 
 import backend.StageData;
 import backend.WeekData;
-import FunkinPreloader;
 import backend.Highscore;
 import backend.Song;
 
@@ -430,13 +429,7 @@ class FreeplayState extends MusicBeatState
 					{
 						curSelected = 0;
 						changeSelection();
-						holdTime = 0;	
-		
-						// If preloader preview is enabled, play the preloaded Inst for this selection
-						if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader && FunkinPreloader.preloadedInsts.exists(songs[curSelected].songName))
-						{
-							FunkinPreloader.startPreview(songs[curSelected].songName, 0.6, 30000);
-						}
+						holdTime = 0;
 					}
 					else if(FlxG.keys.justPressed.END)
 					{
@@ -613,19 +606,9 @@ class FreeplayState extends MusicBeatState
 					}
 				}
 
-				// If preloader is enabled and we have the Inst cached, use it to avoid loading lag
-				if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader && FunkinPreloader.preloadedInsts.exists(PlayState.SONG.song))
-				{
-					var cachedInst = FunkinPreloader.preloadedInsts.get(PlayState.SONG.song);
-					if (cachedInst != null)
-						FlxG.sound.playMusic(cachedInst, 0.8);
-					else
-						FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
-				}
-				else
-				{
-					FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
-				}
+				
+				FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
+
 				FlxG.sound.music.pause();
 				instPlaying = curSelected;
 
@@ -905,16 +888,6 @@ class FreeplayState extends MusicBeatState
 
 		changeDiff();
 		_updateSongLastDifficulty();
-
-		// If preloader preview is enabled, play the preloaded Inst for this selection
-		if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader)
-		{
-			FunkinPreloader.stopPreview();
-			if (FunkinPreloader.preloadedInsts.exists(songs[curSelected].songName))
-			{
-				FunkinPreloader.startPreview(songs[curSelected].songName, 0.6, 30000);
-			}
-		}
 	}
 	
 	public function detectAndLoadAllDifficulties():Void
