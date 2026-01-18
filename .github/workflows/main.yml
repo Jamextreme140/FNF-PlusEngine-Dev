@@ -224,6 +224,7 @@ jobs:
         run: |
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
+          haxelib install lime 8.2.3 --quiet
           chmod +x ./setup/unish-lib.sh
           sh ./setup/unish-lib.sh
       
