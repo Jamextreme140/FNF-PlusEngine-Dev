@@ -31,6 +31,7 @@ import psychlua.SScript;
 #end
 
 import psychlua.ModchartSprite;
+import psychlua.LuaClass;
 
 import mobile.psychlua.Functions;
 
@@ -390,6 +391,122 @@ class FunkinLua {
 			#else
 			return defaultValue;
 			#end
+		});
+		
+		// ============================================
+		// CLASS SYSTEM FOR LUA
+		// ============================================
+		
+		Lua_helper.add_callback(lua, "createClass", function(className:String, ?parentClass:String = null, ?interfaceClass:String = null) {
+			if (LuaClass.hasClass(className)) {
+				luaTrace('createClass: Class "$className" already exists!', false, false, FlxColor.YELLOW);
+				return LuaClass.getClass(className);
+			}
+			
+			var classDef = LuaClass.registerClass(className, parentClass, interfaceClass);
+			luaTrace('Created class: $className' + (parentClass != null ? ' extends $parentClass' : ''));
+			return classDef;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassConstructor", function(className:String, constructorFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassConstructor: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			classDef.constructor = constructorFunc;
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassMethod", function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassMethod: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.methods == null) 
+				classDef.methods = {};
+			
+			Reflect.setField(classDef.methods, methodName, methodFunc);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassStaticMethod", function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassStaticMethod: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.staticMethods == null) 
+				classDef.staticMethods = {};
+			
+			Reflect.setField(classDef.staticMethods, methodName, methodFunc);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "createClassInstance", function(className:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('createClassInstance: Class "$className" not found!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			return LuaClass.createInstance(className, args);
+		});
+		
+		Lua_helper.add_callback(lua, "callClassMethod", function(instance:Dynamic, methodName:String, ?args:Array<Dynamic>) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('callClassMethod: Invalid instance!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.callMethod(methodName, args);
+		});
+		
+		Lua_helper.add_callback(lua, "callClassStatic", function(className:String, methodName:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('callClassStatic: Class "$className" not found!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			return LuaClass.callStatic(className, methodName, args);
+		});
+		
+		Lua_helper.add_callback(lua, "setInstanceField", function(instance:Dynamic, fieldName:String, value:Dynamic) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('setInstanceField: Invalid instance!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			classInstance.setField(fieldName, value);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "getInstanceField", function(instance:Dynamic, fieldName:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('getInstanceField: Invalid instance!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.getField(fieldName);
+		});
+		
+		Lua_helper.add_callback(lua, "isInstanceOf", function(instance:Dynamic, className:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.isInstanceOf(className);
+		});
+		
+		Lua_helper.add_callback(lua, "hasClass", function(className:String) {
+			return LuaClass.hasClass(className);
 		});
 
 		Lua_helper.add_callback(lua, "addLuaScript", function(luaFile:String, ?ignoreAlreadyRunning:Bool = false) {

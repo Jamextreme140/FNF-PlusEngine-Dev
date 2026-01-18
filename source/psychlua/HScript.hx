@@ -3,6 +3,7 @@ package psychlua;
 import objects.Character;
 import psychlua.LuaUtils;
 import psychlua.CustomSubstate;
+import psychlua.LuaClass;
 
 #if LUA_ALLOWED
 import psychlua.FunkinLua;
@@ -326,6 +327,126 @@ class HScript extends Iris
 				modName = this.modFolder;
 			}
 			return LuaUtils.getModSetting(saveTag, modName);
+		});
+		
+		// ============================================
+		// CLASS SYSTEM FOR HSCRIPT
+		// ============================================
+		
+		set('LuaClass', LuaClass);
+		set('LuaClassDefinition', LuaClassDefinition);
+		set('LuaClassInstance', LuaClassInstance);
+		
+		set('createClass', function(className:String, ?parentClass:String = null, ?interfaceClass:String = null) {
+			if (LuaClass.hasClass(className)) {
+				trace('createClass: Class "$className" already exists!');
+				return LuaClass.getClass(className);
+			}
+			
+			var classDef = LuaClass.registerClass(className, parentClass, interfaceClass);
+			trace('Created class: $className' + (parentClass != null ? ' extends $parentClass' : ''));
+			return classDef;
+		});
+		
+		set('setClassConstructor', function(className:String, constructorFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassConstructor: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			classDef.constructor = constructorFunc;
+			return true;
+		});
+		
+		set('setClassMethod', function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassMethod: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.methods == null) 
+				classDef.methods = {};
+			
+			Reflect.setField(classDef.methods, methodName, methodFunc);
+			return true;
+		});
+		
+		set('setClassStaticMethod', function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassStaticMethod: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.staticMethods == null) 
+				classDef.staticMethods = {};
+			
+			Reflect.setField(classDef.staticMethods, methodName, methodFunc);
+			return true;
+		});
+		
+		set('createClassInstance', function(className:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				trace('createClassInstance: Class "$className" not found!');
+				return null;
+			}
+			
+			return LuaClass.createInstance(className, args);
+		});
+		
+		set('callClassMethod', function(instance:Dynamic, methodName:String, ?args:Array<Dynamic>) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('callClassMethod: Invalid instance!');
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.callMethod(methodName, args);
+		});
+		
+		set('callClassStatic', function(className:String, methodName:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				trace('callClassStatic: Class "$className" not found!');
+				return null;
+			}
+			
+			return LuaClass.callStatic(className, methodName, args);
+		});
+		
+		set('setInstanceField', function(instance:Dynamic, fieldName:String, value:Dynamic) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('setInstanceField: Invalid instance!');
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			classInstance.setField(fieldName, value);
+			return true;
+		});
+		
+		set('getInstanceField', function(instance:Dynamic, fieldName:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('getInstanceField: Invalid instance!');
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.getField(fieldName);
+		});
+		
+		set('isInstanceOf', function(instance:Dynamic, className:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.isInstanceOf(className);
+		});
+		
+		set('hasClass', function(className:String) {
+			return LuaClass.hasClass(className);
 		});
 
 		// Window Functions (shortcuts for WindowTweens)
