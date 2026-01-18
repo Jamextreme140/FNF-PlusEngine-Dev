@@ -6,6 +6,7 @@ import flixel.util.FlxDestroyUtil;
 import openfl.geom.ColorTransform;
 
 var pathVector = new Vector3();
+var __tempVector = new Vector3(); // Reusable vector for calculations
 
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
@@ -14,6 +15,11 @@ var pathVector = new Vector3();
 final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	var __lineGraphic:FlxGraphic;
 	var __lastDivisions:Int = -1;
+	
+	// LOD (Level of Detail) settings
+	static inline final LOD_MIN_DIVISIONS:Int = 10;
+	static inline final LOD_MAX_DIVISIONS:Int = 20;
+	static inline final LOD_DISTANCE_THRESHOLD:Float = 1000;
 
 	var uvt:DrawData<Float>;
 	var indices:DrawData<Int>;
@@ -138,6 +144,7 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		var vi = 0, vertCount = 0;
 
 		var lastOutput:ModifierOutput = null;
+		// Reuse pathVector instead of creating new ones
 		pathVector.setTo(Adapter.instance.getDefaultReceptorX(lane, fn), Adapter.instance.getDefaultReceptorY(lane, fn), 0);
 		pathVector.incrementBy(ModchartUtil.getHalfPos());
 

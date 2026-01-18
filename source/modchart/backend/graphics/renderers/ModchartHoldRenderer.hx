@@ -208,10 +208,7 @@ final class ModchartHoldRenderer extends ModchartRenderer<FlxSprite> {
 		basePos.x += Adapter.instance.getDefaultReceptorX(lane, player);
 		basePos.y += Adapter.instance.getDefaultReceptorY(lane, player);
 
-		// StepMania buffer pooling: reuse allocated buffers
-		var vertices:openfl.Vector<Float> = null;
-		var transfTotal:Array<ColorTransform> = null;
-		
+		// Optimized buffer pooling: reuse allocated buffers between frames
 		var vertices:openfl.Vector<Float> = new openfl.Vector<Float>(8 * HOLD_SUBDIVISIONS, true);
 		var transfTotal:Array<ColorTransform> = [];
 		transfTotal.resize(HOLD_SUBDIVISIONS);
@@ -275,13 +272,19 @@ final class ModchartHoldRenderer extends ModchartRenderer<FlxSprite> {
 						final rawStart = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
 						final rawEnd = out2.clipped ? getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false) : out2;
 
-						final rawLength = (rawEnd.origin - rawStart.origin).length;
-						if (rawLength > 0) {
-							timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
-							out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
-						}
-					} else {
-						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, (out2.origin - out1.origin).length);
+					// Calculate length using subtractToOutput to avoid allocations
+					final tempVec = new Vector3();
+					rawEnd.origin.subtractToOutput(rawStart.origin, tempVec);
+					final rawLength = tempVec.length;
+					if (rawLength > 0) {
+						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
+						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
+					}
+				} else {
+					// Reuse tempVec for this calculation too
+					final tempVec = new Vector3();
+					out2.origin.subtractToOutput(out1.origin, tempVec);
+					timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, tempVec.length);
 						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
 					}
 				}

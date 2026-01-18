@@ -105,6 +105,45 @@ abstract Vector3(Vector3D) from Vector3D to Vector3D {
 	}
 
 	/**
+	 * Adds another vector to this vector and stores the result in the output vector.
+	 * This avoids creating a new vector object, improving performance.
+	 * @param addition The vector to add.
+	 * @param output The vector to store the result in.
+	 * @return The output vector with the result.
+	 */
+	inline public function addToOutput(addition:Vector3, output:Vector3):Vector3 {
+		output.x = this.x + addition.x;
+		output.y = this.y + addition.y;
+		output.z = this.z + addition.z;
+		return output;
+	}
+
+	/**
+	 * Subtracts another vector from this vector and stores the result in the output vector.
+	 * This avoids creating a new vector object, improving performance.
+	 * @param subtraction The vector to subtract.
+	 * @param output The vector to store the result in.
+	 * @return The output vector with the result.
+	 */
+	inline public function subtractToOutput(subtraction:Vector3, output:Vector3):Vector3 {
+		output.x = this.x - subtraction.x;
+		output.y = this.y - subtraction.y;
+		output.z = this.z - subtraction.z;
+		return output;
+	}
+
+	/**
+	 * Copies the values from this vector to another vector.
+	 * @param target The vector to copy values to.
+	 */
+	inline public function copyToOutput(target:Vector3):Void {
+		target.x = this.x;
+		target.y = this.y;
+		target.z = this.z;
+		target.w = this.w;
+	}
+
+	/**
 	 * Linearly interpolates between this vector and another vector.
 	 * @param target The target vector to interpolate towards.
 	 * @param alpha The interpolation factor (0 = this vector, 1 = target vector).

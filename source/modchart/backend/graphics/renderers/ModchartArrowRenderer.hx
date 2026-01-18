@@ -5,6 +5,10 @@ final fMatrix:FlxMatrix = new FlxMatrix();
 final rotationVector = new Vector3();
 final helperVector = new Vector3();
 
+// Object pools to reduce allocations
+final colorTransformPool:Array<ColorTransform> = [for (i in 0...32) new ColorTransform()];
+var colorPoolIndex:Int = 0;
+
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
 @:noDebug
@@ -77,7 +81,11 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
 			Adapter.instance.getDefaultReceptorY(arrowData.lane, arrowData.player) + Manager.ARROW_SIZEDIV2, 0);
 
 		final output = instance.modifiers.getPath(arrowPosition, arrowData);
-		arrowPosition.copyFrom(output.pos.clone());
+		// Use direct assignment instead of clone + copyFrom to reduce allocations
+		final outputPos = output.pos;
+		arrowPosition.x = outputPos.x;
+		arrowPosition.y = outputPos.y;
+		arrowPosition.z = outputPos.z;
 
 		// internal mods
 		if (orient != 0) {
@@ -182,10 +190,19 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
         // @formatter:on
 		final absGlow = output.visuals.glow * 255;
 		final negGlow = 1 - output.visuals.glow;
-		var color = new ColorTransform(negGlow, negGlow, negGlow, arrow.alpha * output.visuals.alpha, Math.round(output.visuals.glowR * absGlow),
-			Math.round(output.visuals.glowG * absGlow), Math.round(output.visuals.glowB * absGlow));
+		// Reuse ColorTransform from pool instead of allocating new ones
+		var color = colorTransformPool[colorPoolIndex];
+		color.redMultiplier = negGlow;
+		color.greenMultiplier = negGlow;
+		color.blueMultiplier = negGlow;
+		color.alphaMultiplier = arrow.alpha * output.visuals.alpha;
+		color.redOffset = Math.round(output.visuals.glowR * absGlow);
+		color.greenOffset = Math.round(output.visuals.glowG * absGlow);
+		color.blueOffset = Math.round(output.visuals.glowB * absGlow);
+		color.alphaOffset = 0;
+		colorPoolIndex = (colorPoolIndex + 1) % colorTransformPool.length;
 
-		// make the instruction
+		// Make the instruction
 		var newInstruction:FMDrawInstruction = {};
 		newInstruction.item = arrow;
 		newInstruction.vertices = vertices;
@@ -199,6 +216,10 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
 
 	override public function shift() {
 		__drawInstruction(queue[postCount++]);
+		// Reset color pool index for next frame
+		if (postCount >= count) {
+			colorPoolIndex = 0;
+		}
 	}
 
 	private function __drawInstruction(instruction:FMDrawInstruction) {
