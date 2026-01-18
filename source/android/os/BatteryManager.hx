@@ -1,6 +1,6 @@
 package android.os;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 import lime.system.JNI;
 
 /**
@@ -46,7 +46,7 @@ class BatteryManager
 	 */
 	public function new():Void
 	{
-		constructor = JNICache.createStaticMethod('org/haxe/extension/Tools', 'getBatteryManager', '()Landroid/os/BatteryManager;')();
+		constructor = JNI.createStaticMethod('org/haxe/extension/Tools', 'getBatteryManager', '()Landroid/os/BatteryManager;')();
 	}
 
 	/**
@@ -56,7 +56,7 @@ class BatteryManager
 	 */
 	public function isCharging():Bool
 	{
-		return JNI.callMember(JNICache.createMemberMethod('android/os/BatteryManager', 'isCharging', '()Z'), constructor, []);
+		return JNI.callMember(JNI.createMemberMethod('android/os/BatteryManager', 'isCharging', '()Z'), constructor, []);
 	}
 
 	/**
@@ -67,7 +67,7 @@ class BatteryManager
 	 */
 	public function getProperty(id:Int):Int
 	{
-		return JNI.callMember(JNICache.createMemberMethod('android/os/BatteryManager', 'getIntProperty', '(I)I'), constructor, [id]);
+		return JNI.callMember(JNI.createMemberMethod('android/os/BatteryManager', 'getIntProperty', '(I)I'), constructor, [id]);
 	}
 }
 #end

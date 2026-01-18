@@ -1,6 +1,6 @@
 package android.content;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 import lime.system.JNI;
 
 /**
@@ -20,7 +20,7 @@ class Context
 	 */
 	public static inline function getFilesDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getFilesDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getFilesDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -31,7 +31,7 @@ class Context
 	 */
 	public static inline function getExternalFilesDir(type:String = null):String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getExternalFilesDir', '(Ljava/lang/String;)Ljava/io/File;')(type));
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getExternalFilesDir', '(Ljava/lang/String;)Ljava/io/File;')(type));
 	}
 
 	/**
@@ -45,7 +45,7 @@ class Context
 	{
 		final dirs:Array<String> = [];
 
-		final jniDirs:Array<Dynamic> = JNICache.createStaticMethod('org.haxe.extension.Tools', 'getExternalFilesDirs', '(Ljava/lang/String;)[Ljava/io/File;')(type);
+		final jniDirs:Array<Dynamic> = JNI.createStaticMethod('org.haxe.extension.Tools', 'getExternalFilesDirs', '(Ljava/lang/String;)[Ljava/io/File;')(type);
 
 		for (dir in jniDirs)
 			dirs.push(getAbsolutePath(dir));
@@ -60,7 +60,7 @@ class Context
 	 */
 	public static inline function getCacheDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getCacheDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getCacheDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -70,7 +70,7 @@ class Context
 	 */
 	public static inline function getCodeCacheDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getCodeCacheDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getCodeCacheDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -80,7 +80,7 @@ class Context
 	 */
 	public static inline function getNoBackupFilesDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getNoBackupFilesDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getNoBackupFilesDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -90,7 +90,7 @@ class Context
 	 */
 	public static inline function getExternalCacheDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getExternalCacheDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getExternalCacheDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -103,7 +103,7 @@ class Context
 	{
 		final dirs:Array<String> = [];
 
-		final jniDirs:Array<Dynamic> = JNICache.createStaticMethod('org.haxe.extension.Tools', 'getExternalCacheDirs', '()[Ljava/io/File;')();
+		final jniDirs:Array<Dynamic> = JNI.createStaticMethod('org.haxe.extension.Tools', 'getExternalCacheDirs', '()[Ljava/io/File;')();
 
 		for (dir in jniDirs)
 			dirs.push(getAbsolutePath(dir));
@@ -118,7 +118,7 @@ class Context
 	 */
 	public static inline function getObbDir():String
 	{
-		return getAbsolutePath(JNICache.createStaticMethod('org.haxe.extension.Tools', 'getObbDir', '()Ljava/io/File;')());
+		return getAbsolutePath(JNI.createStaticMethod('org.haxe.extension.Tools', 'getObbDir', '()Ljava/io/File;')());
 	}
 
 	/**
@@ -131,7 +131,7 @@ class Context
 	@:noCompletion
 	private static inline function getAbsolutePath(file:Dynamic):String
 	{
-		return JNI.callMember(JNICache.createMemberMethod('java/io/File', 'getAbsolutePath', '()Ljava/lang/String;'), file, []);
+		return JNI.callMember(JNI.createMemberMethod('java/io/File', 'getAbsolutePath', '()Ljava/lang/String;'), file, []);
 	}
 }
 #end

@@ -1,6 +1,6 @@
 package android;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 import android.Permissions;
 import haxe.io.Path;
 import lime.app.Event;
@@ -28,7 +28,7 @@ class Tools
 	 */
 	public static function installPackage(path:String):Void
 	{
-		if (!JNICache.createStaticMethod('org/haxe/extension/Tools', 'installPackage', '(Ljava/lang/String;)Z')(path))
+		if (!JNI.createStaticMethod('org/haxe/extension/Tools', 'installPackage', '(Ljava/lang/String;)Z')(path))
 			Log.warn('"REQUEST_INSTALL_PACKAGES" permission and "Install apps from external sources" setting must be granted to this app in order to install a '
 				+ Path.extension(path).toUpperCase()
 				+ ' file.');
@@ -39,7 +39,7 @@ class Tools
 	 */
 	public static inline function enableAppSecure():Void
 	{
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'enableAppSecure', '()V')();
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'enableAppSecure', '()V')();
 	}
 
 	/**
@@ -47,7 +47,7 @@ class Tools
 	 */
 	public static inline function disableAppSecure():Void
 	{
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'disableAppSecure', '()V')();
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'disableAppSecure', '()V')();
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Tools
 	 */
 	public static inline function launchPackage(packageName:String, requestCode:Int = 1):Void
 	{
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'launchPackage', '(Ljava/lang/String;I)V')(packageName, requestCode);
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'launchPackage', '(Ljava/lang/String;I)V')(packageName, requestCode);
 	}
 
 	/**
@@ -77,7 +77,7 @@ class Tools
 		if (negativeButton == null)
 			negativeButton = {name: null, func: null};
 
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'showAlertDialog',
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'showAlertDialog',
 			'(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/haxe/lime/HaxeObject;Ljava/lang/String;Lorg/haxe/lime/HaxeObject;)V')(title, message,
 				positiveButton.name, new ButtonListener(positiveButton.func), negativeButton.name, new ButtonListener(negativeButton.func));
 	}
@@ -107,7 +107,7 @@ class Tools
 	 */
 	public static inline function isDolbyAtmos():Bool
 	{
-		return JNICache.createStaticMethod('org/haxe/extension/Tools', 'isDolbyAtmos', '()Z')();
+		return JNI.createStaticMethod('org/haxe/extension/Tools', 'isDolbyAtmos', '()Z')();
 	}
 
 	/**
@@ -122,7 +122,7 @@ class Tools
 	public static inline function showNotification(title:String, message:String, ?channelID:String = 'unknown_channel',
 			?channelName:String = 'Unknown Channel', ?ID:Int = 1):Void
 	{
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'showNotification',
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'showNotification',
 			'(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V')(title, message, channelID, channelName, ID);
 	}
 
@@ -138,7 +138,7 @@ class Tools
 	 */
 	public static function getCutoutDimensions():Array<Rectangle>
 	{
-		final cutoutRectangles:Array<Dynamic> = JNICache.createStaticMethod('org/haxe/extension/Tools', 'getCutoutDimensions', '()[Landroid/graphics/Rect;')();
+		final cutoutRectangles:Array<Dynamic> = JNI.createStaticMethod('org/haxe/extension/Tools', 'getCutoutDimensions', '()[Landroid/graphics/Rect;')();
 
 		if (cutoutRectangles == null || cutoutRectangles.length == 0)
 			return [];
@@ -150,10 +150,10 @@ class Tools
 			if (rectangle == null)
 				continue;
 
-			final top:Int = JNICache.createMemberField('android/graphics/Rect', 'top', 'I').get(rectangle);
-			final left:Int = JNICache.createMemberField('android/graphics/Rect', 'left', 'I').get(rectangle);
-			final right:Int = JNICache.createMemberField('android/graphics/Rect', 'right', 'I').get(rectangle);
-			final bottom:Int = JNICache.createMemberField('android/graphics/Rect', 'bottom', 'I').get(rectangle);
+			final top:Int = JNI.createMemberField('android/graphics/Rect', 'top', 'I').get(rectangle);
+			final left:Int = JNI.createMemberField('android/graphics/Rect', 'left', 'I').get(rectangle);
+			final right:Int = JNI.createMemberField('android/graphics/Rect', 'right', 'I').get(rectangle);
+			final bottom:Int = JNI.createMemberField('android/graphics/Rect', 'bottom', 'I').get(rectangle);
 
 			rectangles.push(new Rectangle(left, top, right - left, bottom - top));
 		}
@@ -169,7 +169,7 @@ class Tools
 	 */
 	public static inline function setActivityTitle(title:String):Bool
 	{
-		return JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'setActivityTitle', '(Ljava/lang/String;)Z')(title);
+		return JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'setActivityTitle', '(Ljava/lang/String;)Z')(title);
 	}
 
 	/**
@@ -177,7 +177,7 @@ class Tools
 	 */
 	public static inline function minimizeWindow():Void
 	{
-		JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'minimizeWindow', '()V')();
+		JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'minimizeWindow', '()V')();
 	}
 
 	/**
@@ -187,7 +187,7 @@ class Tools
 	 */
 	public static inline function isAndroidTV():Bool
 	{
-		return JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'isAndroidTV', '()Z')();
+		return JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'isAndroidTV', '()Z')();
 	}
 
 	/**
@@ -197,7 +197,7 @@ class Tools
 	 */
 	public static inline function isTablet():Bool
 	{
-		return JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'isTablet', '()Z')();
+		return JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'isTablet', '()Z')();
 	}
 
 	/**
@@ -207,7 +207,7 @@ class Tools
 	 */
 	public static inline function isChromebook():Bool
 	{
-		return JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'isChromebook', '()Z')();
+		return JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'isChromebook', '()Z')();
 	}
 
 	/**
@@ -217,7 +217,7 @@ class Tools
 	 */
 	public static inline function isDeXMode():Bool
 	{
-		return JNICache.createStaticMethod('org/libsdl/app/SDLActivity', 'isDeXMode', '()Z')();
+		return JNI.createStaticMethod('org/libsdl/app/SDLActivity', 'isDeXMode', '()Z')();
 	}
 }
 

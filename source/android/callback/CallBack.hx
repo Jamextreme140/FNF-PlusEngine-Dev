@@ -1,6 +1,6 @@
 package android.callback;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 import lime.system.JNI;
 import haxe.Json;
 import lime.app.Event;
@@ -46,7 +46,7 @@ class CallBack
 		onActivityResult = new Event<Dynamic->Void>();
 		onRequestPermissionsResult = new Event<Dynamic->Void>();
 
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'initCallBack', '(Lorg/haxe/lime/HaxeObject;)V')(new CallBackHandler());
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'initCallBack', '(Lorg/haxe/lime/HaxeObject;)V')(new CallBackHandler());
 
 		initialized = true;
 	}

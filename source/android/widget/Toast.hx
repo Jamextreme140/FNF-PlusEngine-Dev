@@ -1,6 +1,6 @@
 package android.widget;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 
 /**
  * Utility class for displaying toast messages on Android via JNI.
@@ -32,6 +32,6 @@ class Toast
 	 * @param yOffset Optional. Vertical offset from the gravity position. Default is 0.
 	 */
 	public static inline function makeText(text:String, duration:Int, ?gravity:Int = -1, ?xOffset:Int = 0, ?yOffset:Int = 0):Void
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'makeToastText', '(Ljava/lang/String;IIII)V')(text, duration, gravity, xOffset, yOffset);
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'makeToastText', '(Ljava/lang/String;IIII)V')(text, duration, gravity, xOffset, yOffset);
 }
 #end

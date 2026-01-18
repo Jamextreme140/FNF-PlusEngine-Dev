@@ -1,6 +1,6 @@
 package android;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 
 using StringTools;
 
@@ -23,7 +23,7 @@ class Settings
 	 */
 	public static inline function requestSetting(setting:String, requestCode:Int = 1):Void
 	{
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'requestSetting',
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'requestSetting',
 			'(Ljava/lang/String;I)V')(!setting.startsWith('android.settings.') ? 'android.settings.$setting' : setting, requestCode);
 	}
 }

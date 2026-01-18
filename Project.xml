@@ -123,7 +123,7 @@
 	<haxelib name="moonchart" unless="mac | ios"/>
 
 	<!--Psych stuff needed-->
-	<haxelib name="linc_luajit_ex" if="LUA_ALLOWED"/>
+	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
 	<haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
 	<!--Compatibility with older mods-->
 	<haxelib name="sscript-parch" version="git" if="SSCRIPT_ALLOWED"/>

@@ -1,6 +1,6 @@
 package android;
 
-import lime._internal.backend.android.JNICache;
+import lime.system.JNI;
 
 using StringTools;
 
@@ -21,7 +21,7 @@ class Permissions
 	 */
 	public static inline function getGrantedPermissions():Array<String>
 	{
-		return JNICache.createStaticMethod('org/haxe/extension/Tools', 'getGrantedPermissions', '()[Ljava/lang/String;')();
+		return JNI.createStaticMethod('org/haxe/extension/Tools', 'getGrantedPermissions', '()[Ljava/lang/String;')();
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Permissions
 			if (!permissions[i].startsWith('android.permission.'))
 				permissions[i] = 'android.permission.${permissions[i]}';
 
-		JNICache.createStaticMethod('org/haxe/extension/Tools', 'requestPermissions',
+		JNI.createStaticMethod('org/haxe/extension/Tools', 'requestPermissions',
 			'([Ljava/lang/String;I)V')(permissions, requestCode);
 	}
 }
