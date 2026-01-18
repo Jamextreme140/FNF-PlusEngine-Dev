@@ -131,10 +131,6 @@
 	<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
 	<haxelib name="hxdiscord_rpc" if="DISCORD_ALLOWED"/>
 	<haxelib name="flxanimate"/>
-	
-	<!-- Define for hscript-improved -->
-	<define name="HScriptImproved" if="hscript-improved"/>
-	<define name="CUSTOM_CLASSES" />
 
 	<!-- Disable Discord IO Thread -->
 	<haxedef name="DISCORD_DISABLE_IO_THREAD" if="hxdiscord_rpc" />
