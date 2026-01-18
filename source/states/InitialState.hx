@@ -1,7 +1,7 @@
 package states;
 
 #if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-import backend.scripting.ModState;
+import states.ModState;
 #end
 import backend.Mods;
 import backend.ClientPrefs;

@@ -2,7 +2,7 @@ package states;
 
 import backend.WeekData;
 import backend.Mods;
-import backend.scripting.ModState;
+import states.ModState;
 
 import flixel.FlxBasic;
 import flixel.graphics.FlxGraphic;

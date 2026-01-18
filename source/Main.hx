@@ -106,6 +106,11 @@ class Main extends Sprite
 		Mods.pushGlobalMods();
 		#end
 		Mods.loadTopMod();
+		
+		// Initialize GlobalScript
+		#if HSCRIPT_ALLOWED
+		states.ModState.initGlobalScript();
+		#end
 
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 

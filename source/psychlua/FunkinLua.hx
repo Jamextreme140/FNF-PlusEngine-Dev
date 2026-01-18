@@ -71,8 +71,25 @@ class FunkinLua {
 		#end
 
 		this.scriptName = scriptName.trim();
+		
+		// Support both PlayState and ModState
 		var game:PlayState = PlayState.instance;
-		if(game != null) game.luaArray.push(this);
+		if(game != null) 
+		{
+			game.luaArray.push(this);
+		}
+		else 
+		{
+			// Try ModState if PlayState is not available
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				var ms:states.ModState = cast modState;
+				#if LUA_ALLOWED
+				ms.luaArray.push(this);
+				#end
+			}
+		}
 
 		var myFolder:Array<String> = this.scriptName.split('/');
 		#if MODS_ALLOWED
@@ -297,6 +314,82 @@ class FunkinLua {
 		});
 		Lua_helper.add_callback(lua, "getVar", function(varName:String) {
 			return MusicBeatState.getVariables().get(varName);
+		});
+		
+		// ModState Variable Functions
+		Lua_helper.add_callback(lua, "setSharedVar", function(varName:String, value:Dynamic) {
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				var ms:states.ModState = cast modState;
+				#if HSCRIPT_ALLOWED
+				states.ModState.globalVariables.set(varName, value);
+				#end
+				MusicBeatState.getVariables().set(varName, value);
+			}
+			else
+			{
+				MusicBeatState.getVariables().set(varName, value);
+			}
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getSharedVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				#if HSCRIPT_ALLOWED
+				if(states.ModState.globalVariables.exists(varName))
+					return states.ModState.globalVariables.get(varName);
+				#end
+				if(MusicBeatState.getVariables().exists(varName))
+					return MusicBeatState.getVariables().get(varName);
+			}
+			else if(MusicBeatState.getVariables().exists(varName))
+				return MusicBeatState.getVariables().get(varName);
+			
+			return defaultValue;
+		});
+		
+		Lua_helper.add_callback(lua, "setPublicVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.publicVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getPublicVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.publicVariables.exists(varName) ? states.ModState.publicVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
+		});
+		
+		Lua_helper.add_callback(lua, "setStaticVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.staticVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getStaticVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.staticVariables.exists(varName) ? states.ModState.staticVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
+		});
+		
+		Lua_helper.add_callback(lua, "setGlobalVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.globalVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getGlobalVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.globalVariables.exists(varName) ? states.ModState.globalVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
 		});
 
 		Lua_helper.add_callback(lua, "addLuaScript", function(luaFile:String, ?ignoreAlreadyRunning:Bool = false) {

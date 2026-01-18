@@ -225,7 +225,7 @@ class HScript extends Iris
 		#if DISCORD_ALLOWED
 		set('Discord', backend.DiscordClient);
 		#end
-		set('ModState', backend.scripting.ModState);
+		set('ModState', states.ModState);
 		set('PlayState', PlayState);
 		set('TitleState', states.TitleState);
 		set('MainMenuState', states.MainMenuState);
