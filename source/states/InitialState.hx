@@ -31,7 +31,6 @@ class InitialState extends MusicBeatState
 		#if !html5
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
-		Application.current.window.vsync = ClientPrefs.data.vsync;
 		
 		// Check if top mod has custom state scripts
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED)

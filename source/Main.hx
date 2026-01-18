@@ -268,8 +268,6 @@ class Main extends Sprite
 		LimeSystem.allowScreenTimeout = ClientPrefs.data.screensaver;
 		#end
 
-		// VSync application moved to InitialState after preferences load.
-
 		#if (cpp && windows)
 		// Add window close handler for fade out effect
 		Application.current.window.onClose.add(onWindowClose);

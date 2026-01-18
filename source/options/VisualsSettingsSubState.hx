@@ -175,13 +175,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeWatermark;
 
 		#if native
-		var option:Option = new Option('VSync',
-			'If checked, Enables VSync fixing any screen tearing at the cost of capping the FPS to screen refresh rate.\n(Must restart the game to have an effect)',
-			'vsync',
-			BOOL);
-		option.onChange = onChangeVSync;
-		addOption(option);
-
 		var option:Option = new Option('Fullscreen Mode:',
 			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
 			'fullscreenMode',
@@ -466,9 +459,4 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			}
 		}
 	}
-
-	#if native
-	function onChangeVSync()
-		lime.app.Application.current.window.vsync = ClientPrefs.data.vsync;
-	#end
 }
