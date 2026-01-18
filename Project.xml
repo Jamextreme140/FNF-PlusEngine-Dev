@@ -206,7 +206,32 @@
 
 	<!-- Android Tools Extension for Permissions and Native Functions -->
 	<section if="android">
-		<dependency name="androidtools" path="dependencies/androidtools" if="android" />
+		<haxelib name="extension-androidtools" if="android" />
+		
+		<!-- Android Permissions (required for file access, mods, etc.) -->
+		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
+		<config:android permission="android.permission.ACCESS_WIFI_STATE" />
+		<config:android permission="android.permission.INTERNET" />
+		<config:android permission="android.permission.VIBRATE" />
+		<config:android permission="android.permission.WAKE_LOCK" />
+		
+		<!-- Storage permissions for Android 10 and below (API 29 and below) -->
+		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+		
+		<!-- Storage permissions for Android 11+ (API 30+) - Scoped Storage -->
+		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
+		
+		<!-- Storage permissions for Android 13+ (API 33+) - Granular media permissions -->
+		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
+		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
+		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
+		
+		<!-- Storage permissions for Android 14+ (API 34+) - Partial media access -->
+		<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+		
+		<!-- Media location permission for Android 10+ (API 29+) -->
+		<config:android permission="android.permission.ACCESS_MEDIA_LOCATION" />
 	</section>
 
 	<!-- Category Type for Apple Systems -->
