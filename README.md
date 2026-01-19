@@ -118,7 +118,7 @@ You need to have:
 ![Modchart](docs/img/modchart.gif)
 - New Gameplay Changers (Opponent Mode, No Drop Penalty, Perfect Only).
 - You can choose your default accuracy system. ITG, Psych, DJMax, Wife3, osu!, Simple
-- Added the songs "erect" and "nightmare," BUT without stages and events, only levels
+- Added the songs "erect" and "nightmare"
 * Support for NotITG levels (without modifiers) and Stepmania, includes UI
 ![Stepmania](docs/img/Stepmania.png)
 - Android support
