@@ -1,294 +1,233 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Build
 
-
-# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+env:
+  HAXE_VERSION: 4.3.4
+
 jobs:
-  # This workflow contains a single job called "build"
-  Linux-x32:
-    # The type of runner that the job will run on
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  build-desktop:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [32, 64]
+        exclude:
+          - os: macos-latest
+            arch: 32
+          - os: ubuntu-latest
+            arch: 32
+        include:
+          - os: macos-latest
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
+      - uses: actions/checkout@v4
       
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
+      - uses: krdlab/setup-haxe@v2
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+      
+      - name: Cache Haxelib dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxelib
+            ~/.hxcpp
+            C:/haxelib
+            C:/.hxcpp
+          key: ${{ runner.os }}-haxelib-${{ hashFiles('**/Project.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-haxelib-
+      
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
         run: |
-          sudo apt-get install libvlc-dev
-          sudo apt-get install libvlccore-dev
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev libgl1-mesa-dev libglu1-mesa-dev g++-multilib gcc-multilib
+      
+      - name: Install Haxelib (Unix)
+        if: runner.os != 'Windows'
+        run: |
           haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
+          haxelib install hxcpp --quiet
           chmod +x ./setup/unish-lib.sh
           sh ./setup/unish-lib.sh
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build linux -32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: linuxBuild32
-          path: 'export/release/linux/bin'
-
-  Linux-x64:
-    # The type of runner that the job will run on
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          sudo apt-get install libvlc-dev
-          sudo apt-get install libvlccore-dev
-          haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          chmod +x ./setup/unish-lib.sh
-          sh ./setup/unish-lib.sh
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: linuxBuild64
-          path: 'export/release/linux/bin'  
-          
-  Windows-x32:
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: windows-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
+      - name: Install Haxelib (Windows)
+        if: runner.os == 'Windows'
         run: |
           haxelib setup C:/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          .\"setup/windows-lib.bat"
+          haxelib install hxcpp --quiet
+          .\setup\windows-lib.bat
         shell: cmd
-      - name: Skip SScript setup mode
-        run: |
-          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
-          type %USERPROFILE%\settings.cocoa
-        shell: cmd
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build windows -32bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: windowsBuild32
-          path: export/release/windows/bin
-
-  Windows-x64:
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: windows-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          haxelib setup C:/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          .\"setup/windows-lib.bat"
-        shell: cmd
-      - name: Skip SScript setup mode
-        run: |
-          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
-          type %USERPROFILE%\settings.cocoa
-        shell: cmd
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build windows -64bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: windowsBuild64
-          path: export/release/windows/bin
-
-  Mac-ARM:
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: macos-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
+      - name: Skip SScript setup mode (Unix)
+        if: runner.os != 'Windows'
+        run: echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
       
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          haxelib setup ~/haxelib
-          chmod +x ./setup/unish-lib.sh
-          sh ./setup/unish-lib.sh
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-
-          cat ~/settings.cocoa
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      - name: Compile
-        run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: macBuildARM
-          path: export/release/macos/bin
-
-  Android:
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
+      - name: Skip SScript setup mode (Windows)
+        if: runner.os == 'Windows'
+        run: echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
+        shell: cmd
       
-      - name: Setup Java JDK 17
+      - name: Enable HXCPP compile cache
+        run: |
+          echo "HXCPP_COMPILE_CACHE=${{ runner.os == 'Windows' && 'C:/.hxcpp' || '~/.hxcpp' }}" >> $GITHUB_ENV
+        shell: bash
+      
+      - name: Create Version Tag
+        run: echo "${{ github.run_id }}" > VERSION
+      
+      - name: Build Linux
+        if: runner.os == 'Linux'
+        run: haxelib run lime build linux -${{ matrix.arch }}bits --app-version="4.0.0-${{ github.run_id }}" -D officialBuild
+      
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        run: haxelib run lime build windows -${{ matrix.arch }}bits --app-version="4.0.0-${{ github.run_id }}" -D officialBuild
+      
+      - name: Build macOS (x64)
+        if: runner.os == 'macOS' && matrix.arch == 64
+        run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id }}" -D officialBuild
+      
+      - name: Build macOS (ARM)
+        if: runner.os == 'macOS' && matrix.arch == 'arm64'
+        run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id }}" -D officialBuild
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ matrix.arch }}
+          path: export/release/**/bin
+
+  build-mobile:
+    strategy:
+      matrix:
+        include:
+          - platform: android
+            arch: armv7
+            os: ubuntu-latest
+          - platform: android
+            arch: arm64
+            os: ubuntu-latest
+          - platform: ios
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: krdlab/setup-haxe@v2
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+      
+      - name: Setup Java (Android)
+        if: matrix.platform == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
       
       - name: Setup Android SDK
+        if: matrix.platform == 'android'
         uses: android-actions/setup-android@v3
       
-      - name: Install Android SDK 35 and NDK r27d
+      - name: Install Android NDK
+        if: matrix.platform == 'android'
         run: |
           sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmdline-tools;latest"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
       
-      # Runs a set of commands using the runners shell
+      - name: Cache Haxelib dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxelib
+            ~/.hxcpp
+          key: ${{ runner.os }}-${{ matrix.platform }}-haxelib-${{ hashFiles('**/Project.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-haxelib-
+      
       - name: Install Haxelib
         run: |
           haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
+          haxelib install hxcpp --quiet
           chmod +x ./setup/unish-lib.sh
           sh ./setup/unish-lib.sh
       
       - name: Setup Lime for Android
+        if: matrix.platform == 'android'
         run: |
           haxelib run lime setup android
           haxelib run lime config ANDROID_SDK $ANDROID_SDK_ROOT
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_SDK_ROOT/ndk/27.0.12077973
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_ROOT
           haxelib run lime config JAVA_HOME $JAVA_HOME
       
       - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
+        run: echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
+      
+      - name: Enable HXCPP compile cache
+        run: echo "HXCPP_COMPILE_CACHE=~/.hxcpp" >> $GITHUB_ENV
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
-      - name: Clean old build artifacts only
+      - name: Clean old builds
+        if: matrix.platform == 'android'
         run: |
-          rm -rf export
-          rm -rf build
-          rm -rf ~/.gradle
+          rm -rf export build ~/.gradle
       
-      - name: Compile
-        run: haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
+      - name: Build Android (ARMv7)
+        if: matrix.platform == 'android' && matrix.arch == 'armv7'
+        run: haxelib run lime build android -Dlegacy --app-version="4.0.0-${{ github.run_id }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
+      - name: Build Android (ARM64)
+        if: matrix.platform == 'android' && matrix.arch == 'arm64'
+        run: haxelib run lime build android --app-version="4.0.0-${{ github.run_id }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
+      
+      - name: Build iOS
+        if: matrix.platform == 'ios'
+        run: haxelib run lime build ios -nosign --app-version="4.0.0-${{ github.run_id }}" -D officialBuild
+      
+      - name: Publish Android Artifact
+        if: matrix.platform == 'android'
+        uses: actions/upload-artifact@v4
         with:
-          name: androidBuild
+          name: Android-${{ matrix.arch }}
           path: export/release/android/bin
-
-  iOS:
-    if: contains(github.event.head_commit.message, 'wd')
-    runs-on: macos-15
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
+      
+      - name: Publish iOS Artifact
+        if: matrix.platform == 'ios'
+        uses: actions/upload-artifact@v4
         with:
-          haxe-version: 4.3.4
-      
-      # Runs a set of commands using the runners shell
-      - name: Install Haxelib
-        run: |
-          haxelib setup ~/haxelib
-          chmod +x ./setup/unish-lib.sh
-          sh ./setup/unish-lib.sh
-      
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
-      
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      
-      - name: Compile
-        run: haxelib run lime build ios -nosign --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: iOSBuild
+          name: iOS
           path: export/release/ios/build/Release-iphoneos
+  
+  package-all:
+    needs: [build-desktop, build-mobile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: builds
+      
+      - name: Display structure
+        run: ls -R builds
+      
+      - name: Create release package
+        run: |
+          cd builds
+          zip -r ../FNF-PlusEngine-${{ github.run_id }}-All-Platforms.zip .
+      
+      - name: Upload combined package
+        uses: actions/upload-artifact@v4
+        with:
+          name: All-Platforms-Package
+          path: FNF-PlusEngine-*.zip

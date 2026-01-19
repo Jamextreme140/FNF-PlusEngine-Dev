@@ -4,15 +4,17 @@ cd ..
 echo Installing libraries...
 echo This might take a few moments depending on your internet speed.
 haxelib git hxcpp https://github.com/kittycathy233/hxcpp --quiet
-haxelib git lime https://github.com/kittycathy233/lime --quiet
+haxelib git lime https://github.com/Psych-Plus-Team/lime.git --quiet
+haxelib install format 3.8.0 --quiet
+haxelib install hxp 1.3.1 --quiet
 haxelib install extension-androidtools 2.2.2 --quiet
 haxelib install openfl 9.5.0 --quiet
-haxelib install flixel 5.6.2 --quiet
+haxelib git flixel https://github.com/kittycathy233/flixel --quiet
 haxelib install flixel-addons 3.3.2 --quiet
 haxelib install flixel-tools 1.5.1 --quiet
 haxelib install hscript-iris 1.1.3 --quiet
 haxelib git sscript-parch https://github.com/Psych-Plus-Team/SScript-Parch.git --quiet
-haxelib install moonchart 0.5.0 --quiet
+haxelib install moonchart 0.5.1 --quiet
 haxelib install tjson 1.4.0 --quiet
 haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate 768740a56b26aa0c072720e0d1236b94afe68e3e --quiet
 haxelib git linc_luajit https://github.com/kittycathy233/linc_luajit --quiet
