@@ -2555,7 +2555,9 @@ class PlayState extends MusicBeatState
 
 	override function openSubState(SubState:FlxSubState)
 	{
+		#if VIDEOS_ALLOWED
 		if (videoCutscene != null) videoCutscene.pause();
+		#end
 		stagesFunc(function(stage:BaseStage) stage.openSubState(SubState));
 		if (paused)
 		{
@@ -2577,7 +2579,9 @@ class PlayState extends MusicBeatState
 	{
 		super.closeSubState();
 		
+		#if VIDEOS_ALLOWED
 		if (videoCutscene != null) videoCutscene.resume();
+		#end
 		stagesFunc(function(stage:BaseStage) stage.closeSubState());
 		if (paused)
 		{
@@ -2591,12 +2595,14 @@ class PlayState extends MusicBeatState
 			paused = false;
 			
 			// Reanudar todos los videos de Lua
-			#if LUA_ALLOWED
+			#if (LUA_ALLOWED && VIDEOS_ALLOWED)
 			psychlua.LuaVideo.resumeAll();
 			#end
 			
 			// Reanudar todos los VideoHandlers
+			#if VIDEOS_ALLOWED
 			objects.wrappers.VideoHandler.resumeAll();
+			#end
 			
 			callOnScripts('onResume');
 			resetRPC(startTimer != null && startTimer.finished);
@@ -2712,10 +2718,12 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
+		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null)
 		{
 			videoCutscene.videoSprite.bitmap.rate = paused ? 0 : playbackRate;
 		}
+		#end
 
 		setOnScripts('curDecStep', curDecStep);
 		setOnScripts('curDecBeat', curDecBeat);
@@ -3187,12 +3195,14 @@ class PlayState extends MusicBeatState
 		}
 		
 		// Pausar todos los videos de Lua
-		#if LUA_ALLOWED
+		#if (LUA_ALLOWED && VIDEOS_ALLOWED)
 		psychlua.LuaVideo.pauseAll();
 		#end
 		
 		// Pausar todos los VideoHandlers
+		#if VIDEOS_ALLOWED
 		objects.wrappers.VideoHandler.pauseAll();
+		#end
 		
 		if(!cpuControlled)
 		{
@@ -5263,7 +5273,7 @@ class PlayState extends MusicBeatState
 		#end
 		
 		// Limpiar todos los videos de Lua
-		#if LUA_ALLOWED
+		#if (LUA_ALLOWED && VIDEOS_ALLOWED)
 		psychlua.LuaVideo.clearAll();
 		#end
 		

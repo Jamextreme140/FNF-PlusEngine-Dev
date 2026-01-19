@@ -221,7 +221,7 @@ jobs:
           rm -rf ~/.gradle
       
       - name: Compile
-        run: haxelib run lime build android -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS -D HXCPP_ARM64 -D HXCPP_ARMV7=0
+        run: haxelib run lime build android -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -291,7 +291,7 @@ jobs:
           rm -rf ~/.gradle
       
       - name: Compile
-        run: haxelib run lime build android -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS -D HXCPP_ARMV7 -D HXCPP_ARM64=0
+        run: haxelib run lime build android -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4

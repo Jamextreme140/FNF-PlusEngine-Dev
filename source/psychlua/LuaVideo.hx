@@ -6,7 +6,9 @@ import hxvlc.flixel.FlxVideoSprite;
 
 class LuaVideo {
     #if LUA_ALLOWED
+    #if VIDEOS_ALLOWED
     private static var activeVideos:Map<String, FlxVideoSprite> = new Map();
+    #end
     
     private static var isDestroyed:Map<String, Bool> = new Map();
     private static var allowDestroy:Map<String, Bool> = new Map();

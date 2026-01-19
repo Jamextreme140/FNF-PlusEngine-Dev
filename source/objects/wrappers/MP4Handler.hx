@@ -18,6 +18,7 @@ import hxvlc.flixel.FlxVideoSprite;
  */
 class MP4Handler extends FlxSprite
 {
+	#if VIDEOS_ALLOWED
 	public var readyCallback:Void->Void;
 	public var finishCallback:Void->Void;
 
@@ -376,4 +377,5 @@ class MP4Handler extends FlxSprite
 	{
 		allowDestroy = true;
 	}
+	#end
 }

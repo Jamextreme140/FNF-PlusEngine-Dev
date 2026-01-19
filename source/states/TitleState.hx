@@ -71,7 +71,9 @@ class TitleState extends MusicBeatState
 	var easterEggKeysBuffer:String = '';
 	#end
 
+	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
+	#end
 	var showingIntro:Bool = false;
 	var introFinished:Bool = false;
 	var skipTimer:Float = 0;
@@ -144,6 +146,7 @@ class TitleState extends MusicBeatState
 		var blackBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(blackBG);
 
+		#if VIDEOS_ALLOWED
 		introVideo = new FlxVideoSprite();
 		introVideo.bitmap.onEndReached.add(function() {
 			onIntroFinished();
@@ -161,6 +164,7 @@ class TitleState extends MusicBeatState
 			trace('Intro video not found, skipping to normal intro');
 			onIntroFinished();
 		}
+		#end
 	}
 	
 	function onIntroFinished():Void
@@ -172,11 +176,13 @@ class TitleState extends MusicBeatState
 		FlxG.save.data.introFinished = true;
 		FlxG.save.flush();
 
+		#if VIDEOS_ALLOWED
 		if (introVideo != null)
 		{
 			introVideo.destroy();
 			introVideo = null;
 		}
+		#end
 
 		#if FREEPLAY
 		MusicBeatState.switchState(new FreeplayState());
@@ -201,10 +207,12 @@ class TitleState extends MusicBeatState
 
 		FlxG.sound.play(Paths.sound('cancelMenu'), 0.7);
 
+		#if VIDEOS_ALLOWED
 		if (introVideo != null)
 		{
 			introVideo.stop();
 		}
+		#end
 		
 		onIntroFinished();
 	}

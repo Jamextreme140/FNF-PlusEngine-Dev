@@ -19,6 +19,7 @@ import hxvlc.flixel.FlxVideoSprite;
  */
 class VideoHandler extends FlxSprite
 {
+	#if VIDEOS_ALLOWED
 	public var canSkip:Bool = false; // DISABLED - Evitar crashes de null object reference
 	public var canUseSound:Bool = true;
 	public var canUseAutoResize:Bool = true;
@@ -573,4 +574,5 @@ class VideoHandler extends FlxSprite
 		
 		activeInstances.clear();
 	}
+	#end
 }
