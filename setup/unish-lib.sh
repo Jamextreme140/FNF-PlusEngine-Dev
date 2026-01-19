@@ -7,7 +7,7 @@ echo Makking the main haxelib and setuping folder in same time..
 mkdir ~/haxelib && haxelib setup ~/haxelib
 echo Installing dependencies...
 echo This might take a few moments depending on your internet speed.
-haxelib git lime https://github.com/openfl/lime develop --quiet
+haxelib git hxcpp https://github.com/kittycathy233/hxcpp --quiet
 haxelib install lime 8.3.0 --quiet
 haxelib install extension-androidtools 2.2.2 --quiet
 haxelib install openfl 9.5.0 --quiet
