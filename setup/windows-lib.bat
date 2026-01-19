@@ -4,7 +4,7 @@ cd ..
 echo Installing libraries...
 echo This might take a few moments depending on your internet speed.
 haxelib git hxcpp https://github.com/kittycathy233/hxcpp --quiet
-haxelib git lime https://github.com/Psych-Plus-Team/lime.git --quiet
+haxelib git lime https://github.com/kittycathy233/lime --quiet
 haxelib install extension-androidtools 2.2.2 --quiet
 haxelib install openfl 9.5.0 --quiet
 haxelib install flixel 5.6.2 --quiet

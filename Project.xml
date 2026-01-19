@@ -131,7 +131,7 @@
 	<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
 	<haxelib name="hxdiscord_rpc" if="DISCORD_ALLOWED"/>
 	<haxelib name="flxanimate"/>
-
+	
 	<!-- Disable Discord IO Thread -->
 	<haxedef name="DISCORD_DISABLE_IO_THREAD" if="hxdiscord_rpc" />
 	<haxedef name="NO_PRECOMPILED_HEADERS" if="linux" />
@@ -202,36 +202,6 @@
 
 	<!-- Do whatever you want I'm tired uninstall and install everytime -->
 	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
-
-	<!-- Android Tools Extension for Permissions and Native Functions -->
-	<section if="android">
-		<haxelib name="extension-androidtools" />
-		
-		<!-- Basic Android Permissions (all SDK versions) -->
-		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
-		<config:android permission="android.permission.ACCESS_WIFI_STATE" />
-		<config:android permission="android.permission.INTERNET" />
-		<config:android permission="android.permission.VIBRATE" />
-		<config:android permission="android.permission.WAKE_LOCK" />
-		
-		<!-- Storage permissions for Android 10 and below (API <= 29) -->
-		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" if="android-target-sdk-version &lt; 33" />
-		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" if="android-target-sdk-version &lt; 33" />
-		
-		<!-- Storage permissions for Android 10+ (API 29+) - Media location access -->
-		<config:android permission="android.permission.ACCESS_MEDIA_LOCATION" if="android-target-sdk-version >= 29" />
-		
-		<!-- Storage permissions for Android 11+ (API 30+) - Scoped Storage -->
-		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" if="android-target-sdk-version >= 30" />
-		
-		<!-- Storage permissions for Android 13+ (API 33+) - Granular media permissions -->
-		<config:android permission="android.permission.READ_MEDIA_IMAGES" if="android-target-sdk-version >= 33" />
-		<config:android permission="android.permission.READ_MEDIA_VIDEO" if="android-target-sdk-version >= 33" />
-		<config:android permission="android.permission.READ_MEDIA_AUDIO" if="android-target-sdk-version >= 33" />
-		
-		<!-- Storage permissions for Android 14+ (API 34+) - Partial media access -->
-		<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" if="android-target-sdk-version >= 34" />
-	</section>
 
 	<!-- Category Type for Apple Systems -->
 	<config:ios category_type="public.app-category.music-games" />
