@@ -273,21 +273,12 @@ class ModState extends MusicBeatState
     }
 
     override function update(elapsed:Float)
-    {
+    {   
         callOnGlobalScript('onStateUpdate', [stateName, elapsed]);
         callOnScripts('onUpdate', [elapsed]);
         super.update(elapsed);
         callOnScripts('onUpdatePost', [elapsed]);
         callOnGlobalScript('onStateUpdatePost', [stateName, elapsed]);
-        
-        // Use proper state switching with transition instead of direct switch
-        if(nextState != null)
-        {
-            var stateToSwitch = nextState;
-            nextState = null;
-            MusicBeatState.switchState(stateToSwitch);
-            return; // Exit update after initiating state switch
-        }
 
         if (FlxG.keys.justPressed.F12) {
             MusicBeatState.switchState(new ModsMenuState());
@@ -351,6 +342,8 @@ class ModState extends MusicBeatState
         
         var scriptPath:String = Paths.hx(stateName);
         var scriptFolder:String = haxe.io.Path.directory(scriptPath);
+        // Use only the file name to avoid loading the main script twice due to path separator differences
+        var mainFileName:String = haxe.io.Path.withoutDirectory(scriptPath);
         var foundScripts:Bool = false;
         
         // Load Lua scripts first
@@ -400,13 +393,12 @@ class ModState extends MusicBeatState
             {
                 if(file.endsWith('.hx'))
                 {
+                    // Avoid loading the main script twice (different path separators, same file)
+                    if(file == mainFileName) continue;
                     var fullPath:String = haxe.io.Path.join([scriptFolder, file]);
-                    if(fullPath != scriptPath)
-                    {
-                        initHScript(fullPath);
-                        trace('Loaded additional HScript: $file for state: $stateName');
-                        foundScripts = true;
-                    }
+                    initHScript(fullPath);
+                    trace('Loaded additional HScript: $file for state: $stateName');
+                    foundScripts = true;
                 }
             }
         }
