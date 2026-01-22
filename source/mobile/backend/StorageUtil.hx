@@ -170,7 +170,7 @@ class StorageUtil
 @:runtimeValue
 enum abstract StorageType(String) from String to String
 {
-	final forcedPath = '/sdcard/';
+	final forcedPath = '/storage/emulated/0/';
 	final packageNameLocal = 'com.leninasto.plusengine';
 	final fileLocal = 'PlusEngine';
 
