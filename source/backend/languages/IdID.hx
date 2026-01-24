@@ -5,7 +5,7 @@ class IdID
     public static var languageName:String = "Indonesian (Bahasa Ind.)";
     public static var languageCode:String = "id-ID";
     
-    // IntroTexts localizados untuk layar judul
+    // IntroTexts localized for the title screen
     public static var introTexts:Array<Array<String>> = [
         ["shoutouts to tom fulp", "lol"],
         ["Ludum dare", "luar biasa"],
@@ -24,7 +24,6 @@ class IdID
         ["ingat latihan", "bikin kamu lebih baik"],
         ["engine dibuat oleh", "Shadow Mario"],
         ["versi plus oleh", "Lenin Asto"],
-        ["nikmati", "permainannya"],
         ["tekan Enter", "untuk mulai"],
         ["friday night", "funkin"],
         ["stecu stecu", "konoha"],
@@ -105,7 +104,7 @@ class IdID
         // Mods Menu
         "no_mods_installed" => "TIDAK ADA MOD YANG DIINSTAL\nTEKAN TOMBOL KEMBALI UNTUK KELUAR ATAU INSTAL MOD",
         "no_mods_found" => "Tidak ditemukan mod.",
-        "mod_restart" => "* Mengaktifkan atau menonaktifkan mod ini akan me-restart permainan.",
+        "mod_restart" => "* Mengaktifkan atau menonaktifkan mod ini akan me-restart game.",
         "reload_button" => "MUAT ULANG",
         "enable_all_button" => "AKTIFKAN SEMUA",
         "disable_all_button" => "MATIKAN SEMUA",
@@ -441,9 +440,8 @@ class IdID
         "touchpad_actionmode_missing" => "touchPad actionMode \"{1}\" tidak ada.",
         "file_save_success" => "{1} telah disimpan.",
         "file_save_fail" => "{1} tidak dapat disimpan.\n({2})",
-        "permissions_message" => "Izin penyimpanan diperlukan untuk menyimpan data game dan mod.\nSilakan berikan izin yang diminta saat diminta.",
-        "create_directory_error" => "Gagal membuat direktori berikut:\n{1}\nSilakan periksa izin penyimpanan atau ruang yang tersedia.\nAplikasi mungkin tidak berfungsi dengan benar tanpa direktori-direktori ini.",
-        "changed_storage_type" => "Jenis Penyimpanan telah diubah dan Anda perlu me-restart permainan!!\nTekan OK untuk menutup permainan.",
+        "permissions_message" => "Jika Anda telah menerima izin, semuanya baik-baik saja!\nJika tidak, bersiaplah untuk mengalami crash\nTekan OK untuk melihat apa yang terjadi",
+        "create_directory_error" => "Silakan buat direktori ke\n{1}\nTekan OK untuk menutup game",
         "files_missing" => "Sepertinya Anda memiliki beberapa file yang hilang yang diperlukan untuk menjalankan game\nTekan OK untuk memulai proses penyalinan",
 
         // Mobile Options
@@ -457,7 +455,7 @@ class IdID
         "setting_allow_phone_screensaver" => "Izinkan Layar Pengaman Ponsel",
         "description_allow_phone_screensaver" => "Jika dicentang, ponsel akan masuk ke mode tidur setelah tidak aktif selama beberapa detik.\n(Waktu yang dibutuhkan tergantung pada pengaturan ponsel Anda)",
         "setting_wide_screen_mode" => "Mode Layar Lebar",
-        "description_wide_screen_mode" => "Jika dicentang, permainan akan diperluas untuk mengisi seluruh layar Anda. (PERINGATAN: Dapat menyebabkan tampilan yang buruk dan merusak beberapa mod yang mengubah ukuran permainan/kamera)",
+        "description_wide_screen_mode" => "Jika dicentang, game akan diperluas untuk mengisi seluruh layar Anda. (PERINGATAN: Dapat menyebabkan tampilan yang buruk dan merusak beberapa mod yang mengubah ukuran game/kamera)",
         "setting_hitbox_design" => "Desain Hitbox:",
         "setting_hitbox_design-no_gradient" => "Tanpa Gradasi",
         "setting_hitbox_design-no_gradient_(old)" => "Tanpa Gradasi (Lama)",
@@ -471,7 +469,9 @@ class IdID
         "setting_storage_type" => "Jenis Penyimpanan",
         "setting_storage_type-external_data" => "EKSTERNAL_DATA",
         "setting_storage_type-external" => "EKSTERNAL",
-        "description_storage_type" => "Folder mana yang harus digunakan oleh Plus Engine?\n(MENGUBAH INI AKAN MENGHAPUS FOLDER LAMA ANDA!!)",
+        "setting_storage_type-external_media" => "EKSTERNAL_MEDIA",
+        "setting_storage_type-external_obb" => "EKSTERNAL_OBB",
+        "description_storage_type" => "Pilih lokasi penyimpanan data game.\nEKSTERNAL_DATA: Disarankan, penyimpanan berbatasan.\nEKSTERNAL: Publik /sdcard/.PlusEngine/\nMengubah pengaturan ini memerlukan restart game!",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
