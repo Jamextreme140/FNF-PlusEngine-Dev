@@ -245,17 +245,16 @@
 	<icon path="art/icons/icon32.png" size='32'/>
 	<icon path="art/icons/icon64.png" size='64'/>
 	<icon path="art/icons/iconOG.png" />
-	<icon path="art/icons/mobile/icon32.png" size='32' if="android" />
-	<icon path="art/icons/mobile/icon64.png" size='64' if="android" />
-	<icon path="art/icons/mobile/iconOG.png" if="android" />
-	<icon path="art/icons/iOS/bf-Default-iOS 29x29@2x.png" size='29' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 40x40@2x.png" size='40' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 57x57@1x.png" size='57' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 58x58@2x.png" size='58' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 60x60@3x.png" size='60' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 80x80@2x.png" size='80' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 87x87@3x.png" size='87' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 114x114@2x.png" size='114' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 120x120@2x.png" size='120' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 180x180@3x.png" size='180' if="ios" />
+	
+	<section if="android">
+		<icon path="art/icons/mobile/icon32.png" size='32'/>
+		<icon path="art/icons/mobile/icon64.png" size='64'/>
+		<icon path="art/icons/mobile/iconOG.png"/>
+	</section>
+
+	<section if="ios">
+	    <icon path="art/icons/PlusEngine.appiconset/iOS-Default.png"/>
+		<icon path="art/icons/PlusEngine.appiconset/iOS-Dark.png"/>
+		<icon path="art/icons/PlusEngine.appiconset/iOS-Tinted.png"/>
+	</section>
 </project>
