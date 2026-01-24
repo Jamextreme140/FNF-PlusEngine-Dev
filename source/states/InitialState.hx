@@ -22,10 +22,8 @@ class InitialState extends MusicBeatState
 	{
 		super.create();
 		
-		ClientPrefs.loadPrefs();
 		Highscore.load();
 		Language.reloadPhrases();
-		MobileData.init();
 
 		// Apply preferences-dependent runtime settings.
 		#if !html5

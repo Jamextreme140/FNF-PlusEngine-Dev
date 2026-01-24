@@ -24,11 +24,11 @@ import states.TitleState;
 	public var fpsRework:Bool = false;
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
 	
-	// Sistema de Accuracy/Rating
+	// Accuracy/Rating system
 	public var accuracySystem:String = 'Wife3'; // 'Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'
 	
 	// Combo Break Settings
-	public var badShitBreakCombo:Bool = false; // Si está en true, Bad y Shit romperán el combo
+	public var badShitBreakCombo:Bool = false; // When true, Bad and Shit will break the combo
 
 	public var systemScoreMultiplier:String = 'Psych'; // 'Psych', 'Codename'
 	
@@ -36,7 +36,7 @@ import states.TitleState;
 	public var middleScroll:Bool = false;
 	public var opponentStrums:Bool = true;
 	public var showFPS:Bool = true;
-	public var fpsDebugLevel:Int = 0; // Nivel de debug del FPSCounter (persistente)
+	public var fpsDebugLevel:Int = 0; // FPSCounter debug level (persistent)
 	public var showWatermark:Bool = false;
 	public var flashing:Bool = true;
 	public var autoPause:Bool = true;
@@ -60,23 +60,23 @@ import states.TitleState;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;
-	public var showEndCountdown:Bool = false; // Activa/desactiva la cuenta regresiva
-    public var endCountdownSeconds:Int = 10;  // Segundos de cuenta regresiva (10-30)
-	public var holdSubdivisions:Int = 4; // Subdivisiones para las notas hold (1-32)
+	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
+	    public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
+	public var holdSubdivisions:Int = 4; // Subdivisions for hold notes (1-32)
 	// Modchart Config Options
-	public var camera3dEnabled:Bool = true; // Habilita/deshabilita cámaras 3D
-	public var optimizeHolds:Bool = false; // Optimiza el renderizado de holds (puede verse mal con modcharts complejos)
-	public var zScale:Float = 1.0; // Escala del eje Z (profundidad)
-	public var renderArrowPaths:Bool = false; // Renderiza las líneas de trayectoria de las flechas
-	public var styledArrowPaths:Bool = false; // Aplica estilos visuales a las trayectorias
-	public var arrowPathBoundary:Int = 300; // Margen de boundary checking para paths (pixeles fuera de pantalla)
-	public var holdCacheEnabled:Bool = true; // Cache de hold graphics para mejor performance
-	public var holdAlphaDivisions:Int = 20; // Variantes de alpha pre-calculadas (10-30)
-	public var seamlessHoldExtension:Float = 2.0; // Extensión de holds para evitar gaps (0-5)
-	public var holdEndScale:Float = 1.0; // Escala del final de los holds
-	public var preventScaledHoldEnd:Bool = false; // Previene el escalado de los hold ends
-	public var columnSpecificModifiers:Bool = true; // Habilita/deshabilita modificadores específicos por columna
-	public var holdsBehindStrum:Bool = false; // Muestra los sustains detrás de las strums
+	public var camera3dEnabled:Bool = true; // Enables/disables 3D cameras
+	public var optimizeHolds:Bool = false; // Optimizes hold rendering (may look bad with complex modcharts)
+	public var zScale:Float = 1.0; // Z axis scale (depth)
+	public var renderArrowPaths:Bool = false; // Renders arrow path lines
+	public var styledArrowPaths:Bool = false; // Applies visual styles to paths
+	public var arrowPathBoundary:Int = 300; // Boundary margin for paths (pixels off-screen)
+	public var holdCacheEnabled:Bool = true; // Hold graphics cache for better performance
+	public var holdAlphaDivisions:Int = 20; // Pre-calculated alpha variants (10-30)
+	public var seamlessHoldExtension:Float = 2.0; // Hold extension to avoid gaps (0-5)
+	public var holdEndScale:Float = 1.0; // Hold end scale
+	public var preventScaledHoldEnd:Bool = false; // Prevents scaling of hold ends
+	public var columnSpecificModifiers:Bool = true; // Enables/disables column-specific modifiers
+	public var holdsBehindStrum:Bool = false; // Shows sustains behind strums
 	public var noteOffset:Int = 0;
 	public var arrowRGB:Array<Array<FlxColor>> = [
 		[0xFFC24B99, 0xFFFFFFFF, 0xFF3C1F56],
@@ -143,7 +143,7 @@ import states.TitleState;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
 	public var abbreviateScore:Bool = true;
-	public var heavyCharts:Bool = false; // Heavy Charts Mode para charts pesados
+	public var heavyCharts:Bool = false; // Heavy Charts Mode for heavy charts
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
 	
 	// Compatibility Settings
@@ -251,6 +251,20 @@ class ClientPrefs {
 		defaultButtons = gamepadBinds.copy();
 		defaultMobileBinds = mobileBinds.copy();
 	}
+
+	#if android
+	public static function loadStorageTypeEarly():Void
+	{
+		var save:FlxSave = new FlxSave();
+		save.bind('funkin', CoolUtil.getSavePath());
+		if (save != null && save.data != null && Reflect.hasField(save.data, 'storageType'))
+		{
+			var storedType = Reflect.field(save.data, 'storageType');
+			if (storedType != null)
+				data.storageType = storedType;
+		}
+	}
+	#end
 
 	public static function saveSettings() {
 		for (key in Reflect.fields(data))

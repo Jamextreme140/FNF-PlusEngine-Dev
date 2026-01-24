@@ -49,7 +49,7 @@ class FunkinLua {
 	public var hscript:HScript = null;
 	#end
 	#if SSCRIPT_ALLOWED
-	public var sscript:SScript = null; // Para compatibilidad con mods antiguos
+	public var sscript:SScriptCompat = null; // Para compatibilidad con mods antiguos
 	#end
 
 	public var callbacks:Map<String, Dynamic> = new Map<String, Dynamic>();
@@ -1829,7 +1829,7 @@ class FunkinLua {
 		// Only implement SScript callbacks if compatibility mode is enabled
 		#if SSCRIPT_ALLOWED 
 		if (ClientPrefs.data.useSScriptCompat) {
-			SScript.implement(this);
+			SScriptCompat.implement(this);
 		}
 		#end
 		#if flxanimate FlxAnimateFunctions.implement(this); #end

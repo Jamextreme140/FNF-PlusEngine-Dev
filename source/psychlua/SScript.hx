@@ -1,6 +1,5 @@
 package psychlua;
 
-import flixel.FlxBasic;
 import objects.Character;
 import psychlua.LuaUtils;
 import psychlua.CustomSubstate;
@@ -9,52 +8,75 @@ import psychlua.CustomSubstate;
 import psychlua.FunkinLua;
 #end
 
-#if HSCRIPT_ALLOWED
-import tea.SScript as TeaSScript;
+#if sys
+import sys.FileSystem;
+import sys.io.File;
+#end
+
+// Wrapper de compatibilidad para mods de Psych Engine 0.6.x - 0.7.3 que usan tea.SScript
+#if SSCRIPT_ALLOWED
+import tea.SScript;
 import tea.SScript.TeaCall;
-class SScript extends TeaSScript
+
+/**
+ * Clase de compatibilidad para mods antiguos que usan SScript (0.6.x - 0.7.3)
+ * Los mods nuevos deben usar HScript.hx que usa hscript-iris
+ */
+class SScriptCompat extends SScript
 {
 	public var modFolder:String;
+	public var origin:String;
+
+	// Handlers globales para warnings y errores de SScript
+	public static var sscriptWarnHandler:Dynamic = null;
+	public static var sscriptErrorHandler:Dynamic = null;
+	// Contador de errores de SScript para estadísticas
+	public static var sscript_Errors:Int = 0;
 
 	#if LUA_ALLOWED
 	public var parentLua:FunkinLua;
+	
 	public static function initHaxeModule(parent:FunkinLua)
 	{
 		if(parent.sscript == null)
 		{
 			trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
-			parent.sscript = new SScript(parent);
+			parent.sscript = new SScriptCompat(parent);
 		}
 	}
 
 	public static function initHaxeModuleCode(parent:FunkinLua, code:String, ?varsToBring:Any = null)
 	{
-		var hs:SScript = try parent.sscript catch (e) null;
-		if(hs == null)
+		var ss:SScriptCompat = try parent.sscript catch (e) null;
+		if(ss == null)
 		{
 			trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
-			parent.sscript = new SScript(parent, code, varsToBring);
+			parent.sscript = new SScriptCompat(parent, code, varsToBring);
 		}
 		else
 		{
-			hs.doString(code);
+			ss.doString(code);
 			@:privateAccess
-			if(hs.parsingException != null)
+			if(ss.parsingException != null)
 			{
-				PlayState.instance.addTextToDebug('ERROR ON LOADING (${hs.origin}): ${hs.parsingException.message}', FlxColor.RED);
+				var errorMsg = ss.parsingException.message;
+				PlayState.instance.addTextToDebug('ERROR ON LOADING (${ss.origin}): $errorMsg', FlxColor.RED);
+				sscript_Errors++;
+				if(sscriptErrorHandler != null) {
+					sscriptErrorHandler(errorMsg, ss.origin);
+				}
 			}
 		}
 	}
 	#end
 
-	public var origin:String;
 	override public function new(?parent:Dynamic, ?file:String, ?varsToBring:Any = null)
 	{
 		if (file == null)
 			file = '';
 
 		this.varsToBring = varsToBring;
-	
+		
 		super(file, false, false);
 
 		#if LUA_ALLOWED
@@ -66,12 +88,14 @@ class SScript extends TeaSScript
 		}
 		#end
 
+		// Si es una ruta de archivo, cargar el contenido
 		if (scriptFile != null && scriptFile.length > 0)
 		{
 			this.origin = scriptFile;
+			
 			#if MODS_ALLOWED
 			var myFolder:Array<String> = scriptFile.split('/');
-			if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1]))) //is inside mods folder
+			if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
 				this.modFolder = myFolder[1];
 			#end
 		}
@@ -108,46 +132,52 @@ class SScript extends TeaSScript
 		set('CustomSubstate', CustomSubstate);
 		#if (!flash && sys)
 		set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
+		set('ErrorHandledRuntimeShader', shaders.ErrorHandledShader.ErrorHandledRuntimeShader);
 		#end
 		set('ShaderFilter', openfl.filters.ShaderFilter);
 		set('StringTools', StringTools);
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
 		#end
-		
-		// Legacy Video Support (hxCodec API compatibility using hxvlc)
-		#if hxvlc
-		// Modern hxCodec API (FlxVideo/FlxVideoSprite)
-		set('FlxVideo', objects.wrappers.legacy.FlxVideo);
-		set('FlxVideoSprite', objects.wrappers.legacy.FlxVideoSprite);
-		
-		// hxCodec 2.x API (VideoHandler/VideoSprite)
+		#if (hxvlc)
+		set('VideoSprite', objects.VideoSprite);
+		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
+		set('FlxVideo', hxvlc.flixel.FlxVideo);
+		// Compatibilidad con versiones anteriores
 		set('VideoHandler', objects.wrappers.v2.VideoHandler);
-		set('VideoSprite', objects.wrappers.v2.VideoSprite);
-		
-		// hxCodec 3.x API (MP4Handler/MP4Sprite - oldest)
 		set('MP4Handler', objects.wrappers.v3.MP4Handler);
-		set('MP4Sprite', objects.wrappers.v3.MP4Sprite);
 		#end
 
 		// Functions & Variables
 		set('setVar', function(name:String, value:Dynamic) {
-			PlayState.instance.variables.set(name, value);
+			try {
+				MusicBeatState.getVariables().set(name, value);
+				
+			} catch(e:Dynamic) {
+				var warnMsg = 'Null reference in setVar("$name"): ${e}';
+				if(PlayState.instance != null)
+					PlayState.instance.addTextToDebug('WARNING (${this.origin}): $warnMsg', FlxColor.YELLOW);
+				trace('WARNING (${this.origin}): $warnMsg');
+			}
 			return value;
 		});
 		set('getVar', function(name:String) {
 			var result:Dynamic = null;
-			if(PlayState.instance.variables.exists(name)) result = PlayState.instance.variables.get(name);
+			// Luego en variables globales
+			if(MusicBeatState.getVariables().exists(name)) {
+				result = MusicBeatState.getVariables().get(name);
+			}
 			return result;
 		});
 		set('removeVar', function(name:String)
 		{
-			if(PlayState.instance.variables.exists(name))
+			var removed = false;
+			if(MusicBeatState.getVariables().exists(name))
 			{
-				PlayState.instance.variables.remove(name);
-				return true;
+				MusicBeatState.getVariables().remove(name);
+				removed = true;
 			}
-			return false;
+			return removed;
 		});
 		set('debugPrint', function(text:String, ?color:FlxColor = null) {
 			if(color == null) color = FlxColor.WHITE;
@@ -246,7 +276,6 @@ class SScript extends TeaSScript
 		});
 
 		// For adding your own callbacks
-		// not very tested but should work
 		#if LUA_ALLOWED
 		set('createGlobalCallback', function(name:String, func:Dynamic)
 		{
@@ -257,13 +286,12 @@ class SScript extends TeaSScript
 			FunkinLua.customFunctions.set(name, func);
 		});
 
-		// this one was tested
 		set('createCallback', function(name:String, func:Dynamic, ?funk:FunkinLua = null)
 		{
 			if(funk == null) funk = parentLua;
 			
-			if(parentLua != null) funk.addLocalCallback(name, func);
-			else FunkinLua.luaTrace('createCallback ($name): 3rd argument is null', false, false, FlxColor.RED);
+			if(funk != null) funk.addLocalCallback(name, func);
+			else PlayState.instance.addTextToDebug('createCallback ($name): 3rd argument is null', FlxColor.RED);
 		});
 		#end
 
@@ -289,6 +317,7 @@ class SScript extends TeaSScript
 				else trace('$origin - $msg');
 			}
 		});
+		
 		#if LUA_ALLOWED
 		set('parentLua', parentLua);
 		#else
@@ -296,6 +325,7 @@ class SScript extends TeaSScript
 		#end
 		set('this', this);
 		set('game', FlxG.state);
+		set('controls', Controls.instance);
 
 		set('buildTarget', LuaUtils.getBuildTarget());
 		set('customSubstate', CustomSubstate.instance);
@@ -303,7 +333,7 @@ class SScript extends TeaSScript
 
 		set('Function_Stop', LuaUtils.Function_Stop);
 		set('Function_Continue', LuaUtils.Function_Continue);
-		set('Function_StopLua', LuaUtils.Function_StopLua); //doesnt do much cuz HScript has a lower priority than Lua
+		set('Function_StopLua', LuaUtils.Function_StopLua);
 		set('Function_StopHScript', LuaUtils.Function_StopHScript);
 		set('Function_StopAll', LuaUtils.Function_StopAll);
 		
@@ -316,14 +346,13 @@ class SScript extends TeaSScript
 			set('addBehindGF', PlayState.instance.addBehindGF);
 			set('addBehindDad', PlayState.instance.addBehindDad);
 			set('addBehindBF', PlayState.instance.addBehindBF);
-			setSpecialObject(PlayState.instance, false, PlayState.instance.instancesExclude);
+			setSpecialObject(PlayState.instance, false, []);
 		}
 
 		if(varsToBring != null) {
 			for (key in Reflect.fields(varsToBring)) {
 				key = key.trim();
 				var value = Reflect.field(varsToBring, key);
-				//trace('Key $key: $value');
 				set(key, Reflect.field(varsToBring, key));
 			}
 			varsToBring = null;
@@ -334,32 +363,110 @@ class SScript extends TeaSScript
 		if (funcToRun == null) return null;
 
 		if(!exists(funcToRun)) {
-			#if LUA_ALLOWED
-			FunkinLua.luaTrace(origin + ' - No HScript function named: $funcToRun', false, false, FlxColor.RED);
-			#else
-			PlayState.instance.addTextToDebug(origin + ' - No HScript function named: $funcToRun', FlxColor.RED);
-			#end
-			return null;
+			// Return a successful TeaCall with null value instead of error
+			// This matches Psych 0.7.3 behavior where missing functions are silently ignored
+			return {
+				succeeded: true,
+				calledFunction: funcToRun,
+				returnValue: null,
+				exceptions: []
+			};
 		}
 
-		final callValue = call(funcToRun, funcArgs);
-		if (!callValue.succeeded)
-		{
-			final e = callValue.exceptions[0];
-			if (e != null) {
-				var msg:String = e.toString();
-				#if LUA_ALLOWED
-				if(parentLua != null)
-				{
-					FunkinLua.luaTrace('$origin: ${parentLua.lastCalledFunction} - $msg', false, false, FlxColor.RED);
-					return null;
+		try {
+			if(funcArgs == null) funcArgs = [];
+			
+			final callValue = call(funcToRun, funcArgs);
+			
+			// Always return the callValue, even if it failed
+			// This prevents crashes from propagating
+			if (!callValue.succeeded)
+			{
+				final e = callValue.exceptions[0];
+				if (e != null) {
+					var msg:String = e.toString();
+					
+					// Detectar errores comunes que deben ser warnings
+					var isWarning = msg.toLowerCase().contains('null') || 
+					                msg.toLowerCase().contains('object reference') ||
+					                msg.toLowerCase().contains('exprreturn');
+					
+					if(isWarning) {
+						// Mostrar como warning en lugar de error
+						#if LUA_ALLOWED
+						if(parentLua != null)
+						{
+							FunkinLua.luaTrace('$origin: ${parentLua.lastCalledFunction} - WARNING: $msg', false, false, FlxColor.YELLOW);
+							if(sscriptWarnHandler != null) {
+								sscriptWarnHandler('${parentLua.lastCalledFunction} - $msg', origin);
+							}
+						}
+						else
+						#end
+						{
+							if(PlayState.instance != null)
+								PlayState.instance.addTextToDebug('$origin - WARNING: $msg', FlxColor.YELLOW);
+							if(sscriptWarnHandler != null) {
+								sscriptWarnHandler(msg, origin);
+							}
+						}
+						// Return successful call with null value to prevent crashes
+						return {
+							succeeded: true,
+							calledFunction: funcToRun,
+							returnValue: null,
+							exceptions: []
+						};
+					}
+					
+					// Para errores críticos, registrar pero no crashear
+					sscript_Errors++;
+					#if LUA_ALLOWED
+					if(parentLua != null)
+					{
+						FunkinLua.luaTrace('$origin: ${parentLua.lastCalledFunction} - ERROR: $msg', false, false, FlxColor.RED);
+						if(sscriptErrorHandler != null) {
+							sscriptErrorHandler('${parentLua.lastCalledFunction} - $msg', origin);
+						}
+					}
+					else
+					#end
+					{
+						if(PlayState.instance != null)
+							PlayState.instance.addTextToDebug('$origin - ERROR: $msg', FlxColor.RED);
+						if(sscriptErrorHandler != null) {
+							sscriptErrorHandler(msg, origin);
+						}
+					}
 				}
-				#end
-				PlayState.instance.addTextToDebug('$origin - $msg', FlxColor.RED);
+				// Return successful call with null to prevent crash propagation
+				return {
+					succeeded: true,
+					calledFunction: funcToRun,
+					returnValue: null,
+					exceptions: []
+				};
 			}
-			return null;
+			return callValue;
 		}
-		return callValue;
+		catch(e:Dynamic) {
+			// Capturar cualquier error inesperado del interprete
+			var msg:String = Std.string(e);
+			trace('CRITICAL ERROR in SScript ($origin): $msg');
+			if(PlayState.instance != null)
+				PlayState.instance.addTextToDebug('CRITICAL ERROR ($origin): $msg', FlxColor.RED);
+			sscript_Errors++;
+			if(sscriptErrorHandler != null) {
+				sscriptErrorHandler('CRITICAL: $msg', origin);
+			}
+			// Return successful call with null to prevent crash propagation
+			return {
+				succeeded: true,
+				calledFunction: funcToRun,
+				returnValue: null,
+				exceptions: []
+			};
+		}
 	}
 
 	public function executeFunction(funcToRun:String = null, funcArgs:Array<Dynamic>):TeaCall {
@@ -370,46 +477,41 @@ class SScript extends TeaSScript
 	#if LUA_ALLOWED
 	public static function implement(funk:FunkinLua) {
 		funk.addLocalCallback("runHaxeCode", function(codeToRun:String, ?varsToBring:Any = null, ?funcToRun:String = null, ?funcArgs:Array<Dynamic> = null):Dynamic {
-			#if SScript
 			initHaxeModuleCode(funk, codeToRun, varsToBring);
-			final retVal:TeaCall = funk.sscript.executeCode(funcToRun, funcArgs);
-			if (retVal != null) {
-				if(retVal.succeeded)
-					return (retVal.returnValue == null || LuaUtils.isOfTypes(retVal.returnValue, [Bool, Int, Float, String, Array])) ? retVal.returnValue : null;
-
-				final e = retVal.exceptions[0];
-				final calledFunc:String = if(funk.sscript.origin == funk.lastCalledFunction) funcToRun else funk.lastCalledFunction;
-				if (e != null)
-					FunkinLua.luaTrace(funk.sscript.origin + ":" + calledFunc + " - " + e, false, false, FlxColor.RED);
-				return null;
-			}
-			else if (funk.sscript.returnValue != null)
+			if (funk.sscript != null)
 			{
-				return funk.sscript.returnValue;
+				final retVal:TeaCall = funk.sscript.executeCode(funcToRun, funcArgs);
+				if (retVal != null) {
+					if(retVal.succeeded)
+						return (retVal.returnValue == null || LuaUtils.isOfTypes(retVal.returnValue, [Bool, Int, Float, String, Array])) ? retVal.returnValue : null;
+
+					final e = retVal.exceptions[0];
+					final calledFunc:String = if(funk.sscript.origin == funk.lastCalledFunction) funcToRun else funk.lastCalledFunction;
+					if (e != null)
+						FunkinLua.luaTrace(funk.sscript.origin + ":" + calledFunc + " - " + e, false, false, FlxColor.RED);
+					return null;
+				}
 			}
-			#else
-			FunkinLua.luaTrace("runHaxeCode: HScript isn't supported on this platform!", false, false, FlxColor.RED);
-			#end
 			return null;
 		});
 		
 		funk.addLocalCallback("runHaxeFunction", function(funcToRun:String, ?funcArgs:Array<Dynamic> = null) {
-			#if SScript
-			var callValue = funk.sscript.executeFunction(funcToRun, funcArgs);
-			if (!callValue.succeeded)
+			if (funk.sscript != null)
 			{
-				var e = callValue.exceptions[0];
-				if (e != null)
-					FunkinLua.luaTrace('ERROR (${funk.sscript.origin}: ${callValue.calledFunction}) - ' + e.message.substr(0, e.message.indexOf('\n')), false, false, FlxColor.RED);
-				return null;
+				var callValue = funk.sscript.executeFunction(funcToRun, funcArgs);
+				if (!callValue.succeeded)
+				{
+					var e = callValue.exceptions[0];
+					if (e != null)
+						FunkinLua.luaTrace('ERROR (${funk.sscript.origin}: ${callValue.calledFunction}) - ' + e.message.substr(0, e.message.indexOf('\n')), false, false, FlxColor.RED);
+					return null;
+				}
+				else
+					return callValue.returnValue;
 			}
-			else
-				return callValue.returnValue;
-			#else
-			FunkinLua.luaTrace("runHaxeFunction: HScript isn't supported on this platform!", false, false, FlxColor.RED);
-			#end
+			return null;
 		});
-		// This function is unnecessary because import already exists in SScript as a native feature
+		
 		funk.addLocalCallback("addHaxeLibrary", function(libName:String, ?libPackage:String = '') {
 			var str:String = '';
 			if(libPackage.length > 0)
@@ -417,16 +519,15 @@ class SScript extends TeaSScript
 			else if(libName == null)
 				libName = '';
 
-			var c:Dynamic = Type.resolveClass(str + libName);
+			var c:Dynamic = null;
+				c = Type.resolveClass(str + libName);
 			if (c == null)
 				c = Type.resolveEnum(str + libName);
+			
 
-			#if SScript
 			if (c != null)
-				TeaSScript.globalVariables[libName] = c;
-			#end
+				SScript.globalVariables[libName] = c;
 
-			#if SScript
 			if (funk.sscript != null)
 			{
 				try {
@@ -437,9 +538,6 @@ class SScript extends TeaSScript
 					FunkinLua.luaTrace(funk.sscript.origin + ":" + funk.lastCalledFunction + " - " + e, false, false, FlxColor.RED);
 				}
 			}
-			#else
-			FunkinLua.luaTrace("addHaxeLibrary: HScript isn't supported on this platform!", false, false, FlxColor.RED);
-			#end
 		});
 	}
 	#end
@@ -472,39 +570,34 @@ class SScriptFlxColor {
 	public static var CYAN(default, null):Int = FlxColor.CYAN;
 
 	public static function fromInt(Value:Int):Int 
-	{
 		return cast FlxColor.fromInt(Value);
-	}
 
 	public static function fromRGB(Red:Int, Green:Int, Blue:Int, Alpha:Int = 255):Int
-	{
 		return cast FlxColor.fromRGB(Red, Green, Blue, Alpha);
-	}
-	public static function fromRGBFloat(Red:Float, Green:Float, Blue:Float, Alpha:Float = 1):Int
-	{	
+
+	public static function fromRGBFloat(Red:Float, Green:Float, Blue:Float, Alpha:Float = 1):Int	
 		return cast FlxColor.fromRGBFloat(Red, Green, Blue, Alpha);
-	}
 
 	public static inline function fromCMYK(Cyan:Float, Magenta:Float, Yellow:Float, Black:Float, Alpha:Float = 1):Int
-	{
 		return cast FlxColor.fromCMYK(Cyan, Magenta, Yellow, Black, Alpha);
-	}
 
-	public static function fromHSB(Hue:Float, Sat:Float, Brt:Float, Alpha:Float = 1):Int
-	{	
+	public static function fromHSB(Hue:Float, Sat:Float, Brt:Float, Alpha:Float = 1):Int	
 		return cast FlxColor.fromHSB(Hue, Sat, Brt, Alpha);
-	}
-	public static function fromHSL(Hue:Float, Sat:Float, Light:Float, Alpha:Float = 1):Int
-	{	
+
+	public static function fromHSL(Hue:Float, Sat:Float, Light:Float, Alpha:Float = 1):Int	
 		return cast FlxColor.fromHSL(Hue, Sat, Light, Alpha);
-	}
+
 	public static function fromString(str:String):Int
-	{
 		return cast FlxColor.fromString(str);
-	}
+	
+	public static function interpolate(Color1:Int, Color2:Int, Factor:Float = 0.5):Int
+		return cast FlxColor.interpolate(Color1, Color2, Factor);
+	
+	public static function gradient(Color1:Int, Color2:Int, Steps:Int, ?Ease:Float->Float):Array<Int>
+		return cast FlxColor.gradient(Color1, Color2, Steps, Ease);
 }
 #else
-class SScript
+class SScriptCompat
 {
 	#if LUA_ALLOWED
 	public static function implement(funk:FunkinLua) {

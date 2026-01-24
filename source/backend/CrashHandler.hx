@@ -185,7 +185,7 @@ class CrashHandler
 		saveErrorMessage(errorLog);
 		#end
 
-		// Mensaje con link de ayuda
+		// Message with help link
 		var errorMsg = '$errorLog\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Critical Error!");
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
@@ -216,7 +216,7 @@ class CrashHandler
 	#if sys
 	private static function saveErrorMessage(message:String):Void
 	{
-		final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
+		final folder:String = #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
 
 		try
 		{

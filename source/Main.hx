@@ -83,7 +83,11 @@ class Main extends Sprite
 		super();
 		#if mobile
 		#if android
+		ClientPrefs.loadStorageTypeEarly();
 		StorageUtil.requestPermissions();
+		trace('[Main] Current storage type: ' + ClientPrefs.data.storageType);
+		trace('[Main] Storage directory: ' + StorageUtil.getStorageDirectory());
+		trace('[Main] Mods directory: ' + StorageUtil.getExternalStorageDirectory());
 		#end
 		Sys.setCwd(StorageUtil.getStorageDirectory());
 		#end
@@ -110,8 +114,6 @@ class Main extends Sprite
 		#if HSCRIPT_ALLOWED
 		states.ModState.initGlobalScript();
 		#end
-
-		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {
@@ -174,6 +176,9 @@ class Main extends Sprite
 		Controls.instance = new Controls();
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
+		#if mobile
+		MobileData.init();
+		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
@@ -184,15 +189,19 @@ class Main extends Sprite
 		// Determine initial state. InitialState will load mods and redirect accordingly.
 		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
+		trace('[Main] Checking if files need to be copied...');
 		if (!CopyState.checkExistingFiles()) {
+			trace('[Main] Files missing, starting CopyState');
 			initialState = CopyState;
-		} else
-		#end
-		{
-			// Preloader removed: always start at InitialState
+		} else {
+			trace('[Main] All files exist, skipping CopyState');
 		}
+		#else
+		// Preloader removed: always start at InitialState
+		#end
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
+		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		addChild(fpsVar);
@@ -200,9 +209,9 @@ class Main extends Sprite
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
 		
-		// Preferences and MobileData initialization moved to InitialState.
 
-		// Agregar los botones de TraceDisplay y Debug para móvil
+
+		// Add TraceDisplay and Debug buttons for mobile.
 		#if mobile
 		traceButton = new TraceButton();
 		addChild(traceButton);
@@ -214,7 +223,7 @@ class Main extends Sprite
 		Lib.current.stage.align = "tl";
 		Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
 		   if(fpsVar != null) {
-			   // Posicionamiento inicial con márgenes constantes
+			   // Initial positioning with constant margins.
 			   var marginX = 10;
 			   var marginY = 3;
 			   fpsVar.positionFPS(marginX, marginY, 1.0);
