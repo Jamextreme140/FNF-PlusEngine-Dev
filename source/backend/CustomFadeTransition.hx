@@ -58,7 +58,6 @@ class CustomFadeTransition extends MusicBeatSubstate {
     // Cancel current transition
     public static function cancelCurrentTransition():Void {
         if (currentTransition != null && !currentTransition.isDestroyed) {
-            trace('Canceling current transition: ${currentTransition.transitionId}');
             currentTransition.forceClose();
         }
         
@@ -85,7 +84,6 @@ class CustomFadeTransition extends MusicBeatSubstate {
         
         // Cancel previous transition before creating new one
         if (currentTransition != null && currentTransition != this) {
-            trace('Canceling previous transition before creating new one');
             cancelCurrentTransition();
         }
         
@@ -368,8 +366,6 @@ class CustomFadeTransition extends MusicBeatSubstate {
         if ( isDestroyed || isClosing) return;
         
         isClosing = true;
-        
-        trace('Force closing transition: $transitionId');
         
         // Desbloquear si somos la transición actual
         if (currentTransition == this) {

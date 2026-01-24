@@ -28,40 +28,20 @@ import haxe.Exception;
 
 /**
  * A storage class for mobile.
- * @author Karim Akra and Lily Ross (mcagabe19)
+ * @author Karim Akra and Homura Akemi (HomuHomu833)
  */
 class StorageUtil
 {
 	#if sys
-	// root directory, used for handling the saved storage type and path
-	public static final rootDir:String = LimeSystem.applicationStorageDirectory;
-
-	public static function getStorageDirectory(?force:Bool = false):String
-	{
-		var daPath:String = '';
-		#if android
-		if (!FileSystem.exists(rootDir + 'storagetype.txt'))
-			File.saveContent(rootDir + 'storagetype.txt', 'EXTERNAL_DATA');
-		var curStorageType:String = File.getContent(rootDir + 'storagetype.txt');
-		daPath = force ? StorageType.fromStrForce(curStorageType) : StorageType.fromStr(curStorageType);
-		daPath = Path.addTrailingSlash(daPath);
-		#elseif ios
-		daPath = LimeSystem.documentsDirectory;
-		#else
-		daPath = Sys.getCwd();
-		#end
-
-		return daPath;
-	}
+	public static function getStorageDirectory():String
+		return #if android haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) #elseif ios lime.system.System.documentsDirectory #else Sys.getCwd() #end;
 
 	public static function getSMDirectory():String
-	{
-		return #if android Path.addTrailingSlash(StorageUtil.getStorageDirectory() + 'sm/') #else './sm/' #end;
-	}
+		return #if android '/sdcard/.PlusEngine/sm/' #else './sm/' #end;
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
-		final folder:String = #if android StorageUtil.getStorageDirectory() + 'saves/' #else Sys.getCwd() + 'saves/' #end;
+		final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
 		try
 		{
 			if (!FileSystem.exists(folder))
@@ -72,21 +52,33 @@ class StorageUtil
 				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
 		}
 		catch (e:Dynamic)
+		{
+			// Fallback: if the selected storage is not writable (common on newer Android versions),
+			// try app-specific external files dir.
+			#if android
+			try
+			{
+				final fallbackFolder:String = haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) + 'saves/';
+				if (!FileSystem.exists(fallbackFolder))
+					FileSystem.createDirectory(fallbackFolder);
+				File.saveContent('$fallbackFolder/$fileName', fileData);
+				if (alert)
+					CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
+				return;
+			}
+			catch (_:Dynamic) {}
+			#end
+
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]), Language.getPhrase('mobile_error', "Error!"));
 			else
-				trace('$fileName couldn\'t be saved. (${Std.string(e)})');
+				trace('$fileName couldn\'t be saved. (${e.message})');
 	}
 
 	#if android
+	// always force path due to haxe
 	public static function getExternalStorageDirectory():String
-	{
-		if (!FileSystem.exists(rootDir + 'storagetype.txt'))
-			File.saveContent(rootDir + 'storagetype.txt', 'EXTERNAL');
-		var curStorageType:String = File.getContent(rootDir + 'storagetype.txt');
-
-		return Path.addTrailingSlash(StorageType.fromStr(curStorageType));
-	}
+		return '/sdcard/.PlusEngine/';
 
 	public static function requestPermissions():Void
 	{
@@ -96,11 +88,7 @@ class StorageUtil
 			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
 
 		if (!AndroidEnvironment.isExternalStorageManager())
-		{
-			if (AndroidVersion.SDK_INT >= AndroidVersionCode.S)
-				AndroidSettings.requestSetting('REQUEST_MANAGE_MEDIA');
 			AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
-		}
 
 		if ((AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU
 			&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_MEDIA_IMAGES'))
@@ -109,10 +97,12 @@ class StorageUtil
 			CoolUtil.showPopUp(Language.getPhrase('permissions_message', 'If you accepted the permissions you are all good!\nIf you didn\'t then expect a crash\nPress OK to see what happens'),
 				Language.getPhrase('mobile_notice', "Notice!"));
 
+		// Create main storage directory
 		try
 		{
-			if (!FileSystem.exists(StorageUtil.getStorageDirectory()))
-				FileSystem.createDirectory(StorageUtil.getStorageDirectory());
+			var mainDir = StorageUtil.getStorageDirectory();
+			if (!FileSystem.exists(mainDir))
+				FileSystem.createDirectory(mainDir);
 		}
 		catch (e:Dynamic)
 		{
@@ -120,17 +110,19 @@ class StorageUtil
 			LimeSystem.exit(1);
 		}
 
+		// Create mods directory in public external storage
 		try
 		{
-			if (!FileSystem.exists(StorageUtil.getStorageDirectory() + 'mods'))
-				FileSystem.createDirectory(StorageUtil.getStorageDirectory() + 'mods');
+			if (!FileSystem.exists(StorageUtil.getExternalStorageDirectory() + 'mods'))
+				FileSystem.createDirectory(StorageUtil.getExternalStorageDirectory() + 'mods');
 		}
 		catch (e:Dynamic)
 		{
-			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
-			LimeSystem.exit(1);
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getExternalStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			lime.system.System.exit(1);
 		}
 
+		// Create StepMania directory
 		try
 		{
 			if (!FileSystem.exists(StorageUtil.getSMDirectory()))
@@ -162,60 +154,176 @@ class StorageUtil
 		daPath = Path.addTrailingSlash(daPath.endsWith("\n") ? daPath.substr(0, daPath.length - 1) : daPath);
 		return daPath;
 	}
+
+	/**
+	 * Best-effort migration when switching storage types.
+	 * Copies game data (saves, logs, assets) from old storage to new storage.
+	 * Mods and modsList.txt are NOT migrated as they remain in public storage.
+	 */
+	public static function migrateStorage(oldType:String, newType:String):Void
+	{
+		if (oldType == null || newType == null || oldType == newType) return;
+
+		var oldRoot = haxe.io.Path.addTrailingSlash(getStoragePathForType(oldType));
+		var newRoot = haxe.io.Path.addTrailingSlash(getStoragePathForType(newType));
+		if (oldRoot == newRoot) return;
+
+		// Ensure target directory exists and is writable
+		try
+		{
+			if (!FileSystem.exists(newRoot))
+				FileSystem.createDirectory(newRoot);
+			
+			// Test write permission
+			var testFile = newRoot + '.write_test';
+			File.saveContent(testFile, 'test');
+			FileSystem.deleteFile(testFile);
+		}
+		catch (e:Dynamic)
+		{
+			return;
+		}
+
+		// Migrate game data only (saves, logs, assets)
+		// Mods and modsList.txt stay in /sdcard/.PlusEngine/ and are not migrated
+		copyDirectoryIfExists(oldRoot + 'saves', newRoot + 'saves');
+		copyDirectoryIfExists(oldRoot + 'logs', newRoot + 'logs');
+		copyDirectoryIfExists(oldRoot + 'assets', newRoot + 'assets');
+
+		// Cleanup old data to avoid duplicated storage usage
+		deleteDirectoryIfExists(oldRoot + 'saves');
+		deleteDirectoryIfExists(oldRoot + 'logs');
+		deleteDirectoryIfExists(oldRoot + 'assets');
+		
+	}
+
+	static function copyFileIfExists(src:String, dst:String):Void
+	{
+		try
+		{
+			if (!FileSystem.exists(src) || FileSystem.isDirectory(src)) return;
+
+			var dstDir = haxe.io.Path.directory(dst);
+			if (dstDir != null && dstDir.length > 0 && !FileSystem.exists(dstDir))
+				FileSystem.createDirectory(dstDir);
+
+			sys.io.File.copy(src, dst);
+		}
+		catch (_:Dynamic) {}
+	}
+
+	static function copyDirectoryIfExists(srcDir:String, dstDir:String):Void
+	{
+		try
+		{
+			if (!FileSystem.exists(srcDir) || !FileSystem.isDirectory(srcDir)) return;
+			if (!FileSystem.exists(dstDir)) FileSystem.createDirectory(dstDir);
+
+			for (name in FileSystem.readDirectory(srcDir))
+			{
+				var src = haxe.io.Path.join([srcDir, name]);
+				var dst = haxe.io.Path.join([dstDir, name]);
+				if (FileSystem.isDirectory(src))
+					copyDirectoryIfExists(src, dst);
+				else
+					copyFileIfExists(src, dst);
+			}
+		}
+		catch (_:Dynamic) {}
+	}
+
+	static function deleteDirectoryIfExists(dir:String):Void
+	{
+		try
+		{
+			if (!FileSystem.exists(dir) || !FileSystem.isDirectory(dir)) return;
+			for (name in FileSystem.readDirectory(dir))
+			{
+				var path = haxe.io.Path.join([dir, name]);
+				if (FileSystem.isDirectory(path))
+					deleteDirectoryIfExists(path);
+				else
+					FileSystem.deleteFile(path);
+			}
+			FileSystem.deleteDirectory(dir);
+		}
+		catch (_:Dynamic) {}
+	}
+	
+	/**
+	 * Returns an array of available storage types with their descriptions
+	 */
+	public static function getAvailableStorageTypes():Array<StorageTypeInfo>
+	{
+		return [
+			{
+				id: "EXTERNAL_DATA",
+				name: "App Data (Recommended)",
+				description: "Android/data/<package>/files/\nScoped storage, no special permissions needed.\nData cleared when app is uninstalled."
+			},
+			{
+				id: "EXTERNAL",
+				name: "Public Storage",
+				description: "Stores in /sdcard/.PlusEngine/\nRequires file manager permission on Android 11+.\nPersists after uninstall, easy to access with file managers."
+			},
+			{
+				id: "EXTERNAL_MEDIA",
+				name: "Media Storage",
+				description: "Android/media/<package>/files/\nSuitable for media files.\nData cleared when app is uninstalled."
+			},
+			{
+				id: "EXTERNAL_OBB",
+				name: "OBB Storage",
+				description: "Android/obb/<package>/files/\nFor large expansion files and DLCs.\nData cleared when app is uninstalled."
+			},
+			{
+				id: "EXTERNAL_GLOBAL",
+				name: "Global App Data",
+				description: "Android/data/<package>/files/\nSame as App Data (kept for compatibility).\nData cleared when app is uninstalled."
+			}
+		];
+	}
+	
+	/**
+	 * Gets the storage path for a specific storage type (useful for migration)
+	 */
+	public static function getStoragePathForType(storageType:String):String
+	{
+		switch(storageType)
+		{
+			case "EXTERNAL":
+				return AndroidEnvironment.getExternalStorageDirectory() + '/.PlusEngine/';
+				
+			case "EXTERNAL_DATA":
+				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
+				
+			case "EXTERNAL_MEDIA":
+				var mediaBase = getAndroidMediaBaseDir();
+				if (mediaBase != null && mediaBase.length > 0)
+					return mediaBase + '/files/';
+				var mediaFilesDir = AndroidContext.getExternalFilesDir('Media');
+				if (mediaFilesDir != null && mediaFilesDir.length > 0)
+					return mediaFilesDir + '/files/';
+				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
+				
+			case "EXTERNAL_OBB":
+				return AndroidContext.getObbDir() + '/files/';
+				
+			case "EXTERNAL_GLOBAL":
+				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
+				
+			default:
+				return AndroidContext.getExternalFilesDir() + '/.PlusEngine/';
+		}
+	}
+	
+	/**
+	 * Checks if storage type requires special permissions
+	 */
+	public static function requiresSpecialPermissions(storageType:String):Bool
+	{
+		return (storageType == "EXTERNAL" || storageType == "EXTERNAL_GLOBAL");
+	}
 	#end
 	#end
 }
-
-#if android
-@:runtimeValue
-enum abstract StorageType(String) from String to String
-{
-	final forcedPath = '/storage/emulated/0/';
-	final packageNameLocal = 'com.leninasto.plusengine';
-	final fileLocal = 'PlusEngine';
-
-	var EXTERNAL_DATA = "EXTERNAL_DATA";
-	var EXTERNAL_OBB = "EXTERNAL_OBB";
-	var EXTERNAL_MEDIA = "EXTERNAL_MEDIA";
-	var EXTERNAL = "EXTERNAL";
-	var EXTERNAL_GLOBAL = "EXTERNAL_GLOBAL";
-
-	public static function fromStr(str:String):StorageType
-	{
-		final EXTERNAL_DATA = AndroidContext.getExternalFilesDir();
-		final EXTERNAL_OBB = AndroidContext.getObbDir();
-		final EXTERNAL_MEDIA = AndroidEnvironment.getExternalStorageDirectory() + '/Android/media/' + lime.app.Application.current.meta.get('packageName');
-		final EXTERNAL = AndroidEnvironment.getExternalStorageDirectory() + '/.' + lime.app.Application.current.meta.get('file');
-		final EXTERNAL_GLOBAL = AndroidEnvironment.getExternalStorageDirectory() + '/.' + fileLocal;
-
-		return switch (str)
-		{
-			case "EXTERNAL_DATA": EXTERNAL_DATA;
-			case "EXTERNAL_OBB": EXTERNAL_OBB;
-			case "EXTERNAL_MEDIA": EXTERNAL_MEDIA;
-			case "EXTERNAL": EXTERNAL;
-			case "EXTERNAL_GLOBAL": EXTERNAL_GLOBAL;
-			default: StorageUtil.getExternalDirectory(str) + '.' + fileLocal;
-		}
-	}
-
-	public static function fromStrForce(str:String):StorageType
-	{
-		final EXTERNAL_DATA = forcedPath + 'Android/data/' + packageNameLocal + '/files';
-		final EXTERNAL_OBB = forcedPath + 'Android/obb/' + packageNameLocal;
-		final EXTERNAL_MEDIA = forcedPath + 'Android/media/' + packageNameLocal;
-		final EXTERNAL = forcedPath + '.' + fileLocal;
-		final EXTERNAL_GLOBAL = forcedPath + '.' + fileLocal;
-
-		return switch (str)
-		{
-			case "EXTERNAL_DATA": EXTERNAL_DATA;
-			case "EXTERNAL_OBB": EXTERNAL_OBB;
-			case "EXTERNAL_MEDIA": EXTERNAL_MEDIA;
-			case "EXTERNAL": EXTERNAL;
-			case "EXTERNAL_GLOBAL": EXTERNAL_GLOBAL;
-			default: StorageUtil.getExternalDirectory(str) + '.' + fileLocal;
-		}
-	}
-}
-#end

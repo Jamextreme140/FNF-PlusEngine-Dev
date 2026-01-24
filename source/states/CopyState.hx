@@ -145,7 +145,7 @@ class CopyState extends MusicBeatState
 				if (failedFiles.length > 0)
 				{
 					CoolUtil.showPopUp(failedFiles.join('\n'), 'Failed To Copy ${failedFiles.length} File.');
-					final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
+					final folder:String = #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
 					if (!FileSystem.exists(folder))
 						FileSystem.createDirectory(folder);
 					File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '-CopyState' + '.txt', failedFilesStack.join('\n'));
@@ -218,17 +218,24 @@ class CopyState extends MusicBeatState
 		var fileName = Path.withoutDirectory(file);
 		var directory = Path.directory(file);
 		#if android
-		if (fileName.startsWith('mods/'))
-			directory = StorageUtil.getExternalStorageDirectory() + directory;
+		if (file.startsWith('mods/'))
+			directory = StorageUtil.getExternalStorageDirectory() + directory; // Mods in public storage
+		else
+			directory = StorageUtil.getStorageDirectory() + directory; // Game assets follow storage type
 		#end
+		
+		var fullPath = Path.join([directory, fileName]);
+		
 		try
 		{
 			var fileData:String = OpenFLAssets.getText(getFile(file));
 			if (fileData == null)
 				fileData = '';
 			if (!FileSystem.exists(directory))
+			{
 				FileSystem.createDirectory(directory);
-			File.saveContent(Path.join([directory, fileName]), fileData);
+			}
+			File.saveContent(fullPath, fileData);
 		}
 		catch (e:haxe.Exception)
 		{
@@ -272,12 +279,23 @@ class CopyState extends MusicBeatState
 		var assets = locatedFiles.filter(folder -> folder.startsWith('assets/'));
 		var mods = locatedFiles.filter(folder -> folder.startsWith('mods/'));
 		locatedFiles = assets.concat(mods);
-		locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(file));
+		
 		#if android
-		for (file in locatedFiles)
-			if (file.startsWith('mods/'))
-				locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file));
 		#end
+		
+		#if android
+		// Check if files exist in their respective storage locations
+		locatedFiles = locatedFiles.filter(file -> {
+			if (file.startsWith('mods/'))
+				return !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file);
+			else
+				return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
+		});
+		#else
+		locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(file));
+		#end
+		
+
 
 		var filesToRemove:Array<String> = [];
 

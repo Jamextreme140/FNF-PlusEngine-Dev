@@ -154,13 +154,32 @@ class Mods
 	}
 
 	public static var updatedOnState:Bool = false;
+	inline static function getModsListPath():String
+		return #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
+
+	inline static function getFallbackModsListPath():String
+		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
+
+	static function resolveModsListReadPath():String
+	{
+		#if android
+		var primary = getModsListPath();
+		if (FileSystem.exists(primary)) return primary;
+		var fallback = getFallbackModsListPath();
+		if (FileSystem.exists(fallback)) return fallback;
+		return primary;
+		#else
+		return getModsListPath();
+		#end
+	}
+
 	inline public static function parseList():ModsList {
 		if(!updatedOnState) updateModList();
 		var list:ModsList = {enabled: [], disabled: [], all: []};
 
 		#if MODS_ALLOWED
 		try {
-			for (mod in CoolUtil.coolTextFile(#if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt'))
+			for (mod in CoolUtil.coolTextFile(resolveModsListReadPath()))
 			{
 				//trace('Mod: $mod');
 				if(mod.trim().length < 1) continue;
@@ -186,7 +205,7 @@ class Mods
 		var list:Array<Array<Dynamic>> = [];
 		var added:Array<String> = [];
 		try {
-			for (mod in CoolUtil.coolTextFile(#if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt'))
+			for (mod in CoolUtil.coolTextFile(resolveModsListReadPath()))
 			{
 				var dat:Array<String> = mod.split("|");
 				var folder:String = dat[0];
@@ -220,7 +239,15 @@ class Mods
 			fileStr += values[0] + '|' + (values[1] ? '1' : '0');
 		}
 
-		File.saveContent(#if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt', fileStr);
+		// Save modsList next to the public mods folder for compatibility.
+		// If Android blocks the write, fall back to app-specific storage.
+		try {
+			File.saveContent(getModsListPath(), fileStr);
+		} catch (_:Dynamic) {
+			try {
+				File.saveContent(getFallbackModsListPath(), fileStr);
+			} catch (_:Dynamic) {}
+		}
 		updatedOnState = true;
 		//trace('Saved modsList.txt');
 		#end

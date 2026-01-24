@@ -34,6 +34,12 @@ class MobileOptionsSubState extends BaseOptionsMenu
 	#end
 	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
+	#if android
+	final storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL", "EXTERNAL_MEDIA", "EXTERNAL_OBB", "EXTERNAL_GLOBAL"];
+	var initialStorageType:String;
+	var pendingStorageType:String;
+	var storageTypeChanged:Bool = false;
+	#end
 	var option:Option;
 
 	public function new()
@@ -42,6 +48,10 @@ class MobileOptionsSubState extends BaseOptionsMenu
 			storageTypes = storageTypes.concat(externalPaths); #end
 		title = Language.getPhrase('mobile_options_menu', 'Mobile Options');
 		rpcTitle = 'Mobile Options Menu'; // for Discord Rich Presence, fuck it
+		#if android
+		initialStorageType = ClientPrefs.data.storageType;
+		pendingStorageType = initialStorageType;
+		#end
 
 		option = new Option('Extra Controls', 'Select how many extra buttons you prefer to have?\nThey can be used for mechanics with LUA or HScript.',
 			'extraButtons', STRING, exControlTypes);
@@ -73,6 +83,20 @@ class MobileOptionsSubState extends BaseOptionsMenu
 		option.onChange = () -> FlxG.scaleMode = new mobile.backend.MobileScaleMode();
 		addOption(option);
 		#end
+		
+		#if android
+		option = new Option('Storage Type',
+			'Select where the game should store its data.\nEXTERNAL_DATA: Recommended, scoped storage.\nEXTERNAL: Public /sdcard/.PlusEngine/\nChanging this requires restarting the game!',
+			'storageType', STRING, storageTypes);
+		option.onChange = () -> 
+		{
+			var newType = curOption.getValue();
+			pendingStorageType = newType;
+			storageTypeChanged = (pendingStorageType != initialStorageType);
+			// Don't save here, we'll save on close with the correct value
+		};
+		addOption(option);
+		#end
 
 		if (MobileData.mode == 3)
 		{
@@ -99,32 +123,42 @@ class MobileOptionsSubState extends BaseOptionsMenu
 	}
 
 	#if android
-	function onStorageChange():Void
+	override public function close()
 	{
-		File.saveContent(lime.system.System.applicationStorageDirectory + 'storagetype.txt', ClientPrefs.data.storageType);
-
-		var lastStoragePath:String = StorageType.fromStrForce(lastStorageType) + '/';
-
-		try
+		if (storageTypeChanged)
 		{
-			if (ClientPrefs.data.storageType != "EXTERNAL")
-				Sys.command('rm', ['-rf', lastStoragePath]);
+			trace('[MobileOptions] Storage type changing from ' + initialStorageType + ' to ' + pendingStorageType);
+			
+			// Update ClientPrefs.data FIRST
+			ClientPrefs.data.storageType = pendingStorageType;
+			
+			// Now save settings (this will copy data.storageType to FlxG.save.data.storageType)
+			ClientPrefs.saveSettings();
+			
+			trace('[MobileOptions] Verifying save: ClientPrefs.data.storageType = ' + ClientPrefs.data.storageType);
+			trace('[MobileOptions] Verifying save: FlxG.save.data.storageType = ' + FlxG.save.data.storageType);
+			
+			var oldPath = StorageUtil.getStoragePathForType(initialStorageType);
+			var newPath = StorageUtil.getStoragePathForType(pendingStorageType);
+
+			trace('[MobileOptions] Old path: ' + oldPath);
+			trace('[MobileOptions] New path: ' + newPath);
+
+			// Copy what we can before exiting (best-effort)
+			StorageUtil.migrateStorage(initialStorageType, pendingStorageType);
+
+			var message = 'Storage directory changed.\n\n';
+			message += 'The game will now close. Please reopen it.\n\n';
+			message += 'Old: ' + oldPath + '\n';
+			message += 'New: ' + newPath + '\n\n';
+			message += 'Missing files will be copied on next launch.';
+			
+			FlxG.stage.window.alert(message, 'Restart Required');
+			lime.system.System.exit(0);
+			return;
 		}
-		catch (e:haxe.Exception)
-			trace('Failed to remove last directory. (${e.message})');
+
+		super.close();
 	}
 	#end
-
-	override public function destroy()
-	{
-		super.destroy();
-		#if android
-		if (ClientPrefs.data.storageType != lastStorageType)
-		{
-			onStorageChange();
-			CoolUtil.showPopUp(Language.getPhrase('storage_type_changed', 'Storage Type has been changed and you needed restart the game!\nPress OK to close the game.', Language.getPhrase('mobile_notice', "Notice!")));
-			lime.system.System.exit(0);
-		}
-		#end
-	}
 }
