@@ -247,6 +247,20 @@
 	<icon path="art/icons/iconOG.png" />
 	
 	<section if="android">
+		<!-- Android Permissions -->
+		<config:android permission="android.permission.INTERNET" />
+		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
+		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
+		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
+		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
+		
+		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
+		<config:android target-sdk-version="35" />
+		<android target-sdk-version="35" />
+		
 		<icon path="art/icons/mobile/icon32.png" size='32'/>
 		<icon path="art/icons/mobile/icon64.png" size='64'/>
 		<icon path="art/icons/mobile/iconOG.png"/>

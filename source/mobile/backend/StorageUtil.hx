@@ -34,20 +34,47 @@ class StorageUtil
 {
 	#if sys
 	public static function getStorageDirectory():String
-		return #if android haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) #elseif ios lime.system.System.documentsDirectory #else Sys.getCwd() #end;
+	{
+		#if android
+		// Use the configured storage type from ClientPrefs
+		if (ClientPrefs.data != null && ClientPrefs.data.storageType != null)
+			return getStoragePathForType(ClientPrefs.data.storageType);
+		else
+			return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()); // Fallback to default
+		#elseif ios
+		return lime.system.System.documentsDirectory;
+		#else
+		return Sys.getCwd();
+		#end
+	}
 
 	public static function getSMDirectory():String
 		return #if android '/sdcard/.PlusEngine/sm/' #else './sm/' #end;
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
-		final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
+		// modsList.txt always goes to public storage (/sdcard/.PlusEngine/)
+		var folder:String;
+		if (fileName == 'modsList.txt')
+		{
+			#if android
+			folder = getExternalStorageDirectory();
+			#else
+			folder = Sys.getCwd();
+			#end
+		}
+		else
+		{
+			// Other files go to the configured storage + saves/
+			folder = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
+		}
+		
 		try
 		{
 			if (!FileSystem.exists(folder))
 				FileSystem.createDirectory(folder);
 
-			File.saveContent('$folder/$fileName', fileData);
+			File.saveContent(folder + fileName, fileData);
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
 		}
@@ -299,22 +326,26 @@ class StorageUtil
 				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 				
 			case "EXTERNAL_MEDIA":
-				var mediaBase = getAndroidMediaBaseDir();
-				if (mediaBase != null && mediaBase.length > 0)
-					return mediaBase + '/files/';
-				var mediaFilesDir = AndroidContext.getExternalFilesDir('Media');
-				if (mediaFilesDir != null && mediaFilesDir.length > 0)
-					return mediaFilesDir + '/files/';
+				// Android/media/<package>/files/
+				var externalFilesPath = AndroidContext.getExternalFilesDir();
+				if (externalFilesPath != null && externalFilesPath.length > 0)
+				{
+					// Replace '/Android/data/' with '/Android/media/'
+					var mediaPath = externalFilesPath.replace('/Android/data/', '/Android/media/');
+					return haxe.io.Path.addTrailingSlash(mediaPath);
+				}
 				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 				
 			case "EXTERNAL_OBB":
-				return AndroidContext.getObbDir() + '/files/';
+				// Android/obb/<package>/
+				return haxe.io.Path.addTrailingSlash(AndroidContext.getObbDir());
 				
 			case "EXTERNAL_GLOBAL":
 				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 				
 			default:
-				return AndroidContext.getExternalFilesDir() + '/.PlusEngine/';
+				// Fallback to EXTERNAL_DATA
+				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 		}
 	}
 	

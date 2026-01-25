@@ -54,6 +54,16 @@ class Paths
 		#if cpp
 		cpp.NativeGc.run(true);
 		#end
+		
+		// Extra aggressive cleanup on low-end Android
+		#if android
+		if (AndroidOptimizer.getCurrentTier() == 0)
+		{
+			// Force additional GC cycles on low-end
+			System.gc();
+			cpp.NativeGc.run(true);
+		}
+		#end
 	}
 
 	// define the locally tracked assets
@@ -298,6 +308,13 @@ class Paths
 			bitmap.image = null;
 			bitmap.readable = true;
 		}
+		#if android
+		else
+		{
+			// Even without GPU caching, optimize on low-end Android
+			bitmap = TextureOptimizer.optimize(bitmap);
+		}
+		#end
 
 		var graph:FlxGraphic = FlxGraphic.fromBitmapData(bitmap, false, key);
 		graph.persist = true;

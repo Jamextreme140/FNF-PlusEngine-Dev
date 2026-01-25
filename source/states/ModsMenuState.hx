@@ -849,8 +849,18 @@ class ModsMenuState extends MusicBeatState
 			fileStr += '$mod|$on';
 		}
 
-		var path:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
-		File.saveContent(path, fileStr);
+		// Use StorageUtil.saveContent with proper error handling and no popup alert
+		#if android
+		StorageUtil.saveContent('modsList.txt', fileStr, false);
+		#else
+		var path:String = Sys.getCwd() + 'modsList.txt';
+		try {
+			File.saveContent(path, fileStr);
+		} catch (e:Dynamic) {
+			trace('[ModsMenuState] Failed to save modsList.txt: $e');
+		}
+		#end
+		
 		Mods.parseList();
 		Mods.loadTopMod();
 	}

@@ -165,7 +165,7 @@ class Native
 	 * Detects GPU name using multiple methods.
 	 * Priority: OpenGL GL_RENDERER > driverInfo > fallback
 	 */
-	private static function detectGPU():String
+	public static function detectGPU():String
 	{
 		#if (!flash && sys)
 		try {

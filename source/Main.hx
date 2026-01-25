@@ -87,7 +87,6 @@ class Main extends Sprite
 		StorageUtil.requestPermissions();
 		trace('[Main] Current storage type: ' + ClientPrefs.data.storageType);
 		trace('[Main] Storage directory: ' + StorageUtil.getStorageDirectory());
-		trace('[Main] Mods directory: ' + StorageUtil.getExternalStorageDirectory());
 		#end
 		Sys.setCwd(StorageUtil.getStorageDirectory());
 		#end
@@ -177,6 +176,11 @@ class Main extends Sprite
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
 		MobileData.init();
+		
+		// Initialize Android optimizer for automatic quality adjustments
+		#if android
+		backend.AndroidOptimizer.init();
+		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
@@ -187,9 +191,7 @@ class Main extends Sprite
 		// Determine initial state. InitialState will load mods and redirect accordingly.
 		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
-		trace('[Main] Checking if files need to be copied...');
 		if (!CopyState.checkExistingFiles()) {
-			trace('[Main] Files missing, starting CopyState');
 			initialState = CopyState;
 		} else {
 			trace('[Main] All files exist, skipping CopyState');
@@ -221,10 +223,14 @@ class Main extends Sprite
 		Lib.current.stage.align = "tl";
 		Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
 		   if(fpsVar != null) {
-			   // Initial positioning with constant margins.
+			   // Position relative to FlxGame (accounts for letterboxing on Android)
 			   var marginX = 10;
 			   var marginY = 3;
+			   #if android
+			   fpsVar.positionFPS(FlxG.game.x + marginX, FlxG.game.y + marginY, 1.0);
+			   #else
 			   fpsVar.positionFPS(marginX, marginY, 1.0);
+			   #end
 		   }
 
 		#if (linux || mac) // fix the app icon not showing up on the Linux Panel / Mac Dock
@@ -270,12 +276,15 @@ class Main extends Sprite
 		// shader coords fix
 		var resizeDebounceTimer:FlxTimer = null;
 		function handleGameResized():Void {
-			// Only reposition the FPS counter, no scaling.
+			// Reposition the FPS counter relative to FlxGame (accounts for letterboxing)
 			if(fpsVar != null) {
 				var marginX = 10;
 				var marginY = 3;
-				// No scaling, only reposition.
+				#if android
+				fpsVar.positionFPS(FlxG.game.x + marginX, FlxG.game.y + marginY, 1.0);
+				#else
 				fpsVar.positionFPS(marginX, marginY, 1.0);
+				#end
 			}
 			
 			// Reposition TraceDisplay button.

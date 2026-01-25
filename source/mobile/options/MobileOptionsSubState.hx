@@ -35,7 +35,6 @@ class MobileOptionsSubState extends BaseOptionsMenu
 	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	#if android
-	final storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL", "EXTERNAL_MEDIA", "EXTERNAL_OBB", "EXTERNAL_GLOBAL"];
 	var initialStorageType:String;
 	var pendingStorageType:String;
 	var storageTypeChanged:Bool = false;
@@ -51,6 +50,13 @@ class MobileOptionsSubState extends BaseOptionsMenu
 		#if android
 		initialStorageType = ClientPrefs.data.storageType;
 		pendingStorageType = initialStorageType;
+		
+		// Show detected device tier (informational only)
+		var tierName = backend.AndroidOptimizer.getTierName();
+		var gpuName = backend.Native.detectGPU();
+		var tierInfo = 'Detected: $tierName | GPU: $gpuName\n\nQuality settings were auto-configured.\nYou can manually override in Graphics Settings.';
+		option = new Option('Device Performance Info', tierInfo, '', STRING, []);
+		addOption(option);
 		#end
 
 		option = new Option('Extra Controls', 'Select how many extra buttons you prefer to have?\nThey can be used for mechanics with LUA or HScript.',
@@ -112,12 +118,6 @@ class MobileOptionsSubState extends BaseOptionsMenu
 			'If checked, the mobile controls color will be set to the notes color in your settings.\n(have effect during gameplay only)', 'dynamicColors',
 			BOOL);
 		addOption(option);
-
-		#if android
-		option = new Option('Storage Type', 'Which folder Plus Engine should use?', 'storageType', STRING,
-			storageTypes);
-		addOption(option);
-		#end
 
 		super();
 	}

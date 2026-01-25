@@ -1820,6 +1820,37 @@ class FunkinLua {
 		addLocalCallback("autoMonitorMemory", function(?thresholdMB:Float = 500) {
 			backend.MemoryManager.autoMonitor(thresholdMB);
 		});
+		
+		// Android Optimizer functions
+		addLocalCallback("getAndroidTier", function() {
+			#if android
+			return backend.AndroidOptimizer.getCurrentTier();
+			#else
+			return 2; // Desktop = high-end
+			#end
+		});
+		
+		addLocalCallback("getAndroidTierName", function() {
+			#if android
+			return backend.AndroidOptimizer.getTierName();
+			#else
+			return "Desktop";
+			#end
+		});
+		
+		addLocalCallback("forceAndroidTier", function(tier:Int) {
+			#if android
+			backend.AndroidOptimizer.forceOptimizationTier(tier);
+			#end
+		});
+		
+		addLocalCallback("isAndroid", function() {
+			#if android
+			return true;
+			#else
+			return false;
+			#end
+		});
 		#end
 
 		#if DISCORD_ALLOWED DiscordClient.addLuaCallbacks(lua); #end

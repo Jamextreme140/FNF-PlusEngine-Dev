@@ -18,6 +18,35 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 		boyfriend.animation.finishCallback = function (name:String) boyfriend.dance();
 		boyfriend.visible = false;
 
+		#if android
+		// Show auto-detected tier and manual override
+		var tierName = backend.AndroidOptimizer.getTierName();
+		var option:Option = new Option('Auto-Optimization Tier',
+			'Detected: $tierName\n\nYou can manually force a tier below to override.\nLow-End = Maximum performance\nHigh-End = Maximum quality',
+			'',
+			STRING,
+			['Auto (Recommended)', 'Force Low-End', 'Force Mid-Range', 'Force High-End']);
+		option.onChange = () -> {
+			var selected = option.getValue();
+			switch(selected) {
+				case 'Force Low-End':
+					backend.AndroidOptimizer.forceOptimizationTier(0);
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+				case 'Force Mid-Range':
+					backend.AndroidOptimizer.forceOptimizationTier(1);
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+				case 'Force High-End':
+					backend.AndroidOptimizer.forceOptimizationTier(2);
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+				default:
+					// Re-run auto-detection
+					backend.AndroidOptimizer.init();
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+			}
+		};
+		addOption(option);
+		#end
+
 		//I'd suggest using "Low Quality" as an example for making your own option since it is the simplest here
 		var option:Option = new Option('Low Quality', //Name
 			'If checked, disables some background details,\ndecreases loading times and improves performance.', //Description
