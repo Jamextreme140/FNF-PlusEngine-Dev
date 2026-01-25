@@ -27,12 +27,6 @@ class LegacySettingsSubState extends BaseOptionsMenu
 			'legacyFileSystemAccess',
 			BOOL);
 		addOption(option);
-		
-		var option:Option = new Option('Vanilla Transition',
-		    'If checked, uses the vanilla Psych Engine transition instead of the custom one.',
-			'vanillaTransition',
-			BOOL);
-		addOption(option);
 
 		// Legacy Font Option
 		option = new Option('Use Legacy Font',

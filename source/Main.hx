@@ -176,9 +176,7 @@ class Main extends Sprite
 		Controls.instance = new Controls();
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
-		#if mobile
 		MobileData.init();
-		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {

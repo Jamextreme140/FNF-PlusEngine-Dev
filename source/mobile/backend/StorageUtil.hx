@@ -73,6 +73,7 @@ class StorageUtil
 				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]), Language.getPhrase('mobile_error', "Error!"));
 			else
 				trace('$fileName couldn\'t be saved. (${e.message})');
+		}
 	}
 
 	#if android
@@ -326,4 +327,11 @@ class StorageUtil
 	}
 	#end
 	#end
+}
+
+typedef StorageTypeInfo = 
+{
+	var id:String;
+	var name:String;
+	var description:String;
 }
