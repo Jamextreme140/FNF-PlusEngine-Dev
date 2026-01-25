@@ -239,6 +239,12 @@ class IdID
         "setting_botplay" => "Botplay",
 
         // Graphics Settings
+        "setting_auto-optimization_tier" => "Tingkat Optimasi Otomatis",
+        "setting_auto-optimization_tier-auto" => "Otomatis (Disarankan)"
+        "setting_auto-optimization_tier-force_low-end" => "Paksa Kelas-Rendah",
+        "setting_auto-optimization_tier-force_mid-range" => "Paksa Kelas-Menengah",
+        "setting_auto-optimization_tier-force_high-end" => "Paksa Kelas-Tinggi",
+        "description_auto-optimization_tier" => "Terdeteksi: $tierName\n\nAnda dapat memaksa secara manual tier di bawahnya untuk menggantikan.\nKelas-Bawah = Kinerja maksimum\nKelas-Tinggi = Kualitas maksimum",
         "setting_low_quality" => "Kualitas Rendah",
         "description_low_quality" => "Jika dicentang, menonaktifkan beberapa detail latar belakang,\nmengurangi waktu pemuatan, dan meningkatkan kinerja.",
         "setting_anti-aliasing" => "Anti-Aliasing",
@@ -323,9 +329,6 @@ class IdID
         "description_fullscreen_mode" => "Pilih mode layar penuh.\nTanpa batas: Layar penuh dalam jendela (disarankan untuk berpindah antar jendela dengan Alt-Tab).\nEksklusif: Layar penuh tradisional (dapat minimized saat berpindah antar jendela dengan Alt-Tab).",
         "setting_pause_music" => "Jeda Lagu Layar:",
         "setting_pause_music-none" => "Tidak ada",
-        "setting_pause_music-tea_time" => "Waktu Teh",
-        "setting_pause_music-breakfast" => "Sarapan",
-        "setting_pause_music-breakfast_(pico)" => "Sarapan (Pico)",
         "description_pause_music" => "Lagu apa yang Anda sukai untuk layar jeda?",
         "setting_check_for_updates" => "Periksa Pembaruan",
         "description_check_for_updates" => "Pada versi rilis, aktifkan opsi ini untuk memeriksa pembaruan saat Anda memulai game.",
@@ -403,8 +406,6 @@ class IdID
         "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
         "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
         "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
-        "setting_vanilla_ransition" => "Transisi Vanila",
-        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi Psych Engine standar daripada yang kustom.",
         "setting_use_legacy_font" => "Gunakan Font Warisan",
         "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
 
