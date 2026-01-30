@@ -142,7 +142,7 @@ final class ModifierGroup {
 				visuals = mod.visuals(visuals, args);
 		}
 		pos.z *= 0.001 * Config.Z_SCALE;
-		pos = playfield.projection.transformVector(pos);
+		pos = playfield.view.transformVector(pos);
 		final output:ModifierOutput = {
 			pos: pos,
 			visuals: visuals

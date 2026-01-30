@@ -5,6 +5,14 @@ import flixel.graphics.FlxGraphic;
 import flixel.util.FlxDestroyUtil;
 import openfl.geom.ColorTransform;
 
+using flixel.util.FlxColorTransformUtil;
+
+typedef PathCacheData = {
+	var vertices:NativeVector<Float>;
+	var transforms:NativeVector<ColorTransform>;
+	var divisions:Int;
+}
+
 var pathVector = new Vector3();
 var __tempVector = new Vector3(); // Reusable vector for calculations
 
@@ -12,7 +20,7 @@ var __tempVector = new Vector3(); // Reusable vector for calculations
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
-final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
+final class PathRenderer extends BaseRenderer<FlxSprite> {
 	var __lineGraphic:FlxGraphic;
 	var __lastDivisions:Int = -1;
 	
@@ -21,8 +29,8 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	static inline final LOD_MAX_DIVISIONS:Int = 20;
 	static inline final LOD_DISTANCE_THRESHOLD:Float = 1000;
 
-	var uvt:DrawData<Float>;
-	var indices:DrawData<Int>;
+	var uvt:NativeVector<Float>;
+	var indices:NativeVector<Int>;
 
 	// Cache system for performance
 	var __pathCache:Map<String, PathCacheData> = new Map();
@@ -46,10 +54,11 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	public function updateTris(divisions:Int) {
 		final segs = divisions - 1;
 		if (divisions != __lastDivisions) {
-			uvt = new DrawData<Float>(segs * 12, true);
-			indices = new DrawData<Int>(segs * 6, true);
+			uvt = new NativeVector<Float>(divisions * 12);
+			indices = new NativeVector<Int>(divisions * 6);
+
 			var ui = 0, ii = 0, vertCount = 0;
-			for (div in 0...divisions) {
+			for (div in 0...segs) {
 				for (_ in 0...4) {
 					uvt.set(ui++, 0);
 					uvt.set(ui++, 0);
@@ -71,10 +80,12 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		__lastDivisions = divisions;
 	}
 
-	public function new(instance:PlayField) {
-		super(instance);
+	public function new(parent:PlayField) {
+		super(parent);
 
-		__lineGraphic = FlxG.bitmap.create(10, 10, 0xFFFFFFFF);
+		__lineGraphic = FlxG.bitmap.create(1, 1, 0xFFFFFFFF, true);
+		__lineGraphic.destroyOnNoUse = false;
+		__lineGraphic.persist = true;
 		
 		// Pre-calculate constants (StepMania optimization)
 		__screenHeight = FlxG.height;
@@ -86,17 +97,17 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	var __lastThickness:Float = 0;
 
 	// the entry sprite should be A RECEPTOR / STRUM !!
-	override public function prepare(item:FlxSprite) {
+	override public function prepare(item:FlxSprite):Null<DrawCommand> {
 		final lane = Adapter.instance.getLaneFromArrow(item);
 		final fn = Adapter.instance.getPlayerFromArrow(item);
 
 		final canUseLast = fn == __lastPlayer;
 
-		final pathAlpha = canUseLast ? __lastAlpha : instance.getPercent('arrowPathAlpha', fn);
-		final pathThickness = canUseLast ? __lastThickness : instance.getPercent('arrowPathThickness', fn);
+		final pathAlpha = canUseLast ? __lastAlpha : parent.getPercent('arrowPathAlpha', fn);
+		final pathThickness = canUseLast ? __lastThickness : parent.getPercent('arrowPathThickness', fn);
 
 		if (pathAlpha <= 0.01 || pathThickness <= 0.1)
-			return;
+			return null;
 
 		__lastAlpha = pathAlpha;
 		__lastThickness = pathThickness;
@@ -130,16 +141,28 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		if (!shouldRefresh && !songPosChanged && __pathCache.exists(cacheKey)) {
 			final cached = __pathCache.get(cacheKey);
 			if (cached != null && cached.divisions == divisions) {
-				var newInstruction:FMDrawInstruction = {};
-				newInstruction.extra = [cached.vertices, indices, uvt, cached.transforms];
-				newInstruction.item = item;
-				queue[count++] = newInstruction;
-				return;
+				// Use cached data to build DrawCommand
+				var dc:DrawCommand = {
+					parent: item,
+					graphic: __lineGraphic,
+					antialiasing: false,
+					blend: NORMAL,
+					cameras: Adapter.instance.getArrowCamera(),
+					shader: null,
+
+					vertices: cached.vertices,
+					uvs: uvt,
+					indices: indices,
+					colors: cached.transforms,
+					isColored: true,
+					hasColorOffsets: true
+				};
+				return dc;
 			}
 		}
 
 		final segs = divisions - 1;
-		final vertices = new DrawData<Float>(segs * 8, true);
+		final vertices = new NativeVector<Float>(segs * 8);
 
 		var vi = 0, vertCount = 0;
 
@@ -154,9 +177,11 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		final applyScale = Config.ARROW_PATHS_CONFIG.APPLY_SCALE;
 		final applyDepth = Config.ARROW_PATHS_CONFIG.APPLY_DEPTH;
 
-		final transforms:Array<ColorTransform> = [];
+		final transforms = new NativeVector<ColorTransform>(segs);
 		var tID:Int = 0;
-		transforms.resize(segs);
+
+		var hasC = false;
+		var hasCOff = false;
 		
 		// Adaptive culling bounds - larger for better quality
 		final cullTop = -600;
@@ -180,13 +205,16 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 			// Start paths closer to receptors (200ms before instead of 500ms)
 			var hitTime = baseHitTime + __pathInterval * index; // Use cached interval
 
-			var output = instance.modifiers.getPath(pathVector.clone(), {
+			var vec = pathVector.clone();
+			var param:ArrowData = {
 				hitTime: songPos + hitTime,
 				distance: hitTime,
 				lane: lane,
 				player: fn,
 				isTapArrow: true
-			});
+			};
+
+			var output = parent.modifiers.getPath(vec, param);
 			
 			// Store key points for interpolation
 			if (useInterpolation && (index % 3 == 0 || index == divisions - 1)) {
@@ -199,7 +227,7 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 				continue;
 			}
 
-			if (lastOutput != null) {
+			if (vertCount > 0) {
 				final p0 = lastOutput;
 				final p1 = output;
 
@@ -241,19 +269,19 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 				vertices.set(vi++, pos1.x - nx * t1);
 				vertices.set(vi++, pos1.y - ny * t1);
 
-				// Optimized color transform calculation
-				if (colored || applyAlpha) {
-					final glow = colored ? p0.visuals.glow : 0;
-					final fAlpha = applyAlpha ? p0.visuals.alpha : 1;
-					final negGlow = 1 - glow;
-					final absGlow = glow * 255;
-					transforms[tID++] = new ColorTransform(negGlow, negGlow, negGlow, fAlpha * pathAlpha, 
-						Math.round(p0.visuals.glowR * absGlow),
-						Math.round(p0.visuals.glowG * absGlow), 
-						Math.round(p0.visuals.glowB * absGlow));
-				} else {
-					transforms[tID++] = new ColorTransform(1, 1, 1, pathAlpha, 0, 0, 0);
-				}
+				final glow = colored ? p0.visuals.glow : 0;
+				final fAlpha = applyAlpha ? p0.visuals.alpha : 1;
+				final negGlow = 1 - glow;
+				final absGlow = glow * 255;
+				var ctr:ColorTransform;
+
+				transforms[tID++] = ctr = new ColorTransform(negGlow, negGlow, negGlow, fAlpha * pathAlpha, Math.round(p0.visuals.glowR * absGlow),
+					Math.round(p0.visuals.glowG * absGlow), Math.round(p0.visuals.glowB * absGlow));
+
+				if (ctr.hasRGBMultipliers() || ctr.alphaMultiplier != 1)
+					hasC = true;
+				if (ctr.hasRGBAOffsets())
+					hasCOff = true;
 
 				vertCount += 4;
 			}
@@ -270,57 +298,36 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 			divisions: divisions
 		});
 		
-		// Update last song position for change detection
-		__lastSongPos = songPos;
+		var dc:DrawCommand = {
+			parent: item,
+			graphic: __lineGraphic,
+			antialiasing: false,
+			blend: NORMAL,
+			cameras: Adapter.instance.getArrowCamera(),
+			shader: null,
 
-		var newInstruction:FMDrawInstruction = {};
-		newInstruction.extra = [vertices, indices, uvt, transforms];
-		newInstruction.item = item; // Store receptor for z-depth
-		queue[count++] = newInstruction;
-	}
-
-	override public function shift() {
-		if (count == 0 || queue.length <= 0)
-			return;
-
-		// Increment frame counter for cache system
+			vertices: vertices,
+			uvs: uvt,
+			indices: indices,
+			colors: transforms,
+			isColored: hasC,
+			hasColorOffsets: hasCOff
+		};
+		
+		// Update cache tracking
 		__frameCounter++;
-
-		final cameras = Adapter.instance.getArrowCamera();
-		for (instruction in queue) {
-			if (instruction == null)
-				continue;
-			
-			// Set z-depth to render paths below everything (higher z = further back)
-			if (instruction.item != null) {
-				instruction.item._z = instruction.item._z + 200;
-			}
-			final vertices:DrawData<Float> = cast instruction.extra[0];
-			final indices:DrawData<Int> = cast instruction.extra[1];
-			final uvt:DrawData<Float> = cast instruction.extra[2];
-			final transforms:Array<ColorTransform> = cast instruction.extra[3];
-
-			for (camera in cameras) {
-				var item = camera.startTrianglesBatch(__lineGraphic, false, true, NORMAL, true);
-				@:privateAccess
-				item.addGradientTriangles(vertices, indices, uvt, null, camera._bounds, transforms);
-			}
-		}
+		__lastSongPos = songPos;
+		
+		return dc;
 	}
 
 	override function dispose() {
-		__lineGraphic = FlxDestroyUtil.destroy(__lineGraphic);
+		__lineGraphic.destroy();
 		__pathCache.clear();
 		__pathCache = null;
 		__vertexPool = null;
 		__transformPool = null;
+		__lineGraphic = null;
 	}
 
-	inline static final ARROW_PATH_BOUNDARY_OFFSET:Float = 300;
-}
-
-typedef PathCacheData = {
-	vertices:DrawData<Float>,
-	transforms:Array<ColorTransform>,
-	divisions:Int
 }

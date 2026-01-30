@@ -5,6 +5,7 @@ import flixel.FlxSprite;
 
 interface IAdapter {
 	public function onModchartingInitialization():Void;
+	public function onModchartingDispose():Void;
 
 	// Song-related stuff
 	public function getSongPosition():Float; // Current song position
