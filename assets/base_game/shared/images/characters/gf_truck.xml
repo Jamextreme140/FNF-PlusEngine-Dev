@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Created with Funkin Packer v0.1.3 https://neeeoo.github.io/funkin-packer/
+-->
+<TextureAtlas imagePath="gf_truck.png" width="2366" height="2281">
+	<SubTexture name="dance left0000" x="601" y="442" width="300" height="444" frameX="-292" frameY="-48" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0001" x="0" y="439" width="298" height="442" frameX="-289" frameY="-50" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0002" x="596" y="0" width="298" height="439" frameX="-289" frameY="-50" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0003" x="1488" y="0" width="292" height="441" frameX="-288" frameY="-48" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0004" x="1782" y="0" width="292" height="441" frameX="-288" frameY="-48" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0005" x="2076" y="0" width="288" height="443" frameX="-287" frameY="-45" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0006" x="582" y="888" width="290" height="448" frameX="-285" frameY="-40" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0007" x="1179" y="1342" width="299" height="453" frameX="-278" frameY="-35" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance left0008" x="1480" y="1344" width="302" height="455" frameX="-276" frameY="-33" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0000" x="1184" y="889" width="310" height="451" frameX="-246" frameY="-45" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0001" x="874" y="888" width="308" height="449" frameX="-251" frameY="-47" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0002" x="1519" y="443" width="308" height="446" frameX="-251" frameY="-48" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0003" x="903" y="442" width="306" height="444" frameX="-256" frameY="-50" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0004" x="1211" y="443" width="306" height="444" frameX="-256" frameY="-50" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0005" x="300" y="441" width="299" height="443" frameX="-259" frameY="-49" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0006" x="291" y="886" width="289" height="447" frameX="-257" frameY="-45" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0007" x="1829" y="445" width="286" height="446" frameX="-259" frameY="-46" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="dance right0008" x="0" y="883" width="289" height="446" frameX="-258" frameY="-46" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="down miss0000" x="0" y="0" width="296" height="437" frameX="-280" frameY="-54" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="down miss0001" x="1784" y="1346" width="295" height="458" frameX="-277" frameY="-38" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="down miss0002" x="292" y="1338" width="299" height="452" frameX="-276" frameY="-42" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="down0000" x="298" y="0" width="296" height="437" frameX="-240" frameY="-46" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="down0001" x="896" y="0" width="590" height="440" frameX="-239" frameY="-44" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="left miss0000" x="1496" y="891" width="289" height="451" frameX="-256" frameY="-43" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="left miss0001" x="1174" y="1797" width="295" height="463" frameX="-256" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="left miss0002" x="1471" y="1801" width="298" height="463" frameX="-253" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="left0000" x="1787" y="893" width="289" height="451" frameX="-297" frameY="-37" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="left0001" x="2078" y="893" width="286" height="451" frameX="-298" frameY="-38" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="right miss0000" x="593" y="1339" width="291" height="452" frameX="-284" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="right miss0001" x="290" y="1792" width="295" height="458" frameX="-276" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="right miss0002" x="587" y="1793" width="297" height="458" frameX="-277" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="right0000" x="886" y="1339" width="291" height="452" frameX="-315" frameY="-35" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="right0001" x="0" y="1335" width="290" height="451" frameX="-313" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="up miss0000" x="2081" y="1346" width="285" height="461" frameX="-262" frameY="-49" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="up miss0001" x="1771" y="1806" width="296" height="465" frameX="-257" frameY="-45" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="up miss0002" x="2069" y="1809" width="290" height="472" frameX="-259" frameY="-40" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="up0000" x="886" y="1793" width="286" height="462" frameX="-261" frameY="-37" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="up0001" x="0" y="1788" width="288" height="459" frameX="-259" frameY="-38" frameWidth="1024" frameHeight="576"/>
+</TextureAtlas>

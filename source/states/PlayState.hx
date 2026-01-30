@@ -695,6 +695,7 @@ class PlayState extends MusicBeatState
 			case 'phillyStreets': new PhillyStreets(); 	//Weekend 1 - Darnell, Lit Up, 2Hot
 			case 'phillyBlazin': new PhillyBlazin();	//Weekend 1 - Blazin
 			case 'notitg': new NotITG();				//StepMania NotITG stage - Stage negro vacío
+			case 'sserafim': new Sserafim();			//Sserafim - Spaghetti
 			// Erect Stages
 			case 'mainStageErect': new states.stages.erect.MainStageErect();
 			case 'spookyMansionErect': new states.stages.erect.SpookyMansionErect();

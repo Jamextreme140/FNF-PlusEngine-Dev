@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Created with Funkin Packer v0.1.3 https://neeeoo.github.io/funkin-packer/
+-->
+<TextureAtlas imagePath="gfGetUp.png" width="2419" height="2491">
+	<SubTexture name="getup0000" x="2169" y="2215" width="220" height="270" rotated="true" frameX="-356" frameY="-320" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0001" x="1947" y="2215" width="220" height="271" rotated="true" frameX="-356" frameY="-320" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0002" x="1703" y="1955" width="242" height="405" rotated="true" frameX="-225" frameY="-319" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0003" x="1456" y="1955" width="245" height="408" rotated="true" frameX="-224" frameY="-319" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0004" x="1791" y="1711" width="405" height="233" frameX="-230" frameY="-319" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0005" x="1378" y="1719" width="411" height="234" frameX="-224" frameY="-309" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0006" x="1947" y="1946" width="401" height="267" frameX="-232" frameY="-280" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0007" x="0" y="660" width="473" height="372" rotated="true" frameX="-252" frameY="-73" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0008" x="982" y="336" width="468" height="363" rotated="true" frameX="-264" frameY="-74" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0009" x="1487" y="0" width="469" height="352" rotated="true" frameX="-312" frameY="-76" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0010" x="462" y="1344" width="459" height="351" rotated="true" frameX="-340" frameY="-86" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0011" x="797" y="2035" width="332" height="454" frameX="-363" frameY="-91" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0012" x="1131" y="2035" width="323" height="453" frameX="-373" frameY="-92" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0013" x="922" y="1719" width="454" height="314" rotated="true" frameX="-377" frameY="-90" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0014" x="459" y="2035" width="336" height="456" frameX="-372" frameY="-86" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0015" x="1915" y="667" width="460" height="329" rotated="true" frameX="-360" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0016" x="1958" y="0" width="461" height="329" rotated="true" frameX="-360" frameY="-81" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0017" x="1452" y="690" width="460" height="336" rotated="true" frameX="-353" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0018" x="475" y="670" width="460" height="336" rotated="true" frameX="-353" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0019" x="0" y="1369" width="459" height="333" rotated="true" frameX="-355" frameY="-83" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0020" x="1861" y="1339" width="459" height="341" rotated="true" frameX="-355" frameY="-83" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0021" x="1399" y="1370" width="459" height="339" rotated="true" frameX="-356" frameY="-83" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0022" x="923" y="1378" width="459" height="339" rotated="true" frameX="-356" frameY="-83" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0023" x="1914" y="998" width="460" height="339" rotated="true" frameX="-356" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0024" x="937" y="701" width="460" height="334" rotated="true" frameX="-355" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0025" x="1958" y="331" width="461" height="334" rotated="true" frameX="-355" frameY="-81" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0026" x="1452" y="354" width="461" height="334" rotated="true" frameX="-354" frameY="-81" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0027" x="475" y="1008" width="460" height="334" rotated="true" frameX="-354" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0028" x="0" y="1034" width="460" height="333" rotated="true" frameX="-353" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0029" x="1399" y="1028" width="460" height="340" rotated="true" frameX="-353" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0030" x="937" y="1037" width="460" height="339" rotated="true" frameX="-353" frameY="-82" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0031" x="461" y="1697" width="459" height="336" rotated="true" frameX="-356" frameY="-83" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0032" x="0" y="1704" width="457" height="335" rotated="true" frameX="-356" frameY="-85" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0033" x="0" y="2041" width="341" height="449" frameX="-352" frameY="-93" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0034" x="0" y="0" width="501" height="320" rotated="true" frameX="-360" frameY="-44" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0035" x="503" y="0" width="492" height="333" rotated="true" frameX="-347" frameY="-51" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0036" x="0" y="322" width="490" height="336" rotated="true" frameX="-344" frameY="-52" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0037" x="997" y="0" width="488" height="334" rotated="true" frameX="-346" frameY="-52" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="getup0038" x="492" y="335" width="488" height="333" rotated="true" frameX="-347" frameY="-52" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="static0000" x="2169" y="2215" width="220" height="270" rotated="true" frameX="-356" frameY="-320" frameWidth="1024" frameHeight="576"/>
+</TextureAtlas>

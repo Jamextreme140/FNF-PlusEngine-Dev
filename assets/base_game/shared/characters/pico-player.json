@@ -73,111 +73,127 @@
 			"indices": []
 		},
 		{
-			"offsets": [256, 232],
-			"indices": [],
-			"fps": 24,
-			"anim": "shoot",
 			"loop": false,
-			"name": "Pico Shoot Hip Full0"
+			"offsets": [39, 2],
+			"anim": "hey",
+			"fps": 24,
+			"name": "Pico HEY!!",
+			"indices": []
 		},
 		{
-			"offsets": [0, 0],
-			"indices": [],
-			"fps": 24,
-			"anim": "shootMISS",
 			"loop": false,
-			"name": "Pico Hit Can0"
+			"offsets": [-12, -10],
+			"anim": "CanHit",
+			"fps": 24,
+			"name": "Pico Hit Can",
+			"indices": []
 		},
 		{
-			"offsets": [0, 0],
-			"indices": [],
-			"fps": 24,
+			"loop": false,
+			"offsets": [-40, -5],
 			"anim": "cock",
-			"loop": false,
-			"name": "Pico Reload0"
-		},
-		{
-			"offsets": [60, 0],
-			"indices": [],
 			"fps": 24,
-			"anim": "intro1",
-			"loop": false,
-			"name": "Pico Gets Pissed0"
+			"name": "Pico Reload",
+			"indices": []
 		},
 		{
-			"offsets": [0, 0],
-			"indices": [],
+			"offsets": [21, 27],
+			"loop": false,
 			"fps": 24,
-			"anim": "cockCutscene",
-			"loop": false,
-			"name": "cutscene cock0"
-		},
-		{
-			"offsets": [255, 231],
-			"indices": [],
-			"fps": 24,
-			"anim": "intro2",
-			"loop": false,
-			"name": "shoot and return0"
-		},
-		{
-			"anim": "burpSmile",
-			"loop": false,
-			"indices": [],
-			"fps": 24,
-			"name": "burpsmile",
-			"offsets": [33, -3]
-		},
-		{
-			"anim": "shit",
-			"loop": false,
-			"indices": [],
-			"fps": 24,
-			"name": "shit",
-			"offsets": [0, -3]
-		},
-		{
-			"anim": "singRIGHT-alt",
-			"loop": false,
-			"indices": [],
-			"fps": 24,
-			"name": "pico swear right",
-			"offsets": [-50, 1]
-		},
-		{
-			"anim": "singDOWN-alt",
-			"loop": false,
-			"indices": [],
-			"fps": 24,
-			"name": "pico swear down",
-			"offsets": [84, -77]
-		},
-		{
 			"anim": "singUP-alt",
-			"loop": false,
 			"indices": [],
-			"fps": 24,
-			"name": "pico swear up",
-			"offsets": [21, 28]
+			"name": "pico swear up"
 		},
 		{
-			"anim": "singLEFT-alt",
+			"offsets": [84, -80],
 			"loop": false,
-			"indices": [],
 			"fps": 24,
-			"name": "pico swear left",
-			"offsets": [84, -11]
+			"anim": "singDOWN-alt",
+			"indices": [],
+			"name": "pico swear down"
+		},
+		{
+			"offsets": [-48, 2],
+			"loop": false,
+			"fps": 24,
+			"anim": "singRIGHT-alt",
+			"indices": [],
+			"name": "pico swear right"
+		},
+		{
+			"offsets": [85, -10],
+			"loop": false,
+			"fps": 24,
+			"anim": "singLEFT-alt",
+			"indices": [],
+			"name": "pico swear left"
+		},
+		{
+			"loop": false,
+			"offsets": [63, 20],
+			"anim": "cheer",
+			"fps": 24,
+			"name": "Pico YEAH cheer",
+			"indices": []
+		},
+		{
+			"offsets": [41, 0],
+			"loop": false,
+			"fps": 24,
+			"anim": "burpShit",
+			"indices": [],
+			"name": "burpshit"
+		},
+		{
+			"offsets": [4, 1],
+			"loop": false,
+			"fps": 24,
+			"anim": "shit-alt",
+			"indices": [],
+			"name": "shit"
+		},
+		{
+			"offsets": [40, 0],
+			"loop": false,
+			"fps": 24,
+			"anim": "burpSmile",
+			"indices": [],
+			"name": "burpsmile"
+		},
+		{
+			"loop": false,
+			"offsets": [259, 237],
+			"anim": "shoot",
+			"fps": 24,
+			"name": "Pico Shoot Hip Full",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [41, 0],
+			"anim": "shit",
+			"fps": 24,
+			"name": "burpshit",
+			"indices": [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 59]
+		},
+		{
+			"loop": false,
+			"offsets": [41, 0],
+			"anim": "burpShit-alt",
+			"fps": 24,
+			"name": "burpshit",
+			"indices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
 		}
 	],
 	"vocals_file": "",
 	"no_antialiasing": false,
-	"image": "characters/pico-erect, characters/picoAnims/Pico_Intro, characters/picoAnims/Pico_Shooting",
-	"position": [0, 300],
+	"image": "characters/PICO_all-in-one_assets",
+	"position": [95, 420],
 	"healthicon": "pico",
 	"flip_x": true,
 	"healthbar_colors": [183, 216, 85],
-	"camera_position": [200, 40],
+	"camera_position": [510, -50],
 	"sing_duration": 4,
-	"scale": 1,
+	"scale": 1.6,
 	"_editor_isPlayer": true
 }

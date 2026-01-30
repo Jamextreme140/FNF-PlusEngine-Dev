@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Created with Funkin Packer v0.1.3 https://neeeoo.github.io/funkin-packer/
+-->
+<TextureAtlas imagePath="kick.png" width="2129" height="2156">
+	<SubTexture name="door0000" x="1076" y="1693" width="286" height="445" frameX="-234" frameY="-65" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0000" x="1076" y="1693" width="286" height="445" frameX="-234" frameY="-65" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0001" x="789" y="1693" width="285" height="446" frameX="-235" frameY="-64" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0002" x="502" y="1698" width="285" height="448" frameX="-228" frameY="-57" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0003" x="1364" y="1675" width="466" height="468" frameX="-47" frameY="-80" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0004" x="0" y="1698" width="500" height="458" rotated="true" frameX="-55" frameY="-43" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0005" x="0" y="0" width="517" height="416" rotated="true" frameX="-97" frameY="-28" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0006" x="519" y="0" width="511" height="423" rotated="true" frameX="-90" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0007" x="0" y="418" width="510" height="423" rotated="true" frameX="-90" frameY="-36" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0008" x="1032" y="0" width="507" height="425" rotated="true" frameX="-88" frameY="-40" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0009" x="512" y="425" width="507" height="425" rotated="true" frameX="-88" frameY="-40" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0010" x="0" y="843" width="506" height="426" rotated="true" frameX="-87" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0011" x="1541" y="0" width="506" height="426" rotated="true" frameX="-87" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0012" x="1021" y="427" width="506" height="425" rotated="true" frameX="-87" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0013" x="508" y="852" width="506" height="425" rotated="true" frameX="-87" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0014" x="0" y="1271" width="506" height="425" rotated="true" frameX="-87" frameY="-41" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0015" x="1923" y="531" width="161" height="104" rotated="true" frameX="-409" frameY="-202" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0016" x="1923" y="734" width="160" height="99" rotated="true" frameX="-414" frameY="-200" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0017" x="1832" y="1826" width="160" height="95" rotated="true" frameX="-418" frameY="-196" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0018" x="1923" y="637" width="161" height="95" rotated="true" frameX="-417" frameY="-192" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0019" x="1923" y="428" width="162" height="101" rotated="true" frameX="-412" frameY="-185" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0020" x="1832" y="1662" width="270" height="162" frameX="-242" frameY="-209" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0021" x="1820" y="854" width="309" height="315" rotated="true" frameX="-197" frameY="-178" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0022" x="1712" y="1261" width="365" height="399" frameX="-194" frameY="-140" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0023" x="1529" y="428" width="392" height="392" frameX="-188" frameY="-119" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0024" x="1417" y="854" width="401" height="405" frameX="-187" frameY="-99" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0025" x="1310" y="1267" width="400" height="406" frameX="-188" frameY="-97" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0026" x="1016" y="854" width="399" height="411" frameX="-188" frameY="-93" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0027" x="508" y="1279" width="399" height="412" frameX="-188" frameY="-92" frameWidth="1024" frameHeight="576"/>
+	<SubTexture name="kick0028" x="909" y="1279" width="399" height="412" frameX="-188" frameY="-92" frameWidth="1024" frameHeight="576"/>
+</TextureAtlas>
