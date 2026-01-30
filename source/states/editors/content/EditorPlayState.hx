@@ -52,7 +52,7 @@ class EditorPlayState extends MusicBeatSubstate
 	var songLength:Float = 0;
 	var songSpeed:Float = 1;
 	
-	var showCombo:Bool = false;
+	var showCombo:Bool = true;
 	var showComboNum:Bool = true;
 	var showRating:Bool = true;
 
@@ -590,7 +590,7 @@ class EditorPlayState extends MusicBeatSubstate
 		comboSpr.x = placement;
 		comboSpr.acceleration.y = FlxG.random.int(200, 300) * playbackRate * playbackRate;
 		comboSpr.velocity.y -= FlxG.random.int(140, 160) * playbackRate;
-		comboSpr.visible = (!ClientPrefs.data.hideHud && showCombo);
+		comboSpr.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showCombo && showCombo);
 		comboSpr.x += ClientPrefs.data.comboOffset[0];
 		comboSpr.y -= ClientPrefs.data.comboOffset[1];
 		comboSpr.antialiasing = antialias;
@@ -614,7 +614,7 @@ class EditorPlayState extends MusicBeatSubstate
 
 		var daLoop:Int = 0;
 		var xThing:Float = 0;
-		if (showCombo)
+		if (ClientPrefs.data.showCombo && showCombo)
 			comboGroup.add(comboSpr);
 
 		var separatedScore:String = Std.string(combo).lpad('0', 3);
