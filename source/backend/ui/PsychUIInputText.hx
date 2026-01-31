@@ -376,10 +376,7 @@ class PsychUIInputText extends FlxSpriteGroup
 	}
 
 	public dynamic function onPressEnter(e:KeyboardEvent)
-	{
-		FlxG.stage.window.textInputEnabled = false;
 		focusOn = null;
-	}
 
 	public var unfocus:Void->Void;
 	public static function set_focusOn(v:PsychUIInputText)
@@ -392,9 +389,11 @@ class PsychUIInputText extends FlxSpriteGroup
 		return (focusOn = v);
 	}
 
+	public var ignoreCheck = false;
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		if (ignoreCheck) return;
 
 		if(FlxG.mouse.justPressed)
 		{
@@ -406,13 +405,11 @@ class PsychUIInputText extends FlxSpriteGroup
 				FlxG.stage.window.textInputEnabled = true;
 				caretIndex = 0;
 				var lastBound:Float = 0;
-				var textObjX:Float = textObj.getScreenPosition(camera).x;
-				var mousePosX:Float = FlxG.mouse.getScreenPosition(camera).x;
-				var txtX:Float = textObjX - textObj.textField.scrollH;
+				var txtX:Float = textObj.x - textObj.textField.scrollH;
 
 				for (i => bound in _boundaries)
 				{
-					if(mousePosX >= txtX + (bound - lastBound)/2)
+					if(FlxG.mouse.screenX >= txtX + (bound - lastBound)/2)
 					{
 						caretIndex = i+1;
 						txtX += bound - lastBound;
@@ -474,15 +471,6 @@ class PsychUIInputText extends FlxSpriteGroup
 	public function updateCaret()
 	{
 		if(textObj == null || !textObj.exists) return;
-
-		// Clamp indices before calling OpenFL's selection API.
-		// This prevents crashes when the text changes while the caret/selection indices
-		// still refer to a previous (longer) string (e.g. when loading a chart).
-		var len:Int = (text != null) ? text.length : 0;
-		if(caretIndex < 0) caretIndex = 0;
-		if(caretIndex > len) caretIndex = len;
-		if(selectIndex < -1) selectIndex = -1;
-		if(selectIndex > len) selectIndex = len;
 
 		var textField = textObj.textField;
 		textField.setSelection(caretIndex, caretIndex);
@@ -673,7 +661,7 @@ class PsychUIInputText extends FlxSpriteGroup
 
 		var letter:String = String.fromCharCode(charCode);
 		letter = filter(letter);
-		if(letter.length > 0 && (maxLength == 0 || (text.length + letter.length) <= maxLength))
+		if(letter.length > 0 && (maxLength == 0 || (text.length + letter.length) < maxLength))
 		{
 			var lastText = text;
 			//trace('Drawing character: $letter');
