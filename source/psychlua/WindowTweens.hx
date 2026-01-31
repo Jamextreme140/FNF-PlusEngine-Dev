@@ -13,6 +13,7 @@ import states.PlayState;
 
 #if windows
 import lenin.slushithings.windows.WindowsAPI;
+import lenin.slushithings.windows.WindowsCPP;
 #end
 
 // Window tweening utilities using optimized FlxTween.num method
@@ -139,8 +140,7 @@ class WindowTweens {
 
     public static function getWindowWidth():Int {
         #if windows
-        var window = Lib.current.stage.window;
-        return window.width;
+        return WindowsCPP.getWindowWidth();
         #else
         return FlxG.width;
         #end
@@ -148,8 +148,7 @@ class WindowTweens {
 
     public static function getWindowHeight():Int {
         #if windows
-        var window = Lib.current.stage.window;
-        return window.height;
+        return WindowsCPP.getWindowHeight();
         #else
         return FlxG.height;
         #end
@@ -158,8 +157,8 @@ class WindowTweens {
     public static function centerWindow() {
         #if windows
         var window = Lib.current.stage.window;
-        var screenWidth = Capabilities.screenResolutionX;
-        var screenHeight = Capabilities.screenResolutionY;
+        var screenWidth = WindowsCPP.getScreenWidth();
+        var screenHeight = WindowsCPP.getScreenHeight();
         window.x = Std.int((screenWidth - window.width) / 2);
         window.y = Std.int((screenHeight - window.height) / 2);
         #end
@@ -205,8 +204,8 @@ class WindowTweens {
     public static function randomizeWindowPosition(minX:Int = 0, maxX:Int = -1, minY:Int = 0, maxY:Int = -1) {
         #if windows
         var window = Lib.current.stage.window;
-        var screenWidth = Capabilities.screenResolutionX;
-        var screenHeight = Capabilities.screenResolutionY;
+        var screenWidth = WindowsCPP.getScreenWidth();
+        var screenHeight = WindowsCPP.getScreenHeight();
         
         if (maxX == -1) maxX = Std.int(screenWidth - window.width);
         if (maxY == -1) maxY = Std.int(screenHeight - window.height);
@@ -223,10 +222,17 @@ class WindowTweens {
     }
 
     public static function getScreenResolution():{width:Int, height:Int} {
+        #if windows
+        return {
+            width: WindowsCPP.getScreenWidth(),
+            height: WindowsCPP.getScreenHeight()
+        };
+        #else
         return {
             width: Std.int(Capabilities.screenResolutionX),
             height: Std.int(Capabilities.screenResolutionY)
         };
+        #end
     }
 
     public static function setWindowFullscreen(enable:Bool) {
@@ -320,11 +326,13 @@ class WindowTweens {
 
         FlxTween.cancelTweensOf(window);
         if (!skip) {
+            var screenWidth = WindowsCPP.getScreenWidth();
+            var screenHeight = WindowsCPP.getScreenHeight();
             FlxTween.tween(window, {
                 width: winX,
                 height: winY,
-                y: Math.floor((Capabilities.screenResolutionY / 2) - (winY / 2)),
-                x: Math.floor((Capabilities.screenResolutionX / 2) - (winX / 2)) + (Capabilities.screenResolutionX * Math.floor(window.x / (Capabilities.screenResolutionX)))
+                y: Math.floor((screenHeight / 2) - (winY / 2)),
+                x: Math.floor((screenWidth / 2) - (winX / 2)) + (screenWidth * Math.floor(window.x / (screenWidth)))
             }, 0.4, {
                 ease: FlxEase.quadInOut,
                 onComplete: function(_) {
@@ -334,9 +342,11 @@ class WindowTweens {
                 }
             });
         } else {
+            var screenWidth = WindowsCPP.getScreenWidth();
+            var screenHeight = WindowsCPP.getScreenHeight();
             FlxG.resizeWindow(width, height);
-            window.y = Math.floor((Capabilities.screenResolutionY / 2) - (winY / 2));
-            window.x = Std.int(Math.floor((Capabilities.screenResolutionX / 2) - (winX / 2)) + (Capabilities.screenResolutionX * Math.floor(window.x / (Capabilities.screenResolutionX))));
+            window.y = Math.floor((screenHeight / 2) - (winY / 2));
+            window.x = Std.int(Math.floor((screenWidth / 2) - (winX / 2)) + (screenWidth * Math.floor(window.x / (screenWidth))));
         }
         FlxG.scaleMode = new RatioScaleMode(true);
         window.resizable = width == 1280;
@@ -684,6 +694,67 @@ class WindowTweens {
         return WindowsAPI.getWindowsVersion();
         #else
         return 0;
+        #end
+    }
+
+    /**
+     * Gets the work area width (screen minus taskbar) - more accurate than screen resolution
+     * @return Work area width in pixels
+     */
+    public static function getWorkAreaWidth():Int {
+        #if windows
+        return WindowsCPP.getWorkAreaWidth();
+        #else
+        return Std.int(Capabilities.screenResolutionX);
+        #end
+    }
+
+    /**
+     * Gets the work area height (screen minus taskbar) - more accurate than screen resolution
+     * @return Work area height in pixels
+     */
+    public static function getWorkAreaHeight():Int {
+        #if windows
+        return WindowsCPP.getWorkAreaHeight();
+        #else
+        return Std.int(Capabilities.screenResolutionY);
+        #end
+    }
+
+    /**
+     * Gets the window client area width (content area without borders)
+     * @return Client width in pixels
+     */
+    public static function getWindowClientWidth():Int {
+        #if windows
+        return WindowsCPP.getWindowClientWidth();
+        #else
+        return FlxG.width;
+        #end
+    }
+
+    /**
+     * Gets the window client area height (content area without title bar and borders)
+     * @return Client height in pixels
+     */
+    public static function getWindowClientHeight():Int {
+        #if windows
+        return WindowsCPP.getWindowClientHeight();
+        #else
+        return FlxG.height;
+        #end
+    }
+
+    /**
+     * Centers the window on the work area (screen minus taskbar) instead of full screen
+     */
+    public static function centerWindowOnWorkArea() {
+        #if windows
+        var window = Lib.current.stage.window;
+        var workWidth = WindowsCPP.getWorkAreaWidth();
+        var workHeight = WindowsCPP.getWorkAreaHeight();
+        window.x = Std.int((workWidth - window.width) / 2);
+        window.y = Std.int((workHeight - window.height) / 2);
         #end
     }
 }

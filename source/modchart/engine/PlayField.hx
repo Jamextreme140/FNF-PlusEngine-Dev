@@ -10,6 +10,20 @@ import modchart.backend.graphics.renderers.*;
 import modchart.engine.events.types.*;
 import openfl.geom.Matrix;
 
+/**
+ * PARENTED TRANSFORMATION TODOS:
+ * - [!] `x` / `y` (this autoticly allows motion variables, which are unusable by default (`moves = false`))
+ * - [!] `origin`
+ * - [!] `offset`
+ * - [!] `scale`
+ * - [!] `angle`
+ * - [!] `scrollFactor`
+ * - `clipRect`
+ * - `color` / `colorTransform`
+ * - `shader` (i dont think this is possible..?... just in case leaving this in TODOs yet)
+ * - `blend` (same as shader...)
+ */
+
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
 @:noDebug
@@ -200,9 +214,7 @@ final class PlayField extends FlxSprite {
 		super.update(elapsed);
 	}
 
-	override public function draw() {
-		modifiers.postRender();
-	}
+	override public function draw() {}
 
 	override public function destroy() {
 		super.destroy();
@@ -242,7 +254,6 @@ final class PlayField extends FlxSprite {
 		updateSkewMatrix();
 		_matrix.concat(_skewMatrix);
 
-		// getScreenPosition(_point, camera).subtractPoint(offset);
 		_point.set().subtractPoint(offset);
 		_point.add(origin.x, origin.y);
 		matrix.translate(_point.x, _point.y);

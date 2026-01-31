@@ -3,6 +3,10 @@ package backend;
 import openfl.Lib;
 import openfl.system.Capabilities;
 
+#if windows
+import lenin.slushithings.windows.WindowsCPP;
+#end
+
 /**
  * Centralized window mode helper.
  *
@@ -122,8 +126,14 @@ class WindowMode
 			} catch (_:Dynamic) {}
 			window.borderless = true;
 
+			// Get accurate screen dimensions using native Windows API
+			#if windows
+			var screenW = WindowsCPP.getScreenWidth();
+			var screenH = WindowsCPP.getScreenHeight();
+			#else
 			var screenW = Std.int(Capabilities.screenResolutionX);
 			var screenH = Std.int(Capabilities.screenResolutionY);
+			#end
 
 			// Move/resize to cover the primary monitor.
 			window.x = 0;

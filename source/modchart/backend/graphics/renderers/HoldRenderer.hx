@@ -122,8 +122,8 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 			var view = new Vector3(rotation.x + curPoint.x, rotation.y + curPoint.y, rotation.z);
 			view = __rotateTail(view);
-			//if (Config.CAMERA3D_ENABLED)
-			//	view = parent.camera3D.applyViewTo(view);
+			// if (Config.CAMERA3D_ENABLED)
+			// 	view = parent.camera3D.applyViewTo(view);
 			view.z *= 0.001;
 
 			// The result of the perspective projection of rotation
@@ -194,7 +194,6 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 		final HOLD_SUBDIVISIONS = Adapter.instance.getHoldSubdivisions(item);
 
-
 		updateIndices(HOLD_SUBDIVISIONS);
 
 		final player = Adapter.instance.getPlayerFromArrow(item);
@@ -223,6 +222,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		__rotateX = canUseLast ? __lastRX : (__lastRX = parent.getPercent('holdRotateX', player));
 		__rotateY = canUseLast ? __lastRY : (__lastRY = parent.getPercent('holdRotateY', player));
 		__rotateZ = canUseLast ? __lastRZ : (__lastRZ = parent.getPercent('holdRotateZ', player));
+
 		var parentTime = Adapter.instance.getHoldParentTime(item);
 		var parentData:ArrowData = {
 			hitTime: parentTime,
@@ -254,11 +254,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 			var out1:HoldSegmentOutput;
 			var out2:HoldSegmentOutput;
-			
-			
+
 			out1 = firstIteration ? getHoldSegment(item, basePos, lastData != null ? lastData : getArrowParams(item, holdTimeProgress)) : lastSegment;
 			out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeProgress + (holdTimeInterval * timeScale))));
-			
 
 			if (firstIteration) {
 				item._z = out1.depth;
@@ -268,19 +266,13 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 						final rawStart = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
 						final rawEnd = out2.clipped ? getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false) : out2;
 
-					// Calculate length using subtractToOutput to avoid allocations
-					final tempVec = new Vector3();
-					rawEnd.origin.subtractToOutput(rawStart.origin, tempVec);
-					final rawLength = tempVec.length;
-					if (rawLength > 0) {
-						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
-						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
-					}
-				} else {
-					// Reuse tempVec for this calculation too
-					final tempVec = new Vector3();
-					out2.origin.subtractToOutput(out1.origin, tempVec);
-					timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, tempVec.length);
+						final rawLength = (rawEnd.origin - rawStart.origin).length;
+						if (rawLength > 0) {
+							timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
+							out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
+						}
+					} else {
+						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, (out2.origin - out1.origin).length);
 						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
 					}
 				}
@@ -304,7 +296,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 			final negGlow = 1 - out1.visuals.glow;
 			final absGlow = out1.visuals.glow * 255;
-			
+
 			var ctr:ColorTransform;
 
 			transfTotal[tID++] = ctr = new ColorTransform(negGlow, negGlow, negGlow, out1.visuals.alpha * item.alpha,

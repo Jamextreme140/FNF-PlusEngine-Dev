@@ -615,6 +615,160 @@ class WindowsCPP
 	public static function setWindowLayeredMode(numberMode:Int)
 	{
 	}
+
+	/**
+	 * Gets the actual screen width using GetSystemMetrics (DPI-aware and accurate)
+	 * @return Screen width in pixels
+	 */
+	@:functionCode('
+		return GetSystemMetrics(SM_CXSCREEN);
+	')
+	public static function getScreenWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual screen height using GetSystemMetrics (DPI-aware and accurate)
+	 * @return Screen height in pixels
+	 */
+	@:functionCode('
+		return GetSystemMetrics(SM_CYSCREEN);
+	')
+	public static function getScreenHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the work area width (screen minus taskbar)
+	 * @return Work area width in pixels
+	 */
+	@:functionCode('
+		RECT rect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		return rect.right - rect.left;
+	')
+	public static function getWorkAreaWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the work area height (screen minus taskbar)
+	 * @return Work area height in pixels
+	 */
+	@:functionCode('
+		RECT rect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		return rect.bottom - rect.top;
+	')
+	public static function getWorkAreaHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual window client area width (excluding borders)
+	 * @return Client width in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetClientRect(window, &rect)) {
+			return rect.right - rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowClientWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual window client area height (excluding borders and title bar)
+	 * @return Client height in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetClientRect(window, &rect)) {
+			return rect.bottom - rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowClientHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the total window width (including borders and decorations)
+	 * @return Window width in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.right - rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the total window height (including borders, title bar and decorations)
+	 * @return Window height in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.bottom - rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the window X position on screen
+	 * @return Window X coordinate in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowX():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the window Y position on screen
+	 * @return Window Y coordinate in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowY():Int
+	{
+		return 0;
+	}
 	#end
 }
 

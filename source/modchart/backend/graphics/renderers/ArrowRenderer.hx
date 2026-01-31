@@ -7,10 +7,6 @@ final fMatrix:FlxMatrix = new FlxMatrix();
 final rotationVector = new Vector3();
 final helperVector = new Vector3();
 
-// Object pools to reduce allocations
-final colorTransformPool:Array<ColorTransform> = [for (i in 0...32) new ColorTransform()];
-var colorPoolIndex:Int = 0;
-
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
 @:noDebug
@@ -46,12 +42,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		if (arrow.alpha <= 0)
 			return null;
 
-		// Validate that the sprite has valid frames before processing it
-		if (arrow.frame == null || arrow.frame.frame == null) {
-			return null; // Skip sprites without valid frames (e.g. SustainSplash with a makeGraphic fallback)
-		}
-
 		final arrowPosition = helperVector;
+
 		final player = Adapter.instance.getPlayerFromArrow(arrow);
 
 		// setup the position
@@ -83,11 +75,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 			Adapter.instance.getDefaultReceptorY(arrowData.lane, arrowData.player) + Manager.ARROW_SIZEDIV2, 0);
 
 		final output = parent.modifiers.getPath(arrowPosition, arrowData);
-		// Use direct assignment instead of clone + copyFrom to reduce allocations
-		final outputPos = output.pos;
-		arrowPosition.x = outputPos.x;
-		arrowPosition.y = outputPos.y;
-		arrowPosition.z = outputPos.z;
+		arrowPosition.copyFrom(output.pos.clone());
 
 		// internal mods
 		if (orient != 0) {
@@ -139,8 +127,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 			rotation.y = rotation.y * depthScale * output.visuals.scaleY;
 
 			var view = new Vector3(rotation.x + arrowPosition.x, rotation.y + arrowPosition.y, rotation.z);
-			//if (Config.CAMERA3D_ENABLED)
-			//	view = parent.camera3D.applyViewTo(view);
+			// if (Config.CAMERA3D_ENABLED)
+			// 	view = parent.camera3D.applyViewTo(view);
 			view.z *= 0.001 * Config.Z_SCALE;
 
 			// The result of the perspective projection of rotation
@@ -155,7 +143,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 			vertPointer = vertPointer + 2;
 		} while (vertPointer < planeVertices.length);
 
-        // @formatter:off
+		// @formatter:off
 		var vertices = new NativeVector<Float>(8);
 		// top left
 		vertices[0] = planeVertices[0];
@@ -170,6 +158,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		// bottom right
 		vertices[6] = planeVertices[6];
 		vertices[7] = planeVertices[7];
+
 		final uvRectangle = arrow.frame.uv;
 		var uvData = new NativeVector<Float>(12);
 		var k = 0;
@@ -238,7 +227,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		indices[3] = 1;
 		indices[4] = 3;
 		indices[5] = 2;
-
+		
 		// @formatter:on
 		final absGlow = output.visuals.glow * 255;
 		final negGlow = 1 - output.visuals.glow;
@@ -249,7 +238,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		var color = new ColorTransform(negGlow, negGlow, negGlow, arrow.alpha * output.visuals.alpha, Math.round(output.visuals.glowR * absGlow),
 			Math.round(output.visuals.glowG * absGlow), Math.round(output.visuals.glowB * absGlow));
 
-		// Make the instruction
+		// make the instruction
 		var dc:DrawCommand = {
 			parent: arrow,
 			graphic: arrow.graphic,
