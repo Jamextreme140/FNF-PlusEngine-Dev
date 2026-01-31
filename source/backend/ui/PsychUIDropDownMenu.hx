@@ -13,6 +13,11 @@ class PsychUIDropDownMenu extends PsychUIInputText
 	public var selectedIndex(default, set):Int = -1;
 	public var selectedLabel(default, set):String = null;
 
+	var _items:Array<PsychUIDropDownItem> = [];
+    public var curScroll:Int = 0;
+    public var broadcastDropDownEvent:Bool = true;
+    public var maxVisibleItems:Int = 5;
+
 	var _curFilter:Array<String>;
 	var _itemWidth:Float = 0;
 	public function new(x:Float, y:Float, list:Array<String>, callback:Int->String->Void, ?width:Float = 100)
@@ -37,21 +42,18 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		{
 			if(old != cur)
 			{
-				_curFilter = this.list.filter(function(str:String) return str.startsWith(cur));
-				showDropDown(true, 0, _curFilter);
+				if(cur.length > 0)
+				{
+					_curFilter = this.list.filter(function(str:String) return str.startsWith(cur));
+					showDropDown(true, 0, _curFilter);
+				}
+				else
+				{
+					_curFilter = null;
+					showDropDown(true, 0, null);
+				}
 			}
 		}
-		unfocus = function()
-		{
-			showDropDownClickFix();
-			showDropDown(false);
-		}
-
-		for (option in list)
-			addOption(option);
-
-		selectedIndex = 0;
-		showDropDown(false);
 	}
 
 	function set_selectedIndex(v:Int)
@@ -82,8 +84,6 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		return selectedLabel;
 	}
 
-	var _items:Array<PsychUIDropDownItem> = [];
-	public var curScroll:Int = 0;
 	override function update(elapsed:Float)
 	{
 		var lastFocus = PsychUIInputText.focusOn;
@@ -171,6 +171,34 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				showDropDown(true, curScroll - wheel, _curFilter);
 			}
 		}
+		else if (isMouseOverDropdown())
+		{
+			#if FLX_TOUCH
+			if(list.length > 1)
+			{
+				for (swipe in FlxG.swipes)
+				{
+					var dx = swipe.startPosition.x - swipe.endPosition.x;
+					var dy = swipe.startPosition.y - swipe.endPosition.y;
+					var distance = Math.sqrt(dx * dx + dy * dy);
+
+					if (distance >= 25)
+					{
+						var angle = swipe.startPosition.angleBetween(swipe.endPosition);
+
+						if (angle >= -45 && angle <= 45)
+						{
+							showDropDown(true, curScroll - 1, _curFilter);
+						}
+						else if ((angle >= 135 && angle <= 180) || (angle >= -180 && angle <= -135))
+						{
+							showDropDown(true, curScroll + 1, _curFilter);
+						}
+					}
+				}
+			}
+			#end
+		}
 	}
 
 	private function showDropDownClickFix()
@@ -191,8 +219,8 @@ class PsychUIDropDownMenu extends PsychUIInputText
 			_curFilter = null;
 		}
 
-		var maxVisibleItems = Math.floor((FlxG.height - (this.y + behindText.y + behindText.height)) / 20);
-		var totalItems = onlyAllowed != null ? onlyAllowed.length : list.length;
+		var itemsToShow = onlyAllowed != null ? onlyAllowed : (_curFilter != null ? _curFilter : list);
+		var totalItems = itemsToShow.length;
 
 		curScroll = scroll;
         if(curScroll < 0) curScroll = 0;
@@ -241,14 +269,13 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		}
 	}
 
-	public var broadcastDropDownEvent:Bool = true;
 	function clickedOn(num:Int, label:String)
-	{
-		selectedIndex = num;
-		showDropDown(false);
-		if(onSelect != null) onSelect(num, label);
-		if(broadcastDropDownEvent) PsychUIEventHandler.event(CLICK_EVENT, this);
-	}
+    {
+        selectedIndex = num;
+        showDropDown(false);
+        if(onSelect != null) onSelect(num, label);
+        if(broadcastDropDownEvent) PsychUIEventHandler.event(CLICK_EVENT, this);
+    }
 
 	public function isMouseOverDropdown():Bool
 	{
