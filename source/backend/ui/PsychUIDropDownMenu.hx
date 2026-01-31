@@ -195,8 +195,8 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		var totalItems = onlyAllowed != null ? onlyAllowed.length : list.length;
 
 		curScroll = scroll;
-        if(curScroll < 0) curScroll = 0;
-        if(curScroll >= totalItems) curScroll = Std.int(Math.max(0, totalItems - 1));
+		if(curScroll < 0) curScroll = 0;
+		if(curScroll >= totalItems) curScroll = Math.max(0, totalItems - 1);
 		
 		if(vis)
 		{
