@@ -18,7 +18,7 @@ on:
 jobs:
   Linux-x64:
     # The type of runner that the job will run on
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -59,7 +59,7 @@ jobs:
           path: 'export/release/linux/bin'  
           
   Windows-x32:
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
     steps:
@@ -93,7 +93,7 @@ jobs:
           path: export/release/windows/bin/Windows32
 
   Windows-x64:
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
     steps:
@@ -127,7 +127,7 @@ jobs:
           path: export/release/windows/bin
 
   Mac-ARM:
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-latest
 
     steps:
@@ -160,7 +160,7 @@ jobs:
           path: export/release/macos/bin
 
   Android:
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
 
     steps:
@@ -280,7 +280,7 @@ jobs:
           path: ${{ steps.find-apk.outputs.apk-path }}/${{ steps.find-apk.outputs.apk-file }}
 
   iOS:
-    if: contains(github.event.head_commit.message, 'wd') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-15
 
     steps:
