@@ -240,6 +240,12 @@ class VisualsSettingsSubState extends BaseOptionsMenu
             BOOL);
         addOption(option);
 
+		var option:Option = new Option('Visualizer on Main Menu',
+		    'If checked, it will display the visualization in the main menu. Enable this if you want the main menu to look cool.'
+			'visualizerOnMainMenu',
+			BOOL);
+		addOption(option);
+
         var option:Option = new Option('Show End Countdown',
             'If checked, shows a countdown in the last seconds of the song.',
             'showEndCountdown',

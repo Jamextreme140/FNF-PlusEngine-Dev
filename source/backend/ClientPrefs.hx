@@ -158,6 +158,7 @@ class ClientPrefs {
 	public static var data:SaveVariables = {};
 	public static var defaultData:SaveVariables = {};
 	public static var judgementCounter:Bool = true;
+	public static var visualizerOnMainMenu:Bool = true;
 	
 
 	//Every key has two binds, add your key bind down here and then add your control on options/ControlsSubState.hx and Controls.hx
