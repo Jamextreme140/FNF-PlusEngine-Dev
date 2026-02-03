@@ -120,7 +120,7 @@ class Psych implements IAdapter {
 	}
 
 	public function getHoldSubdivisions(hold:FlxSprite):Int {
-		return 4;
+		return ClientPrefs.data.holdSubdivisions;
 	}
 
 	public function getHoldLength(item:FlxSprite):Float

@@ -12,23 +12,18 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 		title = Language.getPhrase('modchart_menu', 'Modchart Settings');
 		rpcTitle = 'Modchart Options Menu'; // for Discord Rich Presence
 
+		// ========== CAMERA & RENDERING SECTION ==========
+		
 		// 3D Camera option
 		var option:Option = new Option('Enable 3D Cameras',
-			'Enables or disables 3D camera functionality.\nDisabling this may improve performance by skipping 3D transformations.',
+			'If checked: Enables 3D camera transformations and depth effects.\nIf unchecked: Disables 3D features for better performance.',
 			'camera3dEnabled',
 			BOOL);
 		addOption(option);
 
-		// Optimize Holds option
-		var option:Option = new Option('Optimize Hold Rendering',
-			'Optimizes hold arrow rendering for better performance.\nNOT recommended for complex modcharts as holds may look incorrect.',
-			'optimizeHolds',
-			BOOL);
-		addOption(option);
-
 		// Z Scale option
-		var option:Option = new Option('Z-Axis Scale',
-			'Scales the Z-axis values to control perceived depth.\nHigher values increase depth, lower values flatten it.',
+		var option:Option = new Option('Z-Axis Depth Scale',
+			'Controls the perceived depth of 3D effects.\nHigher = More dramatic depth\nLower = Flatter appearance',
 			'zScale',
 			FLOAT);
 		option.scrollSpeed = 10;
@@ -38,23 +33,25 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 		option.decimals = 1;
 		addOption(option);
 
+		// ========== ARROW PATH RENDERING ==========
+		
 		// Render Arrow Paths option
 		var option:Option = new Option('Render Arrow Paths',
-			'Renders the trajectory lines of arrows.\nWARNING: This affects performance due to path computation.',
+			'If checked: Shows trajectory lines of arrows.\nWARNING: May impact performance significantly.',
 			'renderArrowPaths',
 			BOOL);
 		addOption(option);
 
 		// Styled Arrow Paths option
 		var option:Option = new Option('Styled Arrow Paths',
-			'Applies visual styles to arrow paths (color, scale, alpha).\nOnly works when "Render Arrow Paths" is enabled.',
+			'Applies colors, transparency, and scaling to arrow paths.\nRequires "Render Arrow Paths" to be enabled.',
 			'styledArrowPaths',
 			BOOL);
 		addOption(option);
 
 		// Arrow Path Boundary option
 		var option:Option = new Option('Arrow Path Boundary',
-			'Pixels outside screen to still render paths.\nLower = Better FPS, Higher = Less pop-in\n(Recommended: 300)',
+			'Distance in pixels beyond screen edges to render paths.\nLower = Better performance | Higher = Less visual pop-in',
 			'arrowPathBoundary',
 			INT);
 		option.scrollSpeed = 10;
@@ -64,9 +61,37 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 		option.decimals = 0;
 		addOption(option);
 
+		// ========== HOLD NOTE SETTINGS ==========
+		
+		// Hold Subdivisions option
+		var option:Option = new Option('Hold Subdivisions',
+			'Number of segments per hold note for rendering.\nHigher = Smoother curves | Lower = Better performance\n(Range: 1-32)',
+			'holdSubdivisions',
+			INT);
+		option.scrollSpeed = 1;
+		option.minValue = 1;
+		option.maxValue = 32;
+		option.changeValue = 1;
+		option.decimals = 0;
+		addOption(option);
+		
+		// Optimize Holds option
+		var option:Option = new Option('Optimize Hold Rendering',
+			'Reduces hold note calculations for ~2x better performance.\nNOT recommended with complex modcharts (may cause visual glitches).',
+			'optimizeHolds',
+			BOOL);
+		addOption(option);
+
+		// Holds Behind Strum option
+		var option:Option = new Option('Holds Behind Strums',
+			'If checked: Sustains render behind strum line.\nIf unchecked: Sustains render above strum line.',
+			'holdsBehindStrum',
+			BOOL);
+		addOption(option);
+
 		// Hold End Scale option
 		var option:Option = new Option('Hold End Scale',
-			'Scales the size of hold note endings.\nAdjust for visual preference.',
+			'Multiplier for the size of hold note tail caps.\n1.0 = Default size',
 			'holdEndScale',
 			FLOAT);
 		option.scrollSpeed = 10;
@@ -78,22 +103,17 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 
 		// Prevent Scaled Hold End option
 		var option:Option = new Option('Prevent Scaled Hold Ends',
-			'Prevents scaling the hold note endings.\nWARNING: May affect performance with many holds on screen.',
+			'Keeps hold ends at constant size regardless of modifiers.\nWARNING: Adds extra calculations, may reduce FPS with many holds.',
 			'preventScaledHoldEnd',
 			BOOL);
 		addOption(option);
 
+		// ========== PERFORMANCE & MODIFIERS ==========
+		
 		// Column Specific Modifiers option
-		var option:Option = new Option('Column Specific Modifiers',
-			'Enables column-specific modifiers.\nDisabling may improve performance by reducing calculations.',
+		var option:Option = new Option('Column-Specific Modifiers',
+			'Allows modifiers to affect individual note lanes.\nDisabling improves performance by reducing per-lane calculations.',
 			'columnSpecificModifiers',
-			BOOL);
-		addOption(option);
-
-		// Holds Behind Strum option
-		var option:Option = new Option('Holds Behind Strums',
-			'Shows sustain notes behind the strum line.\nVisual preference option.',
-			'holdsBehindStrum',
 			BOOL);
 		addOption(option);
 

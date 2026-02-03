@@ -63,21 +63,32 @@ import states.TitleState;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	    public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
-	public var holdSubdivisions:Int = 4; // Subdivisions for hold notes (1-32)
-	// Modchart Config Options
-	public var camera3dEnabled:Bool = true; // Enables/disables 3D cameras
-	public var optimizeHolds:Bool = false; // Optimizes hold rendering (may look bad with complex modcharts)
-	public var zScale:Float = 1.0; // Z axis scale (depth)
-	public var renderArrowPaths:Bool = false; // Renders arrow path lines
-	public var styledArrowPaths:Bool = false; // Applies visual styles to paths
-	public var arrowPathBoundary:Int = 300; // Boundary margin for paths (pixels off-screen)
-	public var holdCacheEnabled:Bool = true; // Hold graphics cache for better performance
+	
+	// ========== Modchart Config Options ==========
+	// Hold Rendering
+	public var holdSubdivisions:Int = 4; // Segments per hold note for rendering (1-32, higher = smoother)
+	// Camera & 3D Settings
+	public var camera3dEnabled:Bool = true; // Enables 3D camera transformations
+	public var zScale:Float = 1.0; // Z-axis depth scale (0.1-5.0)
+	
+	// Arrow Path Settings
+	public var renderArrowPaths:Bool = false; // Renders arrow trajectory lines (performance intensive)
+	public var styledArrowPaths:Bool = false; // Applies colors/transparency to arrow paths
+	public var arrowPathBoundary:Int = 300; // Pixels beyond screen to render paths (0-1000)
+	
+	// Hold Note Settings
+	public var optimizeHolds:Bool = false; // Optimizes hold rendering (not recommended for complex modcharts)
+	public var holdsBehindStrum:Bool = false; // Renders sustains behind strum line
+	public var holdEndScale:Float = 1.0; // Scale multiplier for hold note endings (0.1-3.0)
+	public var preventScaledHoldEnd:Bool = false; // Prevents modifier scaling on hold ends (performance cost)
+	
+	// Hold Cache Settings (Auto-managed by AndroidOptimizer)
+	public var holdCacheEnabled:Bool = true; // Hold graphics cache for performance
 	public var holdAlphaDivisions:Int = 20; // Pre-calculated alpha variants (10-30)
-	public var seamlessHoldExtension:Float = 2.0; // Hold extension to avoid gaps (0-5)
-	public var holdEndScale:Float = 1.0; // Hold end scale
-	public var preventScaledHoldEnd:Bool = false; // Prevents scaling of hold ends
-	public var columnSpecificModifiers:Bool = true; // Enables/disables column-specific modifiers
-	public var holdsBehindStrum:Bool = false; // Shows sustains behind strums
+	
+	// Modifier Settings
+	public var columnSpecificModifiers:Bool = true; // Enables per-lane modifier calculations
+	
 	public var noteOffset:Int = 0;
 	public var arrowRGB:Array<Array<FlxColor>> = [
 		[0xFFC24B99, 0xFFFFFFFF, 0xFF3C1F56],
