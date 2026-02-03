@@ -97,6 +97,8 @@ class AudioVisualizer extends FlxSprite
     override function update(elapsed:Float)
     {
         super.update(elapsed);
+
+        if (!visible || !isOnScreen()) return;
         
         updateTimer += elapsed;
         var updateInterval = 1.0 / targetFPS;
@@ -117,6 +119,11 @@ class AudioVisualizer extends FlxSprite
             applySmoothing();
             updateBars();
         }
+    }
+
+    function isOnScreen():Bool
+    {
+        return x < FlxG.width && x + width > 0 && y < FlxG.height && y + height > 0;
     }
     
     function updateAudioData()

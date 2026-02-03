@@ -10,6 +10,7 @@ import objects.MusicPlayer;
 
 import options.GameplayChangersSubstate;
 import substates.ResetScoreSubState;
+import objects.AudioVisualizer;
 
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
@@ -86,6 +87,9 @@ class FreeplayState extends MusicBeatState
 	var isDeccelerating:Bool = false;
 	var swipeSensitivity:Float = 100; // pixels needed to change selection
 
+	var audioVisualizer:AudioVisualizer;
+    var visualizerEnabled:Bool = true;
+
 	override function create()
 	{
 		//Paths.clearStoredMemory();
@@ -158,20 +162,6 @@ class FreeplayState extends MusicBeatState
 		blackOverlay = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		blackOverlay.alpha = 0.1;
 		add(blackOverlay);
-
-        /* Fixing =p
-		{
-			var visualizer = new AudioDisplay(FlxG.sound.music, 0, FlxG.height - 120, FlxG.width, 120, 128, 4, FlxColor.WHITE);
-			visualizer.snd = FlxG.sound.music;
-			visualizer.stopUpdate = false;
-			visualizer.setMode(SPECTRUM);
-			visualizer.setColorMode(SOLID);
-			visualizer.setSensitivity(5);
-			visualizer.setFalloffSpeed(0.9);
-			visualizer.setSmoothing(0.1); 
-			add(visualizer);
-		}
-		*/
 		
 		layerFree = new FlxSprite().loadGraphic(Paths.image('ui/layerfree'));
 		layerFree.antialiasing = ClientPrefs.data.antialiasing;
@@ -337,6 +327,12 @@ class FreeplayState extends MusicBeatState
 		
 		player = new MusicPlayer(this);
 		add(player);
+
+		visualizerEnabled = ClientPrefs.enableVisualizer;
+		if (visualizerEnabled)
+		{
+			createAudioVisualizer();
+		}
 		
 		difficultySelector = new DifficultySelector();
 		add(difficultySelector.cards);
@@ -356,8 +352,30 @@ class FreeplayState extends MusicBeatState
 		}
 	}
 
+	function createAudioVisualizer():Void
+	{
+		if (audioVisualizer != null)
+		{
+			remove(audioVisualizer);
+			audioVisualizer.destroy();
+			audioVisualizer = null;
+		}
+		
+		if (!visualizerEnabled) return;
+
+		audioVisualizer = new AudioVisualizer(FlxG.sound.music, 0, FlxG.height - 100, FlxG.width, 100, 128, 0xFFFFFFFF);
+		audioVisualizer.sensitivity = 0.7;
+		audioVisualizer.falloffSpeed = 0.88;
+		add(audioVisualizer);
+
+		remove(audioVisualizer);
+		insert(1, audioVisualizer);
+	}
+
 	override function closeSubState()
 	{
+		onSettingsChange();
+		
 		changeSelection(0, false);
 		persistentUpdate = true;
 		super.closeSubState();
@@ -390,6 +408,24 @@ class FreeplayState extends MusicBeatState
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+
+		if (audioVisualizer != null && visualizerEnabled)
+		{
+			audioVisualizer.sound = FlxG.sound.music;
+
+			if (bg != null)
+			{
+				var color = bg.color;
+				var visualizerColor = FlxColor.fromRGB(
+					Std.int(FlxMath.lerp(color.red, 255, 0.3)),
+					Std.int(FlxMath.lerp(color.green, 255, 0.3)),
+					Std.int(FlxMath.lerp(color.blue, 255, 0.3))
+				);
+				audioVisualizer.setColor(visualizerColor);
+			}
+		}
+
+		updateTexts(elapsed);
 		
 		if(WeekData.weeksList.length < 1)
 			return;
@@ -953,6 +989,16 @@ class FreeplayState extends MusicBeatState
 			intendedColor = newColor;
 			FlxTween.cancelTweensOf(bg);
 			FlxTween.color(bg, 1, bg.color, intendedColor);
+
+			if (audioVisualizer != null && visualizerEnabled)
+			{
+				var visualizerColor = FlxColor.fromRGB(
+					Std.int(FlxMath.lerp(newColor.red, 255, 0.3)),
+					Std.int(FlxMath.lerp(newColor.green, 255, 0.3)),
+					Std.int(FlxMath.lerp(newColor.blue, 255, 0.3))
+				);
+				FlxTween.color(audioVisualizer, 1, audioVisualizer._color, visualizerColor);
+			}
 		}
 
 		for (num => item in grpSongs.members)
@@ -1063,6 +1109,27 @@ class FreeplayState extends MusicBeatState
 		
 		// Update Difficulty.list with all available difficulties
 		Difficulty.list = availableDiffs;
+	}
+
+	public function onSettingsChange():Void
+	{
+		var newSetting = ClientPrefs.enableVisualizer;
+		
+		if (newSetting != visualizerEnabled)
+		{
+			visualizerEnabled = newSetting;
+			
+			if (visualizerEnabled)
+			{
+				createAudioVisualizer();
+			}
+			else if (audioVisualizer != null)
+			{
+				remove(audioVisualizer);
+				audioVisualizer.destroy();
+				audioVisualizer = null;
+			}
+		}
 	}
 
 	inline private function _updateSongLastDifficulty()
@@ -1292,6 +1359,12 @@ class FreeplayState extends MusicBeatState
 	override function destroy():Void
 	{
 		super.destroy();
+
+		if (audioVisualizer != null)
+		{
+			audioVisualizer.destroy();
+			audioVisualizer = null;
+		}
 
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		if (!FlxG.sound.music.playing && !stopMusicPlay)

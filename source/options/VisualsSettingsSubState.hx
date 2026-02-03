@@ -240,9 +240,9 @@ class VisualsSettingsSubState extends BaseOptionsMenu
             BOOL);
         addOption(option);
 
-		var option:Option = new Option('Visualizer on Main Menu',
-		    'If checked, it will display the visualization in the main menu. Enable this if you want the main menu to look cool.'
-			'visualizerOnMainMenu',
+		var option:Option = new Option('Enable Visualizer',
+		    'If checked, it will display the visualization.'
+			'enableVisualizer',
 			BOOL);
 		addOption(option);
 

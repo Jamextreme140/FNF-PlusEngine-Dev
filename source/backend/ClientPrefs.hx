@@ -39,6 +39,7 @@ import states.TitleState;
 	public var showFPS:Bool = true;
 	public var fpsDebugLevel:Int = 0; // FPSCounter debug level (persistent)
 	public var showWatermark:Bool = false;
+	public var enableVisualizer:Bool = true;
 	public var flashing:Bool = true;
 	public var autoPause:Bool = true;
 	public var antialiasing:Bool = true;
@@ -158,7 +159,17 @@ class ClientPrefs {
 	public static var data:SaveVariables = {};
 	public static var defaultData:SaveVariables = {};
 	public static var judgementCounter:Bool = true;
-	public static var visualizerOnMainMenu:Bool = true;
+
+	public static var enableVisualizer(get, set):Bool;
+
+	private static function get_enableVisualizer():Bool {
+		return data.enableVisualizer;
+	}
+
+	private static function set_enableVisualizer(value:Bool):Bool {
+		data.enableVisualizer = value;
+		return value;
+	}
 	
 
 	//Every key has two binds, add your key bind down here and then add your control on options/ControlsSubState.hx and Controls.hx

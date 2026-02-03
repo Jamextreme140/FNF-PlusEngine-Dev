@@ -152,7 +152,7 @@ class MainMenuState extends MusicBeatState
 			audioVisualizer.destroy();
 		}
 
-		visualizerEnabled = ClientPrefs.data.visualizerOnMainMenu;
+		visualizerEnabled = ClientPrefs.data.enableVisualizer;
 		
 		if (!visualizerEnabled) return;
 
@@ -199,7 +199,7 @@ class MainMenuState extends MusicBeatState
 			if (FlxG.keys.justPressed.F5)
 			{
 				visualizerEnabled = !visualizerEnabled;
-				ClientPrefs.data.visualizerOnMainMenu = visualizerEnabled;
+				ClientPrefs.data.enableVisualizer = visualizerEnabled;
 				ClientPrefs.saveSettings();
 				createAudioVisualizer();
 				FlxG.sound.play(Paths.sound('scrollMenu'));
