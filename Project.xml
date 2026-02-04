@@ -233,11 +233,11 @@
 		<assets path="assets/modchart/eyeShape.csv" rename="modchart/eyeShape.csv" embed="true" />
 		<haxedef name="FM_ENGINE" value="PSYCH"/>
     	<haxedef name="FM_ENGINE_VERSION" value="1.0"/>
-    	<haxeflag name="--macro" value="modchart.backend.macros.Macro.includeFiles()"/>
+    	<haxeflag name="--macro" value="funkin.modding.modchart.backend.macros.Macro.includeFiles()"/>
 		<haxeflag name="source/extraParams.hxml" unless="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.buildFlxCamera())', 'flixel.FlxCamera')" if="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.buildFlxDrawTrianglesItem())', 'flixel.graphics.tile.FlxDrawTrianglesItem')" if="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.addModchartStorage())', 'flixel.FlxBasic')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.buildFlxCamera())', 'flixel.FlxCamera')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.buildFlxDrawTrianglesItem())', 'flixel.graphics.tile.FlxDrawTrianglesItem')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.addModchartStorage())', 'flixel.FlxBasic')" if="ios"/>
 	</section>
 
 	<!-- _________________________________ Custom _______________________________ -->

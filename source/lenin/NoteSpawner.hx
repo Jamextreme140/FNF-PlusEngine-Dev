@@ -1,8 +1,8 @@
 package lenin;
 
 import flixel.FlxG;
-import objects.Note;
-import states.PlayState;
+import funkin.play.notes.Note;
+import funkin.play.PlayState;
 
 /**
  * Sistema de spawning dinámico para notas

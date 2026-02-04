@@ -1,11 +1,11 @@
 package;
 
-import debug.FPSCounter;
-import debug.TraceDisplay;
-import debug.TraceButton;
-import debug.DebugButton;
-import backend.ClientPrefs;
-import backend.Screenshot;
+import funkin.ui.debug.FPSCounter;
+import funkin.ui.debug.TraceDisplay;
+import funkin.ui.debug.TraceButton;
+import funkin.ui.debug.DebugButton;
+import funkin.Preferences as ClientPrefs;
+import funkin.util.Screenshot;
 import flixel.FlxGame;
 import flixel.FlxState;
 import openfl.Lib;
@@ -14,11 +14,11 @@ import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
-import states.TitleState;
-import states.InitialState;
+import funkin.ui.title.TitleState;
+import funkin.InitState;
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;
-import psychlua.HScript.HScriptInfos;
+import funkin.modding.scripting.HScript.HScriptInfos;
 #end
 import openfl.events.KeyboardEvent;
 
@@ -26,9 +26,9 @@ import openfl.events.KeyboardEvent;
 import lime.graphics.Image;
 #end
 #if COPYSTATE_ALLOWED
-import states.CopyState;
+import funkin.mobile.backend.CopyState;
 #end
-import backend.Highscore;
+import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
 
 import lenin.slushithings.windows.WindowsAPI;
@@ -90,10 +90,10 @@ class Main extends Sprite
 		#end
 		Sys.setCwd(StorageUtil.getStorageDirectory());
 		#end
-		backend.CrashHandler.init();
+		funkin.util.CrashHandler.init();
 
 		#if (cpp && windows)
-		backend.Native.fixScaling();
+		funkin.util.Native.fixScaling();
 		// Initialize window transparency support
 		WindowsAPI.setWindowLayered();
 		// Set window border color to purple (128, 41, 182)
@@ -111,7 +111,7 @@ class Main extends Sprite
 		
 		// Initialize GlobalScript
 		#if HSCRIPT_ALLOWED
-		states.ModState.initGlobalScript();
+		funkin.modding.ModState.initGlobalScript();
 		#end
 
 		#if HSCRIPT_ALLOWED
@@ -171,7 +171,7 @@ class Main extends Sprite
 		}
 		#end
 
-		#if LUA_ALLOWED Lua.set_callbacks_function(cpp.Callable.fromStaticFunction(psychlua.CallbackHandler.call)); #end
+		#if LUA_ALLOWED Lua.set_callbacks_function(cpp.Callable.fromStaticFunction(funkin.modding.scripting.psychlua.CallbackHandler.call)); #end
 		Controls.instance = new Controls();
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
@@ -179,12 +179,12 @@ class Main extends Sprite
 		
 		// Initialize Android optimizer for automatic quality adjustments
 		#if android
-		backend.AndroidOptimizer.init();
+		funkin.mobile.AndroidOptimizer.init();
 		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new mobile.backend.MobileScaleMode();
+			FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
 		});
 		#end
 		
@@ -332,7 +332,7 @@ class Main extends Sprite
 
 	function toggleFullScreen(event:KeyboardEvent) {
 		if (Controls.instance.justReleased('fullscreen'))
-			backend.WindowMode.toggleFullscreen();
+			funkin.util.WindowMode.toggleFullscreen();
 	}
 
 	function positionWatermark():Void {
@@ -397,9 +397,9 @@ class Main extends Sprite
 
 	private function setupGame():Void
 	{
-		shaders.ShaderCompatibility.init();
+		funkin.graphics.shaders.ShaderCompatibility.init();
 		
-		trace('\n\n' + backend.Native.buildSystemInfo());
+		trace('\n\n' + funkin.util.Native.buildSystemInfo());
 		
 		#if hxvlc
 		try {
@@ -410,7 +410,7 @@ class Main extends Sprite
 		}
 		#end
 		
-		var flxGraphic = backend.Paths.image("marca");
+		var flxGraphic = funkin.Paths.image("marca");
 		if (flxGraphic != null) {
 			var bmpData:openfl.display.BitmapData = flxGraphic.bitmap;
 			if (watermarkSprite != null && watermarkSprite.parent != null) {
@@ -428,10 +428,10 @@ class Main extends Sprite
 			watermarkSprite.visible = ClientPrefs.data.showWatermark;
 			openfl.Lib.current.stage.addChild(watermarkSprite);
 		} else {
-			trace('No se pudo cargar la marca de agua con backend.Paths.image("marca").');
+			trace('No se pudo cargar la marca de agua con funkin.Paths.image("marca").');
 		}
 
-		var imagePath = backend.Paths.getPath('images/marca.png', IMAGE);
+		var imagePath = funkin.Paths.getPath('images/marca.png', IMAGE);
 		if (sys.FileSystem.exists(imagePath)) {
 		    if (watermark != null && watermark.parent != null)
 		        removeChild(watermark);

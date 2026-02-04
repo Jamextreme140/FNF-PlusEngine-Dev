@@ -1,7 +1,7 @@
 package lenin.slushithings.windows.winGDIThings;
 
 import sys.thread.Thread;
-import states.PlayState;
+import funkin.play.PlayState;
 
 /**
  * This class starts an external thread to the main one of the engine, it is used so that 

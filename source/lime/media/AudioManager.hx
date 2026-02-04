@@ -4,7 +4,7 @@ package lime.media;
 
 import haxe.Timer;
 import lime._internal.backend.native.NativeCFFI;
-import backend.ALSoftConfig;
+import funkin.audio.ALSoftConfig;
 #if (js && html5)
 import js.Browser;
 #end

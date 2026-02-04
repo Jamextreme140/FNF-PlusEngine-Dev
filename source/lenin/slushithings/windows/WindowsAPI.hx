@@ -10,7 +10,7 @@ import lime.system.System;
 import lenin.slushithings.windows.WindowsCPP;
 import lenin.slushithings.windows.winGDIThings.SlushiWinGDI;
 import lenin.slushithings.windows.winGDIThings.WinGDIThread;
-import psychlua.LuaUtils;
+import funkin.modding.scripting.psychlua.LuaUtils;
 #end
 
 /**
