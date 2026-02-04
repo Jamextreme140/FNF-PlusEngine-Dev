@@ -33,6 +33,10 @@ import states.TitleState;
 
 	public var systemScoreMultiplier:String = 'Psych'; // 'Psych', 'Codename'
 	
+	// Multiplayer Settings
+	public var playerName:String = "Player";
+	public var multiplayerServerURL:String = "ws://localhost:8080";
+	
 	public var downScroll:Bool = false;
 	public var middleScroll:Bool = false;
 	public var opponentStrums:Bool = true;

@@ -6,6 +6,7 @@ import backend.StageData;
 import backend.WeekData;
 import backend.Song;
 import backend.Rating;
+import backend.NetworkManager;
 
 import flixel.FlxBasic;
 import flixel.FlxObject;
@@ -306,6 +307,12 @@ class PlayState extends MusicBeatState
 	public var playOpponent:Bool = false; // Opponent Mode - play as opponent
 	public var noDropPenalty:Bool = false; // Hold drops don't cause misses
 	public var pressMissDamage:Float = 0.05;
+	
+	// Multiplayer Mode
+	public static var isMultiplayerMode:Bool = false;
+	public var opponentStatsTxt:FlxText;
+	private var statsUpdateTimer:Float = 0;
+	private var STATS_UPDATE_INTERVAL:Float = 1.0; // Send stats every 1 second
 
 	public var botplaySine:Float = 0;
 	public var botplayTxt:FlxText;
@@ -939,6 +946,16 @@ class PlayState extends MusicBeatState
 		scoreTxt.borderSize = 1.25;
 		scoreTxt.visible = !ClientPrefs.data.hideHud;
 		uiGroup.add(scoreTxt);
+		
+		// Multiplayer opponent stats text
+		if (isMultiplayerMode) {
+			opponentStatsTxt = new FlxText(10, 10, FlxG.width - 20, "", 18);
+			opponentStatsTxt.setFormat(Paths.font("phantom.ttf"), 18, FlxColor.fromRGB(255, 100, 100), LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			opponentStatsTxt.scrollFactor.set();
+			opponentStatsTxt.borderSize = 1.25;
+			opponentStatsTxt.text = 'Opponent: ${NetworkManager.opponentData.playerName} - Searching...';
+			uiGroup.add(opponentStatsTxt);
+		}
 	
 		// Detectar si es un chart de StepMania o si usa el stage notitg
 		isStepManiaChart = (customAudioPath != null && (customAudioPath.contains('/sm/') || customAudioPath.contains('sm/'))) || (curStage == 'notitg');		// Crear UI de StepMania si es necesario
@@ -2696,6 +2713,21 @@ class PlayState extends MusicBeatState
 
 	override public function update(elapsed:Float)
 	{
+		// Update network manager
+		if (isMultiplayerMode) {
+			NetworkManager.update();
+			
+			// Send stats update periodically
+			statsUpdateTimer += elapsed;
+			if (statsUpdateTimer >= STATS_UPDATE_INTERVAL) {
+				statsUpdateTimer = 0;
+				sendStatsToOpponent();
+			}
+			
+			// Update opponent stats display
+			updateOpponentStatsDisplay();
+		}
+		
 		if(!inCutscene && !paused && !freezeCamera) {
 			FlxG.camera.followLerp = 0.04 * cameraSpeed * playbackRate;
 			var idleAnim:Bool = (boyfriend.getAnimationName().startsWith('idle') || boyfriend.getAnimationName().startsWith('danceLeft') || boyfriend.getAnimationName().startsWith('danceRight'));
@@ -3921,6 +3953,22 @@ class PlayState extends MusicBeatState
 		var ret:Dynamic = callOnScripts('onEndSong', null, true);
 		if(ret != LuaUtils.Function_Stop && !transitioning)
 		{
+			// Send final stats if in multiplayer mode
+			if (isMultiplayerMode) {
+				var finalStats:PlayerStats = {
+					score: songScore,
+					accuracy: ratingPercent,
+					misses: songMisses,
+					combo: maxCombo,
+					sicks: ratingsData[1].hits,
+					goods: ratingsData[2].hits,
+					bads: ratingsData[3].hits,
+					shits: ratingsData[4].hits,
+					rating: ratingName
+				};
+				NetworkManager.sendSongEnd(finalStats);
+			}
+			
 			#if !switch
 			var percent:Float = ratingPercent;
 			if(Math.isNaN(percent)) percent = 0;
@@ -6148,6 +6196,35 @@ class PlayState extends MusicBeatState
 	function capitalizeFirst(str:String):String {
 		if (str == null || str.length == 0) return str;
 		return str.substr(0, 1).toUpperCase() + str.substr(1).toLowerCase();
+	}
+	
+	// Multiplayer helper functions
+	function sendStatsToOpponent():Void {
+		if (!isMultiplayerMode || !NetworkManager.isInMatch) return;
+		
+		var stats:PlayerStats = {
+			score: songScore,
+			accuracy: ratingPercent,
+			misses: songMisses,
+			combo: combo,
+			sicks: ratingsData[1].hits,
+			goods: ratingsData[2].hits,
+			bads: ratingsData[3].hits,
+			shits: ratingsData[4].hits,
+			rating: ratingName
+		};
+		
+		NetworkManager.sendStatsUpdate(stats);
+	}
+	
+	function updateOpponentStatsDisplay():Void {
+		if (!isMultiplayerMode || opponentStatsTxt == null) return;
+		
+		var oppData = NetworkManager.opponentData;
+		var accStr = oppData.accuracy > 0 ? '${FlxMath.roundDecimal(oppData.accuracy * 100, 2)}%' : '0%';
+		var comboStr = oppData.combo > 0 ? ' • Combo: ${oppData.combo}' : '';
+		
+		opponentStatsTxt.text = 'Opponent: ${oppData.playerName} | Score: ${oppData.score} | Acc: ${accStr} | Misses: ${oppData.misses}${comboStr}';
 	}
 
 	public function makeLuaTouchPad(DPadMode:String, ActionMode:String) {
