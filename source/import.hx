@@ -90,5 +90,6 @@ import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.addons.transition.FlxTransitionableState;
 import funkin.graphics.shaders.flixel.system.FlxShader;
 
+// Uh?
 using StringTools;
 #end
