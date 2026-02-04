@@ -1,170 +1,163 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Build
 
-
-# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   Linux-x64:
-    # The type of runner that the job will run on
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           sudo apt-get update
-          sudo apt-get install libvlc-dev
-          sudo apt-get install libvlccore-dev
-          sudo apt-get install libasound2-dev
-          sudo apt-get install libpulse-dev
-          sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
-          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install libvlc-dev libvlccore-dev libasound2-dev libpulse-dev \
+            libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            libgl1-mesa-dev libglu1-mesa-dev
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           chmod +x ./setup/unish-lib.sh
           sh ./setup/unish-lib.sh
+      
       - name: Skip SScript setup mode
         run: |
           echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
           cat ~/settings.cocoa
+      
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
+      
       - name: Compile
         run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: linuxBuild64
-          path: 'export/release/linux/bin'  
-          
-  Windows-x32:
+          path: export/release/linux/bin/*
+
+  Windows-x86:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           haxelib setup C:/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          .\"setup/windows-lib.bat"
+          haxelib install hxcpp > $null
+          .\setup\windows-lib.bat
         shell: cmd
+      
       - name: Skip SScript setup mode
         run: |
           echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
           type %USERPROFILE%\settings.cocoa
         shell: cmd
+      
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
+      
       - name: Compile
-        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: windowsBuild32
-          path: export/release/windows/bin/Windows32
+          path: export/release/windows/bin/*
 
   Windows-x64:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           haxelib setup C:/haxelib
-          haxelib install hxcpp > /dev/null --quiet
-          .\"setup/windows-lib.bat"
+          haxelib install hxcpp > $null
+          .\setup\windows-lib.bat
         shell: cmd
+      
       - name: Skip SScript setup mode
         run: |
           echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
           type %USERPROFILE%\settings.cocoa
         shell: cmd
+      
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
+      
       - name: Compile
-        run: haxelib run lime build windows -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+        run: haxelib run lime build windows -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: windowsBuild64
-          path: export/release/windows/bin
+          path: export/release/windows/bin/*
 
   Mac-ARM:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           haxelib setup ~/haxelib
           chmod +x ./setup/unish-lib.sh
           sh ./setup/unish-lib.sh
+      
       - name: Skip SScript setup mode
         run: |
           echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-
           cat ~/settings.cocoa
+      
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
+      
       - name: Compile
         run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: macBuildARM
-          path: export/release/macos/bin
+          path: export/release/macos/bin/*
 
   Android:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
@@ -185,8 +178,8 @@ jobs:
           sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmdline-tools;latest"
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           sudo apt-get update
@@ -229,69 +222,48 @@ jobs:
           echo "org.gradle.configureondemand=true" >> ~/.gradle/gradle.properties
           echo "android.enableR8.fullMode=false" >> ~/.gradle/gradle.properties
       
-      - name: Configure Lime for release build only
-        run: |
-          lime config android.release true
-          lime config android.ndk.debug false
-      
       - name: Compile
-        run: haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS -release
-      
-      - name: Clean build directories before artifact collection
         run: |
-          find export/release/android -name "*.so.debug" -type f -delete
-          find export/release/android -name "*.a" -type f -delete
-          find export/release/android -name "*.o" -type f -delete
-          find export/release/android -name "*.d" -type f -delete
-          find export/release/android -name "*.bc" -type f -delete
-          find export/release/android -name "*.ilk" -type f -delete
-          find export/release/android -name "*.pdb" -type f -delete
-
-          rm -rf export/release/android/obj
-          rm -rf export/release/android/intermediates
-          rm -rf export/release/android/tmp
-
-          echo "Build artifacts before cleanup:"
-          find export/release/android -type f -name "*.apk" | xargs ls -lh
+          haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS -D release -D final
       
-      - name: Find and select main APK
-        id: find-apk
+      - name: Find and compress APK file
         run: |
-          MAIN_APK=$(find export/release/android -name "*.apk" -type f | grep -v universal | grep -v split | head -1)
-
-          if [ -z "$MAIN_APK" ]; then
-            MAIN_APK=$(find export/release/android -name "*.apk" -type f | head -1)
+          find export/release/android -name "*.apk" -type f | head -5
+          
+          mkdir -p android-artifacts
+          
+          for apk in export/release/android/bin/*.apk; do
+            if [ -f "$apk" ]; then
+              echo "Found APK: $apk"
+              cp "$apk" android-artifacts/
+            fi
+          done
+          
+          if [ ! "$(ls -A android-artifacts 2>/dev/null)" ]; then
+            echo "Searching for APK files in export directory..."
+            find export -name "*.apk" -type f -exec cp {} android-artifacts/ \;
           fi
           
-          if [ -n "$MAIN_APK" ]; then
-            echo "Selected APK: $MAIN_APK"
-            echo "APK size: $(ls -lh "$MAIN_APK" | awk '{print $5}')"
-            echo "apk-path=$(dirname "$MAIN_APK")" >> $GITHUB_OUTPUT
-            echo "apk-file=$(basename "$MAIN_APK")" >> $GITHUB_OUTPUT
-          else
-            echo "No APK found!"
-            exit 1
-          fi
+          echo "Artifacts to upload:"
+          ls -la android-artifacts/
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: androidBuild
-          path: ${{ steps.find-apk.outputs.apk-path }}/${{ steps.find-apk.outputs.apk-file }}
+          path: android-artifacts/
 
   iOS:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-15
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4.1.7
 
       - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
-      # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
           haxelib setup ~/haxelib
@@ -313,4 +285,4 @@ jobs:
         uses: actions/upload-artifact@v4.3.4
         with:
           name: iOSBuild
-          path: export/release/ios/build/Release-iphoneos
+          path: export/release/ios/build/Release-iphoneos/*
