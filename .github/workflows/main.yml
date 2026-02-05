@@ -258,7 +258,7 @@ jobs:
       
       - name: Compile
         run: |
-          haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS -D release -D final
+          haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Find and compress APK file
         run: |
