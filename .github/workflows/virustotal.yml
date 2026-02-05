@@ -85,6 +85,31 @@ jobs:
           files: |
             ./FNF-PlusEngine-Windows-x64.zip
 
+  scan-mac-intel:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download Mac Intel Build
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: main.yml
+          name: macBuildIntel
+          path: ./mac-intel-build
+          
+      - name: Zip Mac Intel Build
+        run: |
+          cd ./mac-intel-build
+          zip -r ../FNF-PlusEngine-Mac-Intel.zip *
+          cd ..
+          
+      - name: VirusTotal Scan Mac Intel
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ./FNF-PlusEngine-Mac-Intel.zip
+
   scan-mac-arm:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
@@ -168,7 +193,6 @@ jobs:
           IOS_PATH="${{ steps.find-ios.outputs.ios_path }}"
           
           if [ -d "$IOS_PATH" ]; then
-            # It's a directory, zip it
             cd "$IOS_PATH"
             zip -r ../../FNF-PlusEngine-iOS.zip *
             cd ../..
