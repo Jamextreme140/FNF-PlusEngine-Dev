@@ -49,11 +49,11 @@ class Prompt extends BasePrompt
 		btn.cameras = cameras;
 		add(btn);
 
-		var btn:PsychUIButton = new PsychUIButton(0, btnY, _noTxt, close);
-		btn.screenCenter(X);
-		btn.x += 100;
-		btn.cameras = cameras;
-		add(btn);
+		var btn2:PsychUIButton = new PsychUIButton(0, btnY, _noTxt, close);
+		btn2.screenCenter(X);
+		btn2.x += 100;
+		btn2.cameras = cameras;
+		add(btn2);
 	}
 
 	override function close()

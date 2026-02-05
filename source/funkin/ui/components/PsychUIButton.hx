@@ -56,6 +56,14 @@ class PsychUIButton extends FlxSpriteGroup
 	{
 		super.update(elapsed);
 
+		// Prevent updates if camera or background sprite is null/destroyed
+		if(camera == null || bg == null || !bg.exists || !bg.alive)
+			return;
+		
+		// Check if camera is still valid and in the cameras list
+		if(!FlxG.cameras.list.contains(camera))
+			return;
+
 		if(_firstFrame)
 		{
 			bg.color = normalStyle.bgColor;
@@ -72,7 +80,15 @@ class PsychUIButton extends FlxSpriteGroup
 
 		if(forceCheckNext || FlxG.mouse.justMoved || FlxG.mouse.justPressed)
 		{
-			var overlapped:Bool = (camera != null && FlxG.mouse.overlaps(bg, camera));
+			var overlapped:Bool = false;
+			try 
+			{
+				overlapped = FlxG.mouse.overlaps(bg, camera);
+			}
+			catch(e:Any)
+			{
+				return; // Exit early if overlap check fails
+			}
 
 			forceCheckNext = false;
 
