@@ -9,7 +9,7 @@ on:
 
 jobs:
   Linux-x64:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'linx')
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +48,7 @@ jobs:
           path: export/release/linux/bin/*
 
   Windows-x86:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'winx86')
     runs-on: windows-latest
 
     steps:
@@ -84,7 +84,7 @@ jobs:
           path: export/release/windows/bin/*
 
   Windows-x64:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'winx64')
     runs-on: windows-latest
 
     steps:
@@ -119,8 +119,42 @@ jobs:
           name: windowsBuild64
           path: export/release/windows/bin/*
 
+  Mac-Intel:
+    if: contains(github.event.head_commit.message, 'macin')
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          chmod +x ./setup/unish-lib.sh
+          sh ./setup/unish-lib.sh
+      
+      - name: Skip SScript setup mode
+        run: |
+          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
+          cat ~/settings.cocoa
+      
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      
+      - name: Compile
+        run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: macBuildIntel
+          path: export/release/macos/bin/*
+
   Mac-ARM:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'macar')
     runs-on: macos-latest
 
     steps:
@@ -154,7 +188,7 @@ jobs:
           path: export/release/macos/bin/*
 
   Android:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'andr')
     runs-on: ubuntu-latest
 
     steps:
@@ -254,7 +288,7 @@ jobs:
           path: android-artifact/
 
   iOS:
-    if: contains(github.event.head_commit.message, 'wd')
+    if: contains(github.event.head_commit.message, 'ios')
     runs-on: macos-15
 
     steps:
