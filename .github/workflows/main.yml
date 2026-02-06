@@ -40,7 +40,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -114,7 +113,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build windows -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -149,7 +147,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -184,7 +181,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -291,7 +287,7 @@ jobs:
         uses: actions/upload-artifact@v4.3.4
         with:
           name: androidBuild
-          path: android-artifact/
+          path: android-artifact/*
 
   iOS:
     if: contains(github.event.head_commit.message, 'ios')
@@ -320,7 +316,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build ios -nosign --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
