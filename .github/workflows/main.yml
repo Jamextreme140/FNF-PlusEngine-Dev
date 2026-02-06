@@ -260,7 +260,7 @@ jobs:
         run: |
           haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
-      - name: Find and compress APK file
+      - name: Find and move APK file to directory
         run: |
           find export/release/android -name "*.apk" -type f | head -5
           

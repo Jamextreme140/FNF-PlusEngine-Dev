@@ -74,8 +74,12 @@ class SystemMemory
     {
         #if windows
         return WindowsCPP.getCPUCoreCount();
+        #elseif (mac || ios)
+        return getMacCPUCores();
+        #elseif (linux || android)
+        return getLinuxCPUCores();
         #elseif cpp
-        return untyped __cpp__('sysconf(_SC_NPROCESSORS_ONLN)');
+        return getGenericCPUCores();
         #else
         return 1;
         #end
@@ -146,6 +150,19 @@ class SystemMemory
     {
         return 0;
     }
+
+    /**
+     * Gets CPU cores on Mac/iOS using sysconf
+     */
+    @:functionCode('
+        #include <unistd.h>
+        long cores = sysconf(_SC_NPROCESSORS_ONLN);
+        return (cores > 0) ? (int)cores : 1;
+    ')
+    private static function getMacCPUCores():Int
+    {
+        return 1;
+    }
     #end
 
     #if (linux || android)
@@ -205,7 +222,39 @@ class SystemMemory
     {
         return readLinuxMemInfo(false);
     }
+
+    /**
+     * Gets CPU cores on Linux using sysconf
+     */
+    @:functionCode('
+        #include <unistd.h>
+        long cores = sysconf(_SC_NPROCESSORS_ONLN);
+        return (cores > 0) ? (int)cores : 1;
+    ')
+    private static function getLinuxCPUCores():Int
+    {
+        return 1;
+    }
     #end
+
+    /**
+     * Generic CPU core detection for other cpp platforms
+     */
+    @:functionCode('
+        // Try to get CPU cores using sysconf if available
+        #ifdef _SC_NPROCESSORS_ONLN
+            #include <unistd.h>
+            long cores = sysconf(_SC_NPROCESSORS_ONLN);
+            if (cores > 0) return (int)cores;
+        #endif
+        
+        // Fallback to 1 core
+        return 1;
+    ')
+    private static function getGenericCPUCores():Int
+    {
+        return 1;
+    }
 
     /**
      * Checks if the current device is low-end based on RAM
