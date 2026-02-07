@@ -159,3 +159,4 @@ function onInitModchart() {
                 - `setModifierPath('luapath', nodes, field)`
 
 ## Faltan mas modificadores pero estos son algunos de ellos, este codigo esta en desarrollo sorry XD
+## More modifiers are needed, but these are some of them. This code is still in development, sorry XD
