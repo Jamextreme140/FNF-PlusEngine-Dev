@@ -177,13 +177,12 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build windows -32 -D 32bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: windowsBuild32
-          path: export/release/windows/bin/*
+          path: export/32bit/windows/bin/*
   
   # └── Windows 64-bit (x64)
   Windows-x64:
@@ -216,7 +215,6 @@ jobs:
       
       - name: Compile
         run: haxelib run lime build windows -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
-        continue-on-error: true
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -435,46 +433,15 @@ jobs:
           rm -rf build
           rm -rf ~/.gradle
       
-      - name: Configure Gradle memory settings
-        run: |
-          mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
-          echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
-          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
-          echo "org.gradle.configureondemand=true" >> ~/.gradle/gradle.properties
-          echo "android.enableR8.fullMode=false" >> ~/.gradle/gradle.properties
-      
       - name: Compile
         run: |
           haxelib run lime build android --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
-        continue-on-error: true
-      
-      - name: Find and move APK file to directory
-        run: |
-          find export/release/android -name "*.apk" -type f | head -5
-          
-          mkdir -p android-artifact
-          
-          for apk in export/release/android/bin/*.apk; do
-            if [ -f "$apk" ]; then
-              echo "Found APK: $apk"
-              cp "$apk" android-artifact/
-            fi
-          done
-          
-          if [ ! "$(ls -A android-artifact 2>/dev/null)" ]; then
-            echo "Searching for APK files in export directory..."
-            find export -name "*.apk" -type f -exec cp {} android-artifact/ \;
-          fi
-          
-          echo "Artifact to upload:"
-          ls -la android-artifact/
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: androidBuild
-          path: android-artifact/*
+          path: export/release/android/bin/app/build/outputs/apk/release/*
 
   # └── iOS (Unsigned)
   iOS:
