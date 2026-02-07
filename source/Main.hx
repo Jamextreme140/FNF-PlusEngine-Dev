@@ -35,7 +35,7 @@ import lenin.slushithings.windows.WindowsAPI;
 
 // NATIVE API STUFF, YOU CAN IGNORE THIS AND SCROLL //
 #if (linux && !debug)
-@:cppInclude('./external/gamemode_client.h')
+@:cppInclude('./funkin/external/linux/gamemode_client.h')
 @:cppFileCode('#define GAMEMODE_AUTO')
 #end
 
@@ -103,6 +103,9 @@ class Main extends Sprite
 		
 		// Initialize Paths with temp cache
 		funkin.Paths.init();
+		
+		// Initialize FunkinMemory - NEW CACHE SYSTEM
+		funkin.FunkinMemory.init();
 		
 		// Initialize MemoryManager
 		funkin.util.MemoryManager.init();

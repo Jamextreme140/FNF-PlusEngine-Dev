@@ -15,6 +15,9 @@ import openfl.display.Sprite;
 import haxe.Http;
 import haxe.Json;
 import funkin.ui.mainmenu.MainMenuState;
+#if windows
+import lenin.slushithings.windows.WindowsCPP;
+#end
 
 /**
 	The FPS class provides an easy-to-use monitor to display
@@ -40,6 +43,11 @@ class FPSCounter extends Sprite
 		The current memory usage (WARNING: this is NOT your total program memory usage, rather it shows the garbage collector memory)
 	**/
 	public var memoryMegas(get, never):Float;
+	
+	/**
+		Task Memory (Windows only) - Actual process memory shown in Task Manager
+	**/
+	public var taskMemory(get, never):Float;
 
 	/**
 		Peak memory usage tracking
@@ -303,8 +311,11 @@ class FPSCounter extends Sprite
 				displayText = '' + Std.string(currentFPS) + ' FPS';
 				displayText += '\nDelay: ' + formatFloat(frameTimeMs, 1) + ' ms';
 				displayText += '\nAvg: ' + formatFloat(avgFrameTimeMs, 1) + ' ms';
-				displayText += '\nMemory: ' + currentMemoryStr;
+				displayText += '\nGC Memory: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
+				#if windows
+				displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
+				#end
 				displayText += '\n\n' + os.substring(1);
 				displayText += '\nCommit: ' + lastCommit;
 			
@@ -350,8 +361,13 @@ class FPSCounter extends Sprite
 				displayText = '' + Std.string(currentFPS) + ' FPS';
 				displayText += '\nDelay: ' + formatFloat(frameTimeMs, 1) + ' ms';
 				displayText += '\nAvg: ' + formatFloat(avgFrameTimeMs, 1) + ' ms';
-				displayText += '\nMemory: ' + currentMemoryStr;
+				displayText += '\nGC Memory: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
+				
+				// Add Windows-specific Task Memory (formatted automatically)
+				#if windows
+				displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
+				#end
 				
 				displayText += '\n\n' + cachedStaticText;
 				
@@ -476,8 +492,8 @@ class FPSCounter extends Sprite
 			// Calculate background size based on text
 			var lines = switch (debugLevel) {
 				case 1: 1.8; // Normal with bg: FPS, Delay, Memory, (optional modAuthor)
-				case 2: 7; // Basic debug info
-				case 3: 26; // Extended debug info
+				case 2: 8; // Basic debug info
+				case 3: 27; // Extended debug info
 				default: 0;
 			}
 
@@ -704,6 +720,10 @@ class FPSCounter extends Sprite
 
 	inline function get_memoryMegas():Float
 		return cpp.vm.Gc.memInfo64(cpp.vm.Gc.MEM_INFO_USAGE);
+
+	inline function get_taskMemory():Float {
+		return funkin.util.MemoryUtil.getTaskMemory();
+	}
 
 	public inline function positionFPS(X:Float, Y:Float, ?scale:Float = 1){
 		// Mantener siempre el mismo tamaño, ignorar el parámetro scale

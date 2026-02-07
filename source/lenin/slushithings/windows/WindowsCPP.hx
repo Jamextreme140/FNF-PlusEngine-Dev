@@ -12,6 +12,7 @@ package lenin.slushithings.windows;
     <lib name="shell32.lib" if="windows" />
     <lib name="gdi32.lib" if="windows" />
     <lib name="user32.lib" if="windows" />
+    <lib name="psapi.lib" if="windows" />
 </target>
 ')
 #if windows
@@ -35,6 +36,7 @@ package lenin.slushithings.windows;
 #include <chrono>
 #include <thread>
 #include <sysinfoapi.h>
+#include <psapi.h>
 
 #define UNICODE
 
@@ -43,6 +45,7 @@ package lenin.slushithings.windows;
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "Shell32.lib")
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "psapi.lib")
 
 // This is so that all window-related functions ALWAYS apply to the engine window.
 static std::string globalWindowTitle = "Friday Night Funkin\': Plus Engine";
@@ -846,6 +849,30 @@ class WindowsCPP
 	public static function getCPUCoreCount():Int
 	{
 		return 0;
+	}
+
+	/**
+	 * Gets the current process memory usage (Working Set) in bytes.
+	 * This is the "Task Memory" shown in Task Manager.
+	 * Same as WinAPI.getProcessMemoryWorkingSetSize() in official Funkin.
+	 * @return Process memory usage in bytes as Float
+	 */
+	@:functionCode('
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS_EX);
+		
+		if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+			// WorkingSetSize is the current working set (Task Memory)
+			SIZE_T workingSetSize = pmc.WorkingSetSize;
+			// Return as bytes (double for precision)
+			return (double)workingSetSize;
+		}
+		
+		return 0.0;
+	')
+	public static function getProcessMemoryUsage():Float
+	{
+		return 0.0;
 	}
 	#end
 }
