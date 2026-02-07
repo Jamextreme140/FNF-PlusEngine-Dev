@@ -15,6 +15,9 @@ import crowplexus.iris.Iris;
 import crowplexus.iris.IrisConfig;
 import crowplexus.hscript.Expr.Error as IrisError;
 import crowplexus.hscript.Printer;
+import crowplexus.iris.scripted.InterpEx;
+import crowplexus.iris.scripted.ScriptClassManager;
+import crowplexus.iris.scripted.AbstractScriptClass;
 
 import funkin.modding.scripting.SScript.SScriptCompat;
 
@@ -486,6 +489,54 @@ class HScript extends Iris
 		set('Function_StopLua', LuaUtils.Function_StopLua); //doesnt do much cuz HScript has a lower priority than Lua
 		set('Function_StopHScript', LuaUtils.Function_StopHScript);
 		set('Function_StopAll', LuaUtils.Function_StopAll);
+		
+		// Auto-resolution configuration functions
+		set('addAutoImportPackage', function(packageName:String) {
+			if(!CustomInterp.autoImportPackages.contains(packageName)) {
+				CustomInterp.autoImportPackages.push(packageName);
+			}
+		});
+		set('removeAutoImportPackage', function(packageName:String) {
+			CustomInterp.autoImportPackages.remove(packageName);
+		});
+		set('addClassBlacklist', function(className:String) {
+			if(!CustomInterp.classBlacklist.contains(className)) {
+				CustomInterp.classBlacklist.push(className);
+			}
+		});
+		set('removeClassBlacklist', function(className:String) {
+			CustomInterp.classBlacklist.remove(className);
+		});
+		set('setAutoResolveClasses', function(enabled:Bool) {
+			CustomInterp.autoResolveClasses = enabled;
+		});
+		set('clearClassCache', function() {
+			CustomInterp._classCache.clear();
+		});
+		
+		// Scripted classes support functions
+		set('registerScriptClass', function(path:String) {
+			try {
+				ScriptClassManager.registerScriptClassByPath(path);
+				debugPrint('Registered scripted class from: $path', FlxColor.GREEN);
+			} catch(e:Dynamic) {
+				debugPrint('Error registering scripted class: $e', FlxColor.RED);
+			}
+		});
+		set('registerScriptClassCode', function(code:String, ?name:String = 'ScriptedClass') {
+			try {
+				ScriptClassManager.registerScriptClassByString(code, name);
+				debugPrint('Registered scripted class: $name', FlxColor.GREEN);
+			} catch(e:Dynamic) {
+				debugPrint('Error registering scripted class: $e', FlxColor.RED);
+			}
+		});
+		set('addScriptClassImport', function(className:String, classRef:Class<Dynamic>) {
+			ScriptClassManager.defaultImports.set(className, classRef);
+		});
+		set('addScriptClassOverride', function(className:String, classRef:Class<Dynamic>) {
+			ScriptClassManager.scriptClassOverrides.set(className, classRef);
+		});
 	}
 
 	#if LUA_ALLOWED
@@ -794,11 +845,50 @@ class CustomFlxTextBorderStyle {
 	public static var OUTLINE_FAST(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.OUTLINE_FAST;
 }
 
-class CustomInterp extends crowplexus.hscript.Interp
+class CustomInterp extends InterpEx
 {
 	public var parentInstance(default, set):Dynamic = [];
 	public var scriptName:String = "Unknown";
 	private var _instanceFields:Array<String>;
+	
+	// Auto-resolution settings
+	public static var autoResolveClasses:Bool = true; // Enable automatic class resolution
+	public static var autoImportPackages:Array<String> = [
+		"flixel",
+		"flixel.util",
+		"flixel.tweens",
+		"flixel.text",
+		"flixel.group",
+		"flixel.effects",
+		"flixel.addons",
+		"flixel.math",
+		"flixel.system",
+		"openfl",
+		"openfl.filters",
+		"openfl.system",
+		"funkin",
+		"funkin.play",
+		"funkin.ui",
+		"funkin.data",
+		"funkin.graphics",
+		"funkin.modding",
+		"funkin.util",
+		"funkin.save"
+	];
+	
+	// Blacklist for security: packages/classes that should NOT be auto-resolved
+	public static var classBlacklist:Array<String> = [
+		"sys.io",
+		"sys.FileSystem",
+		"Sys",
+		"haxe.macro",
+		"polymod",
+		"hscript"
+	];
+	
+	// Cache for resolved classes to improve performance
+	private static var _classCache:Map<String, Class<Dynamic>> = new Map();
+	
 	function set_parentInstance(inst:Dynamic):Dynamic
 	{
 		parentInstance = inst;
@@ -813,23 +903,107 @@ class CustomInterp extends crowplexus.hscript.Interp
 
 	public function new()
 	{
-		super();
+		// Initialize InterpEx with null target class and proxy
+		// This allows scripted classes to work while maintaining compatibility
+		super(null, null);
 	}
 	
 	/**
 	 * Override to resolve classes with backwards compatibility support.
-	 * This allows old mods that use `import backend.Conductor` to work properly.
+	 * Handles: scripted classes, backwards compatibility, and regular classes.
 	 */
 	override function cnew(className:String, args:Array<Dynamic>):Dynamic {
-		// Try to resolve with backwards compatibility first
-		var resolvedClass = StructureOld.resolveClass(className);
+		// First, try InterpEx (scripted classes)
+		// This will check if className is a registered scripted class
+		try {
+			var scriptedInstance = super.cnew(className, args);
+			if (scriptedInstance != null) {
+				return scriptedInstance;
+			}
+		} catch(e:Dynamic) {
+			// Not a scripted class, continue with regular resolution
+		}
 		
+		// Try to resolve with backwards compatibility
+		var resolvedClass = StructureOld.resolveClass(className);
 		if (resolvedClass != null) {
 			return Type.createInstance(resolvedClass, args);
 		}
 		
-		// Fallback to default behavior (will throw error if class not found)
-		return super.cnew(className, args);
+		// Try direct Type.resolveClass as last resort
+		var directClass = Type.resolveClass(className);
+		if (directClass != null) {
+			return Type.createInstance(directClass, args);
+		}
+		
+		// If nothing works, throw error
+		error(EUnknownVariable(className));
+		return null;
+	}
+	
+	/**
+	 * Automatically resolve a class by name.
+	 * Tries to find the class in common packages and handles backwards compatibility.
+	 */
+	private function autoResolveClass(className:String):Class<Dynamic> {
+		if(!autoResolveClasses) return null;
+		
+		// Check cache first
+		if(_classCache.exists(className)) {
+			return _classCache.get(className);
+		}
+		
+		// Check blacklist
+		for(blacklisted in classBlacklist) {
+			if(className.indexOf(blacklisted) == 0) {
+				return null; // Blacklisted package/class
+			}
+		}
+		
+		// Try to resolve with StructureOld (handles backwards compatibility)
+		var resolvedClass = StructureOld.resolveClass(className);
+		if(resolvedClass != null) {
+			_classCache.set(className, resolvedClass);
+			return resolvedClass;
+		}
+		
+		// Try direct resolution
+		var directClass = Type.resolveClass(className);
+		if(directClass != null) {
+			_classCache.set(className, directClass);
+			return directClass;
+		}
+		
+		// Try with auto-import packages
+		for(pkg in autoImportPackages) {
+			var fullClassName = pkg + "." + className;
+			
+			// Check blacklist for full path
+			var isBlacklisted = false;
+			for(blacklisted in classBlacklist) {
+				if(fullClassName.indexOf(blacklisted) == 0) {
+					isBlacklisted = true;
+					break;
+				}
+			}
+			if(isBlacklisted) continue;
+			
+			// Try with StructureOld first (backwards compatibility)
+			var pkgClass = StructureOld.resolveClass(fullClassName);
+			if(pkgClass != null) {
+				_classCache.set(className, pkgClass);
+				return pkgClass;
+			}
+			
+			// Try direct resolution
+			pkgClass = Type.resolveClass(fullClassName);
+			if(pkgClass != null) {
+				_classCache.set(className, pkgClass);
+				return pkgClass;
+			}
+		}
+		
+		return null;
 	}
 
 	override function fcall(o:Dynamic, funcToRun:String, args:Array<Dynamic>):Dynamic {
@@ -910,6 +1084,33 @@ class CustomInterp extends crowplexus.hscript.Interp
 		
 		if(MusicBeatState.getVideoHandlers().exists(id)) {
 			return MusicBeatState.getVideoHandlers().get(id);
+		}
+		
+		// Auto-resolve classes if enabled
+		if(autoResolveClasses) {
+			var resolvedClass = autoResolveClass(id);
+			if(resolvedClass != null) {
+				// Cache it in variables for next access
+				variables.set(id, resolvedClass);
+				return resolvedClass;
+			}
+			
+			// Try to resolve as enum
+			var resolvedEnum = Type.resolveEnum(id);
+			if(resolvedEnum != null) {
+				// Check blacklist
+				var isBlacklisted = false;
+				for(blacklisted in classBlacklist) {
+					if(id.indexOf(blacklisted) == 0) {
+						isBlacklisted = true;
+						break;
+					}
+				}
+				if(!isBlacklisted) {
+					variables.set(id, resolvedEnum);
+					return resolvedEnum;
+				}
+			}
 		}
 
 		error(EUnknownVariable(id));
