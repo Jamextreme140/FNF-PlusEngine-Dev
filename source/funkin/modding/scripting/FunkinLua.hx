@@ -25,6 +25,12 @@ import funkin.play.substates.GameOverSubstate;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.LuaUtils.LuaTweenOptions;
 
+// LuaJIT imports
+import hxluajit.Lua;
+import hxluajit.LuaJIT;
+import hxluajit.LuaL;
+import hxluajit.Types;
+
 #if HSCRIPT_ALLOWED
 import funkin.modding.scripting.HScript;
 import funkin.modding.scripting.SScript;
@@ -57,10 +63,11 @@ class FunkinLua {
 		lua = LuaL.newstate();
 		LuaL.openlibs(lua);
 
-		//trace('Lua version: ' + Lua.version());
-		//trace("LuaJIT version: " + Lua.versionJIT());
-
-		//LuaL.dostring(lua, CLENSE);
+		// LuaJIT-specific optimizations
+		#if (cpp && !scriptingdebug)
+		// Enable JIT compilation for better performance
+		hxluajit.LuaJIT.setmode(lua, 0, hxluajit.LuaJIT.MODE_ENGINE | hxluajit.LuaJIT.MODE_ON);
+		#end
 		
 		// Configure Lua package.path for 0.7.3 mods compatibility on Android
 		#if (android && MODS_ALLOWED)
@@ -110,6 +117,10 @@ class FunkinLua {
 		
 		set('PlusVersion', MainMenuState.plusEngineVersion.trim());
 		set('modFolder', this.modFolder);
+		
+		// LuaJIT version info (useful for debugging and compatibility)
+		set('luaVersion', hxluajit.Lua.VERSION);
+		set('luajitVersion', hxluajit.LuaJIT.VERSION);
 
 		// Song/Week shit
 		set('curBpm', Conductor.bpm);
@@ -239,6 +250,30 @@ class FunkinLua {
 				runningScripts.push(script.scriptName);
 
 			return runningScripts;
+		});
+		
+		// ===== LUAJIT OPTIMIZATION FUNCTIONS =====
+		// Allows scripts to control JIT compiler for performance tuning
+		
+		Lua_helper.add_callback(lua, "setJITMode", function(enabled:Bool) {
+			#if (cpp && !scriptingdebug)
+			var mode = enabled ? LuaJIT.MODE_ON : LuaJIT.MODE_OFF;
+			LuaJIT.setmode(lua, 0, LuaJIT.MODE_ENGINE | mode);
+			return enabled;
+			#else
+			luaTrace('setJITMode: JIT control is only available in release builds', false, false, FlxColor.YELLOW);
+			return false;
+			#end
+		});
+		
+		Lua_helper.add_callback(lua, "flushJIT", function() {
+			#if (cpp && !scriptingdebug)
+			// Flush all JIT-compiled code (useful after heavy loading)
+			LuaJIT.setmode(lua, 0, LuaJIT.MODE_ENGINE | LuaJIT.MODE_FLUSH);
+			return true;
+			#else
+			return false;
+			#end
 		});
 
 		addLocalCallback("setOnScripts", function(varName:String, arg:Dynamic, ?ignoreSelf:Bool = false, ?exclusions:Array<String> = null) {
@@ -1863,7 +1898,13 @@ class FunkinLua {
 		if(lua == null) {
 			return;
 		}
-		Lua.close(lua);
+		
+		// Force garbage collection before closing for better memory cleanup
+		#if (cpp && !scriptingdebug)
+		hxluajit.Lua.gc(lua, hxluajit.Lua.GCCOLLECT, 0);
+		#end
+		
+		hxluajit.Lua.close(lua);
 		lua = null;
 		#if HSCRIPT_ALLOWED
 		if(hscript != null)
