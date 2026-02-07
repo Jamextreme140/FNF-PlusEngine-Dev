@@ -356,7 +356,7 @@ class TitleState extends MusicBeatState
 
 		// Create update notification text
 		updateNotificationText = new FlxText(0, 10, 0, "Checking Updates...", 20);
-		updateNotificationText.setFormat("VCR OSD Mono", 20, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		updateNotificationText.setFormat("PhantomMuff 1.5", 20, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		updateNotificationText.borderSize = 2;
 		updateNotificationText.scrollFactor.set();
 		updateNotificationText.x = FlxG.width + 50; // Start off-screen to the right
