@@ -558,6 +558,8 @@ class IdID
         "images/menudifficulties/easy" => "images/id-ID/menudifficulties/easy",
         "images/menudifficulties/normal" => "images/id-ID/menudifficulties/normal", 
         "images/menudifficulties/hard" => "images/id-ID/menudifficulties/hard",
+        "image/menudifficulties/erect" => "image/id-ID/menudifficulties/erect",
+        "image/menudifficulties/nightmare" => "image/id-ID/menudifficulties/nightmare",
 
         // Game UI
         "images/bad" => "images/id-ID/bad",
