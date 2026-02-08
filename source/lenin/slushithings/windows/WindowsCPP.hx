@@ -293,6 +293,28 @@ class WindowsCPP
 	}
 
 	/**
+	 * Captures only the game window and saves it to a file
+	 * @param path The path where to save the screenshot (must be absolute path)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (hwnd) {
+			RECT rc;
+			GetClientRect(hwnd, &rc);
+			int width = rc.right - rc.left;
+			int height = rc.bottom - rc.top;
+			
+			POINT pt = {0, 0};
+			ClientToScreen(hwnd, &pt);
+			
+			screenCapture(pt.x, pt.y, width, height, path);
+		}
+	')
+	public static function captureGameWindow(path:String):Void
+	{
+	}
+
+	/**
 	 * Sets the window as layered to enable transparency effects
 	 * Must be called before using setWindowAlpha
 	 */

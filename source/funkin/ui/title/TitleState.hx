@@ -13,7 +13,7 @@ import funkin.ui.freeplay.FreeplayState;
 
 #if mobile
 import funkin.mobile.backend.TouchUtil;
-#endif
+#end
 
 typedef TitleData =
 {
@@ -501,7 +501,7 @@ class TitleState extends MusicBeatState
 				titleText.alpha = 1;
 				
 				if(titleText != null) titleText.animation.play('press');
-				#endif
+				#end
 
 				FlxG.camera.flash(ClientPrefs.data.flashing ? FlxColor.WHITE : 0x4CFFFFFF, 1);
 				FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);

@@ -115,7 +115,10 @@ class Screenshot
             text.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
             text.scrollFactor.set();
             text.cameras = [FlxG.camera];
-            FlxG.state.add(text);
+            
+            // Add to substate if active, otherwise add to state
+            var targetState = FlxG.state.subState != null ? FlxG.state.subState : FlxG.state;
+            targetState.add(text);
             
             // Fade out and remove after 2 seconds
             flixel.tweens.FlxTween.tween(text, {alpha: 0}, 1.5, {

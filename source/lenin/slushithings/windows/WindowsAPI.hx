@@ -37,7 +37,7 @@ class WindowsAPI
 	public static function capture(path:String):Void
 	{
 		#if windows
-		WindowsCPP.captureFullScreen(path);
+		WindowsCPP.captureGameWindow(path);
 		#else
 		trace("[Screenshot]: Screenshot capture is only available on Windows");
 		#end
