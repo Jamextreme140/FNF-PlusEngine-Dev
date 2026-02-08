@@ -28,14 +28,10 @@ class ModState extends MusicBeatState
 {
     #if LUA_ALLOWED
     public var luaArray:Array<FunkinLua> = [];
-    public static var globalLuaScript:FunkinLua = null;
     #end
     
     #if HSCRIPT_ALLOWED
     public var hscriptArray:Array<HScript> = [];
-    public static var globalScript:HScript = null;
-    public static var publicVariables:Map<String, Dynamic> = new Map<String, Dynamic>();
-    public static var staticVariables:Map<String, Dynamic> = new Map<String, Dynamic>();
     #end
     
     public static var nextState:FlxState = null;
@@ -44,31 +40,6 @@ class ModState extends MusicBeatState
     public var errorText:FlxText;
     public var hasError:Bool = false;
     public var bgSprite:FlxSprite;
-    
-    // Global variables storage that persists across all states
-    public static var globalVariables:Map<String, Dynamic> = new Map<String, Dynamic>();
-    
-    public static function clearAllSharedVars():Void
-    {
-        globalVariables.clear();
-        trace('ModState: All shared vars cleared globally');
-    }
-    
-    public static function clearModSharedVars(modName:String):Void
-    {
-        var keysToRemove:Array<String> = [];
-        for(key in globalVariables.keys())
-        {
-            if(key.startsWith('${modName}_'))
-                keysToRemove.push(key);
-        }
-        
-        for(key in keysToRemove)
-        {
-            globalVariables.remove(key);
-            trace('ModState: Removed shared var: $key');
-        }
-    }
     
     public static function hasScript(stateName:String):Bool
     {
@@ -81,153 +52,6 @@ class ModState extends MusicBeatState
         #else
         return false;
         #end
-    }
-    
-    public static function initGlobalScript():Void
-    {
-        #if MODS_ALLOWED
-        Mods.loadTopMod();
-        #end
-        
-        // Try to load Lua GlobalScript first
-        #if (LUA_ALLOWED && sys)
-        if(globalLuaScript == null)
-        {
-            #if MODS_ALLOWED
-            var luaPath:String = Paths.modFolders('scripts/GlobalScript.lua');
-            if(!FileSystem.exists(luaPath))
-                luaPath = Paths.getSharedPath('scripts/GlobalScript.lua');
-            #else
-            var luaPath:String = Paths.getSharedPath('scripts/GlobalScript.lua');
-            #end
-            
-            if(FileSystem.exists(luaPath))
-            {
-                trace('Loading Global Lua Script from: $luaPath');
-                globalLuaScript = new FunkinLua(luaPath);
-                trace('GlobalScript (Lua) initialized successfully');
-            }
-        }
-        #end
-        
-        // Then load HScript GlobalScript
-        #if (HSCRIPT_ALLOWED && sys)
-        if(globalScript != null) return; // Already initialized
-        
-        #if MODS_ALLOWED
-        var scriptPath:String = Paths.modFolders('scripts/GlobalScript.hx');
-        if(!FileSystem.exists(scriptPath))
-            scriptPath = Paths.getSharedPath('scripts/GlobalScript.hx');
-        #else
-        var scriptPath:String = Paths.getSharedPath('scripts/GlobalScript.hx');
-        #end
-        
-        if(FileSystem.exists(scriptPath))
-        {
-            try
-            {
-                globalScript = new HScript(null, scriptPath);
-                
-                // Global variables functions
-                globalScript.set('setGlobalVar', function(name:String, value:Dynamic) {
-                    globalVariables.set(name, value);
-                    trace('GlobalScript: Global var set - $name = $value');
-                    return value;
-                });
-                
-                globalScript.set('getGlobalVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
-                    if (globalVariables.exists(name)) {
-                        return globalVariables.get(name);
-                    }
-                    return defaultValue;
-                });
-                
-                globalScript.set('hasGlobalVar', function(name:String):Bool {
-                    return globalVariables.exists(name);
-                });
-                
-                globalScript.set('removeGlobalVar', function(name:String):Bool {
-                    if (globalVariables.exists(name)) {
-                        globalVariables.remove(name);
-                        return true;
-                    }
-                    return false;
-                });
-                
-                // Static variables access
-                globalScript.set('setStaticVar', function(name:String, value:Dynamic) {
-                    staticVariables.set(name, value);
-                    return value;
-                });
-                
-                globalScript.set('getStaticVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
-                    return staticVariables.exists(name) ? staticVariables.get(name) : defaultValue;
-                });
-                
-                // Public variables access
-                globalScript.set('setPublicVar', function(name:String, value:Dynamic) {
-                    publicVariables.set(name, value);
-                    return value;
-                });
-                
-                globalScript.set('getPublicVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
-                    return publicVariables.exists(name) ? publicVariables.get(name) : defaultValue;
-                });
-                
-                if (globalScript.exists('onCreate')) globalScript.call('onCreate');
-                trace('GlobalScript initialized successfully from: $scriptPath');
-            }
-            catch(e:IrisError)
-            {
-                var errorMsg = Printer.errorToString(e, false);
-                trace('GlobalScript Error: $errorMsg');
-                TraceDisplay.addHScriptError(errorMsg, scriptPath);
-            }
-        }
-        else
-        {
-            trace('No GlobalScript found at: $scriptPath');
-        }
-        #end
-    }
-    
-    public static function callOnGlobalScript(funcToCall:String, args:Array<Dynamic> = null):Dynamic
-    {
-        var returnVal:Dynamic = LuaUtils.Function_Continue;
-        
-        // Call on global Lua script first
-        #if LUA_ALLOWED
-        if(globalLuaScript != null)
-        {
-            var ret:Dynamic = globalLuaScript.call(funcToCall, args != null ? args : []);
-            if(ret != null && ret != LuaUtils.Function_Continue)
-                returnVal = ret;
-        }
-        #end
-        
-        // Then call on global HScript
-        #if HSCRIPT_ALLOWED
-        if(globalScript != null && globalScript.exists(funcToCall))
-        {
-            try {
-                var callValue = globalScript.call(funcToCall, args);
-                if(callValue != null && callValue.returnValue != null)
-                {
-                    var myValue:Dynamic = callValue.returnValue;
-                    if(myValue != LuaUtils.Function_Continue)
-                        returnVal = myValue;
-                }
-            }
-            catch(e:Dynamic) {
-                trace('GlobalScript Error calling $funcToCall: $e');
-                @:privateAccess
-                var fileName = globalScript.origin != null ? globalScript.origin : "GlobalScript";
-                TraceDisplay.addHScriptError('Runtime error in $funcToCall: $e', fileName);
-            }
-        }
-        #end
-        
-        return returnVal;
     }
     
     public function new(?stateName:String = '')
@@ -255,17 +79,17 @@ class ModState extends MusicBeatState
         
         #if HSCRIPT_ALLOWED
         // Clear public variables for new state
-        publicVariables.clear();
+        MusicBeatState.publicVariables.clear();
         #end
         
         if(stateName != null && stateName.length > 0)
             loadStateScripts(stateName);
             
-        callOnGlobalScript('onStateCreate', [stateName]);
+        MusicBeatState.callOnGlobalScript('onStateCreate', [stateName]);
         callOnScripts('onCreate');
         super.create();
         callOnScripts('onCreatePost');
-        callOnGlobalScript('onStateCreatePost', [stateName]);
+        MusicBeatState.callOnGlobalScript('onStateCreatePost', [stateName]);
         var plusVer:FlxText = new FlxText(12, FlxG.height - 24, 0, "Plus Engine v" + MainMenuState.plusEngineVersion, 12);
         plusVer.scrollFactor.set();
         plusVer.alpha = 0.8;
@@ -275,11 +99,11 @@ class ModState extends MusicBeatState
 
     override function update(elapsed:Float)
     {   
-        callOnGlobalScript('onStateUpdate', [stateName, elapsed]);
+        MusicBeatState.callOnGlobalScript('onStateUpdate', [stateName, elapsed]);
         callOnScripts('onUpdate', [elapsed]);
         super.update(elapsed);
         callOnScripts('onUpdatePost', [elapsed]);
-        callOnGlobalScript('onStateUpdatePost', [stateName, elapsed]);
+        MusicBeatState.callOnGlobalScript('onStateUpdatePost', [stateName, elapsed]);
 
         if (FlxG.keys.justPressed.F12) {
             MusicBeatState.switchState(new ModsMenuState());
@@ -288,7 +112,7 @@ class ModState extends MusicBeatState
 
     override function destroy()
     {
-        callOnGlobalScript('onStateDestroy', [stateName]);
+        MusicBeatState.callOnGlobalScript('onStateDestroy', [stateName]);
         callOnScripts('onDestroy');
         
         #if LUA_ALLOWED
@@ -316,6 +140,24 @@ class ModState extends MusicBeatState
         callOnScripts('onDestroyPost');
     }
     
+    override function stepHit():Void
+    {
+        callOnScripts('onStepHit', [curStep]);
+        super.stepHit();
+    }
+    
+    override function beatHit():Void
+    {
+        callOnScripts('onBeatHit', [curBeat]);
+        super.beatHit();
+    }
+    
+    override function sectionHit():Void
+    {
+        callOnScripts('onSectionHit', [curSection]);
+        super.sectionHit();
+    }
+    
     public function loadStateScripts(stateName:String)
     {
         #if sys
@@ -327,17 +169,17 @@ class ModState extends MusicBeatState
         #end
         
         #if HSCRIPT_ALLOWED
-        var savedModDir:String = globalVariables.exists('currentModDirectory') ? globalVariables.get('currentModDirectory') : null;
+        var savedModDir:String = MusicBeatState.globalVariables.exists('currentModDirectory') ? MusicBeatState.globalVariables.get('currentModDirectory') : null;
         if(savedModDir != null && savedModDir != currentMod)
         {
             trace('ModState: Mod changed from "$savedModDir" to "$currentMod" - Clearing shared vars');
-            globalVariables.clear(); 
+            MusicBeatState.globalVariables.clear(); 
         }
         
         // Sync global variables with current state's variables
-        for(key in globalVariables.keys())
+        for(key in MusicBeatState.globalVariables.keys())
         {
-            variables.set(key, globalVariables.get(key));
+            variables.set(key, MusicBeatState.globalVariables.get(key));
         }
         #end
         
@@ -414,7 +256,7 @@ class ModState extends MusicBeatState
         if(currentMod != null && currentMod.length > 0)
         {
             #if HSCRIPT_ALLOWED
-            globalVariables.set('currentModDirectory', currentMod);
+            MusicBeatState.globalVariables.set('currentModDirectory', currentMod);
             #end
             variables.set('currentModDirectory', currentMod);
         }
@@ -432,7 +274,7 @@ class ModState extends MusicBeatState
             
             // Shared variables functions (persist across state changes)
             newScript.set('setSharedVar', function(name:String, value:Dynamic) {
-                globalVariables.set(name, value);
+                MusicBeatState.globalVariables.set(name, value);
                 variables.set(name, value);
                 trace('ModState: Shared var set - $name = $value');
                 return value;
@@ -440,8 +282,8 @@ class ModState extends MusicBeatState
             
             newScript.set('getSharedVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
                 // Check global variables first for persistence
-                if (globalVariables.exists(name)) {
-                    var value = globalVariables.get(name);
+                if (MusicBeatState.globalVariables.exists(name)) {
+                    var value = MusicBeatState.globalVariables.get(name);
                     trace('ModState: Shared var get (global) - $name = $value');
                     return value;
                 }
@@ -456,13 +298,13 @@ class ModState extends MusicBeatState
             });
             
             newScript.set('hasSharedVar', function(name:String):Bool {
-                return globalVariables.exists(name) || variables.exists(name);
+                return MusicBeatState.globalVariables.exists(name) || variables.exists(name);
             });
             
             newScript.set('removeSharedVar', function(name:String):Bool {
                 var removed = false;
-                if (globalVariables.exists(name)) {
-                    globalVariables.remove(name);
+                if (MusicBeatState.globalVariables.exists(name)) {
+                    MusicBeatState.globalVariables.remove(name);
                     removed = true;
                 }
                 if (variables.exists(name)) {
@@ -473,29 +315,29 @@ class ModState extends MusicBeatState
             });
             
             newScript.set('clearSharedVars', function() {
-                globalVariables.clear();
+                MusicBeatState.globalVariables.clear();
                 variables.clear();
                 trace('ModState: All shared vars cleared');
             });
             
             // Public variables (shared between scripts in same state)
             newScript.set('setPublicVar', function(name:String, value:Dynamic) {
-                publicVariables.set(name, value);
+                MusicBeatState.publicVariables.set(name, value);
                 return value;
             });
             
             newScript.set('getPublicVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
-                return publicVariables.exists(name) ? publicVariables.get(name) : defaultValue;
+                return MusicBeatState.publicVariables.exists(name) ? MusicBeatState.publicVariables.get(name) : defaultValue;
             });
             
             // Static variables (persist across all states and mods)
             newScript.set('setStaticVar', function(name:String, value:Dynamic) {
-                staticVariables.set(name, value);
+                MusicBeatState.staticVariables.set(name, value);
                 return value;
             });
             
             newScript.set('getStaticVar', function(name:String, ?defaultValue:Dynamic = null):Dynamic {
-                return staticVariables.exists(name) ? staticVariables.get(name) : defaultValue;
+                return MusicBeatState.staticVariables.exists(name) ? MusicBeatState.staticVariables.get(name) : defaultValue;
             });
             
             // Access to MusicBeatState variables

@@ -128,10 +128,7 @@ class Main extends Sprite
 		#end
 		Mods.loadTopMod();
 		
-		// Initialize GlobalScript
-		#if HSCRIPT_ALLOWED
-		funkin.modding.ModState.initGlobalScript();
-		#end
+		// GlobalScript initialization moved to InitialState.create() to ensure FlxG.state exists
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {

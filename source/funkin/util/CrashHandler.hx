@@ -11,6 +11,10 @@ import sys.FileSystem;
 import sys.io.File;
 #end
 
+#if windows
+import lenin.slushithings.windows.WindowsCPP;
+#end
+
 using StringTools;
 using flixel.util.FlxArrayUtil;
 
@@ -46,9 +50,9 @@ class CrashHandler
 	];
 	
 	/**
-	 * Adds a funny prefix to null-related error messages
+	 * Analyzes error message and stack to provide detailed null reference information
 	 */
-	static function funnyNullMessage(originalMessage:String):String
+	static function analyzeNullError(originalMessage:String, stack:Array<haxe.CallStack.StackItem>):String
 	{
 		if (originalMessage == null) return "Null error message (ironic, isn't it?)";
 		
@@ -58,13 +62,147 @@ class CrashHandler
 		                  lowerMsg.contains("null pointer") ||
 		                  lowerMsg.contains("null object");
 		
-		if (isNullError)
+		if (!isNullError) return originalMessage;
+		
+		// Fun message
+		var funnyMsg = NULL_ERROR_MESSAGES[Std.random(NULL_ERROR_MESSAGES.length)];
+		var detailedInfo = new Array<String>();
+		detailedInfo.push(funnyMsg);
+		detailedInfo.push("");
+		
+		// Extract specific location from stack
+		if (stack != null && stack.length > 0)
 		{
-			var funnyMsg = NULL_ERROR_MESSAGES[Std.random(NULL_ERROR_MESSAGES.length)];
-			return '$funnyMsg';
+			var firstItem = stack[0];
+			var locationInfo = "";
+			var fileName = "";
+			var lineNum = -1;
+			var functionName = "";
+			
+			switch (firstItem)
+			{
+				case FilePos(parent, file, line, col):
+					fileName = file.replace('.hx', '');
+					lineNum = line;
+					locationInfo = 'File: $file at line $line';
+					
+					switch (parent)
+					{
+						case Method(cla, func):
+							functionName = '$cla.$func()';
+						case _:
+					}
+					
+				case Method(cl, m):
+					functionName = '$cl.$m()';
+					
+				case _:
+			}
+			
+			if (functionName != "")
+			{
+				detailedInfo.push('>>> Location: $functionName');
+				if (lineNum > 0) detailedInfo.push('    Line: $lineNum');
+			}
+			else if (locationInfo != "")
+			{
+				detailedInfo.push('>>> $locationInfo');
+			}
 		}
 		
-		return originalMessage;
+		// Try to extract variable/object name from error message
+		var objectName = extractNullObjectName(originalMessage);
+		if (objectName != "")
+		{
+			detailedInfo.push('XXX Null Object: $objectName');
+		}
+		
+		// Memory info if on Windows
+		#if windows
+		try {
+			var memUsage = Math.round(WindowsCPP.getProcessMemoryUsage() / 1024 / 1024);
+			var availRAM = WindowsCPP.getAvailableSystemRAM();
+			detailedInfo.push('');
+			detailedInfo.push('[!] Memory: ${memUsage}MB used, ${availRAM}MB available');
+		} catch(e:Dynamic) {}
+		#end
+		
+		return detailedInfo.join('\n');
+	}
+	
+	/**
+	 * Attempts to extract the null object/variable name from error message
+	 */
+	static function extractNullObjectName(message:String):String
+	{
+		if (message == null) return "";
+		
+		// Common patterns for null reference errors
+		var patterns = [
+			~/Null Object Reference/i,
+			~/object reference not set/i,
+			~/Cannot access field or identifier ([a-zA-Z_][a-zA-Z0-9_]*)/,
+			~/null\.([a-zA-Z_][a-zA-Z0-9_]*)/,
+			~/([a-zA-Z_][a-zA-Z0-9_]*) is null/,
+		];
+		
+		for (pattern in patterns)
+		{
+			if (pattern.match(message))
+			{
+				try {
+					var matched = pattern.matched(1);
+					if (matched != null && matched != "") return matched;
+				} catch(e:Dynamic) {}
+			}
+		}
+		
+		return "";
+	}
+	
+	/**
+	 * Generates a detailed system report for crash logs
+	 */
+	static function generateSystemReport():String
+	{
+		var report = new Array<String>();
+		
+		report.push("=== SYSTEM INFORMATION ===");
+		
+		#if windows
+		try {
+			var totalRAM = WindowsCPP.getTotalSystemRAM();
+			var availRAM = WindowsCPP.getAvailableSystemRAM();
+			var memLoad = WindowsCPP.getMemoryLoadPercentage();
+			var cpuCores = WindowsCPP.getCPUCoreCount();
+			var processMemory = Math.round(WindowsCPP.getProcessMemoryUsage() / 1024 / 1024);
+			
+			report.push('OS: Windows');
+			report.push('CPU Cores: $cpuCores');
+			report.push('Total RAM: ${totalRAM}MB');
+			report.push('Available RAM: ${availRAM}MB');
+			report.push('Memory Load: ${memLoad}%');
+			report.push('Process Memory: ${processMemory}MB');
+		} catch(e:Dynamic) {
+			report.push('OS: Windows (detailed info unavailable)');
+		}
+		#else
+		report.push('OS: ${Sys.systemName()}');
+		#end
+		
+		report.push('FlxG.width: ${FlxG.width}');
+		report.push('FlxG.height: ${FlxG.height}');
+		
+		try {
+			var state = Type.getClassName(Type.getClass(FlxG.state));
+			report.push('Current State: $state');
+		} catch(e:Dynamic) {
+			report.push('Current State: Unknown');
+		}
+		
+		report.push("==========================");
+		
+		return report.join('\n');
 	}
 	
 	public static function init():Void
@@ -95,10 +233,11 @@ class CrashHandler
 			m = '${err.text}';
 		}
 		
-		// Add funny message for null errors
-		m = funnyNullMessage(m);
-		
 		var stack = haxe.CallStack.exceptionStack();
+		
+		// Analyze and enhance null error messages
+		m = analyzeNullError(m, stack);
+		
 		var stackLabelArr:Array<String> = [];
 		var stackLabel:String = "";
 		for (e in stack)
@@ -125,15 +264,18 @@ class CrashHandler
 		}
 		stackLabel = stackLabelArr.join('\r\n');
 
+		// Generate system report
+		var systemReport = generateSystemReport();
+
 		// Mostrar error en la consola/terminal
-		trace('\n\n$m\n\n$stackLabel\n======================\nFor help, visit: $HELP_LINK');
+		trace('\n\n$m\n\n$stackLabel\n\n$systemReport\n======================\nFor help, visit: $HELP_LINK');
 		
 		#if sys
-		saveErrorMessage('$m\n$stackLabel');
+		saveErrorMessage('$m\n\n$stackLabel\n\n$systemReport');
 		#end
 
 		// Mensaje con link de ayuda
-		var errorMsg = '$m\n\n$stackLabel\n\n========================\nNeed help? Visit:\n$HELP_LINK';
+		var errorMsg = '$m\n\n$stackLabel\n\n$systemReport\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Error!");
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
 
@@ -145,14 +287,20 @@ class CrashHandler
 	{
 		final log:Array<String> = [];
 
+		var stack = haxe.CallStack.exceptionStack(true);
+		
 		if (message != null && message.length > 0)
 		{
-			// Add funny message for null errors
-			var funnyMessage = funnyNullMessage(Std.string(message));
-			log.push(funnyMessage);
+			// Analyze error for detailed null info
+			var analyzedMessage = analyzeNullError(Std.string(message), stack);
+			log.push(analyzedMessage);
 		}
 
-		log.push(haxe.CallStack.toString(haxe.CallStack.exceptionStack(true)));
+		log.push(haxe.CallStack.toString(stack));
+		
+		// Add system report
+		log.push("");
+		log.push(generateSystemReport());
 		
 		var errorLog = log.join('\n');
 		

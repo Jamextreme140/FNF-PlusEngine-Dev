@@ -20,6 +20,12 @@ class InitialState extends MusicBeatState
 {
 	override function create()
 	{
+		// Initialize GlobalScript before anything else
+		// This is the first state created, so FlxG.state now exists
+		#if HSCRIPT_ALLOWED
+		funkin.ui.MusicBeatState.initGlobalScript();
+		#end
+		
 		super.create();
 		
 		Highscore.load();

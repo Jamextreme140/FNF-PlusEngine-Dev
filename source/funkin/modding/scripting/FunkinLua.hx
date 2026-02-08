@@ -15,6 +15,7 @@ import funkin.play.notes.Note;
 import funkin.play.notes.NoteSplash;
 import funkin.ui.debug.TraceDisplay;
 
+import funkin.ui.MusicBeatState;
 import funkin.ui.mainmenu.MainMenuState;
 import funkin.ui.story.StoryMenuState;
 import funkin.ui.freeplay.FreeplayState;
@@ -84,7 +85,7 @@ class FunkinLua {
 		{
 			game.luaArray.push(this);
 		}
-		else 
+		else if(FlxG.state != null) // Only try ModState if FlxG.state exists
 		{
 			// Try ModState if PlayState is not available
 			var modState:Dynamic = FlxG.state;
@@ -96,6 +97,8 @@ class FunkinLua {
 				#end
 			}
 		}
+		// If neither PlayState nor a state exists, this is likely a global script
+		// Don't add to any array, it will be managed separately
 
 		var myFolder:Array<String> = this.scriptName.split('/');
 		#if MODS_ALLOWED
@@ -357,7 +360,7 @@ class FunkinLua {
 			{
 				var ms:funkin.modding.ModState = cast modState;
 				#if HSCRIPT_ALLOWED
-				funkin.modding.ModState.globalVariables.set(varName, value);
+				MusicBeatState.globalVariables.set(varName, value);
 				#end
 				MusicBeatState.getVariables().set(varName, value);
 			}
@@ -372,8 +375,8 @@ class FunkinLua {
 			if(Std.isOfType(modState, funkin.modding.ModState))
 			{
 				#if HSCRIPT_ALLOWED
-				if(funkin.modding.ModState.globalVariables.exists(varName))
-					return funkin.modding.ModState.globalVariables.get(varName);
+				if(MusicBeatState.globalVariables.exists(varName))
+					return MusicBeatState.globalVariables.get(varName);
 				#end
 				if(MusicBeatState.getVariables().exists(varName))
 					return MusicBeatState.getVariables().get(varName);
@@ -386,13 +389,13 @@ class FunkinLua {
 		
 		Lua_helper.add_callback(lua, "setPublicVar", function(varName:String, value:Dynamic) {
 			#if HSCRIPT_ALLOWED
-			funkin.modding.ModState.publicVariables.set(varName, value);
+			MusicBeatState.publicVariables.set(varName, value);
 			#end
 			return value;
 		});
 		Lua_helper.add_callback(lua, "getPublicVar", function(varName:String, ?defaultValue:Dynamic = null) {
 			#if HSCRIPT_ALLOWED
-			return funkin.modding.ModState.publicVariables.exists(varName) ? funkin.modding.ModState.publicVariables.get(varName) : defaultValue;
+			return MusicBeatState.publicVariables.exists(varName) ? MusicBeatState.publicVariables.get(varName) : defaultValue;
 			#else
 			return defaultValue;
 			#end
@@ -400,13 +403,13 @@ class FunkinLua {
 		
 		Lua_helper.add_callback(lua, "setStaticVar", function(varName:String, value:Dynamic) {
 			#if HSCRIPT_ALLOWED
-			funkin.modding.ModState.staticVariables.set(varName, value);
+			MusicBeatState.staticVariables.set(varName, value);
 			#end
 			return value;
 		});
 		Lua_helper.add_callback(lua, "getStaticVar", function(varName:String, ?defaultValue:Dynamic = null) {
 			#if HSCRIPT_ALLOWED
-			return funkin.modding.ModState.staticVariables.exists(varName) ? funkin.modding.ModState.staticVariables.get(varName) : defaultValue;
+			return MusicBeatState.staticVariables.exists(varName) ? MusicBeatState.staticVariables.get(varName) : defaultValue;
 			#else
 			return defaultValue;
 			#end
@@ -414,13 +417,13 @@ class FunkinLua {
 		
 		Lua_helper.add_callback(lua, "setGlobalVar", function(varName:String, value:Dynamic) {
 			#if HSCRIPT_ALLOWED
-			funkin.modding.ModState.globalVariables.set(varName, value);
+			MusicBeatState.globalVariables.set(varName, value);
 			#end
 			return value;
 		});
 		Lua_helper.add_callback(lua, "getGlobalVar", function(varName:String, ?defaultValue:Dynamic = null) {
 			#if HSCRIPT_ALLOWED
-			return funkin.modding.ModState.globalVariables.exists(varName) ? funkin.modding.ModState.globalVariables.get(varName) : defaultValue;
+			return MusicBeatState.globalVariables.exists(varName) ? MusicBeatState.globalVariables.get(varName) : defaultValue;
 			#else
 			return defaultValue;
 			#end
