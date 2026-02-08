@@ -1,3 +1,4 @@
+
 package funkin.play.stage;
 
 import funkin.play.stage.objects.*;

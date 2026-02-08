@@ -1,0 +1,1869 @@
+[{
+	access: [APublic]
+	doc: Retrieves the value of a local variable of a scripted class.
+	kind: FFun({
+		args: [{
+			meta: null
+			name: varName
+			opt: null
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EReturn({
+					expr: ECall({
+						expr: EField({
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, fieldRead, Normal)
+						pos: #pos
+					}, [{
+						expr: EConst(CIdent(varName))
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: null
+	})
+	meta: null
+	name: scriptGet
+	pos: #pos
+}, {
+	access: [APublic]
+	doc: Directly modifies the value of a local variable of a scripted class.
+	kind: FFun({
+		args: [{
+			meta: null
+			name: varName
+			opt: null
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: varValue
+			opt: null
+			type: null
+			value: {
+				expr: EConst(CIdent(null))
+				pos: #pos
+			}
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EReturn({
+					expr: ECall({
+						expr: EField({
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, fieldWrite, Normal)
+						pos: #pos
+					}, [{
+						expr: EConst(CIdent(varName))
+						pos: #pos
+					}, {
+						expr: EConst(CIdent(varValue))
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: null
+	})
+	meta: null
+	name: scriptSet
+	pos: #pos
+}, {
+	access: [APublic]
+	doc: Calls a function of the scripted class with the given name and arguments.
+	kind: FFun({
+		args: [{
+			meta: null
+			name: funcName
+			opt: null
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: funcArgs
+			opt: null
+			type: TPath({
+				name: Array
+				pack: []
+				params: [TPType(null <- expected enum value)]
+				sub: null
+			})
+			value: {
+				expr: EConst(CIdent(null))
+				pos: #pos
+			}
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EReturn({
+					expr: ECall({
+						expr: EField({
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, callFunction, Normal)
+						pos: #pos
+					}, [{
+						expr: EConst(CIdent(funcName))
+						pos: #pos
+					}, {
+						expr: ETernary({
+							expr: EBinop(OpEq, {
+								expr: EConst(CIdent(funcArgs))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(null))
+								pos: #pos
+							})
+							pos: #pos
+						}, {
+							expr: EArrayDecl([])
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(funcArgs))
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: null
+	})
+	meta: null
+	name: scriptCall
+	pos: #pos
+}, {
+	access: [APrivate]
+	doc: The AbstractScriptClass instance which any variable or function calls are redirected to internally.
+	kind: FVar(TPath({
+		name: AbstractScriptClass
+		pack: [crowplexus, iris, scripted]
+		params: []
+		sub: null
+	}), null)
+	meta: null
+	name: _asc
+	pos: #pos
+}, {
+	access: [APublic, AStatic]
+	doc: Returns a list of all the scripted classes which extend this class.
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EReturn({
+					expr: ECall({
+						expr: EField({
+							expr: EField({
+								expr: EField({
+									expr: EField({
+										expr: EConst(CIdent(crowplexus))
+										pos: #pos
+									}, iris, Normal)
+									pos: #pos
+								}, scripted, Normal)
+								pos: #pos
+							}, ScriptClassManager, Normal)
+							pos: #pos
+						}, listScriptClassesExtending, Normal)
+						pos: #pos
+					}, [{
+						expr: EConst(CString(funkin.play.character.Character, DoubleQuotes))
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: Array
+			pack: []
+			params: [TPType(TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			}))]
+			sub: null
+		})
+	})
+	meta: null
+	name: listScriptClasses
+	pos: #pos
+}, {
+	access: [APublic, AStatic]
+	doc: Initializes a scripted class instance using the given scripted class name and constructor arguments.
+	kind: FFun({
+		args: [{
+			meta: null
+			name: clsName
+			opt: null
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: x
+			opt: false
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Float
+			})
+			value: null
+		}, {
+			meta: null
+			name: y
+			opt: false
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Float
+			})
+			value: null
+		}, {
+			meta: null
+			name: character
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: [TPType(TPath({
+					name: String
+					pack: []
+					params: []
+					sub: null
+				}))]
+				sub: Null
+			})
+			value: null
+		}, {
+			meta: null
+			name: isPlayer
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: [TPType(TPath({
+					name: StdTypes
+					pack: []
+					params: []
+					sub: Bool
+				}))]
+				sub: Null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: ECall({
+					expr: EField({
+						expr: EField({
+							expr: EField({
+								expr: EField({
+									expr: EField({
+										expr: EConst(CIdent(crowplexus))
+										pos: #pos
+									}, iris, Normal)
+									pos: #pos
+								}, scripted, Normal)
+								pos: #pos
+							}, ScriptClassManager, Normal)
+							pos: #pos
+						}, scriptClassOverrides, Normal)
+						pos: #pos
+					}, set, Normal)
+					pos: #pos
+				}, [{
+					expr: EConst(CString(funkin.play.character.Character, DoubleQuotes))
+					pos: #pos
+				}, {
+					expr: ECall({
+						expr: EField({
+							expr: EConst(CIdent(Type))
+							pos: #pos
+						}, resolveClass, Normal)
+						pos: #pos
+					}, [{
+						expr: EConst(CString(funkin.play.character.ScriptedCharacter, DoubleQuotes))
+						pos: #pos
+					}])
+					pos: #pos
+				}])
+				pos: #pos
+			}, {
+				expr: EVars([{
+					expr: {
+						expr: ECall({
+							expr: EField({
+								expr: EField({
+									expr: EField({
+										expr: EField({
+											expr: EConst(CIdent(crowplexus))
+											pos: #pos
+										}, iris, Normal)
+										pos: #pos
+									}, scripted, Normal)
+									pos: #pos
+								}, ScriptClassManager, Normal)
+								pos: #pos
+							}, createScriptClassInstance, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CIdent(clsName))
+							pos: #pos
+						}, {
+							expr: EArrayDecl([{
+								expr: EConst(CIdent(x))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(y))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(character))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(isPlayer))
+								pos: #pos
+							}])
+							pos: #pos
+						}])
+						pos: #pos
+					}
+					isFinal: false
+					isStatic: false
+					meta: []
+					name: asc
+					namePos: #pos
+					type: TPath({
+						name: AbstractScriptClass
+						pack: [crowplexus, iris, scripted]
+						params: []
+						sub: null
+					})
+				}])
+				pos: #pos
+			}, {
+				expr: EIf({
+					expr: EBinop(OpEq, {
+						expr: EConst(CIdent(asc))
+						pos: #pos
+					}, {
+						expr: EConst(CIdent(null))
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: ECall({
+							expr: EConst(CIdent(trace))
+							pos: #pos
+						}, [{
+							expr: EBinop(OpAdd, {
+								expr: EBinop(OpAdd, {
+									expr: EConst(CString(Could not construct instance of scripted class (${clsName} extends , SingleQuotes))
+									pos: #pos
+								}, {
+									expr: EConst(CString(funkin.play.character.ScriptedCharacter, DoubleQuotes))
+									pos: #pos
+								})
+								pos: #pos
+							}, {
+								expr: EConst(CString(), SingleQuotes))
+								pos: #pos
+							})
+							pos: #pos
+						}])
+						pos: #pos
+					}, {
+						expr: EReturn({
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, null)
+				pos: #pos
+			}, {
+				expr: EVars([{
+					expr: {
+						expr: EField({
+							expr: EConst(CIdent(asc))
+							pos: #pos
+						}, superClass, Normal)
+						pos: #pos
+					}
+					isFinal: false
+					isStatic: false
+					meta: []
+					name: scriptedObj
+					namePos: #pos
+					type: null
+				}])
+				pos: #pos
+			}, {
+				expr: ECall({
+					expr: EField({
+						expr: EConst(CIdent(Reflect))
+						pos: #pos
+					}, setField, Normal)
+					pos: #pos
+				}, [{
+					expr: EConst(CIdent(scriptedObj))
+					pos: #pos
+				}, {
+					expr: EConst(CString(_asc, SingleQuotes))
+					pos: #pos
+				}, {
+					expr: EConst(CIdent(asc))
+					pos: #pos
+				}])
+				pos: #pos
+			}, {
+				expr: EReturn({
+					expr: EConst(CIdent(scriptedObj))
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: ScriptedCharacter
+			pack: [funkin, play, character]
+			params: []
+			sub: null
+		})
+	})
+	meta: null
+	name: init
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: character
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(changeCharacter, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(changeCharacter, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(character))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, changeCharacter, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(character))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: changeCharacter
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: json
+			opt: false
+			type: TPath({
+				name: Dynamic
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(loadCharacterFile, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(loadCharacterFile, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(json))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, loadCharacterFile, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(json))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: loadCharacterFile
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: elapsed
+			opt: false
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Float
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(update, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(update, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(elapsed))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, update, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(elapsed))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: update
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(isAnimationFinished, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(isAnimationFinished, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, isAnimationFinished, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Bool
+		})
+	})
+	meta: null
+	name: isAnimationFinished
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(finishAnimation, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(finishAnimation, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, finishAnimation, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: finishAnimation
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: anim
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(hasAnimation, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(hasAnimation, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(anim))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, hasAnimation, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(anim))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Bool
+		})
+	})
+	meta: null
+	name: hasAnimation
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(dance, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(dance, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, dance, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: dance
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: AnimName
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: Force
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Bool
+			})
+			value: null
+		}, {
+			meta: null
+			name: Reversed
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Bool
+			})
+			value: null
+		}, {
+			meta: null
+			name: Frame
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Int
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(playAnim, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(playAnim, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(AnimName))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(Force))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(Reversed))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(Frame))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, playAnim, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(AnimName))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(Force))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(Reversed))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(Frame))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: playAnim
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(recalculateDanceIdle, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(recalculateDanceIdle, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, recalculateDanceIdle, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: recalculateDanceIdle
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: name
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: x
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Float
+			})
+			value: null
+		}, {
+			meta: null
+			name: y
+			opt: true
+			type: TPath({
+				name: StdTypes
+				pack: []
+				params: []
+				sub: Float
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(addOffset, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(addOffset, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(name))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(x))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(y))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, addOffset, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(name))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(x))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(y))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: addOffset
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: [{
+			meta: null
+			name: name
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}, {
+			meta: null
+			name: anim
+			opt: false
+			type: TPath({
+				name: String
+				pack: []
+				params: []
+				sub: null
+			})
+			value: null
+		}]
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(quickAnimAdd, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(quickAnimAdd, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([{
+									expr: EConst(CIdent(name))
+									pos: #pos
+								}, {
+									expr: EConst(CIdent(anim))
+									pos: #pos
+								}])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, quickAnimAdd, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CIdent(name))
+								pos: #pos
+							}, {
+								expr: EConst(CIdent(anim))
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: quickAnimAdd
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(draw, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(draw, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, draw, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: draw
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(copyAtlasValues, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(copyAtlasValues, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, copyAtlasValues, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: copyAtlasValues
+	pos: #pos
+}, {
+	access: [APublic, AOverride]
+	doc: null
+	kind: FFun({
+		args: []
+		expr: {
+			expr: EBlock([{
+				expr: EIf({
+					expr: EBinop(OpBoolAnd, {
+						expr: EBinop(OpNotEq, {
+							expr: EConst(CIdent(_asc))
+							pos: #pos
+						}, {
+							expr: EConst(CIdent(null))
+							pos: #pos
+						})
+						pos: #pos
+					}, {
+						expr: ECall({
+							expr: EField({
+								expr: EConst(CIdent(_asc))
+								pos: #pos
+							}, hasFunction, Normal)
+							pos: #pos
+						}, [{
+							expr: EConst(CString(destroy, DoubleQuotes))
+							pos: #pos
+						}])
+						pos: #pos
+					})
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(_asc))
+									pos: #pos
+								}, callFunction, Normal)
+								pos: #pos
+							}, [{
+								expr: EConst(CString(destroy, DoubleQuotes))
+								pos: #pos
+							}, {
+								expr: EArrayDecl([])
+								pos: #pos
+							}])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				}, {
+					expr: EBlock([{
+						expr: EReturn({
+							expr: ECall({
+								expr: EField({
+									expr: EConst(CIdent(super))
+									pos: #pos
+								}, destroy, Normal)
+								pos: #pos
+							}, [])
+							pos: #pos
+						})
+						pos: #pos
+					}])
+					pos: #pos
+				})
+				pos: #pos
+			}])
+			pos: #pos
+		}
+		params: null
+		ret: TPath({
+			name: StdTypes
+			pack: []
+			params: []
+			sub: Void
+		})
+	})
+	meta: null
+	name: destroy
+	pos: #pos
+}]
+line 117: expected enum value

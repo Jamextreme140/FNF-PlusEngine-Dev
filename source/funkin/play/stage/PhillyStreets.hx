@@ -608,7 +608,7 @@ class PhillyStreets extends BaseStage
 			case STATE_READY:
 				if (blinkCountdown == 0)
 				{
-					gf.playAnim('idle-alt', false);
+					gf.playAnim('idleKnife', false);
 					blinkCountdown = FlxG.random.int(MIN_BLINK_DELAY, MAX_BLINK_DELAY);
 				}
 				else blinkCountdown--;
