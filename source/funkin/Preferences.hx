@@ -113,7 +113,6 @@ import funkin.ui.title.TitleState;
 	public var hitSounds:String = "None";
 	public var hitsoundType:String = "None";
 	public var pauseMusic:String = 'Tea Time';
-	public var showIntroVideo:Bool = true;
 	public var checkForUpdates:Bool = true;
 	public var comboStacking:Bool = true;
 	public var enablePreloader:Bool = false; // Enable global asset preloader on startup
@@ -288,8 +287,6 @@ class Preferences {
         Reflect.setField(FlxG.save.data, "judgementCounter", judgementCounter);
 		data.judgementCounter = judgementCounter;
 
-		FlxG.save.data.showIntroVideo = data.showIntroVideo;
-
 		//Placing this in a separate save so that it can be manually deleted without removing your Score and stuff
 		var save:FlxSave = new FlxSave();
 		save.bind('controls_v3', CoolUtil.getSavePath());
@@ -336,10 +333,6 @@ class Preferences {
 			FlxG.updateFramerate = data.framerate;
 			FlxG.drawFramerate = data.framerate;
 		}
-
-		if (FlxG.save.data.showIntroVideo != null) {
-            data.showIntroVideo = FlxG.save.data.showIntroVideo;
-        }
 
 		if(FlxG.save.data.gameplaySettings != null)
 		{

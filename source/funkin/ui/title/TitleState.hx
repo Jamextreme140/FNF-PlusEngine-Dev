@@ -11,13 +11,9 @@ import funkin.ui.story.StoryMenuState;
 import funkin.ui.mainmenu.MainMenuState;
 import funkin.ui.freeplay.FreeplayState;
 
-#if VIDEOS_ALLOWED
-import hxvlc.flixel.FlxVideoSprite;
-#end
-
 #if mobile
 import funkin.mobile.backend.TouchUtil;
-#end
+#endif
 
 typedef TitleData =
 {
@@ -69,14 +65,6 @@ class TitleState extends MusicBeatState
 	var easterEggKeysBuffer:String = '';
 	#end
 
-	#if VIDEOS_ALLOWED
-	var introVideo:FlxVideoSprite;
-	#end
-	var showingIntro:Bool = false;
-	var introFinished:Bool = false;
-	var skipTimer:Float = 0;
-	var canSkip:Bool = true;
-
 	override public function create():Void
 	{
 		Paths.clearStoredMemory();
@@ -111,81 +99,6 @@ class TitleState extends MusicBeatState
 
 		FlxG.mouse.visible = false;
 
-		var shouldShowIntro:Bool = (!initialized || forceShowIntro) && ClientPrefs.data.showIntroVideo && !FlxG.save.data.introFinished;
-		
-		if(shouldShowIntro)
-		{
-			showIntroVideo();
-		}
-		else
-		{
-			#if FREEPLAY
-			MusicBeatState.switchState(new FreeplayState());
-			#elseif CHARTING
-			MusicBeatState.switchState(new ChartingState());
-			#else
-			if(FlxG.save.data.flashing == null && !FlashingState.leftState)
-			{
-				controls.isInSubstate = false; //idfk what's wrong
-				FlxTransitionableState.skipNextTransIn = true;
-				FlxTransitionableState.skipNextTransOut = true;
-				MusicBeatState.switchState(new FlashingState());
-			}
-			else
-				startIntro();
-			#end
-		}
-	}
-
-	function showIntroVideo():Void
-	{
-		showingIntro = true;
-
-		var blackBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
-		add(blackBG);
-
-		#if VIDEOS_ALLOWED
-		introVideo = new FlxVideoSprite();
-		introVideo.bitmap.onEndReached.add(function() {
-			onIntroFinished();
-		});
-
-		var videoPath:String = Paths.video('titleIntro');
-		if(videoPath != null)
-		{
-			introVideo.load(videoPath);
-			introVideo.play();
-			add(introVideo);
-		}
-		else
-		{
-			trace('Intro video not found, skipping to normal intro');
-			onIntroFinished();
-		}
-		#end
-
-		#if mobile
-        addTouchPad('NONE', 'A');
-        #end
-	}
-	
-	function onIntroFinished():Void
-	{
-		if (!showingIntro) return;
-		
-		showingIntro = false;
-		introFinished = true;
-		FlxG.save.data.introFinished = true;
-		FlxG.save.flush();
-
-		#if VIDEOS_ALLOWED
-		if (introVideo != null)
-		{
-			introVideo.destroy();
-			introVideo = null;
-		}
-		#end
-
 		#if FREEPLAY
 		MusicBeatState.switchState(new FreeplayState());
 		#elseif CHARTING
@@ -193,7 +106,7 @@ class TitleState extends MusicBeatState
 		#else
 		if(FlxG.save.data.flashing == null && !FlashingState.leftState)
 		{
-			controls.isInSubstate = false;
+			controls.isInSubstate = false; //idfk what's wrong
 			FlxTransitionableState.skipNextTransIn = true;
 			FlxTransitionableState.skipNextTransOut = true;
 			MusicBeatState.switchState(new FlashingState());
@@ -201,22 +114,6 @@ class TitleState extends MusicBeatState
 		else
 			startIntro();
 		#end
-	}
-	
-	function skipIntroVideo():Void
-	{
-		if (!showingIntro || !canSkip) return;
-
-		FlxG.sound.play(Paths.sound('cancelMenu'), 0.7);
-
-		#if VIDEOS_ALLOWED
-		if (introVideo != null)
-		{
-			introVideo.stop();
-		}
-		#end
-		
-		onIntroFinished();
 	}
 
 	var logoBl:FlxSprite;
@@ -548,166 +445,140 @@ class TitleState extends MusicBeatState
 		// Execute any pending update check callbacks on the main thread
 		CoolUtil.executeUpdateCallback();
 
-		if (showingIntro && canSkip)
+		if (FlxG.sound.music != null)
+			Conductor.songPosition = FlxG.sound.music.time;
+		// FlxG.watch.addQuick('amp', FlxG.sound.music.amplitude);
+
+		var pressedEnter:Bool = FlxG.keys.justPressed.ENTER || controls.ACCEPT || TouchUtil.justPressed;
+
+		var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
+
+		if (gamepad != null)
 		{
-			var pressedSkip:Bool = false;
-			
-			#if mobile
-			pressedSkip = touchPad != null && touchPad.buttonA.justPressed || controls.ACCEPT;
-			#else
-			pressedSkip = FlxG.keys.justPressed.ENTER || controls.ACCEPT;
-			
-			var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
-			if (gamepad != null && gamepad.justPressed.START)
-			{
-				pressedSkip = true;
-			}
+			if (gamepad.justPressed.START)
+				pressedEnter = true;
+
+			#if switch
+			if (gamepad.justPressed.B)
+				pressedEnter = true;
 			#end
-			
-			if (pressedSkip)
-			{
-				skipIntroVideo();
-				return;
-			}
+		}
+		
+		if (newTitle) {
+			titleTimer += FlxMath.bound(elapsed, 0, 1);
+			if (titleTimer > 2) titleTimer -= 2;
 		}
 
-		if (!showingIntro)
+		// EASTER EGG
+
+		if (initialized && !transitioning && skippedIntro)
 		{
-			if (FlxG.sound.music != null)
-				Conductor.songPosition = FlxG.sound.music.time;
-			// FlxG.watch.addQuick('amp', FlxG.sound.music.amplitude);
-
-			var pressedEnter:Bool = FlxG.keys.justPressed.ENTER || controls.ACCEPT || TouchUtil.justPressed;
-
-			var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
-
-			if (gamepad != null)
+			if (newTitle && !pressedEnter)
 			{
-				if (gamepad.justPressed.START)
-					pressedEnter = true;
-
-				#if switch
-				if (gamepad.justPressed.B)
-					pressedEnter = true;
+				var timer:Float = titleTimer;
+				if (timer >= 1)
+					timer = (-timer) + 2;
+				
+				timer = FlxEase.quadInOut(timer);
+				#if mobile
+				titleTextMobile.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
+				titleTextMobile.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
+				#else
+				titleText.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
+				titleText.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
 				#end
 			}
 			
-			if (newTitle) {
-				titleTimer += FlxMath.bound(elapsed, 0, 1);
-				if (titleTimer > 2) titleTimer -= 2;
-			}
-
-			// EASTER EGG
-
-			if (initialized && !transitioning && skippedIntro)
+			if(pressedEnter)
 			{
-				if (newTitle && !pressedEnter)
-				{
-					var timer:Float = titleTimer;
-					if (timer >= 1)
-						timer = (-timer) + 2;
-					
-					timer = FlxEase.quadInOut(timer);
-					#if mobile
-					titleTextMobile.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
-					titleTextMobile.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
-					#else
-					titleText.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
-					titleText.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
-					#end
-				}
+				#if mobile
+				titleTextMobile.color = FlxColor.WHITE;
+				titleTextMobile.alpha = 1;
 				
-				if(pressedEnter)
+				if(titleTextMobile != null) titleTextMobile.animation.play('press');
+				#else
+				titleText.color = FlxColor.WHITE;
+				titleText.alpha = 1;
+				
+				if(titleText != null) titleText.animation.play('press');
+				#endif
+
+				FlxG.camera.flash(ClientPrefs.data.flashing ? FlxColor.WHITE : 0x4CFFFFFF, 1);
+				FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
+
+				transitioning = true;
+				// FlxG.sound.music.stop();
+
+				new FlxTimer().start(1, function(tmr:FlxTimer)
 				{
-					#if mobile
-					titleTextMobile.color = FlxColor.WHITE;
-					titleTextMobile.alpha = 1;
-					
-					if(titleTextMobile != null) titleTextMobile.animation.play('press');
-					#else
-					titleText.color = FlxColor.WHITE;
-					titleText.alpha = 1;
-					
-					if(titleText != null) titleText.animation.play('press');
-					#end
+					MusicBeatState.switchState(new MainMenuState());
+					closedState = true;
+				});
+				// FlxG.sound.play(Paths.music('titleShoot'), 0.7);
+			}
+			#if TITLE_SCREEN_EASTER_EGG
+			else if (FlxG.keys.firstJustPressed() != FlxKey.NONE)
+			{
+				var keyPressed:FlxKey = FlxG.keys.firstJustPressed();
+				var keyName:String = Std.string(keyPressed);
+				if(allowedKeys.contains(keyName)) {
+					easterEggKeysBuffer += keyName;
+					if(easterEggKeysBuffer.length >= 32) easterEggKeysBuffer = easterEggKeysBuffer.substring(1);
+					//trace('Test! Allowed Key pressed!!! Buffer: ' + easterEggKeysBuffer);
 
-					FlxG.camera.flash(ClientPrefs.data.flashing ? FlxColor.WHITE : 0x4CFFFFFF, 1);
-					FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
-
-					transitioning = true;
-					// FlxG.sound.music.stop();
-
-					new FlxTimer().start(1, function(tmr:FlxTimer)
+					for (wordRaw in easterEggKeys)
 					{
-						MusicBeatState.switchState(new MainMenuState());
-						closedState = true;
-					});
-					// FlxG.sound.play(Paths.music('titleShoot'), 0.7);
-				}
-				#if TITLE_SCREEN_EASTER_EGG
-				else if (FlxG.keys.firstJustPressed() != FlxKey.NONE)
-				{
-					var keyPressed:FlxKey = FlxG.keys.firstJustPressed();
-					var keyName:String = Std.string(keyPressed);
-					if(allowedKeys.contains(keyName)) {
-						easterEggKeysBuffer += keyName;
-						if(easterEggKeysBuffer.length >= 32) easterEggKeysBuffer = easterEggKeysBuffer.substring(1);
-						//trace('Test! Allowed Key pressed!!! Buffer: ' + easterEggKeysBuffer);
-
-						for (wordRaw in easterEggKeys)
+						var word:String = wordRaw.toUpperCase(); //just for being sure you're doing it right
+						if (easterEggKeysBuffer.contains(word))
 						{
-							var word:String = wordRaw.toUpperCase(); //just for being sure you're doing it right
-							if (easterEggKeysBuffer.contains(word))
-							{
-								//trace('YOOO! ' + word);
-								if (FlxG.save.data.psychDevsEasterEgg == word)
-									FlxG.save.data.psychDevsEasterEgg = '';
-								else
-									FlxG.save.data.psychDevsEasterEgg = word;
-								FlxG.save.flush();
+							//trace('YOOO! ' + word);
+							if (FlxG.save.data.psychDevsEasterEgg == word)
+								FlxG.save.data.psychDevsEasterEgg = '';
+							else
+								FlxG.save.data.psychDevsEasterEgg = word;
+							FlxG.save.flush();
 
-								FlxG.sound.play(Paths.sound('secret'));
+							FlxG.sound.play(Paths.sound('secret'));
 
-								var black:FlxSprite = new FlxSprite(0, 0).makeGraphic(1, 1, FlxColor.BLACK);
-								black.scale.set(FlxG.width, FlxG.height);
-								black.updateHitbox();
-								black.alpha = 0;
-								add(black);
+							var black:FlxSprite = new FlxSprite(0, 0).makeGraphic(1, 1, FlxColor.BLACK);
+							black.scale.set(FlxG.width, FlxG.height);
+							black.updateHitbox();
+							black.alpha = 0;
+							add(black);
 
-								FlxTween.tween(black, {alpha: 1}, 1, {onComplete:
-									function(twn:FlxTween) {
-										FlxTransitionableState.skipNextTransIn = true;
-										FlxTransitionableState.skipNextTransOut = true;
-										MusicBeatState.switchState(new TitleState());
-									}
-								});
-								FlxG.sound.music.fadeOut();
-								if(FreeplayState.vocals != null)
-								{
-									FreeplayState.vocals.fadeOut();
+							FlxTween.tween(black, {alpha: 1}, 1, {onComplete:
+								function(twn:FlxTween) {
+									FlxTransitionableState.skipNextTransIn = true;
+									FlxTransitionableState.skipNextTransOut = true;
+									MusicBeatState.switchState(new TitleState());
 								}
-								closedState = true;
-								transitioning = true;
-								playJingle = true;
-								easterEggKeysBuffer = '';
-								break;
+							});
+							FlxG.sound.music.fadeOut();
+							if(FreeplayState.vocals != null)
+							{
+								FreeplayState.vocals.fadeOut();
 							}
+							closedState = true;
+							transitioning = true;
+							playJingle = true;
+							easterEggKeysBuffer = '';
+							break;
 						}
 					}
 				}
-				#end
 			}
+			#end
+		}
 
-			if (initialized && pressedEnter && !skippedIntro)
-			{
-				skipIntro();
-			}
+		if (initialized && pressedEnter && !skippedIntro)
+		{
+			skipIntro();
+		}
 
-			if(swagShader != null)
-			{
-				if(controls.UI_LEFT) swagShader.hue -= elapsed * 0.1;
-				if(controls.UI_RIGHT) swagShader.hue += elapsed * 0.1;
-			}
+		if(swagShader != null)
+		{
+			if(controls.UI_LEFT) swagShader.hue -= elapsed * 0.1;
+			if(controls.UI_RIGHT) swagShader.hue += elapsed * 0.1;
 		}
 
 		super.update(elapsed);
@@ -770,7 +641,7 @@ class TitleState extends MusicBeatState
 			else if(curBeat % 2 == 0) gfDance.animation.play('idle', true);
 		}
 
-		if(!closedState && !showingIntro)
+		if(!closedState)
 		{
 			sickBeats++;
 			switch (sickBeats)
