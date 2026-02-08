@@ -149,10 +149,10 @@ class MusicBeatState extends FlxState
 		removeTouchPad();
 		removeMobileControls();
 		
-		// Cleanup TraceDisplay si esta es la última instancia
+		// TraceDisplay cleanup if this is the last instance
 		if(traceDisplay != null) {
-			// Solo destruir si no hay otros estados activos
-			// En la práctica, el TraceDisplay debe persistir entre estados
+			// Only destroy if there are no other active states
+			// In practice, TraceDisplay should persist across states
 		}
 		
 		super.destroy();
@@ -178,14 +178,14 @@ class MusicBeatState extends FlxState
 
 		if(!_psychCameraInitialized) initPsychCamera();
 		
-		// Inicializar TraceDisplay si no existe
+		// Initialize TraceDisplay if it doesn't exist
 		if(traceDisplay == null && TraceDisplay.instance == null) {
 			traceDisplay = new TraceDisplay();
 			if(FlxG.stage != null) {
 				FlxG.stage.addChild(traceDisplay);
 			}
 		} else if (TraceDisplay.instance != null) {
-			// Usar la instancia existente
+			// Reuse existing instance
 			traceDisplay = TraceDisplay.instance;
 		}
 
@@ -471,8 +471,9 @@ class MusicBeatState extends FlxState
 			{
 				trace('GlobalScript: Loading script from: $scriptPath');
 				
-				// Follow the same pattern as PlayState and ModState
-				globalScript = new HScript(null, scriptPath);
+				// Create the script in manual mode so we can inject globals before parsing
+				// This avoids parse-time errors like "Unknown variable" inside functions.
+				globalScript = new HScript(null, scriptPath, null, true);
 				
 				if(globalScript == null) {
 					trace('GlobalScript: Failed to create HScript instance');
@@ -585,6 +586,11 @@ class MusicBeatState extends FlxState
 				}
 				
 				trace('GlobalScript: Functions configured successfully');
+				
+				// Now parse and execute the script with the injected globals available
+				globalScript.parse(true);
+				globalScript.execute();
+				trace('GlobalScript: Script parsed and executed successfully');
 				
 				// Call onCreate if it exists (like PlayState and ModState do)
 				try {

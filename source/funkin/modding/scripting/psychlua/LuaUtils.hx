@@ -523,13 +523,14 @@ class LuaUtils
 	}
 
 	public static function cameraFromString(cam:String):FlxCamera {
+		var playState = PlayState.instance;
 		switch(cam.toLowerCase()) {
-			case 'camgame' | 'game': return PlayState.instance.camGame;
-			case 'camhud' | 'hud': return PlayState.instance.camHUD;
-			case 'camother' | 'other': return PlayState.instance.camOther;
+			case 'camgame' | 'game': return (playState != null) ? playState.camGame : FlxG.camera;
+			case 'camhud' | 'hud': return (playState != null) ? playState.camHUD : FlxG.camera;
+			case 'camother' | 'other': return (playState != null) ? playState.camOther : FlxG.camera;
 		}
 		var camera:FlxCamera = MusicBeatState.getVariables().get(cam);
-		if (camera == null || !Std.isOfType(camera, FlxCamera)) camera = PlayState.instance.camGame;
+		if (camera == null || !Std.isOfType(camera, FlxCamera)) camera = (playState != null) ? playState.camGame : FlxG.camera;
 		return camera;
 	}
 }

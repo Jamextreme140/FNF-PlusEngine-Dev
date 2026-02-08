@@ -124,32 +124,34 @@ class FunkinLua {
 		// LuaJIT version info (useful for debugging and compatibility)
 		set('luaVersion', hxluajit.Lua.VERSION);
 		set('luajitVersion', hxluajit.LuaJIT.VERSION);
+		set('inPlayState', game != null);
 
 		// Song/Week shit
 		set('curBpm', Conductor.bpm);
-		set('bpm', PlayState.SONG.bpm);
-		set('scrollSpeed', PlayState.SONG.speed);
+		var hasSong:Bool = (PlayState.SONG != null);
+		set('bpm', hasSong ? PlayState.SONG.bpm : Conductor.bpm);
+		set('scrollSpeed', hasSong ? PlayState.SONG.speed : 1);
 		set('crochet', Conductor.crochet);
 		set('stepCrochet', Conductor.stepCrochet);
-		set('songLength', FlxG.sound.music.length);
-		set('songName', PlayState.SONG.song);
-		set('songPath', Paths.formatToSongPath(PlayState.SONG.song));
+		set('songLength', FlxG.sound.music != null ? FlxG.sound.music.length : 0);
+		set('songName', hasSong ? PlayState.SONG.song : '');
+		set('songPath', hasSong ? Paths.formatToSongPath(PlayState.SONG.song) : '');
 		set('loadedSongName', Song.loadedSongName);
 		set('loadedSongPath', Paths.formatToSongPath(Song.loadedSongName));
 		set('chartPath', Song.chartPath);
 		set('startedCountdown', false);
-		set('curStage', PlayState.SONG.stage);
+		set('curStage', hasSong ? PlayState.SONG.stage : '');
 
-		set('isStoryMode', PlayState.isStoryMode);
-		set('difficulty', PlayState.storyDifficulty);
+		set('isStoryMode', game != null ? PlayState.isStoryMode : false);
+		set('difficulty', game != null ? PlayState.storyDifficulty : -1);
 
 		set('difficultyName', Difficulty.getString(false));
 		set('difficultyPath', Difficulty.getFilePath());
 		set('difficultyNameTranslation', Difficulty.getString(true));
-		set('weekRaw', PlayState.storyWeek);
-		set('week', WeekData.weeksList[PlayState.storyWeek]);
-		set('seenCutscene', PlayState.seenCutscene);
-		set('hasVocals', PlayState.SONG.needsVoices);
+		set('weekRaw', game != null ? PlayState.storyWeek : -1);
+		set('week', (game != null && PlayState.storyWeek >= 0 && PlayState.storyWeek < WeekData.weeksList.length) ? WeekData.weeksList[PlayState.storyWeek] : '');
+		set('seenCutscene', game != null ? PlayState.seenCutscene : false);
+		set('hasVocals', hasSong ? PlayState.SONG.needsVoices : false);
 
 		// Screen stuff
 		set('screenWidth', FlxG.width);
@@ -427,6 +429,15 @@ class FunkinLua {
 			#else
 			return defaultValue;
 			#end
+		});
+
+		// Simple logging helper for scripts (works even when console output isn't visible)
+		Lua_helper.add_callback(lua, "traceToDisplay", function(text:String, ?isError:Bool = false) {
+			if(text == null) text = '';
+			if(isError) TraceDisplay.addLuaError(text);
+			else TraceDisplay.addInfo(text);
+			trace('[Lua] ' + text);
+			return text;
 		});
 
 		Lua_helper.add_callback(lua, "addLuaScript", function(luaFile:String, ?ignoreAlreadyRunning:Bool = false) {
@@ -1294,10 +1305,15 @@ class FunkinLua {
 		});
 
 		Lua_helper.add_callback(lua, "setObjectCamera", function(obj:String, camera:String = 'game') {
-			var real:FlxBasic = game.getLuaObject(obj);
-			if(real != null) {
-				real.cameras = [LuaUtils.cameraFromString(camera)];
-				return true;
+			var cam:FlxCamera = LuaUtils.cameraFromString(camera);
+			var gameInstance:PlayState = PlayState.instance;
+			if(gameInstance != null)
+			{
+				var real:FlxBasic = gameInstance.getLuaObject(obj);
+				if(real != null) {
+					real.cameras = [cam];
+					return true;
+				}
 			}
 
 			var split:Array<String> = obj.split('.');
@@ -1307,7 +1323,7 @@ class FunkinLua {
 			}
 
 			if(object != null) {
-				object.cameras = [LuaUtils.cameraFromString(camera)];
+				object.cameras = [cam];
 				return true;
 			}
 			luaTrace("setObjectCamera: Object " + obj + " doesn't exist!", false, false, FlxColor.RED);

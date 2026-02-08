@@ -176,7 +176,7 @@ class HScript extends Iris
 					var errorMsg = Printer.errorToString(e, false);
 					PlayState.instance.addTextToDebug(errorMsg, FlxColor.RED);
 				}
-				// Relanzar la excepción para que PlayState pueda manejarla correctamente
+				// Re-throw the exception so PlayState can handle it correctly
 				throw e;
 			}
 			catch(e:Dynamic) {
@@ -185,7 +185,7 @@ class HScript extends Iris
 				if(PlayState.instance != null) {
 					PlayState.instance.addTextToDebug('WARNING: $e', FlxColor.YELLOW);
 				}
-				// Relanzar la excepción para que PlayState pueda manejarla correctamente
+				// Re-throw the exception so PlayState can handle it correctly
 				throw e;
 			}
 		}
