@@ -168,6 +168,18 @@ class OptionsState extends MusicBeatState
 			}
 		}
 
+		var selectedItem = grpOptions.members[curSelected];
+		if (selectedItem != null)
+		{
+			var targetCameraY = selectedItem.y - (FlxG.height / 2) + (selectedItem.height / 2);
+
+			FlxG.camera.scroll.y = FlxMath.lerp(targetCameraY, FlxG.camera.scroll.y, Math.exp(-elapsed * 6));
+
+			var minScroll = 0;
+			var maxScroll = Math.max(0, (options.length * 50) - FlxG.height * 0.4);
+			FlxG.camera.scroll.y = FlxMath.bound(FlxG.camera.scroll.y, minScroll, maxScroll);
+		}
+
 		if(!exiting) {
 			if (controls.UI_UP_P)
 				changeSelection(-1);
