@@ -221,6 +221,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		var option:Option = new Option(
+			'Show Intro Video',
+			'If checked, it will display the intro video when opening the game.',
+			'showIntroVideo',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option(
             'Combo and Rating in camGame',
             'If enabled, Combo and Ratings will be rendered in the camGame layer instead of camHUD.',
             'comboInGame',
