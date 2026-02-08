@@ -266,7 +266,7 @@
 		<android target-sdk-version="35" />
 		
 		<!-- Android templates for adaptive icons with Material Design 3 support -->
-		<template path="templates/android" />
+		<template path="templates/android/res" />
 	</section>
 
 	<section if="ios">
