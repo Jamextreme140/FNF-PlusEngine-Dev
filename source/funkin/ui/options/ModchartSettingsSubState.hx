@@ -9,6 +9,7 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 {
 	public function new()
 	{
+		// Is necesary add translate here?
 		title = Language.getPhrase('modchart_menu', 'Modchart Settings');
 		rpcTitle = 'Modchart Options Menu'; // for Discord Rich Presence
 
