@@ -165,7 +165,7 @@ class TitleState extends MusicBeatState
 		#end
 
 		#if mobile
-        addTouchPad('NONE', 'A');
+        addTouchPad('NONE', 'A_B');
         #end
 	}
 	
@@ -553,7 +553,7 @@ class TitleState extends MusicBeatState
 			var pressedSkip:Bool = false;
 			
 			#if mobile
-			pressedSkip = touchPad != null && touchPad.buttonA.justPressed || controls.ACCEPT;
+			pressedSkip = touchPad != null && touchPad.buttonA.justPressed && touchPad.buttonB.justPressed || controls.ACCEPT;
 			#else
 			pressedSkip = FlxG.keys.justPressed.ENTER || controls.ACCEPT;
 			
