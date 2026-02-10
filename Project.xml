@@ -267,6 +267,10 @@
 		
 		<!-- Android templates for adaptive icons with Material Design 3 support -->
 		<template path="templates/android" />
+
+		<config:android>
+            <application android:icon="@mipmap/ic_launcher"/>
+        </config:android>
 	</section>
 
 	<section if="ios">
