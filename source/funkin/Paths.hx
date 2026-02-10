@@ -574,6 +574,88 @@ class Paths
 	inline static public function modsImagesJson(key:String)
 		return modFolders('images/' + key + '.json');
 
+	/**
+	 * Get path to an NDLL file in the mods folder
+	 * @param key Name of the NDLL file (without extension)
+	 * @return Full path to the NDLL file
+	 */
+	inline static public function modsNdll(key:String)
+		return modFolders('ndlls/' + key + '.ndll');
+
+	/**
+	 * Get path to a DLL file in the mods folder
+	 * @param key Name of the DLL file (without extension)
+	 * @return Full path to the DLL file
+	 */
+	inline static public function modsDll(key:String)
+		return modFolders('ndlls/' + key + '.dll');
+
+	/**
+	 * Get path to a native library (tries both .ndll and .dll)
+	 * @param key Name of the library file (without extension)
+	 * @return Full path to the library file, or null if not found
+	 */
+	static public function modsLibrary(key:String):String
+	{
+		// Try NDLL first
+		var ndllPath:String = modsNdll(key);
+		if(FileSystem.exists(ndllPath))
+			return ndllPath;
+
+		// Try DLL
+		var dllPath:String = modsDll(key);
+		if(FileSystem.exists(dllPath))
+			return dllPath;
+
+		// Try without ndlls folder (root of mod)
+		var rootNdll:String = modFolders(key + '.ndll');
+		if(FileSystem.exists(rootNdll))
+			return rootNdll;
+
+		var rootDll:String = modFolders(key + '.dll');
+		if(FileSystem.exists(rootDll))
+			return rootDll;
+
+		return null;
+	}
+
+	/**
+	 * List all NDLL files in the current mod's ndlls folder
+	 * @return Array of NDLL filenames (without path or extension)
+	 */
+	static public function listModNdlls():Array<String>
+	{
+		var ndlls:Array<String> = [];
+		
+		if(Mods.currentModDirectory != null && Mods.currentModDirectory.length > 0)
+		{
+			var ndllsFolder:String = mods(Mods.currentModDirectory + '/ndlls');
+			if(FileSystem.exists(ndllsFolder) && FileSystem.isDirectory(ndllsFolder))
+			{
+				for(file in FileSystem.readDirectory(ndllsFolder))
+				{
+					if(file.endsWith('.ndll') || file.endsWith('.dll'))
+					{
+						var name = file.substring(0, file.lastIndexOf('.'));
+						ndlls.push(name);
+					}
+				}
+			}
+		}
+
+		return ndlls;
+	}
+
+	/**
+	 * Check if a native library exists in mods
+	 * @param key Name of the library (without extension)
+	 * @return True if the library exists
+	 */
+	static public function modsLibraryExists(key:String):Bool
+	{
+		return modsLibrary(key) != null;
+	}
+
 	static public function modFolders(key:String)
 	{
 		if(Mods.currentModDirectory != null && Mods.currentModDirectory.length > 0)

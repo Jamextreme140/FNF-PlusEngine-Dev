@@ -225,6 +225,173 @@ class WindowsFunctions
 		Lua_helper.add_callback(lua, "setWinRCenter", function(width:Int, height:Int, ?skip:Bool = false) {
 			WindowTweens.winResizeCenter(width, height, skip);
 		});
+
+		// === DYNAMIC LIBRARY LOADING FUNCTIONS ===
+		
+		/**
+		 * Load a native library (DLL/NDLL) from the current mod's ndlls folder
+		 * @param libraryName Name of the library file (without extension)
+		 * @return Handle to the loaded library (as Float), or 0.0 if failed
+		 * 
+		 * Example: local handle = loadModLibrary("mylib") -- loads mods/mymod/ndlls/mylib.ndll
+		 */
+		Lua_helper.add_callback(lua, "loadModLibrary", function(libraryName:String):Float {
+			#if windows
+			var libPath:String = Paths.modsLibrary(libraryName);
+			if(libPath != null)
+			{
+				trace('Loading library from: $libPath');
+				return lenin.slushithings.windows.WindowsCPP.loadLibrary(libPath);
+			}
+			else
+			{
+				FunkinLua.luaTrace('loadModLibrary: Library "$libraryName" not found in mod', false, false, FlxColor.RED);
+				return 0.0;
+			}
+			#else
+			FunkinLua.luaTrace('loadModLibrary: Only available on Windows', false, false, FlxColor.RED);
+			return 0.0;
+			#end
+		});
+
+		/**
+		 * Load a library from an absolute or relative path
+		 * @param libraryPath Full path to the library file
+		 * @return Handle to the loaded library (as Float), or 0.0 if failed
+		 * 
+		 * Example: local handle = loadLibrary("./custom/mylib.dll")
+		 */
+		Lua_helper.add_callback(lua, "loadLibrary", function(libraryPath:String):Float {
+			#if windows
+			#if sys
+			if(FileSystem.exists(libraryPath))
+			{
+				trace('Loading library from: $libraryPath');
+				return lenin.slushithings.windows.WindowsCPP.loadLibrary(libraryPath);
+			}
+			else
+			{
+				FunkinLua.luaTrace('loadLibrary: File not found: $libraryPath', false, false, FlxColor.RED);
+				return 0.0;
+			}
+			#else
+			return 0.0;
+			#end
+			#else
+			FunkinLua.luaTrace('loadLibrary: Only available on Windows', false, false, FlxColor.RED);
+			return 0.0;
+			#end
+		});
+
+		/**
+		 * Get the address of a function from a loaded library
+		 * @param libraryHandle Handle returned by loadLibrary or loadModLibrary
+		 * @param functionName Name of the exported function
+		 * @return Address of the function (as Float), or 0.0 if not found
+		 * 
+		 * Example: local funcAddr = getProcAddress(handle, "myFunction")
+		 */
+		Lua_helper.add_callback(lua, "getProcAddress", function(libraryHandle:Float, functionName:String):Float {
+			#if windows
+			return lenin.slushithings.windows.WindowsCPP.getProcAddress(libraryHandle, functionName);
+			#else
+			FunkinLua.luaTrace('getProcAddress: Only available on Windows', false, false, FlxColor.RED);
+			return 0.0;
+			#end
+		});
+
+		/**
+		 * Free a loaded library from memory
+		 * @param libraryHandle Handle returned by loadLibrary or loadModLibrary
+		 * @return True if successfully freed
+		 * 
+		 * Example: freeLibrary(handle)
+		 */
+		Lua_helper.add_callback(lua, "freeLibrary", function(libraryHandle:Float):Bool {
+			#if windows
+			return lenin.slushithings.windows.WindowsCPP.freeLibrary(libraryHandle);
+			#else
+			FunkinLua.luaTrace('freeLibrary: Only available on Windows', false, false, FlxColor.RED);
+			return false;
+			#end
+		});
+
+		/**
+		 * Get handle of an already loaded system module
+		 * @param moduleName Name of the module (e.g., "kernel32.dll"), or null for current executable
+		 * @return Handle to the module (as Float), or 0.0 if not found
+		 * 
+		 * Example: local kernel32 = getModuleHandle("kernel32.dll")
+		 */
+		Lua_helper.add_callback(lua, "getModuleHandle", function(?moduleName:String):Float {
+			#if windows
+			return lenin.slushithings.windows.WindowsCPP.getModuleHandle(moduleName);
+			#else
+			FunkinLua.luaTrace('getModuleHandle: Only available on Windows', false, false, FlxColor.RED);
+			return 0.0;
+			#end
+		});
+
+		/**
+		 * Get the full path of a loaded module
+		 * @param moduleHandle Handle of the module, or 0.0 for current executable
+		 * @return Full path to the module file
+		 * 
+		 * Example: local path = getModulePath(0) -- gets exe path
+		 */
+		Lua_helper.add_callback(lua, "getModulePath", function(moduleHandle:Float = 0.0):String {
+			#if windows
+			return lenin.slushithings.windows.WindowsCPP.getModulePath(moduleHandle);
+			#else
+			FunkinLua.luaTrace('getModulePath: Only available on Windows', false, false, FlxColor.RED);
+			return "";
+			#end
+		});
+
+		/**
+		 * Check if a library exists in the mod's ndlls folder
+		 * @param libraryName Name of the library (without extension)
+		 * @return True if the library exists
+		 * 
+		 * Example: if libraryExists("mylib") then ... end
+		 */
+		Lua_helper.add_callback(lua, "libraryExists", function(libraryName:String):Bool {
+			#if MODS_ALLOWED
+			return Paths.modsLibraryExists(libraryName);
+			#else
+			return false;
+			#end
+		});
+
+		/**
+		 * Get the full path to a library in the mod's ndlls folder
+		 * @param libraryName Name of the library (without extension)
+		 * @return Full path to the library, or null if not found
+		 * 
+		 * Example: local path = getLibraryPath("mylib")
+		 */
+		Lua_helper.add_callback(lua, "getLibraryPath", function(libraryName:String):String {
+			#if MODS_ALLOWED
+			var path = Paths.modsLibrary(libraryName);
+			return (path != null) ? path : "";
+			#else
+			return "";
+			#end
+		});
+
+		/**
+		 * List all available NDLLs in the current mod
+		 * @return Array of library names (without extension)
+		 * 
+		 * Example: local libs = listModLibraries()
+		 */
+		Lua_helper.add_callback(lua, "listModLibraries", function():Array<String> {
+			#if MODS_ALLOWED
+			return Paths.listModNdlls();
+			#else
+			return [];
+			#end
+		});
 		#end
 	}
 }
