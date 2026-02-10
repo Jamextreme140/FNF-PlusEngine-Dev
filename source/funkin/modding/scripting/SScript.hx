@@ -302,9 +302,11 @@ class SScriptCompat extends SScript
 				var str:String = '';
 				if(libPackage.length > 0)
 					str = libPackage + '.';
+				else if(libName == null)
+					libName = '';
 
 				var className = str + libName;
-			var resolvedClass = StructureOld.resolveClass(className);
+				var resolvedClass = StructureOld.resolveClass(className);
 				set(libName, resolvedClass);
 			}
 			catch (e:Dynamic) {
@@ -492,7 +494,7 @@ class SScriptCompat extends SScript
 					final e = retVal.exceptions[0];
 					final calledFunc:String = if(funk.sscript.origin == funk.lastCalledFunction) funcToRun else funk.lastCalledFunction;
 					if (e != null)
-						FunkinLua.luaTrace(funk.sscript.origin + ":" + calledFunc + " - " + e, false, false, FlxColor.RED);
+						FunkinLua.luaTrace(funk.sscript.origin + ":" + calledFunc + " - " + e.message.substr(0, e.message.indexOf('\n')), false, false, FlxColor.RED);
 					return null;
 				}
 			}
@@ -527,7 +529,6 @@ class SScriptCompat extends SScript
 			var c:Dynamic = StructureOld.resolveClass(className);
 			if (c == null)
 				c = Type.resolveEnum(className);
-			
 
 			if (c != null)
 				SScript.globalVariables[libName] = c;
