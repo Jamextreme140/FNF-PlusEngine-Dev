@@ -1,0 +1,10 @@
+{
+	"image": "Menu_Yunjin",
+	"scale": 1,
+	"position": [
+		0,
+		0
+	],
+	"idle_anim": "M IDLE",
+	"confirm_anim": "M IDLE"
+}

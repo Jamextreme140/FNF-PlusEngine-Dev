@@ -1,11 +1,11 @@
 package;
 
-import debug.FPSCounter;
-import debug.TraceDisplay;
-import debug.TraceButton;
-import debug.DebugButton;
-import backend.ClientPrefs;
-import backend.Screenshot;
+import funkin.ui.debug.FPSCounter;
+import funkin.ui.debug.TraceDisplay;
+import funkin.ui.debug.TraceButton;
+import funkin.ui.debug.DebugButton;
+import funkin.Preferences as ClientPrefs;
+import funkin.util.Screenshot;
 import flixel.FlxGame;
 import flixel.FlxState;
 import openfl.Lib;
@@ -14,11 +14,11 @@ import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
-import states.TitleState;
-import states.InitialState;
+import funkin.ui.title.TitleState;
+import funkin.InitState;
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;
-import psychlua.HScript.HScriptInfos;
+import funkin.modding.scripting.HScript.HScriptInfos;
 #end
 import openfl.events.KeyboardEvent;
 
@@ -26,16 +26,16 @@ import openfl.events.KeyboardEvent;
 import lime.graphics.Image;
 #end
 #if COPYSTATE_ALLOWED
-import states.CopyState;
+import funkin.mobile.backend.CopyState;
 #end
-import backend.Highscore;
+import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
 
 import lenin.slushithings.windows.WindowsAPI;
 
 // NATIVE API STUFF, YOU CAN IGNORE THIS AND SCROLL //
 #if (linux && !debug)
-@:cppInclude('./external/gamemode_client.h')
+@:cppInclude('./funkin/external/linux/gamemode_client.h')
 @:cppFileCode('#define GAMEMODE_AUTO')
 #end
 
@@ -83,14 +83,36 @@ class Main extends Sprite
 		super();
 		#if mobile
 		#if android
+		ClientPrefs.loadStorageTypeEarly();
 		StorageUtil.requestPermissions();
+		trace('[Main] Current storage type: ' + ClientPrefs.data.storageType);
+		trace('[Main] Storage directory: ' + StorageUtil.getStorageDirectory());
 		#end
 		Sys.setCwd(StorageUtil.getStorageDirectory());
 		#end
-		backend.CrashHandler.init();
+		funkin.util.CrashHandler.init();
+		
+		// Initialize optimization systems EARLY
+		trace('Initializing optimization systems...');
+		
+		#if !macro
+		// Initialize ThreadUtil
+		#if (target.threaded && sys)
+		funkin.util.ThreadUtil.init();
+		#end
+		
+		// Initialize Paths with temp cache
+		funkin.Paths.init();
+		
+		// Initialize FunkinMemory - NEW CACHE SYSTEM
+		funkin.FunkinMemory.init();
+		
+		// Initialize MemoryManager
+		funkin.util.MemoryManager.init();
+		#end
 
 		#if (cpp && windows)
-		backend.Native.fixScaling();
+		funkin.util.Native.fixScaling();
 		// Initialize window transparency support
 		WindowsAPI.setWindowLayered();
 		// Set window border color to purple (128, 41, 182)
@@ -106,12 +128,7 @@ class Main extends Sprite
 		#end
 		Mods.loadTopMod();
 		
-		// Initialize GlobalScript
-		#if HSCRIPT_ALLOWED
-		states.ModState.initGlobalScript();
-		#end
-
-		FlxG.save.bind('funkin', CoolUtil.getSavePath());
+		// GlobalScript initialization moved to InitialState.create() to ensure FlxG.state exists
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {
@@ -170,14 +187,20 @@ class Main extends Sprite
 		}
 		#end
 
-		#if LUA_ALLOWED Lua.set_callbacks_function(cpp.Callable.fromStaticFunction(psychlua.CallbackHandler.call)); #end
+		#if LUA_ALLOWED Lua.set_callbacks_function(cpp.Callable.fromStaticFunction(funkin.modding.scripting.psychlua.CallbackHandler.call)); #end
 		Controls.instance = new Controls();
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
+		MobileData.init();
+		
+		// Initialize Android optimizer for automatic quality adjustments
+		#if android
+		funkin.mobile.AndroidOptimizer.init();
+		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new mobile.backend.MobileScaleMode();
+			FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
 		});
 		#end
 		
@@ -186,27 +209,28 @@ class Main extends Sprite
 		#if COPYSTATE_ALLOWED
 		if (!CopyState.checkExistingFiles()) {
 			initialState = CopyState;
-		} else
-		#end
-		{
-			// Preloader removed: always start at InitialState
+		} else {
+			trace('[Main] All files exist, skipping CopyState');
 		}
+		#else
+		// Preloader removed: always start at InitialState
+		#end
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
-
+		FlxG.save.bind('funkin', CoolUtil.getSavePath());
+		ClientPrefs.loadPrefs();
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		addChild(fpsVar);
 		
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
-		
-		// Preferences and MobileData initialization moved to InitialState.
-
-		// Agregar los botones de TraceDisplay y Debug para móvil
+	
+		// Initialize touch pointer visualization for mobile
 		#if mobile
+
+		// Add TraceDisplay and Debug and buttons for mobile.
 		traceButton = new TraceButton();
 		addChild(traceButton);
-		
 		debugButton = new DebugButton();
 		addChild(debugButton);
 		#end
@@ -214,10 +238,14 @@ class Main extends Sprite
 		Lib.current.stage.align = "tl";
 		Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
 		   if(fpsVar != null) {
-			   // Posicionamiento inicial con márgenes constantes
+			   // Position relative to FlxGame (accounts for letterboxing on Android)
 			   var marginX = 10;
 			   var marginY = 3;
+			   #if android
+			   fpsVar.positionFPS(FlxG.game.x + marginX, FlxG.game.y + marginY, 1.0);
+			   #else
 			   fpsVar.positionFPS(marginX, marginY, 1.0);
+			   #end
 		   }
 
 		#if (linux || mac) // fix the app icon not showing up on the Linux Panel / Mac Dock
@@ -263,12 +291,15 @@ class Main extends Sprite
 		// shader coords fix
 		var resizeDebounceTimer:FlxTimer = null;
 		function handleGameResized():Void {
-			// Only reposition the FPS counter, no scaling.
+			// Reposition the FPS counter relative to FlxGame (accounts for letterboxing)
 			if(fpsVar != null) {
 				var marginX = 10;
 				var marginY = 3;
-				// No scaling, only reposition.
+				#if android
+				fpsVar.positionFPS(FlxG.game.x + marginX, FlxG.game.y + marginY, 1.0);
+				#else
 				fpsVar.positionFPS(marginX, marginY, 1.0);
+				#end
 			}
 			
 			// Reposition TraceDisplay button.
@@ -317,7 +348,7 @@ class Main extends Sprite
 
 	function toggleFullScreen(event:KeyboardEvent) {
 		if (Controls.instance.justReleased('fullscreen'))
-			backend.WindowMode.toggleFullscreen();
+			funkin.util.WindowMode.toggleFullscreen();
 	}
 
 	function positionWatermark():Void {
@@ -382,9 +413,9 @@ class Main extends Sprite
 
 	private function setupGame():Void
 	{
-		shaders.ShaderCompatibility.init();
+		funkin.graphics.shaders.ShaderCompatibility.init();
 		
-		trace('\n\n' + backend.Native.buildSystemInfo());
+		trace('\n\n' + funkin.util.Native.buildSystemInfo());
 		
 		#if hxvlc
 		try {
@@ -395,7 +426,7 @@ class Main extends Sprite
 		}
 		#end
 		
-		var flxGraphic = backend.Paths.image("marca");
+		var flxGraphic = funkin.Paths.image("marca");
 		if (flxGraphic != null) {
 			var bmpData:openfl.display.BitmapData = flxGraphic.bitmap;
 			if (watermarkSprite != null && watermarkSprite.parent != null) {
@@ -413,10 +444,10 @@ class Main extends Sprite
 			watermarkSprite.visible = ClientPrefs.data.showWatermark;
 			openfl.Lib.current.stage.addChild(watermarkSprite);
 		} else {
-			trace('No se pudo cargar la marca de agua con backend.Paths.image("marca").');
+			trace('No se pudo cargar la marca de agua con funkin.Paths.image("marca").');
 		}
 
-		var imagePath = backend.Paths.getPath('images/marca.png', IMAGE);
+		var imagePath = funkin.Paths.getPath('images/marca.png', IMAGE);
 		if (sys.FileSystem.exists(imagePath)) {
 		    if (watermark != null && watermark.parent != null)
 		        removeChild(watermark);

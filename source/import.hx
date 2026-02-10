@@ -1,7 +1,7 @@
 #if !macro
 //Discord API
 #if DISCORD_ALLOWED
-import backend.Discord;
+import funkin.api.discord.Discord;
 #end
 
 //Psych
@@ -11,19 +11,19 @@ import llua.Lua;
 #end
 
 #if ACHIEVEMENTS_ALLOWED
-import backend.Achievements;
+import funkin.data.Achievements;
 #end
 
 // Mobile Controls
-import mobile.objects.MobileControls;
-import mobile.objects.IMobileControls;
-import mobile.objects.Hitbox;
-import mobile.objects.TouchPad;
-import mobile.objects.TouchButton;
-import mobile.input.MobileInputID;
-import mobile.backend.MobileData;
-import mobile.input.MobileInputManager;
-import mobile.backend.TouchUtil;
+import funkin.mobile.objects.MobileControls;
+import funkin.mobile.objects.IMobileControls;
+import funkin.mobile.objects.Hitbox;
+import funkin.mobile.objects.TouchPad;
+import funkin.mobile.objects.TouchButton;
+import funkin.mobile.input.MobileInputID;
+import funkin.mobile.backend.MobileData;
+import funkin.mobile.input.MobileInputManager;
+import funkin.mobile.backend.TouchUtil;
 
 // Android
 #if android
@@ -45,27 +45,31 @@ import sys.io.*;
 import js.html.*;
 #end
 
-import backend.Paths;
-import backend.Controls;
-import backend.CoolUtil;
-import backend.MusicBeatState;
-import backend.MusicBeatSubstate;
-import backend.CustomFadeTransition;
-import backend.ClientPrefs;
-import backend.Conductor;
-import backend.BaseStage;
-import backend.Difficulty;
-import backend.Mods;
-import backend.Language;
-import mobile.backend.StorageUtil;
+import funkin.Paths;
+import funkin.input.Controls;
+import funkin.util.CoolUtil;
+import funkin.util.MemoryManager;
+import funkin.util.ThreadUtil;
+import funkin.util.ObjectPool;
+import funkin.util.SystemMemory;
+import funkin.ui.MusicBeatState;
+import funkin.ui.MusicBeatSubstate;
+import funkin.ui.transition.CustomFadeTransition;
+import funkin.Preferences as ClientPrefs;
+import funkin.audio.Conductor;
+import funkin.play.stage.BaseStage;
+import funkin.data.Difficulty;
+import funkin.modding.Mods;
+import funkin.ui.Language;
+import funkin.mobile.backend.StorageUtil;
 
-import backend.ui.*; //Psych-UI
+import funkin.ui.components.*; //Psych-UI
 
-import objects.Alphabet;
-import objects.BGSprite;
+import funkin.ui.Alphabet;
+import funkin.play.stage.BGSprite;
 
-import states.PlayState;
-import states.LoadingState;
+import funkin.play.PlayState;
+import funkin.ui.LoadingState;
 
 #if flxanimate
 import flxanimate.*;
@@ -88,7 +92,8 @@ import flixel.tweens.FlxTween;
 import flixel.group.FlxSpriteGroup;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.addons.transition.FlxTransitionableState;
-import shaders.flixel.system.FlxShader;
+import funkin.graphics.shaders.flixel.system.FlxShader;
 
+// Uh?
 using StringTools;
 #end

@@ -144,6 +144,9 @@
 	<haxedef name="HXCPP_CFLAGS" value="-std=c99 -Wno-error=deprecated-non-prototype -Wno-deprecated-declarations -Wno-unused-command-line-argument -Wno-macro-redefined" if="macos || ios" />
 	<haxeflag name="-D" value="no-deprecation-warnings"/>
 
+	<!-- Android deprecation flags :v -->
+	<haxedef name="HXCPP_CFLAGS" value="-Wno-error=deprecated-non-prototype" if="android" />
+
 	<!-- Enables a terminal log prompt on debug builds -->
 	<haxelib name="hxcpp-debug-server" if="debug"/>
 	<haxedef name="HXC_LIBVLC_LOGGING" if="VIDEOS_ALLOWED debug" />
@@ -202,7 +205,7 @@
 	<haxedef name="message.reporting" value="pretty" />
 
 	<!-- Do whatever you want I'm tired uninstall and install everytime -->
-	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
+	<certificate path="key.keystore" password="plusengine" alias="plusengine" alias-password="plusengine" if="android" unless="debug" />
 
 	<!-- Category Type for Apple Systems -->
 	<config:ios category_type="public.app-category.music-games" />
@@ -230,32 +233,45 @@
 		<assets path="assets/modchart/eyeShape.csv" rename="modchart/eyeShape.csv" embed="true" />
 		<haxedef name="FM_ENGINE" value="PSYCH"/>
     	<haxedef name="FM_ENGINE_VERSION" value="1.0"/>
-    	<haxeflag name="--macro" value="modchart.backend.macros.Macro.includeFiles()"/>
+    	<haxeflag name="--macro" value="funkin.modding.modchart.backend.macros.Macro.includeFiles()"/>
 		<haxeflag name="source/extraParams.hxml" unless="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.buildFlxCamera())', 'flixel.FlxCamera')" if="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.buildFlxDrawTrianglesItem())', 'flixel.graphics.tile.FlxDrawTrianglesItem')" if="ios"/>
-		<haxeflag name="--macro" value="addMetadata('@:build(modchart.backend.macros.Macro.addModchartStorage())', 'flixel.FlxBasic')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.buildFlxCamera())', 'flixel.FlxCamera')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.buildFlxDrawTrianglesItem())', 'flixel.graphics.tile.FlxDrawTrianglesItem')" if="ios"/>
+		<haxeflag name="--macro" value="addMetadata('@:build(funkin.modding.modchart.backend.macros.Macro.addModchartStorage())', 'flixel.FlxBasic')" if="ios"/>
 	</section>
 
 	<!-- _________________________________ Custom _______________________________ -->
 
 	<assets path='art/icons/iconOG.png' rename='icon.png' if="linux || mac" />
 	
-	<icon path="art/icons/icon16.png" size='16'/>
-	<icon path="art/icons/icon32.png" size='32'/>
-	<icon path="art/icons/icon64.png" size='64'/>
-	<icon path="art/icons/iconOG.png" />
-	<icon path="art/icons/mobile/icon32.png" size='32' if="android" />
-	<icon path="art/icons/mobile/icon64.png" size='64' if="android" />
-	<icon path="art/icons/mobile/iconOG.png" if="android" />
-	<icon path="art/icons/iOS/bf-Default-iOS 29x29@2x.png" size='29' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 40x40@2x.png" size='40' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 57x57@1x.png" size='57' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 58x58@2x.png" size='58' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 60x60@3x.png" size='60' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 80x80@2x.png" size='80' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 87x87@3x.png" size='87' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 114x114@2x.png" size='114' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 120x120@2x.png" size='120' if="ios" />
-	<icon path="art/icons/iOS/bf-Default-iOS 180x180@3x.png" size='180' if="ios" />
+	<!-- Desktop and other platforms icons (excluding Android which uses adaptive icons) -->
+	<icon path="art/icons/icon16.png" size='16' unless="android"/>
+	<icon path="art/icons/icon32.png" size='32' unless="android"/>
+	<icon path="art/icons/icon64.png" size='64' unless="android"/>
+	<icon path="art/icons/iconOG.png" unless="android"/>
+	
+	<section if="android">
+		<!-- Android Permissions -->
+		<config:android permission="android.permission.INTERNET" />
+		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
+		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
+		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
+		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
+		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
+		
+		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
+		<config:android target-sdk-version="35" />
+		<android target-sdk-version="35" />
+		
+		<!-- Android templates for adaptive icons with Material Design 3 support -->
+		<template path="templates/android" />
+	</section>
+
+	<section if="ios">
+	    <icon path="art/icons/PlusEngine.appiconset/iOS-Default.png"/>
+		<icon path="art/icons/PlusEngine.appiconset/iOS-Dark.png"/>
+		<icon path="art/icons/PlusEngine.appiconset/iOS-Tinted.png"/>
+	</section>
 </project>

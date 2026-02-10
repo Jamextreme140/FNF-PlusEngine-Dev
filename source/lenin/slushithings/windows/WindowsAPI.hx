@@ -10,7 +10,7 @@ import lime.system.System;
 import lenin.slushithings.windows.WindowsCPP;
 import lenin.slushithings.windows.winGDIThings.SlushiWinGDI;
 import lenin.slushithings.windows.winGDIThings.WinGDIThread;
-import psychlua.LuaUtils;
+import funkin.modding.scripting.psychlua.LuaUtils;
 #end
 
 /**
@@ -37,7 +37,7 @@ class WindowsAPI
 	public static function capture(path:String):Void
 	{
 		#if windows
-		WindowsCPP.captureFullScreen(path);
+		WindowsCPP.captureGameWindow(path);
 		#else
 		trace("[Screenshot]: Screenshot capture is only available on Windows");
 		#end
@@ -258,6 +258,62 @@ class WindowsAPI
 		}
 		return 0;
 		#else
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the total physical RAM installed in the system (in MB)
+	 * @return Total RAM in megabytes
+	 */
+	public static function getTotalSystemRAM():Int
+	{
+		#if windows
+		return WindowsCPP.getTotalSystemRAM();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the available (free) physical RAM (in MB)
+	 * @return Available RAM in megabytes
+	 */
+	public static function getAvailableRAM():Int
+	{
+		#if windows
+		return WindowsCPP.getAvailableSystemRAM();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the memory usage percentage (0-100)
+	 * @return Percentage of RAM currently in use
+	 */
+	public static function getMemoryUsagePercentage():Int
+	{
+		#if windows
+		return WindowsCPP.getMemoryLoadPercentage();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the number of CPU cores
+	 * @return Number of logical processors
+	 */
+	public static function getCPUCoreCount():Int
+	{
+		#if windows
+		return WindowsCPP.getCPUCoreCount();
+		#else
+		trace("CPU info is only available on Windows");
 		return 0;
 		#end
 	}

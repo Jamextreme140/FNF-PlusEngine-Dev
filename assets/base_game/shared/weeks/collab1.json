@@ -1,0 +1,30 @@
+{
+	"storyName": "collab1",
+	"hideFreeplay": false,
+	"weekBackground": "sserafim",
+	"freeplayColor": [
+		255,
+		234,
+		154
+	],
+	"weekBefore": "tutorial",
+	"startUnlocked": true,
+	"weekCharacters": [
+		"",
+		"",
+		""
+	],
+	"songs": [
+		[
+			"spaghetti",
+			"spaghetti",
+			[
+				212,
+				0,
+				45
+			]
+		]
+	],
+	"hideStoryMode": true,
+	"weekName": "Collab1"
+}

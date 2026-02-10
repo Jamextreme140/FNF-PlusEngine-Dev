@@ -12,6 +12,7 @@ package lenin.slushithings.windows;
     <lib name="shell32.lib" if="windows" />
     <lib name="gdi32.lib" if="windows" />
     <lib name="user32.lib" if="windows" />
+    <lib name="psapi.lib" if="windows" />
 </target>
 ')
 #if windows
@@ -34,6 +35,8 @@ package lenin.slushithings.windows;
 
 #include <chrono>
 #include <thread>
+#include <sysinfoapi.h>
+#include <psapi.h>
 
 #define UNICODE
 
@@ -42,6 +45,7 @@ package lenin.slushithings.windows;
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "Shell32.lib")
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "psapi.lib")
 
 // This is so that all window-related functions ALWAYS apply to the engine window.
 static std::string globalWindowTitle = "Friday Night Funkin\': Plus Engine";
@@ -285,6 +289,28 @@ class WindowsCPP
 		screenCapture(0, 0, screenWidth, screenHeight, path);
 	')
 	public static function captureFullScreen(path:String):Void
+	{
+	}
+
+	/**
+	 * Captures only the game window and saves it to a file
+	 * @param path The path where to save the screenshot (must be absolute path)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (hwnd) {
+			RECT rc;
+			GetClientRect(hwnd, &rc);
+			int width = rc.right - rc.left;
+			int height = rc.bottom - rc.top;
+			
+			POINT pt = {0, 0};
+			ClientToScreen(hwnd, &pt);
+			
+			screenCapture(pt.x, pt.y, width, height, path);
+		}
+	')
+	public static function captureGameWindow(path:String):Void
 	{
 	}
 
@@ -614,6 +640,261 @@ class WindowsCPP
 	')
 	public static function setWindowLayeredMode(numberMode:Int)
 	{
+	}
+
+	/**
+	 * Gets the actual screen width using GetSystemMetrics (DPI-aware and accurate)
+	 * @return Screen width in pixels
+	 */
+	@:functionCode('
+		return GetSystemMetrics(SM_CXSCREEN);
+	')
+	public static function getScreenWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual screen height using GetSystemMetrics (DPI-aware and accurate)
+	 * @return Screen height in pixels
+	 */
+	@:functionCode('
+		return GetSystemMetrics(SM_CYSCREEN);
+	')
+	public static function getScreenHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the work area width (screen minus taskbar)
+	 * @return Work area width in pixels
+	 */
+	@:functionCode('
+		RECT rect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		return rect.right - rect.left;
+	')
+	public static function getWorkAreaWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the work area height (screen minus taskbar)
+	 * @return Work area height in pixels
+	 */
+	@:functionCode('
+		RECT rect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		return rect.bottom - rect.top;
+	')
+	public static function getWorkAreaHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual window client area width (excluding borders)
+	 * @return Client width in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetClientRect(window, &rect)) {
+			return rect.right - rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowClientWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the actual window client area height (excluding borders and title bar)
+	 * @return Client height in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetClientRect(window, &rect)) {
+			return rect.bottom - rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowClientHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the total window width (including borders and decorations)
+	 * @return Window width in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.right - rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowWidth():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the total window height (including borders, title bar and decorations)
+	 * @return Window height in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.bottom - rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowHeight():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the window X position on screen
+	 * @return Window X coordinate in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.left;
+		}
+		return 0;
+	')
+	public static function getWindowX():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the window Y position on screen
+	 * @return Window Y coordinate in pixels
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		RECT rect;
+		if (GetWindowRect(window, &rect)) {
+			return rect.top;
+		}
+		return 0;
+	')
+	public static function getWindowY():Int
+	{
+		return 0;
+	}
+
+	// === Memory Information Functions ===
+
+	/**
+	 * Gets the total physical RAM installed in the system (in MB)
+	 * @return Total RAM in megabytes
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+			// Convert bytes to MB
+			return (int)(totalPhysMem / 1024 / 1024);
+		}
+		
+		return 0;
+	')
+	public static function getTotalSystemRAM():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the available (free) physical RAM (in MB)
+	 * @return Available RAM in megabytes
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			DWORDLONG availPhysMem = memInfo.ullAvailPhys;
+			// Convert bytes to MB
+			return (int)(availPhysMem / 1024 / 1024);
+		}
+		
+		return 0;
+	')
+	public static function getAvailableSystemRAM():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the memory load percentage (0-100)
+	 * @return Memory usage percentage
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			return (int)memInfo.dwMemoryLoad;
+		}
+		
+		return 0;
+	')
+	public static function getMemoryLoadPercentage():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the number of CPU cores
+	 * @return Number of logical processors
+	 */
+	@:functionCode('
+		SYSTEM_INFO sysInfo;
+		GetSystemInfo(&sysInfo);
+		return (int)sysInfo.dwNumberOfProcessors;
+	')
+	public static function getCPUCoreCount():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the current process memory usage (Working Set) in bytes.
+	 * This is the "Task Memory" shown in Task Manager.
+	 * Same as WinAPI.getProcessMemoryWorkingSetSize() in official Funkin.
+	 * @return Process memory usage in bytes as Float
+	 */
+	@:functionCode('
+		PROCESS_MEMORY_COUNTERS_EX pmc;
+		pmc.cb = sizeof(PROCESS_MEMORY_COUNTERS_EX);
+		
+		if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+			// WorkingSetSize is the current working set (Task Memory)
+			SIZE_T workingSetSize = pmc.WorkingSetSize;
+			// Return as bytes (double for precision)
+			return (double)workingSetSize;
+		}
+		
+		return 0.0;
+	')
+	public static function getProcessMemoryUsage():Float
+	{
+		return 0.0;
 	}
 	#end
 }

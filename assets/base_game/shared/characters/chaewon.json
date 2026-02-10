@@ -1,0 +1,128 @@
+{
+	"animations": [
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				0
+			],
+			"anim": "idle",
+			"fps": 12,
+			"name": "idle",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				0
+			],
+			"anim": "singLEFT",
+			"fps": 12,
+			"name": "left0",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				0
+			],
+			"anim": "singDOWN",
+			"fps": 12,
+			"name": "down0",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				0
+			],
+			"anim": "singUP",
+			"fps": 12,
+			"name": "up0",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				0,
+				0
+			],
+			"anim": "singRIGHT",
+			"fps": 12,
+			"name": "right0",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				-133,
+				-30
+			],
+			"anim": "singLEFTmiss",
+			"fps": 12,
+			"name": "left miss",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				-39,
+				-8
+			],
+			"anim": "singDOWNmiss",
+			"fps": 12,
+			"name": "down miss",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				-49,
+				-4
+			],
+			"anim": "singUPmiss",
+			"fps": 12,
+			"name": "up miss",
+			"indices": []
+		},
+		{
+			"loop": false,
+			"offsets": [
+				-12,
+				20
+			],
+			"anim": "singRIGHTmiss",
+			"fps": 12,
+			"name": "right miss",
+			"indices": []
+		}
+	],
+	"taunts": [
+		"hey",
+		"hey",
+		"hey",
+		"hey"
+	],
+	"no_antialiasing": false,
+	"image": "characters/chaewon",
+	"position": [
+		-315,
+		65
+	],
+	"healthicon": "chaewon",
+	"flip_x": false,
+	"healthbar_colors": [
+		178,
+		2,
+		92
+	],
+	"camera_position": [
+		0,
+		0
+	],
+	"sing_duration": 4,
+	"scale": 1.4
+}
