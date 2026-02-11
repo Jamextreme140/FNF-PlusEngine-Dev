@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Mobile Porting Team
+ * Copyright (C) 2026 Mobile Porting Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,8 +26,9 @@ import flixel.FlxObject;
 import flixel.input.touch.FlxTouch;
 
 /**
- * ...
- * @author: Karim Akra
+ * Utility class for handling touch input within the FlxG context.
+ * Based on Funkin base implementation by FunkinCrew
+ * @author: Karim Akra (rework by Lenin)
  */
 class TouchUtil
 {
@@ -36,6 +37,36 @@ class TouchUtil
 	public static var justReleased(get, never):Bool;
 	public static var released(get, never):Bool;
 	public static var touch(get, never):FlxTouch;
+
+	/**
+	 * Checks if an object was touched/pressed
+	 * @param object The FlxObject to check for touch
+	 * @param camera The camera to use for checking (optional, uses object's camera if null)
+	 * @param justPressed If true, only returns true on justPressed. If false, returns true on both pressed and justPressed
+	 * @return Whether the object was touched
+	 */
+	public static function pressAction(object:FlxObject, ?camera:FlxCamera, justPressed:Bool = true):Bool
+	{
+		if (object == null) return false;
+		
+		if (camera == null)
+			camera = object.camera;
+		
+		for (touch in FlxG.touches.list)
+		{
+			if (touch == null) continue;
+			
+			// Check if touch is pressed or just pressed based on parameter
+			var touchCondition = justPressed ? touch.justPressed : (touch.justPressed || touch.pressed);
+			
+			if (touchCondition && object.overlapsPoint(touch.getWorldPosition(camera), true, camera))
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 	public static function overlaps(object:FlxObject, ?camera:FlxCamera):Bool
 	{

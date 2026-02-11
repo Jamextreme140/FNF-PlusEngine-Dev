@@ -174,6 +174,11 @@ class OptionsState extends MusicBeatState
 			if (controls.UI_DOWN_P)
 				changeSelection(1);
 			
+			#if mobile
+			// Touch support for option items
+			handleTouchOptions();
+			#end
+			
 			if (touchPad.buttonC.justPressed || FlxG.keys.justPressed.CONTROL && controls.mobileC)
 			{
 				persistentUpdate = false;
@@ -198,6 +203,36 @@ class OptionsState extends MusicBeatState
 			else if (controls.ACCEPT) openSelectedSubstate(options[curSelected]);
 		}
 	}
+	
+	#if mobile
+	function handleTouchOptions():Void
+	{
+		for (i in 0...grpOptions.members.length)
+		{
+			var item = grpOptions.members[i];
+			if (item != null && funkin.mobile.backend.TouchUtil.pressAction(item, null, true))
+			{
+				if (i == curSelected)
+				{
+					// Tapped on selected item - open it
+					openSelectedSubstate(options[curSelected]);
+				}
+				else
+				{
+					// Tapped on different item - select it
+					var prevSelected = curSelected;
+					curSelected = i;
+					for (num => optionItem in grpOptions.members)
+					{
+						optionItem.targetY = num;
+					}
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+				}
+				break;
+			}
+		}
+	}
+	#end
 	
 	function changeSelection(change:Int = 0)
 	{

@@ -158,6 +158,11 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 
 		if (controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown.justPressed))
 			changeSelection(1);
+		
+		#if mobile
+		// Touch support for option items
+		handleTouchOptions();
+		#end
 
 		if (controls.BACK || (touchPad != null && touchPad.buttonB.justPressed))
 		{
@@ -336,6 +341,65 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 
 		holdTime = 0;
 	}
+	
+	#if mobile
+	function handleTouchOptions():Void
+	{
+		// Check if tapped on any option
+		for (i in 0...grpOptions.members.length)
+		{
+			var item = grpOptions.members[i];
+			if (item != null && funkin.mobile.backend.TouchUtil.pressAction(item, null, true))
+			{
+				if (i == curSelected)
+				{
+					// Tapped on selected item - activate it
+					if(optionsArray[i].type == BOOL)
+					{
+						FlxG.sound.play(Paths.sound('scrollMenu'));
+						optionsArray[i].setValue((optionsArray[i].getValue() == true) ? false : true);
+						optionsArray[i].change();
+						reloadCheckboxes();
+					}
+				}
+				else
+				{
+					// Tapped on different item - select it
+					curSelected = i;
+					for (num => optionItem in grpOptions.members)
+					{
+						optionItem.targetY = num - curSelected;
+						optionItem.alpha = 0.6;
+						if (optionItem.targetY == 0) optionItem.alpha = 1;
+					}
+					for (text in grpTexts)
+					{
+						text.alpha = 0.6;
+						if(text.ID == curSelected) text.alpha = 1;
+					}
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+				}
+				break;
+			}
+		}
+		
+		// Handle checkbox touches
+		for (checkbox in checkboxGroup)
+		{
+			if (checkbox != null && funkin.mobile.backend.TouchUtil.pressAction(checkbox, null, true))
+			{
+				if (checkbox.ID == curSelected)
+				{
+					FlxG.sound.play(Paths.sound('scrollMenu'));
+					optionsArray[checkbox.ID].setValue((optionsArray[checkbox.ID].getValue() == true) ? false : true);
+					optionsArray[checkbox.ID].change();
+					reloadCheckboxes();
+				}
+				break;
+			}
+		}
+	}
+	#end
 	
 	function changeSelection(change:Int = 0)
 	{

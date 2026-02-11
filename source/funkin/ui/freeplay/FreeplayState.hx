@@ -582,6 +582,11 @@ class FreeplayState extends MusicBeatState
 				{
 					changeDifficultySelection(1);
 				}
+				
+				#if mobile
+				// Touch support for difficulty cards
+				handleTouchDifficultyCards();
+				#end
 			}
 		}
 		
@@ -865,6 +870,31 @@ class FreeplayState extends MusicBeatState
 		opponentVocals = FlxDestroyUtil.destroy(opponentVocals);
 	}
 
+	#if mobile
+	function handleTouchDifficultyCards():Void
+	{
+		if (!inDifficultySelect || difficultySelector == null) return;
+		
+		// Check for tap on difficulty cards
+		for (i in 0...difficultySelector.cards.members.length)
+		{
+			var card = difficultySelector.cards.members[i];
+			if (card != null && card.visible && card.alpha > 0.3)
+			{
+				if (funkin.mobile.backend.TouchUtil.pressAction(card, null, true))
+				{
+					var difference = i - difficultySelector.curSelected;
+					if (difference != 0)
+					{
+						changeDifficultySelection(difference);
+					}
+					break;
+				}
+			}
+		}
+	}
+	#end
+	
 	function changeDiff(change:Int = 0)
 	{
 		if (player.playingMusic)
