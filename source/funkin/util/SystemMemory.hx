@@ -163,24 +163,93 @@ class SystemMemory
         {
             var content = sys.io.File.getContent("/proc/meminfo");
             var lines = content.split("\n");
-            var searchKey = total ? "MemTotal:" : "MemAvailable:";
             
-            for (line in lines)
+            if (total)
             {
-                if (line.indexOf(searchKey) == 0)
+                // Get total RAM (always available)
+                for (line in lines)
                 {
-                    // Format: MemTotal:       16384000 kB
-                    var parts = line.split(":");
-                    if (parts.length >= 2)
+                    if (line.indexOf("MemTotal:") == 0)
                     {
-                        var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                        var kb = Std.parseInt(valueStr);
-                        if (kb != null)
+                        // Format: MemTotal:       16384000 kB
+                        var parts = line.split(":");
+                        if (parts.length >= 2)
                         {
-                            // Convert KB to MB
-                            return Std.int(kb / 1024);
+                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
+                            var kb = Std.parseInt(valueStr);
+                            if (kb != null)
+                            {
+                                // Convert KB to MB
+                                return Std.int(kb / 1024);
+                            }
                         }
                     }
+                }
+            }
+            else
+            {
+                // Get available RAM - try MemAvailable first (Linux 3.14+)
+                for (line in lines)
+                {
+                    if (line.indexOf("MemAvailable:") == 0)
+                    {
+                        var parts = line.split(":");
+                        if (parts.length >= 2)
+                        {
+                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
+                            var kb = Std.parseInt(valueStr);
+                            if (kb != null)
+                            {
+                                return Std.int(kb / 1024);
+                            }
+                        }
+                    }
+                }
+                
+                // Fallback for older Android/Linux: MemFree + Buffers + Cached
+                var memFree:Int = 0;
+                var buffers:Int = 0;
+                var cached:Int = 0;
+                
+                for (line in lines)
+                {
+                    if (line.indexOf("MemFree:") == 0)
+                    {
+                        var parts = line.split(":");
+                        if (parts.length >= 2)
+                        {
+                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
+                            var kb = Std.parseInt(valueStr);
+                            if (kb != null) memFree = kb;
+                        }
+                    }
+                    else if (line.indexOf("Buffers:") == 0)
+                    {
+                        var parts = line.split(":");
+                        if (parts.length >= 2)
+                        {
+                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
+                            var kb = Std.parseInt(valueStr);
+                            if (kb != null) buffers = kb;
+                        }
+                    }
+                    else if (line.indexOf("Cached:") == 0 && line.indexOf("SwapCached:") != 0)
+                    {
+                        var parts = line.split(":");
+                        if (parts.length >= 2)
+                        {
+                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
+                            var kb = Std.parseInt(valueStr);
+                            if (kb != null) cached = kb;
+                        }
+                    }
+                }
+                
+                // If we got all three values, calculate available RAM
+                if (memFree > 0)
+                {
+                    var availableKB = memFree + buffers + cached;
+                    return Std.int(availableKB / 1024);
                 }
             }
         }

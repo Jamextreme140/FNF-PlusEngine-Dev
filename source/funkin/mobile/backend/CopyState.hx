@@ -271,16 +271,12 @@ class CopyState extends MusicBeatState
 
 	public static function checkExistingFiles():Bool
 	{
-		
 		locatedFiles = OpenFLAssets.list();
 
 		// removes unwanted assets
 		var assets = locatedFiles.filter(folder -> folder.startsWith('assets/'));
 		var mods = locatedFiles.filter(folder -> folder.startsWith('mods/'));
 		locatedFiles = assets.concat(mods);
-		
-		#if android
-		#end
 		
 		#if android
 		// Check if files exist in their respective storage locations

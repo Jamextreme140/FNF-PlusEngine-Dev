@@ -186,7 +186,7 @@ class TitleState extends MusicBeatState
 		var enterPositionMobileY = 590;
 
 		titleTextMobile = new FlxSprite(enterPositionMobileX, enterPositionMobileY);
-		titleTextMobile.frames = Paths.getSparrowAtlas('mobile/images/titleEnter');
+		titleTextMobile.frames = Paths.getSparrowAtlas('mobile/titleEnter');
 		#else
 		titleText = new FlxSprite(enterPosition.x, enterPosition.y);
 		titleText.frames = Paths.getSparrowAtlas('titleEnter');

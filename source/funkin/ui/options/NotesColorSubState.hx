@@ -189,9 +189,15 @@ class NotesColorSubState extends MusicBeatSubstate
 
 		addTouchPad('NONE', 'B_C');
 		controls.isInSubstate = true;
-		touchPad.buttonB.x = FlxG.width - 132;
-		touchPad.buttonC.x = 0;
-		touchPad.buttonC.y = FlxG.height - 135;
+		if (touchPad != null)
+		{
+			if (touchPad.buttonB != null) touchPad.buttonB.x = FlxG.width - 132;
+			if (touchPad.buttonC != null)
+			{
+				touchPad.buttonC.x = 0;
+				touchPad.buttonC.y = FlxG.height - 135;
+			}
+		}
 	}
 
 	function updateTip()
@@ -494,7 +500,7 @@ class NotesColorSubState extends MusicBeatSubstate
 				}
 			} 
 		}
-		else if(touchPad.buttonC.justPressed || controls.RESET && hexTypeNum < 0)
+		else if((touchPad != null && touchPad.buttonC != null && touchPad.buttonC.justPressed) || (controls.RESET && hexTypeNum < 0))
 		{
 			if(FlxG.keys.pressed.SHIFT || FlxG.gamepads.anyPressed(LEFT_SHOULDER))
 			{

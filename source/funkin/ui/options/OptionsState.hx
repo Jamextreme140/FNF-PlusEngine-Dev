@@ -179,7 +179,7 @@ class OptionsState extends MusicBeatState
 			handleTouchOptions();
 			#end
 			
-			if (touchPad.buttonC.justPressed || FlxG.keys.justPressed.CONTROL && controls.mobileC)
+			if ((touchPad != null && touchPad.buttonC != null && touchPad.buttonC.justPressed) || (FlxG.keys.justPressed.CONTROL && controls.mobileC))
 			{
 				persistentUpdate = false;
 				openSubState(new funkin.mobile.substates.MobileControlSelectSubState());

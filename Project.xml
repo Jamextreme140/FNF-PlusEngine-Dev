@@ -251,6 +251,13 @@
 	<icon path="art/icons/iconOG.png" unless="android"/>
 	
 	<section if="android">
+		<!-- Force adaptive launcher icon from our Android res template -->
+		<config:android>
+			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
+		</config:android>
+		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
+		<assets path="templates/android/res" rename="app/src/main/res" type="template" />
+		
 		<!-- Android Permissions -->
 		<config:android permission="android.permission.INTERNET" />
 		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
@@ -264,9 +271,6 @@
 		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
 		<config:android target-sdk-version="35" />
 		<android target-sdk-version="35" />
-		
-		<!-- Android templates for adaptive icons with Material Design 3 support -->
-		<template path="templates/android" />
 	</section>
 
 	<section if="ios">
