@@ -402,7 +402,7 @@ class IdID
         "setting_optimize_hold_rendering" => "Optimalkan Rendering Hold",
         "description_optimize_hold_rendering" => "Mengurangi perhitungan hold note untuk kinerja yang ~2x lebih baik.\nTIDAK disarankan untuk digunakan dengan modchart yang kompleks (dapat menyebabkan glitch visual).",
         "setting_z_axis_depth_scale" => "Skala Kedalaman Sumbu Z",
-        "description_z_axis__depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
+        "description_z_axis_depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
         "setting_render_arrow_paths" => "Render Jalur Panah",
         "description_render_arrow_paths" => "Jika dicentang: Menampilkan garis lintasan panah.\nPERINGATAN: Dapat mempengaruhi kinerja secara signifikan.",
         "setting_styled_arrow_paths" => "Jalur Panah Berdesain",
