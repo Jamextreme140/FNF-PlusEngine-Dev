@@ -5,20 +5,21 @@ import flixel.tweens.FlxEase;
 import haxe.Http;
 
 import funkin.ui.mainmenu.MainMenuState;
+import funkin.util.UpdateManager;
+import funkin.util.VersionUtil;
 
 class OutdatedSubState extends MusicBeatSubstate
 {
-    public static var updateVersion:String = ""; // Agregar esta variable estática
-    
 	var leftState:Bool = false;
-    var changelogLoaded:Bool = false;
-    var changelog:String = "";
+	var changelogLoaded:Bool = false;
+	var changelog:String = "";
 
 	var bg:FlxSprite;
-    var titleText:FlxText;
-    var versionText:FlxText;
-    var changelogText:FlxText;
-    var controlsText:FlxText;
+	var titleText:FlxText;
+	var versionText:FlxText;
+	var changelogText:FlxText;
+	var controlsText:FlxText;
+	var platformText:FlxText;
 
 	override function create()
 	{
@@ -33,94 +34,106 @@ class OutdatedSubState extends MusicBeatSubstate
 		bg.alpha = 0.0;
 		add(bg);
 
-        // Title text - "Update Available!"
-        titleText = new FlxText(0, 50, FlxG.width, 
-            Language.getPhrase('update_available_title', "Update Available!")
-        );
-        titleText.setFormat(Paths.font('phantom.ttf'), 48, FlxColor.YELLOW, CENTER);
-        titleText.scrollFactor.set();
-        titleText.alpha = 0.0;
-        add(titleText);
+		// Title text - "Update Available!"
+		titleText = new FlxText(0, 30, FlxG.width, 
+			Language.getPhrase('update_available_title', "Update Available!")
+		);
+		titleText.setFormat(Paths.font('phantom.ttf'), 48, FlxColor.YELLOW, CENTER);
+		titleText.scrollFactor.set();
+		titleText.alpha = 0.0;
+		add(titleText);
 
-        // Version comparison text
-        versionText = new FlxText(0, 120, FlxG.width,
-            Language.getPhrase('version_comparison', "Current Version: {1} => New Version: {2}", 
-                [MainMenuState.plusEngineVersion, updateVersion])
-        );
-        versionText.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER);
-        versionText.scrollFactor.set();
-        versionText.alpha = 0.0;
-        add(versionText);
+		// Version comparison text with semantic versioning
+		var currentVer = UpdateManager.currentVersion;
+		var latestVer = UpdateManager.latestVersion;
+		versionText = new FlxText(0, 90, FlxG.width,
+			Language.getPhrase('version_comparison', "Current: {1} → New: {2}", 
+				[currentVer, latestVer])
+		);
+		versionText.setFormat(Paths.font('phantom.ttf'), 26, FlxColor.WHITE, CENTER);
+		versionText.scrollFactor.set();
+		versionText.alpha = 0.0;
+		add(versionText);
 
-        // Changelog text (will be loaded from GitHub)
-        changelogText = new FlxText(50, 180, FlxG.width - 100,
-            Language.getPhrase('loading_changelog', "Loading changelog...")
-        );
-        changelogText.setFormat(Paths.font('phantom.ttf'), 22, FlxColor.CYAN, LEFT);
-        changelogText.scrollFactor.set();
-        changelogText.alpha = 0.0;
-        add(changelogText);
+		// Platform text
+		platformText = new FlxText(0, 130, FlxG.width,
+			Language.getPhrase('platform_text', "Platform: {1}", [UpdateManager.getPlatformName()])
+		);
+		platformText.setFormat(Paths.font('phantom.ttf'), 20, FlxColor.LIME, CENTER);
+		platformText.scrollFactor.set();
+		platformText.alpha = 0.0;
+		add(platformText);
 
-        // Controls text - Diferentes instrucciones para móvil y PC
-        #if mobile
-        controlsText = new FlxText(0, FlxG.height - 120, FlxG.width,
-            Language.getPhrase('update_controls_mobile',
-                "Press A to update to the latest version\nPress B if you're on the correct engine version\nYou can disable this warning in Options Menu"
-            )
-        );
-        #else
-        controlsText = new FlxText(0, FlxG.height - 120, FlxG.width,
-            Language.getPhrase('update_controls',
-                "Press ENTER to update to the latest version\nPress ESCAPE if you're on the correct engine version\nYou can disable this warning in Options Menu"
-            )
-        );
-        #end
-        controlsText.setFormat(Paths.font('phantom.ttf'), 20, FlxColor.WHITE, CENTER);
-        controlsText.scrollFactor.set();
-        controlsText.alpha = 0.0;
-        add(controlsText);
+		// Changelog text (will be loaded from GitHub)
+		changelogText = new FlxText(40, 170, FlxG.width - 80,
+			Language.getPhrase('loading_changelog', "Loading changelog...")
+		);
+		changelogText.setFormat(Paths.font('phantom.ttf'), 18, FlxColor.CYAN, LEFT);
+		changelogText.scrollFactor.set();
+		changelogText.alpha = 0.0;
+		add(changelogText);
 
-        // TouchPad para dispositivos móviles con animación visible
-        #if mobile
-        addTouchPad("NONE", "A_B");
-        touchPad.alpha = 1.0;
-        #end
+		// Controls text - Different instructions for mobile and PC
+		#if mobile
+		controlsText = new FlxText(0, FlxG.height - 100, FlxG.width,
+			Language.getPhrase('update_controls_mobile',
+				"Press A to download update\nPress B to continue\nDisable this in Options"
+			)
+		);
+		#else
+		controlsText = new FlxText(0, FlxG.height - 100, FlxG.width,
+			Language.getPhrase('update_controls',
+				"Press ENTER to download update\nPress ESC to continue\nDisable this in Options"
+			)
+		);
+		#end
+		controlsText.setFormat(Paths.font('phantom.ttf'), 18, FlxColor.WHITE, CENTER);
+		controlsText.scrollFactor.set();
+		controlsText.alpha = 0.0;
+		add(controlsText);
+
+		// TouchPad for mobile devices with visible animation
+		#if mobile
+		addTouchPad("NONE", "A_B");
+		touchPad.alpha = 1.0;
+		#end
 
 		// Start animations
 		FlxTween.tween(bg, { alpha: 0.8 }, 0.6, { ease: FlxEase.sineIn });
-        FlxTween.tween(titleText, { alpha: 1.0 }, 0.6, { ease: FlxEase.sineIn });
-        FlxTween.tween(versionText, { alpha: 1.0 }, 0.8, { ease: FlxEase.sineIn });
-        FlxTween.tween(changelogText, { alpha: 1.0 }, 1.0, { ease: FlxEase.sineIn });
-        FlxTween.tween(controlsText, { alpha: 1.0 }, 1.2, { ease: FlxEase.sineIn });
+		FlxTween.tween(titleText, { alpha: 1.0 }, 0.6, { ease: FlxEase.sineIn });
+		FlxTween.tween(versionText, { alpha: 1.0 }, 0.8, { ease: FlxEase.sineIn });
+		FlxTween.tween(platformText, { alpha: 1.0 }, 0.9, { ease: FlxEase.sineIn });
+		FlxTween.tween(changelogText, { alpha: 1.0 }, 1.0, { ease: FlxEase.sineIn });
+		FlxTween.tween(controlsText, { alpha: 1.0 }, 1.2, { ease: FlxEase.sineIn });
 
-        // Load changelog from GitHub
-        loadChangelog();
+		// Load changelog from GitHub using UpdateManager URL
+		loadChangelog();
     }
 
-    function loadChangelog():Void
-    {
-        var http = new Http("https://raw.githubusercontent.com/LeninAsto/FNF-PlusEngine/refs/heads/main/gitChangelog.txt");
-        
-        http.onData = function(data:String) {
-            changelog = data;
-            changelogLoaded = true;
-            updateChangelogDisplay();
-        };
-        
-        http.onError = function(error:String) {
-            changelog = Language.getPhrase('changelog_error', "Error loading changelog: {1}", [error]);
-            changelogLoaded = true;
-            updateChangelogDisplay();
-        };
-        
-        http.request();
-    }
+	function loadChangelog():Void
+	{
+		var http = new Http(UpdateManager.changelogURL);
+		
+		http.onData = function(data:String) {
+			changelog = data;
+			changelogLoaded = true;
+			updateChangelogDisplay();
+		};
+		
+		http.onError = function(error:String) {
+			changelog = Language.getPhrase('changelog_error', "Error loading changelog: {1}", [error]);
+			changelogLoaded = true;
+			updateChangelogDisplay();
+		};
+		
+		http.request();
+	}
 
-    function updateChangelogDisplay():Void
-    {
-        if (changelogLoaded && changelogText != null) {
-            changelogText.text = Language.getPhrase('changelog_title', "What's New:\n{1}", [changelog]);
-        }
+	function updateChangelogDisplay():Void
+	{
+		if (changelogLoaded && changelogText != null) {
+			changelogText.text = Language.getPhrase('changelog_title', "What's New:\n{1}", [changelog]);
+		}
 	}
 
 	override function update(elapsed:Float)
@@ -128,7 +141,8 @@ class OutdatedSubState extends MusicBeatSubstate
 		if(!leftState) {
 			if (controls.ACCEPT) {
 				leftState = true;
-                CoolUtil.browserLoad("https://github.com/LeninAsto/FNF-PlusEngine/releases");
+				// Open download page using UpdateManager
+				UpdateManager.openDownloadPage();
 			}
 			else if(controls.BACK) {
 				leftState = true;
@@ -137,7 +151,7 @@ class OutdatedSubState extends MusicBeatSubstate
 			{
 				FlxG.sound.play(Paths.sound('cancelMenu'));
 				
-				// Animar touchPad para que desaparezca en móviles
+				// Animate touchPad to fade out on mobile
 				#if mobile
 				if (touchPad != null) {
 					FlxTween.tween(touchPad, { alpha: 0.0 }, 0.5, { ease: FlxEase.sineOut });
@@ -145,10 +159,11 @@ class OutdatedSubState extends MusicBeatSubstate
 				#end
 				
 				FlxTween.tween(bg, { alpha: 0.0 }, 0.9, { ease: FlxEase.sineOut });
-                FlxTween.tween(titleText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
-                FlxTween.tween(versionText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
-                FlxTween.tween(changelogText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
-                FlxTween.tween(controlsText, {alpha: 0}, 1, {
+				FlxTween.tween(titleText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
+				FlxTween.tween(versionText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
+				FlxTween.tween(platformText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
+				FlxTween.tween(changelogText, {alpha: 0}, 1, { ease: FlxEase.sineOut });
+				FlxTween.tween(controlsText, {alpha: 0}, 1, {
 					ease: FlxEase.sineOut,
 					onComplete: function (twn:FlxTween) {
 						FlxG.state.persistentUpdate = true;

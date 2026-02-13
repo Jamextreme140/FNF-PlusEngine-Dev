@@ -3,10 +3,15 @@ package funkin.util;
 #if windows
 import lenin.slushithings.windows.WindowsCPP;
 #end
+#if cpp
+import lenin.slushithings.cpp.CPPInterface;
+#end
 
 /**
  * Cross-platform system memory detection
  * Supports Windows, Mac, Linux, iOS, and Android
+ * 
+ * Enhanced with Slushi Engine's accurate RAM detection
  */
 @:buildXml('
 <target id="haxe">
@@ -34,6 +39,14 @@ class SystemMemory
      */
     public static function getTotalRAM():Int
     {
+        #if cpp
+        // Use the new accurate CPPInterface for all CPP platforms
+        var ramMB:Float = CPPInterface.getRAM();
+        if (ramMB > 0)
+            return Std.int(ramMB);
+        #end
+        
+        // Fallback to platform-specific detection
         #if windows
         return WindowsCPP.getTotalSystemRAM();
         #elseif android
@@ -81,6 +94,20 @@ class SystemMemory
         #else
         return 1;
         #end
+    }
+
+    /**
+     * Gets a human-readable string representation of total system RAM
+     * @return String like "16.0 GB" or "8.0 GB"
+     */
+    public static function getTotalRAMString():String
+    {
+        var ramMB:Int = getTotalRAM();
+        if (ramMB <= 0)
+            return "Unknown";
+        
+        var ramGB:Float = Math.round((ramMB / 1024) * 100) / 100;
+        return ramGB + " GB";
     }
 
     // === Platform-specific implementations ===
@@ -277,23 +304,5 @@ class SystemMemory
             return false;
         }
         return totalRAM < threshold;
-    }
-
-    /**
-     * Gets a human-readable string of total RAM
-     * @return String like "8192 MB" or "8 GB"
-     */
-    public static function getTotalRAMString():String
-    {
-        var totalMB = getTotalRAM();
-        if (totalMB <= 0)
-            return "Unknown";
-        
-        if (totalMB >= 1024)
-        {
-            var gb = Math.round(totalMB / 1024 * 10) / 10;
-            return gb + " GB";
-        }
-        return totalMB + " MB";
     }
 }

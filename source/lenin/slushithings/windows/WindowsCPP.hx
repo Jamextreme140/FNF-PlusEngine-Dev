@@ -800,23 +800,17 @@ class WindowsCPP
 
 	/**
 	 * Gets the total physical RAM installed in the system (in MB)
+	 * NOW USES: GetPhysicallyInstalledSystemMemory for more accurate detection
 	 * @return Total RAM in megabytes
+	 * @deprecated Use lenin.slushithings.cpp.CPPInterface.getRAM() instead
 	 */
-	@:functionCode('
-		MEMORYSTATUSEX memInfo;
-		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-		
-		if (GlobalMemoryStatusEx(&memInfo)) {
-			DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
-			// Convert bytes to MB
-			return (int)(totalPhysMem / 1024 / 1024);
-		}
-		
-		return 0;
-	')
 	public static function getTotalSystemRAM():Int
 	{
+		#if cpp
+		return Std.int(lenin.slushithings.cpp.CPPInterface.getRAM());
+		#else
 		return 0;
+		#end
 	}
 
 	/**

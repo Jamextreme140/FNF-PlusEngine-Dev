@@ -1,5 +1,9 @@
 package lenin;
 
+#if cpp
+import lenin.slushithings.cpp.CPPInterface;
+#end
+
 /**
  * Gestor del sistema de Heavy Charts
  * Controla la activación y desactivación del modo de charts pesados
@@ -21,24 +25,37 @@ class HeavyChartManager
 	}
 
 	/**
-	 * Obtiene la memoria total disponible en bytes
+	 * Obtiene la memoria total disponible del sistema en bytes
+	 * FIXED: Ahora usa detección de RAM real del sistema, no solo la RAM de la app
 	 */
 	private static function getTotalMemory():Int
 	{
-		// Obtener RAM total disponible del sistema
-		return Std.int(openfl.system.System.totalMemory);
+		#if cpp
+		// Get REAL system RAM in MB, then convert to bytes
+		var ramMB:Float = cast CPPInterface.getRAM();
+		if (ramMB <= 0)
+		{
+			// Fallback if detection fails
+			trace("[HeavyChartManager] RAM detection failed, using fallback value");
+			return 8192 * 1024 * 1024; // Assume 8GB as fallback
+		}
+		return Std.int(ramMB * 1024 * 1024); // Convert MB to bytes
+		#else
+		// Non-CPP platforms: use conservative estimate
+		return 4096 * 1024 * 1024; // 4GB fallback
+		#end
 	}
 
 	/**
-	 * Obtiene la memoria actual en bytes usando el GC de Haxe
+	 * Obtiene la memoria actual en uso por la aplicación en bytes
 	 */
 	private static function getCurrentMemory():Int
 	{
 		#if cpp
 		return Std.int(cpp.vm.Gc.memInfo64(cpp.vm.Gc.MEM_INFO_USAGE));
 		#else
-		// Fallback para otras plataformas
-		return Std.int(openfl.system.System.totalMemory * 0.5);
+		// Fallback: use OpenFL's reported memory (app usage, not system total)
+		return Std.int(openfl.system.System.totalMemory);
 		#end
 	}
 
@@ -49,25 +66,27 @@ class HeavyChartManager
 	public static function getDynamicNoteLimit():Int
 	{
 		if (!shouldUseHeavyCharts())
-			return 150; // Límite normal si heavy charts está desactivado
+			return 150; // Normal limit if heavy charts is disabled
 
-		// Obtener RAM total disponible del sistema
+		// Get REAL system RAM total
 		var totalRAM:Int = getTotalMemory();
 		
-		// Calcular cuánta RAM se puede usar para caché de notas (50% del total)
-		// Ya que necesitamos espacio para otros procesos
-		// Estimación: ~500KB por nota (incluyendo struct + overhead)
+		// Calculate how much RAM can be used for note cache (50% of total)
+		// We need space for other processes and game assets
+		// Estimation: ~500 bytes per note (struct + overhead)
 		var ramForNoteCache:Int = Std.int(totalRAM * 0.5);
-		var bytesPerNote:Int = 500; // Bytes aproximados por nota
+		var bytesPerNote:Int = 500; // Approximate bytes per note
 		
-		// Calcular el límite dinámico
+		// Calculate dynamic limit
 		var dynamicLimit:Int = Std.int(ramForNoteCache / bytesPerNote);
 		
-		// Mínimo 200 notas, máximo 2000 notas (evitar extremos)
+		// Minimum 200 notes, maximum 2000 notes (avoid extremes)
 		dynamicLimit = Std.int(Math.min(2000, Math.max(200, dynamicLimit)));
 		
 		var totalRAMMB:Int = Std.int(totalRAM / (1024 * 1024));
 		var cacheBudgetMB:Int = Std.int(ramForNoteCache / (1024 * 1024));
+		
+		trace('[HeavyChartManager] System RAM: ${totalRAMMB}MB | Cache Budget: ${cacheBudgetMB}MB | Dynamic Limit: ${dynamicLimit} notes');
 		
 		return dynamicLimit;
 	}

@@ -125,12 +125,11 @@ class MainMenuState extends MusicBeatState
 
 		#if CHECK_FOR_UPDATES
 		if (showOutdatedWarning && ClientPrefs.data.checkForUpdates && !updateWarningShown) {
-			// Solo mostrar aviso si ya se detectó una actualización disponible y no se ha mostrado antes
-			if (CoolUtil.hasUpdate && CoolUtil.latestVersion != plusEngineVersion) {
-				funkin.play.substates.OutdatedSubState.updateVersion = CoolUtil.latestVersion;
-			persistentUpdate = false;
-				updateWarningShown = true; // Marcar como mostrado para evitar repeticiones
-			openSubState(new funkin.play.substates.OutdatedSubState());
+			// Only show warning if update is available and hasn't been shown before
+			if (CoolUtil.hasUpdate) {
+				persistentUpdate = false;
+				updateWarningShown = true; // Mark as shown to avoid repetitions
+				openSubState(new funkin.play.substates.OutdatedSubState());
 			}
 		}
 		#end

@@ -8,102 +8,28 @@ import lime.utils.Assets as LimeAssets;
 #end
 class CoolUtil
 {
-	public static var hasUpdate:Bool = false;
-	public static var latestVersion:String = "";
-	public static final haxeExtensions:Array<String> = ["hx", "hscript", "hsc", "hxs"];
+	// Legacy update checker variables (forwarded to UpdateManager for compatibility)
+	public static var hasUpdate(get, never):Bool;
+	public static var latestVersion(get, never):String;
 	
-	private static var updateCheckCallback:Void->Void = null;
+	static function get_hasUpdate():Bool return UpdateManager.hasUpdate;
+	static function get_latestVersion():String return UpdateManager.latestVersion;
+	
+	public static final haxeExtensions:Array<String> = ["hx", "hscript", "hsc", "hxs"];
 
-	public static function checkForUpdates(url:String = null, ?onComplete:Void->Void):String {
-		if (url == null || url.length == 0)
-			url = "https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/refs/heads/main/gitVersion.txt";
-		
-		var currentVersion:String = funkin.ui.mainmenu.MainMenuState.plusEngineVersion.trim();
-		hasUpdate = false;
-		latestVersion = currentVersion;
-		
-		if(ClientPrefs.data.checkForUpdates) {
-			trace('checking for updates...');
-			
-			#if sys
-			// Run the update check in a separate thread to avoid blocking
-			sys.thread.Thread.create(function() {
-				var http = new haxe.Http(url);
-				http.onData = function (data:String)
-				{
-					var remoteVersion:String = data.split('\n')[0].trim();
-					trace('version online: $remoteVersion, your version: $currentVersion');
-					
-					if(remoteVersion != currentVersion) {
-						trace('versions arent matching! please update');
-						hasUpdate = true;
-						latestVersion = remoteVersion;
-					} else {
-						trace('versions match! no update needed');
-						hasUpdate = false;
-					}
-					
-					http.onData = null;
-					http.onError = null;
-					http = null;
-					
-					// Store the callback to be called on the main thread
-					if(onComplete != null) {
-						updateCheckCallback = onComplete;
-					}
-				}
-				http.onError = function (error) {
-					trace('error checking for updates: $error');
-					hasUpdate = false;
-					
-					// Store the callback to be called on the main thread
-					if(onComplete != null) {
-						updateCheckCallback = onComplete;
-					}
-				}
-				http.request();
-			});
-			#else
-			// For non-sys targets, run synchronously
-			var http = new haxe.Http(url);
-			http.onData = function (data:String)
-			{
-				var remoteVersion:String = data.split('\n')[0].trim();
-				trace('version online: $remoteVersion, your version: $currentVersion');
-				
-				if(remoteVersion != currentVersion) {
-					trace('versions arent matching! please update');
-					hasUpdate = true;
-					latestVersion = remoteVersion;
-				} else {
-					trace('versions match! no update needed');
-					hasUpdate = false;
-				}
-				
-				http.onData = null;
-				http.onError = null;
-				http = null;
-				
-				if(onComplete != null) onComplete();
-			}
-			http.onError = function (error) {
-				trace('error checking for updates: $error');
-				hasUpdate = false;
-				if(onComplete != null) onComplete();
-			}
-			http.request();
-			#end
-		}
-		return currentVersion;
+	/**
+	 * Check for updates using semantic versioning
+	 * Now uses UpdateManager for proper version comparison
+	 */
+	public static function checkForUpdates(url:String = null, ?onComplete:Void->Void):String 
+	{
+		return UpdateManager.checkForUpdates(url, onComplete);
 	}
 	
 	// Call this in the update loop to execute callbacks on the main thread
-	public static function executeUpdateCallback():Void {
-		if(updateCheckCallback != null) {
-			var callback = updateCheckCallback;
-			updateCheckCallback = null;
-			callback();
-		}
+	public static function executeUpdateCallback():Void 
+	{
+		UpdateManager.update();
 	}
 	inline public static function quantize(f:Float, snap:Float){
 		// changed so this actually works lol
