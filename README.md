@@ -4,7 +4,6 @@
 
 **EN-US | [ES-LA](README.es-LA.md)**
 
-</div>
 
 [![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)
 [![VirusTotal Scan](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml)
@@ -23,6 +22,8 @@
 Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcodec videos from Psych mods 0.6.3 and 0.7.3.
 
 [Join the Discord!!](https://discord.gg/FCwACsDDMz)
+
+</div>
 
 ## Contributors
 
