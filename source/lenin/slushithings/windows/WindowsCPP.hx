@@ -973,6 +973,82 @@ class WindowsCPP
 	{
 		return "";
 	}
+
+	/**
+	 * Sets the window opacity/alpha
+	 * @param alpha Opacity value (0.0 = fully transparent, 1.0 = fully opaque)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return;
+		
+		// Get current window style
+		LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		
+		// Add WS_EX_LAYERED if not already set
+		if (!(exStyle & WS_EX_LAYERED)) {
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+		}
+		
+		// Convert alpha (0.0-1.0) to byte (0-255)
+		BYTE alphaValue = (BYTE)(alpha * 255.0);
+		
+		// Set the layered window attributes
+		SetLayeredWindowAttributes(hwnd, 0, alphaValue, LWA_ALPHA);
+	')
+	public static function setWindowOpacity(alpha:Float):Void
+	{
+	}
+
+	/**
+	 * Gets the current window opacity/alpha
+	 * @return Current opacity value (0.0 - 1.0)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return 1.0;
+		
+		BYTE alphaValue = 255;
+		DWORD flags = 0;
+		COLORREF colorKey = 0;
+		
+		// Try to get the current alpha value
+		if (GetLayeredWindowAttributes(hwnd, &colorKey, &alphaValue, &flags)) {
+			// Convert byte (0-255) to float (0.0-1.0)
+			return (double)alphaValue / 255.0;
+		}
+		
+		// Default to fully opaque if we can\'t get the value
+		return 1.0;
+	')
+	public static function getWindowOpacity():Float
+	{
+		return 1.0;
+	}
+
+	/**
+	 * Makes the window fully transparent (click-through)
+	 * @param transparent True to enable transparency, false to disable
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return;
+		
+		LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		
+		if (transparent) {
+			// Enable layered window with transparency
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+			SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 0, LWA_COLORKEY);
+		} else {
+			// Disable transparency
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
+			SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+		}
+	')
+	public static function setWindowTransparent(transparent:Bool):Void
+	{
+	}
 	#end
 }
 

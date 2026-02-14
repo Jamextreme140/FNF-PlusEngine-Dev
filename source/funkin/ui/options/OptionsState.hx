@@ -114,7 +114,13 @@ class OptionsState extends MusicBeatState
 		{
 			var targetY:Float = item.targetY - lerpSelected;
 			item.screenCenter(X);
+			#if mobile
+			// Adjust Y position higher on mobile when near the end of the list
+			var yOffset:Float = (curSelected >= options.length - 2) ? 0.1 : 0.2;
+			item.y = (FlxG.height * yOffset) + (targetY * 50);
+			#else
 			item.y = (FlxG.height * 0.2) + (targetY * 50);
+			#end
 			
 			item.alpha = 0.6;
 			if (item.targetY == curSelected)
@@ -155,7 +161,13 @@ class OptionsState extends MusicBeatState
 		{
 			var targetY:Float = item.targetY - lerpSelected;
 			item.screenCenter(X);
+			#if mobile
+			// Adjust Y position higher on mobile when near the end of the list
+			var yOffset:Float = (curSelected >= options.length - 4) ? 0.01 : 0.2;
+			item.y = FlxMath.lerp((FlxG.height * yOffset) + (targetY * 50), item.y, Math.exp(-elapsed * 10.2));
+			#else
 			item.y = FlxMath.lerp((FlxG.height * 0.2) + (targetY * 50), item.y, Math.exp(-elapsed * 10.2));
+			#end
 			
 			item.alpha = 0.6;
 			if (item.targetY == curSelected)

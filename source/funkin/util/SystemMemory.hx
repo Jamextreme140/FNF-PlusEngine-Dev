@@ -18,11 +18,11 @@ import lenin.slushithings.cpp.CPPInterface;
     <lib name="Kernel32.lib" if="windows" />
 </target>
 ')
-#if (cpp && !windows)
+#if cpp
 @:cppInclude("unistd.h")
-#end
-#if (linux && !android)
-@:cppInclude("sys/sysinfo.h")
+@:cppInclude("stdio.h")
+@:cppInclude("stdlib.h")
+@:cppInclude("string.h")
 #end
 #if (mac || ios)
 @:cppInclude("sys/types.h")
@@ -104,7 +104,13 @@ class SystemMemory
     {
         var ramMB:Int = getTotalRAM();
         if (ramMB <= 0)
+        {
+            #if android
+            return "W.I.P.";
+            #else
             return "Unknown";
+            #end
+        }
         
         var ramGB:Float = Math.round((ramMB / 1024) * 100) / 100;
         return ramGB + " GB";
@@ -114,26 +120,23 @@ class SystemMemory
 
     #if android
     /**
-     * Gets total RAM on Android by reading /proc/meminfo
+     * Gets total RAM on Android
+     * Note: RAM detection on Android is currently Work In Progress
      */
     private static function getAndroidTotalRAM():Int
     {
-        // Prefer Lime helper (robust meminfo parsing)
-        var mb = lime.system.Memory.getTotalRAMMB();
-        if (mb > 0) return mb;
-
-        // Fallback
-        return readLinuxMemInfo(true);
+        // W.I.P. - RAM detection on Android needs more testing
+        return 0;
     }
 
     /**
-     * Gets available RAM on Android by reading /proc/meminfo
+     * Gets available RAM on Android
+     * Note: RAM detection on Android is currently Work In Progress
      */
     private static function getAndroidAvailableRAM():Int
     {
-        var mb = lime.system.Memory.getAvailableRAMMB();
-        if (mb > 0) return mb;
-        return readLinuxMemInfo(false);
+        // W.I.P. - RAM detection on Android needs more testing
+        return 0;
     }
     #end
 
@@ -183,110 +186,81 @@ class SystemMemory
     }
     #end
 
-    #if (linux || android)
+    #if (linux && !android)
     /**
-     * Reads memory info from /proc/meminfo
-     * Works on both Linux and Android (Android is Linux-based)
-     * @param total If true, returns total RAM; if false, returns available RAM
+     * Gets total RAM on Linux by reading /proc/meminfo using C++
      */
-    private static function readLinuxMemInfo(total:Bool):Int
-    {
-        #if sys
-        try
-        {
-            var content = sys.io.File.getContent("/proc/meminfo");
-            if (content == null || content.length == 0) return 0;
-            var lines = content.split("\n");
-            
-            if (total)
-            {
-                // Prefer regex over strict prefix matching (some builds may include leading spaces)
-                var reTotal:EReg = ~/^\s*MemTotal:\s+(\d+)\s+kB/im;
-                if (reTotal.match(content))
-                {
-                    var kb = Std.parseInt(reTotal.matched(1));
-                    if (kb != null && kb > 0) return Std.int(kb / 1024);
-                }
-            }
-            else
-            {
-                // Get available RAM - try MemAvailable first
-                var reAvail:EReg = ~/^\s*MemAvailable:\s+(\d+)\s+kB/im;
-                if (reAvail.match(content))
-                {
-                    var kb = Std.parseInt(reAvail.matched(1));
-                    if (kb != null && kb > 0) return Std.int(kb / 1024);
-                }
-                
-                // Fallback for older Android/Linux: MemFree + Buffers + Cached
-                var memFree:Int = 0;
-                var buffers:Int = 0;
-                var cached:Int = 0;
-                
-                for (line in lines)
-                {
-                    if (line.indexOf("MemFree:") == 0)
-                    {
-                        var parts = line.split(":");
-                        if (parts.length >= 2)
-                        {
-                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                            var kb = Std.parseInt(valueStr);
-                            if (kb != null) memFree = kb;
-                        }
-                    }
-                    else if (line.indexOf("Buffers:") == 0)
-                    {
-                        var parts = line.split(":");
-                        if (parts.length >= 2)
-                        {
-                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                            var kb = Std.parseInt(valueStr);
-                            if (kb != null) buffers = kb;
-                        }
-                    }
-                    else if (line.indexOf("Cached:") == 0 && line.indexOf("SwapCached:") != 0)
-                    {
-                        var parts = line.split(":");
-                        if (parts.length >= 2)
-                        {
-                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                            var kb = Std.parseInt(valueStr);
-                            if (kb != null) cached = kb;
-                        }
-                    }
-                }
-                
-                // If we got all three values, calculate available RAM
-                if (memFree > 0)
-                {
-                    var availableKB = memFree + buffers + cached;
-                    return Std.int(availableKB / 1024);
-                }
+    @:functionCode('
+        FILE* file = fopen("/proc/meminfo", "r");
+        if (file == NULL) return 0;
+        
+        char line[256];
+        long totalKB = 0;
+        
+        while (fgets(line, sizeof(line), file)) {
+            if (sscanf(line, "MemTotal: %ld kB", &totalKB) == 1) {
+                fclose(file);
+                // Convert KB to MB
+                return (int)(totalKB / 1024);
             }
         }
-        catch (e:Dynamic)
-        {
-            trace('[SystemMemory] Failed to read /proc/meminfo: $e');
-        }
-        #end
+        
+        fclose(file);
         return 0;
-    }
-    
-    /**
-     * Gets total RAM on Linux by reading /proc/meminfo
-     */
+    ')
     private static function getLinuxTotalRAM():Int
     {
-        return readLinuxMemInfo(true);
+        #if cpp
+        return 0; // The C++ code above will be executed
+        #else
+        return 0;
+        #end
     }
 
     /**
-     * Gets available RAM on Linux by reading /proc/meminfo
+     * Gets available RAM on Linux by reading /proc/meminfo using C++
      */
+    @:functionCode('
+        FILE* file = fopen("/proc/meminfo", "r");
+        if (file == NULL) return 0;
+        
+        char line[256];
+        long availableKB = 0;
+        long memFreeKB = 0;
+        long buffersKB = 0;
+        long cachedKB = 0;
+        
+        while (fgets(line, sizeof(line), file)) {
+            // Try MemAvailable first (available on newer kernels)
+            if (sscanf(line, "MemAvailable: %ld kB", &availableKB) == 1) {
+                fclose(file);
+                return (int)(availableKB / 1024);
+            }
+            // Fallback for older kernels: calculate from MemFree + Buffers + Cached
+            sscanf(line, "MemFree: %ld kB", &memFreeKB);
+            sscanf(line, "Buffers: %ld kB", &buffersKB);
+            if (strncmp(line, "Cached:", 7) == 0) { // Avoid SwapCached
+                sscanf(line, "Cached: %ld kB", &cachedKB);
+            }
+        }
+        
+        fclose(file);
+        
+        // Calculate available memory manually if MemAvailable wasn\'t found
+        if (memFreeKB > 0) {
+            long totalAvail = memFreeKB + buffersKB + cachedKB;
+            return (int)(totalAvail / 1024);
+        }
+        
+        return 0;
+    ')
     private static function getLinuxAvailableRAM():Int
     {
-        return readLinuxMemInfo(false);
+        #if cpp
+        return 0; // The C++ code above will be executed
+        #else
+        return 0;
+        #end
     }
     #end
 

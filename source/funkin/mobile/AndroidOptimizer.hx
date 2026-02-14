@@ -23,42 +23,106 @@ class AndroidOptimizer
     
     /**
      * Main initialization - Call this on game startup
+     * Only runs once per installation
      */
     public static function init():Void
     {
         if (hasBeenOptimized) return;
         
-        trace('AndroidOptimizer: Initializing auto-optimization...');
+        // Check if optimizations were already applied in a previous session
+        if (ClientPrefs.data.androidOptimizationsApplied == true)
+        {
+            hasBeenOptimized = true;
+            return;
+        }
         
-        // Detect device tier
+        // Apply buffer optimization to prevent NO_BUFFER_AVAILABLE errors
+        applyBufferOptimizations();
+        
+        // Detect device tier (GPU-based only)
         detectedTier = detectDeviceTier();
         
         // Apply optimizations based on tier
         applyOptimizations(detectedTier);
         
+        // Mark as optimized (will be saved automatically by ClientPrefs system)
         hasBeenOptimized = true;
-        trace('AndroidOptimizer: Optimization complete. Device tier: $detectedTier');
+        ClientPrefs.data.androidOptimizationsApplied = true;
     }
     
     /**
-     * Detects device performance tier based on GPU and RAM
-     * Improved detection for more GPU models and better accuracy
+     * Apply buffer optimizations to prevent NO_BUFFER_AVAILABLE errors
+     * This synchronizes the framerate with the display refresh rate
+     */
+    private static function applyBufferOptimizations():Void
+    {
+        // Enable VSync through FlxG if available
+        #if (!html5)
+        try
+        {
+            // Sync with display refresh rate
+            var refreshRate:Int = getDisplayRefreshRate();
+            FlxG.stage.frameRate = refreshRate;
+            
+            // Ensure proper frame pacing
+            FlxG.drawFramerate = refreshRate;
+            FlxG.updateFramerate = refreshRate;
+        }
+        catch (e:Dynamic)
+        {
+            // Silent fail - default settings will be used
+        }
+        #end
+    }
+    
+    /**
+     * Get the display refresh rate (defaults to 60 if unable to detect)
+     */
+    private static function getDisplayRefreshRate():Int
+    {
+        try
+        {
+            // Try to get from Lime's display API
+            #if lime
+            var display = lime.system.System.getDisplay(0); // Get primary display
+            if (display != null && display.currentMode != null)
+            {
+                var refreshRate = display.currentMode.refreshRate;
+                if (refreshRate > 0)
+                {
+                    // Validate the rate (most displays are 60, 90, 120, or 144 Hz)
+                    if (refreshRate >= 30 && refreshRate <= 165)
+                    {
+                        return refreshRate;
+                    }
+                }
+            }
+            #end
+        }
+        catch (e:Dynamic)
+        {
+            // Silent fail
+        }
+        
+        // Default to 60Hz for compatibility
+        return 60;
+    }
+    
+    /**
+     * Detects device performance tier based on GPU only
+     * RAM detection is disabled as it's unreliable on Android
      */
     private static function detectDeviceTier():Int
     {
         var gpuName = funkin.util.Native.detectGPU();
-        var totalRAM = getTotalRAM();
         var cpuCores = getCPUCores();
-        
-        trace('AndroidOptimizer: GPU: $gpuName, RAM: ${totalRAM}MB, CPU Cores: $cpuCores');
         
         if (gpuName == null || gpuName == 'Unknown')
         {
-            // Fallback to RAM + CPU core based detection
-            if (totalRAM >= 8000 && cpuCores >= 8) return GPU_TIER_HIGH;
-            if (totalRAM >= 6000 && cpuCores >= 6) return GPU_TIER_HIGH;
-            if (totalRAM >= 4000 && cpuCores >= 4) return GPU_TIER_MID;
-            if (totalRAM >= 3000) return GPU_TIER_MID;
+            // Fallback to CPU core based detection only
+            if (cpuCores >= 8) return GPU_TIER_HIGH;
+            if (cpuCores >= 6) return GPU_TIER_MID;
+            if (cpuCores >= 4) return GPU_TIER_MID;
             return GPU_TIER_LOW;
         }
         
@@ -93,7 +157,7 @@ class AndroidOptimizer
                 return GPU_TIER_MID;
             // Mali-G4x = Low-Mid tier
             if (gpu.indexOf('g4') != -1)
-                return totalRAM >= 4000 ? GPU_TIER_MID : GPU_TIER_LOW;
+                return cpuCores >= 6 ? GPU_TIER_MID : GPU_TIER_LOW;
             // Older Mali (T series, etc) = Low tier
             return GPU_TIER_LOW;
         }
@@ -142,9 +206,9 @@ class AndroidOptimizer
         if (gpu.indexOf('vivante') != -1 || gpu.indexOf('img') != -1)
             return GPU_TIER_LOW;
         
-        // Default to mid-tier if unknown but with RAM consideration
-        if (totalRAM >= 6000) return GPU_TIER_HIGH;
-        if (totalRAM >= 3000) return GPU_TIER_MID;
+        // Default to mid-tier if unknown, use CPU cores as fallback
+        if (cpuCores >= 8) return GPU_TIER_HIGH;
+        if (cpuCores >= 4) return GPU_TIER_MID;
         return GPU_TIER_LOW;
     }
     
@@ -160,12 +224,8 @@ class AndroidOptimizer
             var cores:Int = untyped __cpp__('sysconf(_SC_NPROCESSORS_ONLN)');
             if (cores > 0) return cores;
             
-            // Fallback: estimate based on RAM
-            var ram = getTotalRAM();
-            if (ram >= 8000) return 8;
-            if (ram >= 6000) return 6;
-            if (ram >= 4000) return 4;
-            return 2;
+            // Safe default
+            return 4;
         }
         catch (e:Dynamic)
         {
@@ -196,24 +256,21 @@ class AndroidOptimizer
         // Initialize optimization systems
         ObjectPool.init();
         funkin.audio.AudioOptimizer.resetSoundCount();
-        
-        trace('AndroidOptimizer: Core optimization systems initialized');
     }
     
     /**
-     * Optimizations for low-end devices (Adreno 4xx, Mali-G3x, old PowerVR, <3GB RAM)
+     * Optimizations for low-end devices (Adreno 4xx, Mali-G3x, old PowerVR)
      * Maximum performance focus, minimum quality
      */
     private static function applyLowEndOptimizations():Void
     {
-        trace('AndroidOptimizer: Applying LOW-END optimizations');
         
         // Graphics - Minimum quality for maximum performance
         ClientPrefs.data.lowQuality = true;
         ClientPrefs.data.antialiasing = false;
         ClientPrefs.data.shaders = false;
         ClientPrefs.data.cacheOnGPU = false; // GPU too weak
-        ClientPrefs.data.framerate = 30; // Lower FPS for better stability
+        ClientPrefs.data.framerate = Math.floor(getDisplayRefreshRate() / 2); // Half refresh rate for stability
         
         // Gameplay - Disable heavy effects
         ClientPrefs.data.camZooms = false; // Disable camera zooms
@@ -229,7 +286,6 @@ class AndroidOptimizer
         ClientPrefs.data.holdAlphaDivisions = 8; // Minimum divisions
         ClientPrefs.data.renderArrowPaths = false;
         ClientPrefs.data.styledArrowPaths = false;
-        ClientPrefs.data.holdSubdivisions = 1; // Lowest subdivision
         
         // UI - Minimal overhead
         ClientPrefs.data.showFPS = false; // Disable FPS counter overhead
@@ -249,8 +305,6 @@ class AndroidOptimizer
         #if (target.threaded && sys)
         funkin.util.ThreadUtil.setMaxThreads(1);
         #end
-        
-        trace('AndroidOptimizer: LOW-END mode active - Maximum optimization enabled');
     }
     
     /**
@@ -259,14 +313,12 @@ class AndroidOptimizer
      */
     private static function applyMidRangeOptimizations():Void
     {
-        trace('AndroidOptimizer: Applying MID-RANGE optimizations');
-        
         // Graphics - Balanced settings
         ClientPrefs.data.lowQuality = false;
         ClientPrefs.data.antialiasing = true;
         ClientPrefs.data.shaders = false; // Shaders still heavy for mid-range
         ClientPrefs.data.cacheOnGPU = true; // GPU can handle caching
-        ClientPrefs.data.framerate = 60; // Full 60 FPS
+        ClientPrefs.data.framerate = getDisplayRefreshRate(); // Match display refresh rate
         
         // Gameplay - Most effects enabled
         ClientPrefs.data.camZooms = true;
@@ -281,7 +333,6 @@ class AndroidOptimizer
         ClientPrefs.data.holdAlphaDivisions = 15; // Medium divisions
         ClientPrefs.data.renderArrowPaths = false; // Still disable paths
         ClientPrefs.data.styledArrowPaths = false;
-        ClientPrefs.data.holdSubdivisions = 3;
         
         // UI
         ClientPrefs.data.showFPS = true;
@@ -301,8 +352,6 @@ class AndroidOptimizer
         #if (target.threaded && sys)
         funkin.util.ThreadUtil.setMaxThreads(2);
         #end
-        
-        trace('AndroidOptimizer: MID-RANGE mode active - Balanced optimization');
     }
     
     /**
@@ -311,14 +360,12 @@ class AndroidOptimizer
      */
     private static function applyHighEndOptimizations():Void
     {
-        trace('AndroidOptimizer: Applying HIGH-END optimizations');
-        
         // Graphics - Full quality
         ClientPrefs.data.lowQuality = false;
         ClientPrefs.data.antialiasing = true;
         ClientPrefs.data.shaders = true; // Enable shaders
         ClientPrefs.data.cacheOnGPU = true;
-        ClientPrefs.data.framerate = 60;
+        ClientPrefs.data.framerate = getDisplayRefreshRate(); // Match display refresh rate
         
         // Gameplay - All effects enabled
         ClientPrefs.data.camZooms = true;
@@ -333,7 +380,6 @@ class AndroidOptimizer
         ClientPrefs.data.holdAlphaDivisions = 20; // Maximum divisions
         ClientPrefs.data.renderArrowPaths = true;
         ClientPrefs.data.styledArrowPaths = true;
-        ClientPrefs.data.holdSubdivisions = 4;
         
         // UI
         ClientPrefs.data.showFPS = true;
@@ -352,30 +398,6 @@ class AndroidOptimizer
         // Set thread pool to maximum
         #if (target.threaded && sys)
         funkin.util.ThreadUtil.setMaxThreads(4);
-        #end
-        
-        trace('AndroidOptimizer: HIGH-END mode active - Maximum quality enabled');
-    }
-    
-    /**
-     * Get total device RAM in MB
-     */
-    private static function getTotalRAM():Int
-    {
-        #if cpp
-        // Try to get system memory
-        var totalMem:Float = System.totalMemory / (1024 * 1024);
-        
-        // Estimate total system RAM (current memory * 4 is a rough estimate)
-        var estimatedRAM:Int = Std.int(totalMem * 4);
-        
-        // Clamp between reasonable values
-        if (estimatedRAM < 1000) estimatedRAM = 2000; // Minimum 2GB assumption
-        if (estimatedRAM > 16000) estimatedRAM = 8000; // Cap at 8GB for mobile
-        
-        return estimatedRAM;
-        #else
-        return 4000; // Default 4GB assumption
         #end
     }
     
@@ -408,7 +430,6 @@ class AndroidOptimizer
      */
     public static function forceOptimizationTier(tier:Int):Void
     {
-        trace('AndroidOptimizer: Forcing tier $tier');
         applyOptimizations(tier);
     }
 }
