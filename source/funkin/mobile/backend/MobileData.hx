@@ -205,6 +205,26 @@ class MobileData
 			]
 		});
 
+		// B_X_Y
+		actionModes.set('B_X_Y', {
+			buttons: [
+				{button: 'buttonB', graphic: 'b', x: 1156, y: 596, color: '0xFFCB00'},
+				{button: 'buttonX', graphic: 'x', x: 1032, y: 596, color: '0x99062D'},
+				{button: 'buttonY', graphic: 'y', x: 908, y: 596, color: '0x4A35B9'}
+			]
+		});
+
+		// B_C_X_Y_Z
+		actionModes.set('B_C_X_Y_Z', {
+			buttons: [
+				{button: 'buttonX', graphic: 'x', x: 908, y: 472, color: '0x99062D'},
+				{button: 'buttonC', graphic: 'c', x: 908, y: 596, color: '0x44FF00'},
+				{button: 'buttonY', graphic: 'y', x: 1032, y: 472, color: '0x4A35B9'},
+				{button: 'buttonB', graphic: 'b', x: 1032, y: 596, color: '0xFFCB00'},
+				{button: 'buttonZ', graphic: 'z', x: 1156, y: 472, color: '0xCCB98E'}
+			]
+		});
+
 		// A_B_C_X_Y_Z
 		actionModes.set('A_B_C_X_Y_Z', {
 			buttons: [

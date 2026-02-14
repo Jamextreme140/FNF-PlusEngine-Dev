@@ -5,10 +5,15 @@ import funkin.play.AttachedSprite;
 class CreditsState extends MusicBeatState
 {
 	var curSelected:Int = -1;
+	var lerpSelected:Float = -1;
 
 	private var grpOptions:FlxTypedGroup<Alphabet>;
 	private var iconArray:Array<AttachedSprite> = [];
 	private var creditsStuff:Array<Array<String>> = [];
+	
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	var bg:FlxSprite;
 	var descText:FlxText;
@@ -136,9 +141,19 @@ class CreditsState extends MusicBeatState
 
 		bg.color = CoolUtil.colorFromString(creditsStuff[curSelected][4]);
 		intendedColor = bg.color;
+		
+		// Initialize lerpSelected to current selection
+		lerpSelected = curSelected;
 		changeSelection();
 
-		addTouchPad('UP_DOWN', 'A_B');
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		addTouchPad('NONE', 'B');
+		#else
+		addTouchPad('UP_DOWN', 'B');
+		#end
 
 		super.create();
 	}
@@ -187,6 +202,53 @@ class CreditsState extends MusicBeatState
 						changeSelection((checkNewHold - checkLastHold) * (isUp ? -shiftMult : shiftMult));
 					}
 				}
+
+				#if mobile
+				// Touch scroll handling with smooth scrolling
+				if (touchScroll != null)
+				{
+					var scrollDelta = touchScroll.update();
+					
+					// Apply continuous scroll
+					if (Math.abs(scrollDelta) > 0.5)
+					{
+						// Smooth continuous scrolling (inverted for natural direction)
+						lerpSelected += -scrollDelta / 150;
+						lerpSelected = FlxMath.bound(lerpSelected, 0, creditsStuff.length - 1);
+						
+						// Update curSelected when crossing integer boundaries
+						var newSelected = Math.round(lerpSelected);
+						if (newSelected != curSelected)
+						{
+							changeSelection(newSelected - curSelected);
+							// Keep lerp smooth, don't force snap
+						}
+					}
+					
+					// Handle tap on credits (only if not scrolling)
+					if (touchScroll.wasTapped())
+					{
+						var tapPos = touchScroll.getTapPosition();
+						if (tapPos != null)
+						{
+							// Check if tapped on a credit item
+							for (i in 0...grpOptions.members.length)
+							{
+								var item = grpOptions.members[i];
+								if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+								{
+									// Open URL if available
+									if (creditsStuff[i][3] != null && creditsStuff[i][3].length > 4)
+									{
+										CoolUtil.browserLoad(creditsStuff[i][3]);
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+				#end
 			}
 
 			if((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && (creditsStuff[curSelected][3] == null || creditsStuff[curSelected][3].length > 4)) {
@@ -229,6 +291,11 @@ class CreditsState extends MusicBeatState
 			curSelected = FlxMath.wrap(curSelected + change, 0, creditsStuff.length - 1);
 		}
 		while(unselectableCheck(curSelected));
+		
+		#if mobile
+		// Sync lerpSelected to prevent ping-pong effect
+		lerpSelected = curSelected;
+		#end
 
 		var newColor:FlxColor = CoolUtil.colorFromString(creditsStuff[curSelected][4]);
 		//trace('The BG color is: $newColor');
@@ -292,4 +359,19 @@ class CreditsState extends MusicBeatState
 	private function unselectableCheck(num:Int):Bool {
 		return creditsStuff[num].length <= 1;
 	}
+
+	override function destroy()
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
+		super.destroy();
+	}
+
 }

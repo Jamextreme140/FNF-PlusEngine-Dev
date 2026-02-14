@@ -27,11 +27,18 @@ class OptionsState extends MusicBeatState
 	var lerpSelected:Float = 0;
 	public static var menuBG:FlxSprite;
 	public static var onPlayState:Bool = false;
+	
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	function openSelectedSubstate(label:String) {
 		if (label != "Adjust Delay and Combo"){
 			removeTouchPad();
 			persistentUpdate = false;
+			#if mobile
+			if (touchScroll != null) touchScroll.reset(); // Reset tap state when opening substate
+			#end
 		}
 		switch(label)
 		{
@@ -109,6 +116,12 @@ class OptionsState extends MusicBeatState
 		changeSelection();
 		ClientPrefs.saveSettings();
 		
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
+		
 		// Posicionar elementos sin animación inicial
 		for (num => item in grpOptions.members)
 		{
@@ -147,8 +160,18 @@ class OptionsState extends MusicBeatState
 		#end
 		controls.isInSubstate = false;
 		removeTouchPad();
-		addTouchPad('UP_DOWN', 'A_B_C');
+		addTouchPad('NONE', 'B_C');
 		persistentUpdate = true;
+		
+		#if mobile
+		// Reset touch state and refresh selection when returning from substate
+		if (touchScroll != null)
+		{
+			touchScroll.reset();
+		}
+		// Force refresh UI
+		changeSelection(0);
+		#end
 	}
 
 	var exiting = false;
@@ -187,8 +210,33 @@ class OptionsState extends MusicBeatState
 				changeSelection(1);
 			
 			#if mobile
-			// Touch support for option items
-			handleTouchOptions();
+			// Touch scroll handling with smooth scrolling
+			if (touchScroll != null)
+			{
+				var scrollDelta = touchScroll.update();
+				
+				// Apply continuous scroll
+				if (Math.abs(scrollDelta) > 0.5)
+				{
+					// Smooth continuous scrolling (inverted for natural direction)
+					lerpSelected += -scrollDelta / 150;
+					lerpSelected = FlxMath.bound(lerpSelected, 0, options.length - 1);
+					
+					// Update curSelected when crossing integer boundaries
+					var newSelected = Math.round(lerpSelected);
+					if (newSelected != curSelected)
+					{
+						changeSelection(newSelected - curSelected);
+						// Keep lerp smooth, don't force snap
+					}
+				}
+				
+				// Handle tap on options (only if not scrolling)
+				if (touchScroll.wasTapped())
+				{
+					handleTouchOptions();
+				}
+			}
 			#end
 			
 			if ((touchPad != null && touchPad.buttonC != null && touchPad.buttonC.justPressed) || (FlxG.keys.justPressed.CONTROL && controls.mobileC))
@@ -219,10 +267,13 @@ class OptionsState extends MusicBeatState
 	#if mobile
 	function handleTouchOptions():Void
 	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+		
 		for (i in 0...grpOptions.members.length)
 		{
 			var item = grpOptions.members[i];
-			if (item != null && funkin.mobile.backend.TouchUtil.pressAction(item, null, true))
+			if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
 			{
 				if (i == curSelected)
 				{
@@ -234,6 +285,7 @@ class OptionsState extends MusicBeatState
 					// Tapped on different item - select it
 					var prevSelected = curSelected;
 					curSelected = i;
+					lerpSelected = i;
 					for (num => optionItem in grpOptions.members)
 					{
 						optionItem.targetY = num;
@@ -260,6 +312,15 @@ class OptionsState extends MusicBeatState
 
 	override function destroy()
 	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
 		ClientPrefs.loadPrefs();
 		super.destroy();
 	}

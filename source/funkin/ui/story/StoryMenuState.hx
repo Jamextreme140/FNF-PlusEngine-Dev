@@ -28,6 +28,11 @@ class StoryMenuState extends MusicBeatState
 	var bgSprite:FlxSprite;
 
 	private static var curWeek:Int = 0;
+	private static var lerpWeek:Float = 0;
+
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	var txtTracklist:FlxText;
 
@@ -188,7 +193,13 @@ class StoryMenuState extends MusicBeatState
 		changeWeek();
 		changeDifficulty();
 
-		addTouchPad('LEFT_FULL', 'A_B_X_Y');
+		addTouchPad('NONE', 'B_X_Y');
+
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 
 		super.create();
 	}
@@ -198,7 +209,7 @@ class StoryMenuState extends MusicBeatState
 		changeWeek();
 		super.closeSubState();
 		removeTouchPad();
-		addTouchPad('LEFT_FULL', 'A_B_X_Y');
+		addTouchPad('NONE', 'B_X_Y');
 	}
 
 	override function update(elapsed:Float)
@@ -249,7 +260,69 @@ class StoryMenuState extends MusicBeatState
 				changeWeek(-FlxG.mouse.wheel);
 				changeDifficulty();
 		}
-
+		#if mobile
+		// Touch scroll handling with smooth scrolling
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			
+			// Apply continuous scroll
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				// Smooth continuous scrolling (inverted for natural direction)
+				lerpWeek += -scrollDelta / 150;
+				lerpWeek = FlxMath.bound(lerpWeek, 0, WeekData.weeksList.length - 1);
+				
+				// Update curWeek when crossing integer boundaries
+				var newWeek = Math.round(lerpWeek);
+				if (newWeek != curWeek)
+				{
+					changeWeek(newWeek - curWeek);
+					// Keep lerp smooth, don't force snap
+				}
+			}
+			
+			// Handle tap on weeks or difficulty arrows
+			if (touchScroll.wasTapped())
+			{
+				var tapPos = touchScroll.getTapPosition();
+				if (tapPos != null)
+				{
+					// Check for tap on difficulty arrows
+					if (leftArrow.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+					{
+						changeDifficulty(-1);
+					}
+					else if (rightArrow.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+					{
+						changeDifficulty(1);
+					}
+					else
+					{
+						// Check if tapped on current week to select it
+						for (i in 0...grpWeekText.members.length)
+						{
+							var item = grpWeekText.members[i];
+							if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+							{
+								if (i == curWeek)
+								{
+									// Tapped on current week - select it
+									selectWeek();
+								}
+								else
+								{
+									// Tapped on different week - navigate to it
+									changeWeek(i - curWeek);
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		#end
 		if (controls.UI_RIGHT || (touchPad != null && touchPad.buttonRight.pressed))
 			rightArrow.animation.play('press')
 		else
@@ -405,11 +478,12 @@ class StoryMenuState extends MusicBeatState
 			sprDifficulty.loadGraphic(newImage);
 			sprDifficulty.x = leftArrow.x + 60;
 			sprDifficulty.x += (308 - sprDifficulty.width) / 3;
-			sprDifficulty.alpha = 0;
-			sprDifficulty.y = leftArrow.y - sprDifficulty.height + 50;
+			sprDifficulty.y = leftArrow.y - 15;
 
 			FlxTween.cancelTweensOf(sprDifficulty);
-			FlxTween.tween(sprDifficulty, {y: sprDifficulty.y + 30, alpha: 1}, 0.07);
+			sprDifficulty.alpha = 0;
+			sprDifficulty.y = leftArrow.y - sprDifficulty.height + 50;
+			FlxTween.tween(sprDifficulty, {y: leftArrow.y - 15, alpha: 1}, 0.07);
 		}
 		lastDifficultyName = diff;
 
@@ -503,5 +577,19 @@ class StoryMenuState extends MusicBeatState
 		#if !switch
 		intendedScore = Highscore.getWeekScore(loadedWeeks[curWeek].fileName, curDifficulty);
 		#end
+	}
+
+	override function destroy()
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
+		super.destroy();
 	}
 }

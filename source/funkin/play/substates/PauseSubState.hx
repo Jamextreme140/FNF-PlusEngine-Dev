@@ -3,6 +3,8 @@ package funkin.play.substates;
 import funkin.save.Highscore;
 import funkin.data.song.Song;
 import funkin.data.Difficulty;
+import funkin.data.story.level.WeekData;
+import funkin.modding.Mods;
 import funkin.ui.LocaleUtils;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -13,6 +15,7 @@ import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
 import flixel.util.FlxStringUtil;
 import flixel.math.FlxMath;
+import flixel.math.FlxPoint;
 import flixel.sound.FlxSound;
 import funkin.ui.story.StoryMenuState;
 import funkin.ui.freeplay.FreeplayState;
@@ -29,6 +32,12 @@ class PauseSubState extends MusicBeatSubstate
     var menuItemsOG:Array<String> = ['Resume', 'Restart Song', 'Chart Editor', 'Change Difficulty', 'Options', 'Exit to menu'];
     var difficultyChoices = [];
     var curSelected:Int = 0;
+    var lerpSelected:Float = 0;
+
+    #if mobile
+    var touchScroll:funkin.mobile.backend.TouchScroll;
+    #end
+
     var pauseMusic:FlxSound;
     var practiceText:FlxText;
     var skipTimeText:FlxText;
@@ -162,8 +171,14 @@ class PauseSubState extends MusicBeatSubstate
 		regenMenu();
 		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
 
-		addTouchPad(menuItems.contains('Skip Time') ? 'LEFT_FULL' : 'UP_DOWN', 'A');
+		addTouchPad('NONE', 'NONE');
 		addTouchPadCamera();
+
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 
 		super.create();
 	}
@@ -225,6 +240,36 @@ class PauseSubState extends MusicBeatSubstate
 		{
 			changeSelection(1);
 		}
+
+		#if mobile
+		// Touch scroll handling with smooth scrolling
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			
+			// Apply continuous scroll
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				// Smooth continuous scrolling (inverted for natural direction)
+				lerpSelected += -scrollDelta / 300;
+				lerpSelected = FlxMath.bound(lerpSelected, 0, menuItems.length - 1);
+				
+				// Update curSelected when crossing integer boundaries
+				var newSelected = Math.round(lerpSelected);
+				if (newSelected != curSelected)
+				{
+					changeSelection(newSelected - curSelected);
+					// Keep lerp smooth, don't force snap
+				}
+			}
+			
+			// Handle tap on menu items (only if not scrolling)
+			if (touchScroll.wasTapped())
+			{
+				handleTapPause();
+			}
+		}
+		#end
 
 		var daSelected:String = menuItems[curSelected];
 		switch (daSelected)
@@ -386,7 +431,7 @@ class PauseSubState extends MusicBeatSubstate
 
 		if (touchPad == null) //sometimes it dosent add the tpad, hopefully this fixes it
 		{
-			addTouchPad(PlayState.chartingMode ? 'LEFT_FULL' : 'UP_DOWN', 'A');
+			addTouchPad('NONE', 'NONE');
 			addTouchPadCamera();
 		}
 	}
@@ -419,6 +464,15 @@ class PauseSubState extends MusicBeatSubstate
 
 	override function destroy()
 	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
 		pauseMusic.destroy();
 		super.destroy();
 	}
@@ -426,6 +480,12 @@ class PauseSubState extends MusicBeatSubstate
 	function changeSelection(change:Int = 0):Void
 	{
 		curSelected = FlxMath.wrap(curSelected + change, 0, menuItems.length - 1);
+		
+		#if mobile
+		// Sync lerpSelected to prevent ping-pong effect
+		lerpSelected = curSelected;
+		#end
+		
 		for (num => item in grpMenuShit.members)
 		{
 			item.targetY = num - curSelected;
@@ -444,6 +504,58 @@ class PauseSubState extends MusicBeatSubstate
 		missingTextBG.visible = false;
 		FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 	}
+	
+	#if mobile
+	function handleTapPause():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+		
+		// Check if tapped on any menu item
+		for (i in 0...grpMenuShit.members.length)
+		{
+			var item = grpMenuShit.members[i];
+			if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+			{
+				if (i == curSelected)
+				{
+					// Tapped on selected item - activate it (simulate ACCEPT)
+					if (cantUnpause <= 0)
+					{
+						var daSelected:String = menuItems[curSelected];
+						switch (daSelected)
+						{
+							case "Resume":
+								Paths.clearUnusedMemory();
+								close();
+							case "Restart Song":
+								MusicBeatState.resetState();
+							case "Exit to menu":
+								#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
+								PlayState.deathCounter = 0;
+								PlayState.seenCutscene = false;
+							Mods.loadTopMod();
+								if(PlayState.isStoryMode)
+									MusicBeatState.switchState(new funkin.ui.story.StoryMenuState());
+								else
+									MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
+								FlxG.sound.playMusic(Paths.music('freakyMenu'));
+								PlayState.changedDifficulty = false;
+								PlayState.chartingMode = false;
+								FlxG.camera.followLerp = 0;
+						}
+					}
+				}
+				else
+				{
+					// Tapped on different item - select it
+					changeSelection(i - curSelected);
+				}
+				return;
+			}
+		}
+	}
+	#end
 
 	function regenMenu():Void {
 		for (i in 0...grpMenuShit.members.length)
