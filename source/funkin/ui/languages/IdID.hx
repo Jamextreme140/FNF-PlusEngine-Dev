@@ -33,12 +33,12 @@ class IdID
     
     public static var translations:Map<String, String> = [
         "update_available_title" => "Pembaruan Tersedia!",
-        "version_comparison" => "Versi Saat Ini: {1} => Versi Terbaru: {2}",
+        "version_comparison" => "Saat Ini: {1} => Terbaru: {2}",
         "loading_changelog" => "Memuat changelog...",
-        "update_controls" => "Tekan ENTER untuk perbarui ke versi terkini\nTekan ESCAPE jika anda berada di versi engine benar\nAnda dapat mematikan peringatan ini di menu Pengaturan",
+        "update_controls_mobile" => "Tekan A untuk mengunduh pembaruan\nTekan B untuk melanjutkan\nNonaktifkan ini di Pengaturan",
+        "update_controls" => "Tekan ENTER untuk mengunduh pembaruan\nTekan ESC untuk melanjutkan\nNonaktifkan ini di Pengaturan",
         "changelog_title" => "Apa yang Baru:\n{1}",
         "changelog_error" => "Kesalahan memuat changelog: {1}",
-        "update_controls_mobile" => "Tekan {1} untuk mengunduh versi terbaru\nTekan {2} jika Anda berada di versi engine yang benar\nAnda dapat mematikan peringatan ini di menu Pengaturan",
 
         // Gameplay
         "score_text" => "Skor: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
