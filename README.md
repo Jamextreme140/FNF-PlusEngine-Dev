@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**EN-US | [ES-LA](README.es-LA.md)**
+**EN-US | [ES-LA](README.es-LA.md) | [ID-ID](README.id-ID.md)**
 
 
 [![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)

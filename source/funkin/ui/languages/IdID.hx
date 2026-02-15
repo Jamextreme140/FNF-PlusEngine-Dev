@@ -150,7 +150,6 @@ class IdID
         "description_two_keys" => "Selesaikan sebuah lagu hanya menekan dua keys.",
         "achievement_toastie" => "Panggang Roti Gamer",
         "description_toastie" => "Apakah Anda pernah mencoba menjalankan game di panggang roti?",
-        "achievement_debugger" => "Debugger",
         "description_debugger" => "Selesaikan Stage \"Test\" dari Editor Chart.",
         "achievement_pessy_easter_egg" => "Cewek Engine Teman",
         "description_pessy_easter_egg" => "Haha, kamu menemukan aku~!",
@@ -213,7 +212,7 @@ class IdID
         "key_fullscreen" => "Layar Penuh",
         "controls_rebinding" => "Perekat ulang {1}",
         "controls_rebinding2" => "Tahan ESC untuk Batalkan\nTahan Backspace untuk Hapus",
-        "reset_to_default_keys" => "Kembalikan ke\nKeys Bawaan",
+        "reset_to_default_keys" => "Kembalikan ke\nKeys Default",
 
         // Gameplay Changers
         "setting_scroll_type" => "Jenis Gulungan",
@@ -252,7 +251,6 @@ class IdID
 
         // Visuals Settings
         "setting_note_skins" => "Note Skins:",
-        "setting_note_skins-default" => "Bawaan",
         "setting_note_skins-future" => "Masa Depan",
         "setting_note_skins-chip" => "Chip",
         "description_note_skins" => "Pilih Note skin yang Anda sukai",
@@ -266,7 +264,7 @@ class IdID
         "setting_note_splash_opacity" => "Opasitas Note Splash",
         "description_note_splash_opacity" => "Seberapa transparan seharusnya Note Splashes?",
         "setting_color_quantization" => "Kuantisasi Warna",
-        "description_color_quantization" => "Jika dicentang, note akan diberi warna sesuai dengan pembagian ritme (4, 8, 12, 16) seperti di StepMania.\nMengganti warna panah bawaan.",
+        "description_color_quantization" => "Jika dicentang, note akan diberi warna sesuai dengan pembagian ritme (4, 8, 12, 16) seperti di StepMania.\nMengganti warna panah default.",
         "setting_hide_hud" => "Sembunyikan HUD",
         "description_hide_hud" => "Jika dicentang, menyembunyikan sebagian besar elemen HUD.",
         "setting_hide_sustain_splash" => "Sembunyikan Sustain Splash",
@@ -408,7 +406,7 @@ class IdID
         "setting_arrow_path_boundary" => "Batas Jalur Panah",
         "description_arrow_path_boundary" => "Jarak dalam piksel di luar tepi layar untuk merender jalur.\nLebih rendah = Kinerja lebih baik | Lebih tinggi = Lebih sedikit pop-in visual",
         "setting_hold_end_scale" => "Skala Akhir Hold",
-        "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran bawaan",
+        "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran default",
         "setting_prevent_scaled_hold_ends" => "Mencegah Ujung Pegangan yang Terkelupas",
         "description_prevent_scaled_hold_ends" => "Menjaga ujung pegangan tetap berukuran konstan terlepas dari modifikasi.\nPERINGATAN: Menambahkan perhitungan tambahan, dapat mengurangi FPS jika ada banyak pegangan.",
         "setting_column_specific_modifiers" => "Modifikator Spesifik Kolom",
@@ -591,9 +589,7 @@ class IdID
         "editorplaystate_tip" => "Tekan ESC untuk kembali ke Editor Chart",
         "editorplaystate_time" => "Waktu: {1} / {2}",
         "editorplaystate_section_current" => "Bagian: {1}",
-        "editorplaystate_beat" => "Beat: {1}",
         "editorplaystate_step" => "Langkah: {1}",
-        "editorplaystate_score" => "Hits: {1} | Misses: {2}",
         
         // Language example text
         "language_example_text" => "Ini adalah teks contoh dalam bahasa Indonesia Nusantara."

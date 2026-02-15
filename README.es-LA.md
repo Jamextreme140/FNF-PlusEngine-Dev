@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**[EN-US](README.md) | ES-LA**
+**[EN-US](README.md) | ES-LA | ID-ID**
 
 </div>
 
