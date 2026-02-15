@@ -24,7 +24,7 @@ import funkin.ui.title.TitleState;
 	public var popUpRating:Bool = true;
 	public var versionTextOnGameplay:Bool = false;
 	public var gameOverVibration:Bool = false;
-	public var fpsRework:Bool = false;0
+	public var fpsRework:Bool = false;
 	#if windows
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
 	#end
