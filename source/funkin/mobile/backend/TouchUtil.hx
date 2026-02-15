@@ -38,16 +38,42 @@ class TouchUtil
 	public static var released(get, never):Bool;
 	public static var touch(get, never):FlxTouch;
 
+	// Reference to active scroll handler to prevent taps during scroll
+	private static var activeScrollHandler:TouchScroll = null;
+
+	/**
+	 * Register a scroll handler to prevent tap conflicts
+	 */
+	public static function setScrollHandler(handler:TouchScroll):Void
+	{
+		activeScrollHandler = handler;
+	}
+
+	/**
+	 * Clear scroll handler reference
+	 */
+	public static function clearScrollHandler():Void
+	{
+		activeScrollHandler = null;
+	}
+
 	/**
 	 * Checks if an object was touched/pressed
 	 * @param object The FlxObject to check for touch
 	 * @param camera The camera to use for checking (optional, uses object's camera if null)
 	 * @param justPressed If true, only returns true on justPressed. If false, returns true on both pressed and justPressed
+	 * @param ignoreScroll If false, will return false if scroll is active (prevents accidental taps during scroll)
 	 * @return Whether the object was touched
 	 */
-	public static function pressAction(object:FlxObject, ?camera:FlxCamera, justPressed:Bool = true):Bool
+	public static function pressAction(object:FlxObject, ?camera:FlxCamera, justPressed:Bool = true, ignoreScroll:Bool = false):Bool
 	{
 		if (object == null) return false;
+		
+		// Don't register taps if scroll is active (unless explicitly ignored)
+		if (!ignoreScroll && activeScrollHandler != null && activeScrollHandler.isCurrentlyScrolling())
+		{
+			return false;
+		}
 		
 		if (camera == null)
 			camera = object.camera;

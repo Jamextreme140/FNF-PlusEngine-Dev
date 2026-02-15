@@ -13,11 +13,15 @@ class BaseOptionsMenu extends MusicBeatSubstate
 {
 	private var curOption:Option = null;
 	private var curSelected:Int = 0;
+	private var lerpSelected:Float = 0;
 	private var optionsArray:Array<Option>;
 
 	private var grpOptions:FlxTypedGroup<Alphabet>;
 	private var checkboxGroup:FlxTypedGroup<CheckboxThingie>;
 	private var grpTexts:FlxTypedGroup<AttachedText>;
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	private var descBox:FlxSprite;
 	private var descText:FlxText;
@@ -101,11 +105,20 @@ class BaseOptionsMenu extends MusicBeatSubstate
 			//optionText.snapToPosition(); //Don't ignore me when i ask for not making a fucking pull request to uncomment this line ok
 			updateTextFrom(optionsArray[i]);
 		}
+		
+		// Initialize lerpSelected to current selection
+		lerpSelected = curSelected;
 
 		changeSelection();
 		reloadCheckboxes();
 		
-		addTouchPad('LEFT_FULL', 'A_B_C');
+		addTouchPad('LEFT_FULL', 'B');
+		
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 	}
 
 	public function addOption(option:Option) {
@@ -143,8 +156,33 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		}
 		
 		#if mobile
-		// Touch support for option items
-		handleTouchOptions();
+		// Touch scroll handling with smooth scrolling
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			
+			// Apply continuous scroll
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				// Smooth continuous scrolling (inverted for natural direction)
+				lerpSelected += -scrollDelta / 150;
+				lerpSelected = FlxMath.bound(lerpSelected, 0, optionsArray.length - 1);
+				
+				// Update curSelected when crossing integer boundaries
+				var newSelected = Math.round(lerpSelected);
+				if (newSelected != curSelected)
+				{
+					changeSelection(newSelected - curSelected);
+					// Keep lerp smooth, don't force snap
+				}
+			}
+			
+			// Handle tap on options (only if not scrolling)
+			if (touchScroll.wasTapped())
+			{
+				handleTouchOptions();
+			}
+		}
 		#end
 
 		if (controls.BACK) {
@@ -485,14 +523,31 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		option.text = text.replace('%v', val).replace('%d', def);
 	}
 	
+	override function destroy()
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
+		super.destroy();
+	}
+	
 	#if mobile
 	function handleTouchOptions():Void
 	{
-		// Check if tapped on any option
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+		
+		// Check if tapped on any option text
 		for (i in 0...grpOptions.members.length)
 		{
 			var item = grpOptions.members[i];
-			if (item != null && funkin.mobile.backend.TouchUtil.pressAction(item, null, true))
+			if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
 			{
 				if (i == curSelected)
 				{
@@ -507,44 +562,22 @@ class BaseOptionsMenu extends MusicBeatSubstate
 								ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
 							reloadCheckboxes();
 						default:
-							// For other types, just select (they need keyboard input)
+							// For other types, they use keyboard/button input
 					}
 				}
 				else
 				{
 					// Tapped on different item - select it
-					curSelected = i;
-					descText.text = optionsArray[curSelected].description;
-					descText.screenCenter(Y);
-					descText.y += 270;
-
-					for (num => optionItem in grpOptions.members)
-					{
-						optionItem.targetY = num - curSelected;
-						optionItem.alpha = 0.6;
-						if (optionItem.targetY == 0) optionItem.alpha = 1;
-					}
-					for (text in grpTexts)
-					{
-						text.alpha = 0.6;
-						if(text.ID == curSelected) text.alpha = 1;
-					}
-
-					descBox.setPosition(descText.x - 10, descText.y - 10);
-					descBox.setGraphicSize(Std.int(descText.width + 20), Std.int(descText.height + 25));
-					descBox.updateHitbox();
-
-					curOption = optionsArray[curSelected];
-					FlxG.sound.play(Paths.sound('scrollMenu'));
+					changeSelection(i - curSelected);
 				}
-				break;
+				return;
 			}
 		}
 		
-		// Handle checkbox touches
+		// Check if tapped on any checkbox
 		for (checkbox in checkboxGroup)
 		{
-			if (checkbox != null && funkin.mobile.backend.TouchUtil.pressAction(checkbox, null, true))
+			if (checkbox != null && checkbox.visible && checkbox.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
 			{
 				if (checkbox.ID == curSelected)
 				{
@@ -555,20 +588,26 @@ class BaseOptionsMenu extends MusicBeatSubstate
 						ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
 					reloadCheckboxes();
 				}
-				break;
+				else
+				{
+					// Tapped on different checkbox - select it
+					changeSelection(checkbox.ID - curSelected);
+				}
+				return;
 			}
 		}
 	}
 	#end
-	
+
 	function changeSelection(change:Int = 0)
 	{
 		curSelected = FlxMath.wrap(curSelected + change, 0, optionsArray.length - 1);
-
-		descText.text = optionsArray[curSelected].description;
-		descText.screenCenter(Y);
-		descText.y += 270;
-
+		
+		#if mobile
+		// Sync lerpSelected to prevent ping-pong effect
+		lerpSelected = curSelected;
+		#end
+		
 		for (num => item in grpOptions.members)
 		{
 			item.targetY = num - curSelected;
@@ -581,11 +620,13 @@ class BaseOptionsMenu extends MusicBeatSubstate
 			if(text.ID == curSelected) text.alpha = 1;
 		}
 
+		curOption = optionsArray[curSelected]; //shorter lol
+		descText.text = curOption.description;
+		
 		descBox.setPosition(descText.x - 10, descText.y - 10);
 		descBox.setGraphicSize(Std.int(descText.width + 20), Std.int(descText.height + 25));
 		descBox.updateHitbox();
 
-		curOption = optionsArray[curSelected]; //shorter lol
 		FlxG.sound.play(Paths.sound('scrollMenu'));
 	}
 
