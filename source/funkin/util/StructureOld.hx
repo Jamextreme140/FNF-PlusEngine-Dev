@@ -32,6 +32,9 @@ class StructureOld
 		'backend.Controls' => 'funkin.input.Controls',
 		'backend.Discord' => 'funkin.api.discord.Discord',
 		'backend.DiscordClient' => 'funkin.api.discord.Discord',
+
+		// psychlua
+		'psychlua.LuaUtils' => 'funkin.modding.scripting.psychlua.LuaUtils',
 		
 		// States
 		'states.PlayState' => 'funkin.play.PlayState',

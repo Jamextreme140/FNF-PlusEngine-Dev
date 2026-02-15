@@ -988,17 +988,19 @@ class FreeplayState extends MusicBeatState
 		FlxTween.tween(blackOverlay, {alpha: 0.6}, 1.0, {ease: FlxEase.sineInOut});
 		FlxTween.tween(difficultySelector, {enterProgress: 1}, 0.4, {ease: FlxEase.expoOut, startDelay: 0.1});
 		
+		#if mobile
 		// Initialize difficulty scroll
 		difficultyScroll = new funkin.mobile.backend.TouchScroll(true);
+		#end
 	}
 
 	function exitDifficultySelect()
 	{
 		FlxG.sound.play(Paths.sound('cancelMenu'));
-		
+	
 		// Set this immediately to prevent re-entering during tween
 		inDifficultySelect = false;
-		
+
 		#if mobile
 		// Reset touch scroll to clear any pending tap state
 		if (touchScroll != null) touchScroll.reset();

@@ -18,8 +18,10 @@ import lenin.slushithings.cpp.CPPInterface;
     <lib name="Kernel32.lib" if="windows" />
 </target>
 ')
-#if cpp
+#if (cpp && !windows)
 @:cppInclude("unistd.h")
+#end
+#if cpp
 @:cppInclude("stdio.h")
 @:cppInclude("stdlib.h")
 @:cppInclude("string.h")

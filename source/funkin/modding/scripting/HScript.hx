@@ -4,6 +4,10 @@ import funkin.play.character.Character;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.CustomSubstate;
 import funkin.modding.scripting.psychlua.ReflectionFunctions;
+import funkin.modding.scripting.psychlua.ModchartSprite;
+import funkin.modding.scripting.psychlua.DebugLuaText;
+import funkin.play.notes.StrumNote;
+import funkin.play.notes.NoteSplash;
 import funkin.util.StructureOld;
 #if LUA_ALLOWED
 import funkin.modding.scripting.FunkinLua;
@@ -106,7 +110,7 @@ class HScript extends Iris
 
 	public var origin:String;
 	
-	// Static initializer for Iris security configuration
+	// Static initializer for Iris security configuration and import redirects
 	static var __irisConfigured:Bool = {
 		// Configure Iris blocklist for security (system access, macros, etc.)
 		Iris.blocklistImports = [
@@ -117,6 +121,48 @@ class HScript extends Iris
 			"polymod",
 			"hscript"
 		];
+		
+		// Register old Psych Engine paths as proxy imports for backwards compatibility
+		// This makes "import psychlua.LuaUtils" work by redirecting to the new Plus Engine path
+		Iris.proxyImports.set("psychlua.LuaUtils", funkin.modding.scripting.psychlua.LuaUtils);
+		Iris.proxyImports.set("psychlua.ReflectionFunctions", funkin.modding.scripting.psychlua.ReflectionFunctions);
+		Iris.proxyImports.set("psychlua.CustomSubstate", funkin.modding.scripting.psychlua.CustomSubstate);
+		Iris.proxyImports.set("psychlua.HScript", HScript);
+		Iris.proxyImports.set("psychlua.ModchartSprite", funkin.modding.scripting.psychlua.ModchartSprite);
+		Iris.proxyImports.set("psychlua.DebugLuaText", funkin.modding.scripting.psychlua.DebugLuaText);
+		
+		// Backend compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("backend.ClientPrefs", ClientPrefs);
+		Iris.proxyImports.set("backend.Conductor", Conductor);
+		Iris.proxyImports.set("backend.Paths", Paths);
+		Iris.proxyImports.set("backend.Controls", Controls);
+		Iris.proxyImports.set("backend.MusicBeatState", MusicBeatState);
+		Iris.proxyImports.set("backend.Highscore", funkin.save.Highscore);
+		Iris.proxyImports.set("backend.Song", funkin.data.song.Song);
+		Iris.proxyImports.set("backend.WeekData", funkin.data.story.level.WeekData);
+		Iris.proxyImports.set("backend.Difficulty", funkin.data.Difficulty);
+		#if DISCORD_ALLOWED
+		Iris.proxyImports.set("backend.Discord", funkin.api.discord.DiscordClient);
+		#end
+		#if ACHIEVEMENTS_ALLOWED
+		Iris.proxyImports.set("backend.Achievements", Achievements);
+		#end
+		
+		// Objects compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("objects.Character", Character);
+		Iris.proxyImports.set("objects.Alphabet", funkin.ui.Alphabet);
+		Iris.proxyImports.set("objects.Note", funkin.play.notes.Note);
+		Iris.proxyImports.set("objects.StrumNote", funkin.play.notes.StrumNote);
+		Iris.proxyImports.set("objects.NoteSplash", funkin.play.notes.NoteSplash);
+		
+		// States compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("states.PlayState", PlayState);
+		Iris.proxyImports.set("states.MainMenuState", funkin.ui.mainmenu.MainMenuState);
+		Iris.proxyImports.set("states.StoryMenuState", funkin.ui.story.StoryMenuState);
+		Iris.proxyImports.set("states.FreeplayState", funkin.ui.freeplay.FreeplayState);
+		Iris.proxyImports.set("states.TitleState", funkin.ui.title.TitleState);
+		Iris.proxyImports.set("states.LoadingState", funkin.ui.LoadingState);
+		
 		true;
 	};
 	
@@ -192,57 +238,174 @@ class HScript extends Iris
 	}
 
 	var varsToBring(default, set):Any = null;
+	
+	// Override set() to redirect old Psych Engine paths to Plus Engine paths
+	override public function set(key:String, value:Dynamic, allowOverride:Bool = true):Void {
+		// If the value is null and key looks like a class path, try to resolve it
+		if (value == null && key.contains('.')) {
+			// Try to resolve via StructureOld
+			var resolvedClass = StructureOld.resolveClass(key);
+			if (resolvedClass != null) {
+				super.set(key, resolvedClass, allowOverride);
+				return;
+			}
+			
+			// If still null, silently ignore (might be a failed import)
+			// The script will use the already-exposed classes via preset()
+			return;
+		}
+		
+		// If setting a class with an old path name, try to resolve it
+		if (key.contains('.') && Std.isOfType(value, Class)) {
+			var resolvedClass = StructureOld.resolveClass(key);
+			if (resolvedClass != null && resolvedClass != value) {
+				// Use the resolved class instead
+				super.set(key, resolvedClass, allowOverride);
+				return;
+			}
+		}
+		
+		// Default behavior
+		super.set(key, value, allowOverride);
+	}
+	
 	override function preset() {
 		super.preset();
 
-		/*
-		 * HSCRIPT IMPORT SYSTEM (Native Iris + Auto-Resolve Fallback)
-		 * 
-		 * 1. Native imports: Scripts can use `import flixel.FlxSprite;` (recommended)
-		 * 2. Proxy imports: Custom wrappers registered in Iris.proxyImports
-		 * 3. Auto-resolve fallback: For backwards compatibility (autoImportPackages)
-		 * 4. StructureOld: Maps old Psych paths (0.6.3 -> 1.0.x)
-		 * 
-		 * Examples:
-		 *   import flixel.FlxSprite;  // Native import (best)
-		 *   var spr = new FlxSprite(); // Auto-resolved from autoImportPackages
-		 *   FlxG.camera.zoom = 1.0;    // Uses CustomFlxG proxy
-		 *   
-		 * Security: Classes in Iris.blocklistImports cannot be imported
-		 */
-
-		// ===== REGISTER IRIS PROXIES =====
-		// Proxies are checked first during imports, providing compatibility layers
-		Iris.addProxyImport('FlxG', CustomFlxG);
-		Iris.addProxyImport('FlxMath', CustomFlxMath);
-		Iris.addProxyImport('FlxColor', CustomFlxColor);
-		Iris.addProxyImport('FlxAxes', CustomFlxAxes);
-		Iris.addProxyImport('FlxTextAlign', CustomFlxTextAlign);
-		Iris.addProxyImport('FlxTextBorderStyle', CustomFlxTextBorderStyle);
-		
-		// Also set in variables for scripts without imports (backwards compat)
+		// Some very commonly used classes
+		set('Type', Type);
+		set('Map', haxe.ds.StringMap);
+		#if sys
+		set('File', File);
+		set('FileSystem', FileSystem);
+		#end
 		set('FlxG', CustomFlxG);
 		set('FlxMath', CustomFlxMath);
-		set('FlxColor', CustomFlxColor);
-		set('FlxAxes', CustomFlxAxes);
+		set('FlxSprite', flixel.FlxSprite);
+		set('FlxText', flixel.text.FlxText);
 		set('FlxTextAlign', CustomFlxTextAlign);
 		set('FlxTextBorderStyle', CustomFlxTextBorderStyle);
-
-		// ===== SPECIAL CLASSES =====
-		// Classes that are not in autoImportPackages and need explicit registration
+		set('FlxCamera', flixel.FlxCamera);
 		set('PsychCamera', funkin.graphics.PsychCamera);
-		set('Countdown', funkin.play.stage.BaseStage.Countdown);
+		set('FlxTimer', flixel.util.FlxTimer);
+		set('FlxTween', flixel.tweens.FlxTween);
+		set('FlxEase', flixel.tweens.FlxEase);
+
+		// Backwards compatibility: older mods expect a global `modchartTweens` map
+		// that stores tweens by tag. Use the shared PlayState instance so all
+		// scripts access the same map across the game (matches legacy behaviour).
+		#if LUA_ALLOWED
+		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
+		#else
+		set('modchartTweens', null);
+		#end
+		set('FlxFlicker', flixel.effects.FlxFlicker);
+		set('FlxColor', CustomFlxColor);
+		set('FlxAxes', CustomFlxAxes);
+		set('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
+		set('FlxTypedGroup', flixel.group.FlxTypedGroup);
+		set('FlxGroup', flixel.group.FlxGroup);
+		set('Capabilities', openfl.system.Capabilities);
+		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
+		set('Lib', openfl.Lib);
 		#if windows
 		set('WindowTweens', funkin.modding.scripting.psychlua.WindowTweens);
 		#end
+		set('Alphabet', funkin.ui.Alphabet);
+		set('AlphaCharacter', funkin.ui.AlphaCharacter);
+		set('Countdown', funkin.play.stage.BaseStage.Countdown);
+		set('Language', funkin.ui.Language);
+		set('Difficulty', funkin.data.Difficulty);
+		set('WeekData', funkin.data.story.level.WeekData);
+		#if DISCORD_ALLOWED
+		set('Discord', funkin.api.discord.DiscordClient);
+		#end
+		set('ModState', funkin.modding.ModState);
+		set('PlayState', PlayState);
+		set('TitleState', funkin.ui.title.TitleState);
+		set('MainMenuState', funkin.ui.mainmenu.MainMenuState);
+		set('FreeplayState', funkin.ui.freeplay.FreeplayState);
+		set('StoryMenuState', funkin.ui.story.StoryMenuState);
+		set('LoadingState', funkin.ui.LoadingState);
+		set('CreditsState', funkin.ui.credits.CreditsState);
+		set('AchievementsMenuState', funkin.ui.AchievementsMenuState);
+		set('MusicBeatState', MusicBeatState);
+		set('GameplayChangersSubstate', funkin.ui.options.GameplayChangersSubstate);
+		set('Paths', Paths);
+		set('Conductor', Conductor);
+		set('ClientPrefs', ClientPrefs);
+		set('Highscore', funkin.save.Highscore);
+		set('Song', funkin.data.song.Song);
+		#if ACHIEVEMENTS_ALLOWED
+		set('Achievements', Achievements);
+		#end
+		set('Character', Character);
+		set('Alphabet', Alphabet);
+		set('Note', funkin.play.notes.Note);
+		set('CustomSubstate', CustomSubstate);
+		set('LuaUtils', LuaUtils);
+		
+		// ===== BACKWARDS COMPATIBILITY: Old Psych Engine package paths =====
+		// Allow scripts to use old paths like "import psychlua.LuaUtils"
+		// by creating package-like namespaces with the old structure
+		var psychluaCompat:Dynamic = {
+			LuaUtils: LuaUtils,
+			ReflectionFunctions: ReflectionFunctions,
+			CustomSubstate: CustomSubstate,
+			HScript: HScript,
+			ModchartSprite: ModchartSprite,
+			DebugLuaText: DebugLuaText
+		};
+		set('psychlua', psychluaCompat);
+		
+		var backendCompat:Dynamic = {
+			ClientPrefs: ClientPrefs,
+			Conductor: Conductor,
+			Paths: Paths,
+			Controls: Controls,
+			Discord: #if DISCORD_ALLOWED funkin.api.discord.DiscordClient #else null #end,
+			MusicBeatState: MusicBeatState,
+			Highscore: funkin.save.Highscore,
+			Song: funkin.data.song.Song,
+			WeekData: funkin.data.story.level.WeekData,
+			Difficulty: funkin.data.Difficulty,
+			Achievements: #if ACHIEVEMENTS_ALLOWED Achievements #else null #end
+		};
+		set('backend', backendCompat);
+		
+		var objectsCompat:Dynamic = {
+			Character: Character,
+			Alphabet: funkin.ui.Alphabet,
+			Note: funkin.play.notes.Note,
+			StrumNote: StrumNote,
+			NoteSplash: NoteSplash
+		};
+		set('objects', objectsCompat);
+		
+		var statesCompat:Dynamic = {
+			PlayState: PlayState,
+			MainMenuState: funkin.ui.mainmenu.MainMenuState,
+			StoryMenuState: funkin.ui.story.StoryMenuState,
+			FreeplayState: funkin.ui.freeplay.FreeplayState,
+			TitleState: funkin.ui.title.TitleState,
+			LoadingState: funkin.ui.LoadingState
+		};
+		set('states', statesCompat);
+		
 		#if (!flash && sys)
+		set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
 		set('ErrorHandledRuntimeShader', funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader);
 		#end
+		set('ShaderFilter', openfl.filters.ShaderFilter);
+		set('StringTools', StringTools);
+		#if flxanimate
+		set('FlxAnimate', FlxAnimate);
+		#end
 		#if (hxvlc)
-		// Video classes - need explicit registration as they're in external library
 		set('VideoSprite', funkin.graphics.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
+		// Compatibilidad con versiones anteriores
 		set('VideoHandler', funkin.graphics.video.v2.VideoHandler);
 		set('MP4Handler', funkin.graphics.video.v3.MP4Handler);
 		#end
@@ -263,6 +426,9 @@ class HScript extends Iris
 		set('customSubstate', CustomSubstate.instance);
 		set('customSubstateName', CustomSubstate.name);
 		set('buildTarget', LuaUtils.getBuildTarget());
+
+		// Note: Don't expose Character objects directly - they can't be converted to Lua
+		// Scripts can access them via parentInstance resolution (e.g., `boyfriend.x`)
 
 		// ===== CONSTANTS =====
 		set('Function_Stop', LuaUtils.Function_Stop);
@@ -473,50 +639,6 @@ class HScript extends Iris
 			}
 			catch (e:IrisError) {
 				Iris.error(Printer.errorToString(e, false), this.interp.posInfos());
-			}
-		});
-		
-		// ===== IMPORT SYSTEM CONFIGURATION =====
-		// Functions to configure imports and auto-resolution
-		set('addAutoImportPackage', function(packageName:String) {
-			if(!CustomInterp.autoImportPackages.contains(packageName)) {
-				CustomInterp.autoImportPackages.push(packageName);
-			}
-		});
-		set('removeAutoImportPackage', function(packageName:String) {
-			CustomInterp.autoImportPackages.remove(packageName);
-		});
-		set('addImportBlacklist', function(className:String) {
-			if(!Iris.blocklistImports.contains(className)) {
-				Iris.blocklistImports.push(className);
-			}
-		});
-		set('removeImportBlacklist', function(className:String) {
-			Iris.blocklistImports.remove(className);
-		});
-		set('setAutoResolveClasses', function(enabled:Bool) {
-			CustomInterp.autoResolveClasses = enabled;
-		});
-		set('clearClassCache', function() {
-			CustomInterp.clearCache();
-		});
-		set('addProxyClass', function(name:String, proxy:Dynamic) {
-			Iris.addProxyImport(name, proxy);
-		});
-		
-		// ===== USING SYSTEM =====
-		// Iris native using system (like Haxe's "using StringTools")
-		// Allows: "hello".trim() instead of StringTools.trim("hello")
-		set('addUsing', function(className:String) {
-			var customInterp:CustomInterp = cast this.interp;
-			if(customInterp != null) {
-				customInterp.addUsingClass(className);
-			}
-		});
-		set('registerUsing', function(name:String, callback:Dynamic) {
-			var customInterp:CustomInterp = cast this.interp;
-			if(customInterp != null) {
-				customInterp.registerCustomUsing(name, callback);
 			}
 		});
 	}
@@ -833,81 +955,6 @@ class CustomInterp extends crowplexus.hscript.Interp
 	public var scriptName:String = "Unknown";
 	private var _instanceFields:Array<String>;
 	
-	// Auto-resolution settings (fallback for scripts without imports)
-	public static var autoResolveClasses:Bool = true;
-	public static var autoImportPackages:Array<String> = [
-		"flixel",
-		"flixel.util",
-		"flixel.tweens",
-		"flixel.text",
-		"flixel.group",
-		"flixel.effects",
-		"flixel.addons",
-		"flixel.math",
-		"flixel.system",
-		"openfl",
-		"openfl.filters",
-		"openfl.system",
-		"funkin",
-		"funkin.play",
-		"funkin.ui",
-		"funkin.data",
-		"funkin.graphics",
-		"funkin.modding",
-		"funkin.util",
-		"funkin.save"
-	];
-	
-	// Cache for resolved classes (separate from failed lookups)
-	private static var _classCache:Map<String, Class<Dynamic>> = new Map();
-	private static var _failedLookups:Map<String, Bool> = new Map();
-	
-	// Clear cache (useful when reloading scripts or mods)
-	public static function clearCache():Void {
-		_classCache.clear();
-		_failedLookups.clear();
-	}
-	
-	// Add a using class (enables method extension syntax)
-	public function addUsingClass(className:String):Void {
-		var cls = Type.resolveClass(className);
-		if(cls == null) {
-			// Try auto-resolve
-			cls = autoResolveClass(className);
-		}
-		
-		if(cls != null) {
-			// Create using entry for this class
-			var entry = new UsingEntry(className, function(o:Dynamic, f:String, args:Array<Dynamic>):Dynamic {
-				if(!Reflect.hasField(cls, f))
-					return null;
-					
-				var field = Reflect.field(cls, f);
-				if(!Reflect.isFunction(field))
-					return null;
-					
-				// Check if it has at least one argument
-				var argCount = Tools.argCount(field);
-				if(argCount == 0)
-					return null;
-					
-				return Reflect.callMethod(cls, field, [o].concat(args));
-			});
-			
-			if(usings.indexOf(entry) == -1) {
-				usings.push(entry);
-			}
-		}
-	}
-	
-	// Register custom using with callback
-	public function registerCustomUsing(name:String, callback:Dynamic):Void {
-		var entry = new UsingEntry(name, callback);
-		if(usings.indexOf(entry) == -1) {
-			usings.push(entry);
-		}
-	}
-	
 	function set_parentInstance(inst:Dynamic):Dynamic
 	{
 		parentInstance = inst;
@@ -931,102 +978,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 			}
 		}
 	}
-	
-	override function cnew(className:String, args:Array<Dynamic>):Dynamic {
-		// Try to resolve with backwards compatibility
-		var resolvedClass = StructureOld.resolveClass(className);
-		if (resolvedClass != null) {
-			return Type.createInstance(resolvedClass, args);
-		}
-		
-		// Try direct Type.resolveClass as last resort
-		var directClass = Type.resolveClass(className);
-		if (directClass != null) {
-			return Type.createInstance(directClass, args);
-		}
-		
-		// If nothing works, throw error
-		error(EUnknownVariable(className));
-		return null;
-	}
-	
-	/**
-	 * Automatically resolve a class by name.
-	 * Optimized with caching and blacklist using native Iris features.
-	 */
-	private function autoResolveClass(className:String):Class<Dynamic> {
-		if(!autoResolveClasses) return null;
-		
-		// Check failed lookups cache to avoid redundant searches
-		if(_failedLookups.exists(className)) {
-			return null;
-		}
-		
-		// Check success cache first (fast path)
-		if(_classCache.exists(className)) {
-			return _classCache.get(className);
-		}
-		
-		// Check Iris native blocklist (uses startsWith for better performance)
-		for(blocked in Iris.blocklistImports) {
-			if(className == blocked || className.startsWith(blocked + ".")) {
-				_failedLookups.set(className, true);
-				return null;
-			}
-		}
-		
-		// Try StructureOld first (handles Psych 0.6.3 -> 1.0.x path migration)
-		var resolvedClass = StructureOld.resolveClass(className);
-		if(resolvedClass != null) {
-			_classCache.set(className, resolvedClass);
-			return resolvedClass;
-		}
-		
-		// Try direct Type.resolveClass
-		var directClass = Type.resolveClass(className);
-		if(directClass != null) {
-			_classCache.set(className, directClass);
-			return directClass;
-		}
-		
-		// Try with auto-import packages (only if direct lookup failed)
-		for(pkg in autoImportPackages) {
-			var fullClassName = pkg + "." + className;
-			
-			// Check blocklist for full path
-			var isBlocked = false;
-			for(blocked in Iris.blocklistImports) {
-				if(fullClassName == blocked || fullClassName.startsWith(blocked + ".")) {
-					isBlocked = true;
-					break;
-				}
-			}
-			if(isBlocked) continue;
-			
-			// Try StructureOld for package path
-			var pkgClass = StructureOld.resolveClass(fullClassName);
-			if(pkgClass != null) {
-				_classCache.set(className, pkgClass);
-				return pkgClass;
-			}
-			
-			// Try direct resolution for package path
-			pkgClass = Type.resolveClass(fullClassName);
-			if(pkgClass != null) {
-				_classCache.set(className, pkgClass);
-				return pkgClass;
-			}
-		}
-		
-		// Cache failed lookup to avoid repeated searches
-		_failedLookups.set(className, true);
-		return null;
-	}
 
 	override function fcall(o:Dynamic, funcToRun:String, args:Array<Dynamic>):Dynamic {
-		// Capturar null reference antes de continuar
+		// Handle null reference gracefully
 		if (o == null) {
-			// Silently return null to avoid spam
 			return null;
 		}
 
@@ -1039,37 +994,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 		var f = get(o, funcToRun);
 
 		if (f == null) {
-			// Silently return null to avoid spam
+			Iris.error('Tried to call null function $funcToRun', posInfos());
 			return null;
 		}
 
-		// Manejo especial para Maps y sus métodos
-		if (Std.isOfType(o, haxe.Constraints.IMap)) {
-			var map:haxe.Constraints.IMap<Dynamic, Dynamic> = cast o;
-			// Llamar directamente a los métodos del Map para evitar problemas de binding
-			switch(funcToRun) {
-				case "exists":
-					return map.exists(args[0]);
-				case "get":
-					return map.get(args[0]);
-				case "set":
-					map.set(args[0], args[1]);
-					return args[1];
-				case "remove":
-					return map.remove(args[0]);
-				case "keys":
-					return map.keys();
-				case "iterator":
-					return map.iterator();
-				case "clear":
-					map.clear();
-					return null;
-				case "toString":
-					return map.toString();
-			}
-		}
-
-		// Para otros objetos, usar Reflect.callMethod normalmente
 		return Reflect.callMethod(o, f, args);
 	}
 
@@ -1080,7 +1008,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return l.r;
 		}
 
-		// Check variables
+		// Check variables  
 		if (variables.exists(id)) {
 			var v = variables.get(id);
 			return v;
@@ -1092,7 +1020,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return v;
 		}
 
-		// Check parent instance fields
+		// Check parent instance fields (Psych Engine compatibility)
 		if(parentInstance != null && _instanceFields.contains(id)) {
 			var v = Reflect.getProperty(parentInstance, id);
 			return v;
@@ -1105,33 +1033,6 @@ class CustomInterp extends crowplexus.hscript.Interp
 		
 		if(MusicBeatState.getVideoHandlers().exists(id)) {
 			return MusicBeatState.getVideoHandlers().get(id);
-		}
-		
-		// Auto-resolve classes if enabled
-		if(autoResolveClasses) {
-			var resolvedClass = autoResolveClass(id);
-			if(resolvedClass != null) {
-				// Cache in variables for faster next access
-				variables.set(id, resolvedClass);
-				return resolvedClass;
-			}
-			
-			// Try to resolve as enum
-			var resolvedEnum = Type.resolveEnum(id);
-			if(resolvedEnum != null) {
-				// Check blocklist for enum
-				var isBlocked = false;
-				for(blocked in Iris.blocklistImports) {
-					if(id == blocked || id.startsWith(blocked + ".")) {
-						isBlocked = true;
-						break;
-					}
-				}
-				if(!isBlocked) {
-					variables.set(id, resolvedEnum);
-					return resolvedEnum;
-				}
-			}
 		}
 
 		error(EUnknownVariable(id));
