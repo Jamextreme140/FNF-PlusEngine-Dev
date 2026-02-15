@@ -174,7 +174,7 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = onChangeWatermark;
 
-		#if native
+		#if windows
 		var option:Option = new Option('Fullscreen Mode:',
 			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
 			'fullscreenMode',

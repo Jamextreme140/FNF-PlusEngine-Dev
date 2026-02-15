@@ -17,15 +17,17 @@ import funkin.ui.title.TitleState;
 	public var screensaver:Bool = false;
 	public var wideScreen:Bool = false;
 	#if android
-	public var storageType:String = "EXTERNAL_DATA";
+	public var storageType:String = "EXTERNAL";
 	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
 	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;
-	public var hideVersionText:Bool = true;
+	public var hideVersionText:Bool = false;
 	public var gameOverVibration:Bool = false;
-	public var fpsRework:Bool = false;
+	public var fpsRework:Bool = false;0
+	#if windows
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
+	#end
 	
 	// Accuracy/Rating system
 	public var accuracySystem:String = 'Wife3'; // 'Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'
@@ -44,7 +46,9 @@ import funkin.ui.title.TitleState;
 	public var flashing:Bool = true;
 	public var autoPause:Bool = true;
 	public var antialiasing:Bool = true;
+	#if windows
 	public var changeWindowBorderColorWithNoteHit:Bool = false; // Changes window border color on note hit (Windows 11 only)
+	#end
 	public var noteSkin:String = 'Default';
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
@@ -64,7 +68,7 @@ import funkin.ui.title.TitleState;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
-	    public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
+	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
 	
 	// ========== Modchart Config Options ==========
 	// Camera & 3D Settings
@@ -149,7 +153,7 @@ import funkin.ui.title.TitleState;
 	public var goodWindow:Float = 90.0;
 	public var badWindow:Float = 135.0;
 	public var safeFrames:Float = 10.0;
-	public var guitarHeroSustains:Bool = true;
+	public var guitarHeroSustains:Bool = false;
 	public var discordRPC:Bool = true;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
