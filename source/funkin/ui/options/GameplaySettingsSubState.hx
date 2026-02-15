@@ -40,7 +40,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 
 		var option:Option = new Option('Version Text on Gameplay',
 		    "If checked, the version text will be shown.",
-			'hideVersionText',
+			'versionTextOnGameplay',
 			BOOL);
 		addOption(option);
 		

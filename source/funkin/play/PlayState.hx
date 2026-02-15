@@ -832,7 +832,7 @@ class PlayState extends MusicBeatState
 		versionText.scrollFactor.set();
 		versionText.alpha = 1.0; // Comienza completamente visible
 		versionText.borderSize = 1;
-		versionText.visible = ClientPrefs.data.hideVersionText;
+		versionText.visible = ClientPrefs.data.versionTextOnGameplay;
 		versionText.cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
 
 		Conductor.songPosition = -Conductor.crochet * 5 + Conductor.offset;
