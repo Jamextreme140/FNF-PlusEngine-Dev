@@ -154,10 +154,6 @@ class PlayState extends MusicBeatState
 	public var luaArray:Array<FunkinLua> = [];
 	#end
 
-	#if PY_ALLOWED
-	public var pythonArray:Array<FunkinPython> = [];
-	#end
-
 	#if HSCRIPT_ALLOWED
 	public var hscriptArray:Array<HScript> = [];
 	#end
@@ -765,7 +761,7 @@ class PlayState extends MusicBeatState
 			}
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// "SCRIPTS FOLDER" SCRIPTS
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
 			#if linux
@@ -803,7 +799,7 @@ class PlayState extends MusicBeatState
 				gf.visible = false;
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// STAGE SCRIPTS
 		#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
 		#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
@@ -1026,7 +1022,7 @@ class PlayState extends MusicBeatState
 		eventsPushed = null;
 
 		// SONG SPECIFIC SCRIPTS
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// Para canciones de StepMania/NotITG, buscar scripts en la carpeta songs/
 		if (isStepManiaLevel() && customAudioPath != null)
 		{
@@ -1084,11 +1080,6 @@ class PlayState extends MusicBeatState
 						continue;
 					if(file.toLowerCase().endsWith('.hx'))
 						initHScript(folder + file);
-					#end
-
-					#if PY_ALLOWED
-					if(file.toLowerCase().endsWith('.py'))
-						initPython(folder + file);
 					#end
 				}
 		}
@@ -5288,16 +5279,6 @@ class PlayState extends MusicBeatState
 		FunkinLua.customFunctions.clear();
 		#end
 
-		#if PY_ALLOWED
-		for (py in pythonArray)
-		{
-			py.call('onDestroy', []);
-			py.stop();
-		}
-		pythonArray = null;
-		FunkinPython.customFunctions.clear();
-		#end
-
 		#if HSCRIPT_ALLOWED
 		// Destroy all HScript arrays
 		for (script in hscriptArray)
@@ -5728,18 +5709,6 @@ class PlayState extends MusicBeatState
 		if(exclusions == null) exclusions = [];
 		for (script in hscriptArray) {
 			if(exclusions.contains(script.origin))
-				continue;
-
-			script.set(variable, arg);
-		}
-		#end
-	}
-
-	public function setOnPythons(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
-		#if PY_ALLOWED
-		if(exclusions == null) exclusions = [];
-		for (script in pythonArray) {
-			if(exclusions.contains(script.scriptName))
 				continue;
 
 			script.set(variable, arg);
