@@ -377,6 +377,8 @@ class StorageUtil
 		return (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU) && 
 			(storageType == "EXTERNAL" || storageType == "EXTERNAL_GLOBAL");
 	}
+	#end
+	#end
 }
 
 typedef StorageTypeInfo = 
