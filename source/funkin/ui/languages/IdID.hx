@@ -86,10 +86,9 @@ class IdID
         "storyname_tutorial" => "Tata Cara",
         "storyname_week1" => "Ayah yang Tercinta",
         "storyname_week2" => "Bulan Spooky",
-        "storyname_week4" => "Ibu Harus Membunuh",
-        "storyname_week5" => "Salju Merah",
-        "storyname_week6" => "Simulasi Hating ft. Moawling",
-        "storyname_week7" => "Tankman",
+        "storyname_week4" => "IBU HARUS MEMBUNUH",
+        "storyname_week5" => "SALJU MERAH",
+        "storyname_week6" => "simulasi hating ft. moawling",
         "storyname_weekend1" => "Utang yang Harus Dibayar",
 
         // Freeplay

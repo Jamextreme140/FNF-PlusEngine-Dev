@@ -1,0 +1,20 @@
+{
+	"songs": [
+		["Spaghetti", "spaghetti", [255, 234, 154]]
+	],
+
+	"weekCharacters": [
+		"spaghetti",
+		"bf",
+		"gf"
+	],
+	"weekBackground": "",
+
+	"storyName": "LE SSERAFIM",
+	"weekBefore": "weekend1",
+	"weekName": "Sserafim",
+	"startUnlocked": true,
+
+	"hideStoryMode": false,
+	"hideFreeplay": false
+}
