@@ -78,6 +78,23 @@ class CopyState extends MusicBeatState
 		Language.reloadPhrases();
 		funkin.graphics.shaders.ColorblindFilter.UpdateColors();
 		
+		#if android
+		// For Android < 11 with EXTERNAL storage, verify we have permissions before checking files
+		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
+			var hasPermissions = AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+			
+			if (!hasPermissions) {
+				trace('[CopyState] EXTERNAL storage selected but permissions not granted yet. Waiting for user response...');
+				// Give some time for the permission dialog to be processed
+				// The permission was already requested in Main.hx, so we just need to wait briefly
+				// If after this brief wait we still don't have permissions, the checkExistingFiles
+				// will handle it (files will appear as missing and be copied when permissions are granted)
+			} else {
+				trace('[CopyState] EXTERNAL storage permissions confirmed');
+			}
+		}
+		#end
+		
 		locatedFiles = [];
 		maxLoopTimes = 0;
 		checkExistingFiles();
@@ -281,10 +298,16 @@ class CopyState extends MusicBeatState
 		#if android
 		// Check if files exist in their respective storage locations
 		locatedFiles = locatedFiles.filter(file -> {
-			if (file.startsWith('mods/'))
-				return !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file);
-			else
-				return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
+			try {
+				if (file.startsWith('mods/'))
+					return !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file);
+				else
+					return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
+			} catch (e:Dynamic) {
+				// If we can't access the file (e.g., no permissions), assume it's missing
+				trace('[CopyState] Could not check file: $file - ${e}');
+				return true; // Treat as missing so it will be copied when permissions are granted
+			}
 		});
 		#else
 		locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(file));

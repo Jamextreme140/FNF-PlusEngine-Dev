@@ -207,11 +207,32 @@ class Main extends Sprite
 		// Determine initial state. InitialState will load mods and redirect accordingly.
 		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
+		// For Android < 11 with EXTERNAL storage, we need to check if permissions were granted
+		// before we can properly check existing files
+		#if android
+		var needsPermissions:Bool = false;
+		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
+			// Check if we have the necessary permissions for external storage
+			needsPermissions = !AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+		}
+		
+		// If we need permissions and don't have them yet, always go to CopyState
+		// CopyState will handle the file checking after permissions are granted
+		if (needsPermissions || !CopyState.checkExistingFiles()) {
+			initialState = CopyState;
+			if (needsPermissions) {
+				trace('[Main] Permissions not granted yet for EXTERNAL storage, going to CopyState');
+			}
+		} else {
+			trace('[Main] All files exist, skipping CopyState');
+		}
+		#else
 		if (!CopyState.checkExistingFiles()) {
 			initialState = CopyState;
 		} else {
 			trace('[Main] All files exist, skipping CopyState');
 		}
+		#end
 		#else
 		// Preloader removed: always start at InitialState
 		#end
