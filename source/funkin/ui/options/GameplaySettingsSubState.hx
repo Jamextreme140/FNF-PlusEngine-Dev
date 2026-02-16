@@ -52,7 +52,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeAutoPause;
 
 		var option:Option = new Option('Pop Up Score',
-			"If unchecked, hitting notes won't make \"sick\", \"good\".. and combo popups\n(Useful for low end " + Main.platform + ").",
+			"If unchecked, hitting notes won't make \"sick\", \"good\".. and combo popups\n(Useful for low end device)",
 			'popUpRating',
 			BOOL);
 		addOption(option);

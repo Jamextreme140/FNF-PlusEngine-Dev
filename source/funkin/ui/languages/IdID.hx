@@ -344,7 +344,7 @@ class IdID
         "setting_auto_pause" => "Jeda Otomatis",
         "description_auto_pause" => "Jika dicentang, game akan otomatis jeda jika layar tidak berada dalam fokus.",
         "setting_pop_up_score" => "Pop-up Kombo",
-        "description_pop_up_score" => "Jika tidak diaktifkan, memukul note tidak akan menghasilkan \"sick\", \"baik\".. dan popup combo\n(Berguna untuk perangkat dengan spesifikasi rendah " + Main.platform + ").",
+        "description_pop_up_score" => "Jika tidak diaktifkan, memukul note tidak akan menghasilkan \"sick\", \"baik\".. dan popup combo\n(Berguna untuk perangkat dengan spesifikasi rendah)",
         "setting_disable_reset_button" => "Nonaktifkan Tombol Reset",
         "description_disable_reset_button" => "Jika dicentang, menekan tombol Reset tidak akan melakukan apa-apa.",
         "setting_game_over_vibration" => "Getar Game Over",
