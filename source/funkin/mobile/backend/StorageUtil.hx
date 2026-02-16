@@ -117,7 +117,7 @@ class StorageUtil
 		else
 			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
 
-		if (!AndroidEnvironment.isExternalStorageManager())
+		if (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU && !AndroidEnvironment.isExternalStorageManager())
 			AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
 
 		if ((AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU
@@ -312,7 +312,7 @@ class StorageUtil
 			{
 				id: "EXTERNAL",
 				name: "Public Storage",
-				description: "Stores in /sdcard/.PlusEngine/\nRequires file manager permission on Android 11+.\nPersists after uninstall, easy to access with file managers."
+				description: "Stores in /sdcard/.PlusEngine/\nOnly requires file manager permission on Android 11+.\nRemains after uninstall, easily accessible with file manager. (Only on Android 11+)"
 			},
 			{
 				id: "EXTERNAL_MEDIA",
@@ -374,10 +374,9 @@ class StorageUtil
 	 */
 	public static function requiresSpecialPermissions(storageType:String):Bool
 	{
-		return (storageType == "EXTERNAL" || storageType == "EXTERNAL_GLOBAL");
+		return (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU) && 
+			(storageType == "EXTERNAL" || storageType == "EXTERNAL_GLOBAL");
 	}
-	#end
-	#end
 }
 
 typedef StorageTypeInfo = 
