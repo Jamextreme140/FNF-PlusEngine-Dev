@@ -4,27 +4,27 @@
 			"Ugh",
 			"tankman",
 			[
-				246,
-				182,
-				4
+				255,
+				255,
+				255
 			]
 		],
 		[
 			"Guns",
 			"tankman",
 			[
-				246,
-				182,
-				4
+				255,
+				255,
+				255
 			]
 		],
 		[
 			"Stress",
 			"tankman",
 			[
-				246,
-				182,
-				4
+				255,
+				255,
+				255
 			]
 		]
 	],
@@ -38,9 +38,9 @@
 	"storyName": "Tankman",
 	"weekName": "Week 7",
 	"freeplayColor": [
-		146,
-		113,
-		253
+		255,
+		255,
+		255
 	],
 	"hideStoryMode": false,
 	"weekBefore": "week6",
