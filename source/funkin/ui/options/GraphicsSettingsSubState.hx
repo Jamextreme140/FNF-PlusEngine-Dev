@@ -105,6 +105,14 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 			'fpsRework',
 			BOOL);
 		addOption(option);
+
+		var option:Option = new Option('FPS Counter',
+			'If unchecked, hides FPS Counter.',
+			'showFPS',
+			BOOL);
+		option.onChange = onChangeFPSCounter;
+		addOption(option);
+
 		super();
 		insert(1, boyfriend);
 	}
@@ -142,6 +150,12 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 				FlxG.updateFramerate = ClientPrefs.data.framerate;
 			}
 		}
+	}
+
+	function onChangeFPSCounter()
+	{
+		if(Main.fpsVar != null)
+			Main.fpsVar.visible = ClientPrefs.data.showFPS;
 	}
 
 	override function changeSelection(change:Int = 0)

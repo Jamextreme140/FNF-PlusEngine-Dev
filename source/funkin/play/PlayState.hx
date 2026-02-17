@@ -4138,6 +4138,7 @@ class PlayState extends MusicBeatState
 	public var itg_Miss:Int = 0;
 	public var itg_DP:Float = 0.0;
 	public var showComboNum:Bool = true;
+	public var showCombo:Bool = true;
 	public var showRating:Bool = true;	// Stores Ratings and Combo Sprites in a group
 	public var comboGroup:FlxSpriteGroup;
 	// Stores HUD Objects in a Group
@@ -4439,13 +4440,13 @@ class PlayState extends MusicBeatState
 				comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 70;
 			else
 				comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 50 + (comboSpr.height * 0.5);
-			comboSpr.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showCombo && combo > 10);
+			comboSpr.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showCombo && showCombo && combo > 10);
 			comboSpr.velocity.x += FlxG.random.int(1, 10) * playbackRate;
 			comboGroup.add(rating);
 
 			var daLoop:Int = 0;
 			var xThing:Float = 0;
-			if (ClientPrefs.data.showCombo && combo >= 10 || combo == 0)
+			if (ClientPrefs.data.showCombo && showCombo && combo >= 10 || combo == 0)
 				comboGroup.add(comboSpr);
 
 			var separatedScore:String = Std.string(combo).lpad('0', 3);

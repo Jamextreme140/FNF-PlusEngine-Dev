@@ -119,7 +119,24 @@ class MobileSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		option = new Option('Show Debug Buttons',
+			'If checked, shows the T (Trace) and D (Debug) buttons in the top-right corner.\nT toggles trace display, D cycles FPS debug levels.',
+			'showMobileDebugButtons',
+			BOOL);
+		option.onChange = onChangeMobileDebugButtons;
+		addOption(option);
+
 		super();
+	}
+
+	function onChangeMobileDebugButtons()
+	{
+		#if mobile
+		if(Main.traceButton != null)
+			Main.traceButton.visible = ClientPrefs.data.showMobileDebugButtons;
+		if(Main.debugButton != null)
+			Main.debugButton.visible = ClientPrefs.data.showMobileDebugButtons;
+		#end
 	}
 
 	#if android

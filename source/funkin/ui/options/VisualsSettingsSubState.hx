@@ -402,7 +402,7 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		super.destroy();
 	}
 
-	   // function onChangeFPSCounter() eliminado: FPSCounter ahora siempre visible, control solo por F2
+	// FPS Counter option has been moved to GraphicsSettingsSubState
 
 	function onChangeWatermark()
 	{

@@ -14,6 +14,7 @@ import funkin.ui.title.TitleState;
 	public var dynamicColors:Bool = true; // yes cause its cool -Karim
 	public var controlsAlpha:Float = FlxG.onMobile ? 0.6 : 0;
 	public var showTouchPointer:Bool = true; // show touch pointer indicator (like Android dev option)
+	public var showMobileDebugButtons:Bool = true; // show T and D debug buttons on mobile
 	public var screensaver:Bool = false;
 	public var wideScreen:Bool = false;
 	#if android
