@@ -247,21 +247,24 @@ class CharacterEditorState extends MusicBeatState implements PsychUIEventHandler
 	function addCharacter(reload:Bool = false)
 	{
 		var pos:Int = -1;
+		var wasAnimatedIcon:Bool = false;
+		var lastIsPlayer:Bool = false;
+		
 		if(character != null)
 		{
 			pos = members.indexOf(character);
-			var wasAnimatedIcon = character.animatedIcon;
+			wasAnimatedIcon = character.animatedIcon;
+			lastIsPlayer = character.isPlayer;
 			remove(character);
 			character.destroy();
 		}
 
-		var isPlayer = (reload ? character.isPlayer : !predictCharacterIsNotPlayer(_char));
+		var isPlayer = (reload ? lastIsPlayer : !predictCharacterIsNotPlayer(_char));
 		character = new Character(0, 0, _char, isPlayer);
 
 		if(reload && animatedIconCheckBox != null) {
 			character.animatedIcon = animatedIconCheckBox.checked;
 		}
-		character.isPlayer = !character.isPlayer;
 		character.flipX = (character.originalFlipX != character.isPlayer);
 		if(check_player != null) check_player.checked = character.isPlayer;
 		

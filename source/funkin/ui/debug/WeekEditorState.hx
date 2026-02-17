@@ -584,9 +584,12 @@ class WeekEditorFreeplayState extends MusicBeatState implements PsychUIEventHand
 			songText.scaleX = Math.min(1, 980 / songText.width);
 			songText.snapToPosition();
 
-			var icon:HealthIcon = new HealthIcon(weekFile.songs[i][1], false, false);
-			add(icon);
+			var icon:HealthIcon = new HealthIcon(weekFile.songs[i][1]);
+			icon.sprTracker = songText;
+
+			// using a FlxGroup is too much fuss!
 			iconArray.push(icon);
+			add(icon);
 
 			// songText.x += 40;
 			// DONT PUT X IN THE FIRST PARAMETER OF new ALPHABET() !!
@@ -731,14 +734,21 @@ class WeekEditorFreeplayState extends MusicBeatState implements PsychUIEventHand
 		curSelected = FlxMath.wrap(curSelected + change, 0, weekFile.songs.length - 1);
 		for (num => item in grpSongs.members)
 		{
-			var icon:HealthIcon = iconArray[num];
 			item.targetY = num - curSelected;
 			item.alpha = 0.6;
-			icon.alpha = 0.6;
+			
+			if(num < iconArray.length && iconArray[num] != null) {
+				var icon:HealthIcon = iconArray[num];
+				icon.alpha = 0.6;
+				if (item.targetY == 0)
+				{
+					icon.alpha = 1;
+				}
+			}
+			
 			if (item.targetY == 0)
 			{
 				item.alpha = 1;
-				icon.alpha = 1;
 			}
 		}
 		//trace(weekFile.songs[curSelected]);
