@@ -97,7 +97,7 @@ tenang — kemajuan tidak menunggu.
 * crowplexus - HScript Iris, Sistem Masukan v3, dan Kontribusi Lainnya.
 * Kamizeta - Pencipta Pessy, maskot Psych Engine.
 * MaxNeton - Seniman/Animator Easter Egg Layar Pemuatan.
-* Keoiki - Animasi Splash Catatan dan Alfabet Latin.
+* Keoiki - Animasi Splash Note dan Alfabet Latin.
 * SqirraRNG - Penanganan Crash dan Kode Dasar untuk Gelombang Editor Grafik.
 * EliteMasterEric - Dukungan Shader Runtime dan Kontribusi Lainnya.
 * MAJigsaw77 - Perpustakaan Pemuat Video .MP4 (hxvlc).
