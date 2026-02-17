@@ -241,17 +241,19 @@ class Main extends Sprite
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
-	fpsVar.visible = ClientPrefs.data.showFPS;
+		fpsVar.visible = ClientPrefs.data.showFPS;
+		addChild(fpsVar);
 	
 		// Initialize touch pointer visualization for mobile
 		#if mobile
 
 		// Add TraceDisplay and Debug and buttons for mobile.
 		traceButton = new TraceButton();
-	traceButton.visible = ClientPrefs.data.showMobileDebugButtons;
-	addChild(traceButton);
-	debugButton = new DebugButton();
-	debugButton.visible = ClientPrefs.data.showMobileDebugButtons;
+		traceButton.visible = ClientPrefs.data.showMobileDebugButtons;
+		addChild(traceButton);
+
+		debugButton = new DebugButton();
+		debugButton.visible = ClientPrefs.data.showMobileDebugButtons;
 		addChild(debugButton);
 		#end
 		

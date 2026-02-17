@@ -9,12 +9,12 @@ class ShaderFunctions
 	public static function implement(funk:FunkinLua)
 	{
 		var lua = funk.lua;
-		// shader shit
-		funk.addLocalCallback("initLuaShader", function(name:String) {
+		// Shader initialization - supports both legacy (0.7.3) and modern modes
+		funk.addLocalCallback("initLuaShader", function(name:String, ?glslVersion:Int = 120) {
 			if(!ClientPrefs.data.shaders) return false;
 
 			#if (!flash && MODS_ALLOWED && sys)
-			return funk.initLuaShader(name);
+			return funk.initLuaShader(name, glslVersion);
 			#else
 			FunkinLua.luaTrace("initLuaShader: Platform unsupported for Runtime Shaders!", false, false, FlxColor.RED);
 			#end
@@ -40,10 +40,15 @@ class ShaderFunctions
 			if(leObj != null) {
 				var arr:Array<String> = funk.runtimeShaders.get(shader);
 				
-				// Adapt shader code for compatibility if needed
-				var adapted = funkin.graphics.shaders.ShaderCompatibility.adaptShaderCode(arr[0], arr[1]);
-				
-				leObj.shader = new funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, adapted[0], adapted[1]);
+				// Check if using legacy shader mode (Psych 0.7.3)
+				if (ClientPrefs.data.legacyShaderInit) {
+					// Psych 0.7.3 style: Direct FlxRuntimeShader, no error handling (crashes if fails, just like 0.7.3)
+					leObj.shader = new flixel.addons.display.FlxRuntimeShader(arr[0], arr[1]);
+				} else {
+					// Modern mode: ErrorHandledRuntimeShader with ShaderCompatibility
+					var adapted = funkin.graphics.shaders.ShaderCompatibility.adaptShaderCode(arr[0], arr[1]);
+					leObj.shader = new funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader(shader, adapted[0], adapted[1]);
+				}
 				return true;
 			}
 			#else
@@ -289,12 +294,14 @@ class ShaderFunctions
 			return null;
 		}
 		
-		try {
-			return cast (target.shader, FlxRuntimeShader);
-		} catch(e:Dynamic) {
-			// Silently return null instead of spamming errors
-			return null;
+		// Support both FlxRuntimeShader (legacy) and ErrorHandledRuntimeShader (modern)
+		// ErrorHandledRuntimeShader extends FlxRuntimeShader, so this should work for both
+		if (Std.isOfType(target.shader, FlxRuntimeShader)) {
+			return cast target.shader;
 		}
+		
+		// If not a FlxRuntimeShader, silently return null
+		return null;
 	}
 	#end
 }

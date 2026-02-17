@@ -162,6 +162,31 @@ class HScript extends Iris
 		Iris.proxyImports.set("states.FreeplayState", funkin.ui.freeplay.FreeplayState);
 		Iris.proxyImports.set("states.TitleState", funkin.ui.title.TitleState);
 		Iris.proxyImports.set("states.LoadingState", funkin.ui.LoadingState);
+		Iris.proxyImports.set("states.CreditsState", funkin.ui.credits.CreditsState);
+		Iris.proxyImports.set("states.ModsMenuState", funkin.modding.ModsMenuState);
+		
+		// Editor states compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("states.editors.MasterEditorMenu", funkin.ui.debug.MasterEditorMenu);
+		Iris.proxyImports.set("states.editors.CharacterEditorState", funkin.ui.debug.character.CharacterEditorState);
+		Iris.proxyImports.set("states.editors.ChartingState", funkin.ui.debug.charting.ChartEditorState);
+		Iris.proxyImports.set("states.editors.NoteSplashEditorState", funkin.ui.debug.NoteSplashEditorState);
+		Iris.proxyImports.set("states.editors.StageEditorState", funkin.ui.debug.stage.StageEditorState);
+		Iris.proxyImports.set("states.editors.WeekEditorState", funkin.ui.debug.WeekEditorState);
+		Iris.proxyImports.set("states.editors.MenuCharacterEditorState", funkin.ui.debug.MenuCharacterEditorState);
+		
+		// Substates compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("substates.GameOverSubstate", funkin.play.substates.GameOverSubstate);
+		Iris.proxyImports.set("substates.PauseSubState", funkin.play.substates.PauseSubState);
+		Iris.proxyImports.set("substates.GameplayChangersSubstate", funkin.ui.options.GameplayChangersSubstate);
+		Iris.proxyImports.set("substates.ResultsScreen", funkin.play.ResultsState);
+		
+		// Options compatibility (old 0.7.3 paths)
+		Iris.proxyImports.set("options.OptionsState", funkin.ui.options.OptionsState);
+		Iris.proxyImports.set("options.NotesColorSubState", funkin.ui.options.NotesColorSubState);
+		Iris.proxyImports.set("options.NoteOffsetState", funkin.ui.options.NoteOffsetState);
+		Iris.proxyImports.set("options.VisualsSettingsSubState", funkin.ui.options.VisualsSettingsSubState);
+		Iris.proxyImports.set("options.GraphicsSettingsSubState", funkin.ui.options.GraphicsSettingsSubState);
+		Iris.proxyImports.set("options.GameplaySettingsSubState", funkin.ui.options.GameplaySettingsSubState);
 		
 		true;
 	};

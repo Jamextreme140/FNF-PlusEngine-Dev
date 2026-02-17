@@ -35,6 +35,13 @@ class LegacySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		// Legacy Shader Init Option
+		option = new Option('Legacy Shader Init',
+			"If checked, uses Psych 0.7.3 shader initialization system.\nUses glslVersion parameter and direct FlxRuntimeShader instead of\nErrorHandledRuntimeShader. Enable if old shader mods don't work.",
+			'legacyShaderInit',
+			BOOL);
+		addOption(option);
+
 		super();
 	}
 }

@@ -2077,7 +2077,7 @@ class FunkinLua {
 	public var runtimeShaders:Map<String, Array<String>> = new Map<String, Array<String>>();
 	#end
 
-	public function initLuaShader(name:String)
+	public function initLuaShader(name:String, ?glslVersion:Int = 120)
 	{
 		if(!ClientPrefs.data.shaders) return false;
 
@@ -2109,23 +2109,37 @@ class FunkinLua {
 				var frag:String = folder + name + '.frag';
 				var vert:String = folder + name + '.vert';
 				var found:Bool = false;
+				var fragCode:String = null;
+				var vertCode:String = null;
+				
 				if(FileSystem.exists(frag))
 				{
-					frag = File.getContent(frag);
+					fragCode = File.getContent(frag);
 					found = true;
 				}
-				else frag = null;
 
 				if(FileSystem.exists(vert))
 				{
-					vert = File.getContent(vert);
+					vertCode = File.getContent(vert);
 					found = true;
 				}
-				else vert = null;
 
 				if(found)
 				{
-					runtimeShaders.set(name, [frag, vert]);
+					// Process shader code based on mode
+					if (ClientPrefs.data.legacyShaderInit)
+					{
+						// Psych 0.7.3 mode: Add #version if missing
+						if (fragCode != null && !fragCode.contains('#version')) {
+							fragCode = '#version $glslVersion\n' + fragCode;
+						}
+						if (vertCode != null && !vertCode.contains('#version')) {
+							vertCode = '#version $glslVersion\n' + vertCode;
+						}
+					}
+					// Modern mode: ShaderCompatibility will handle adaptation in setSpriteShader
+					
+					runtimeShaders.set(name, [fragCode, vertCode]);
 					//trace('Found shader $name!');
 					return true;
 				}

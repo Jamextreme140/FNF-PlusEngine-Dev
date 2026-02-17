@@ -166,6 +166,7 @@ import funkin.ui.title.TitleState;
 	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)
 	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
 	public var useLegacyFont:Bool = false; // Use legacy VCR font instead of Phantom font
+	public var legacyShaderInit:Bool = false; // Use Psych 0.7.3 shader initialization (glslVersion parameter, direct FlxRuntimeShader)
 }
 
 class Preferences {

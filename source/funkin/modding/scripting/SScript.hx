@@ -109,7 +109,32 @@ class SScriptCompat extends SScript
 	var varsToBring:Any = null;
 	override function preset() {
 		super.preset();
-
+		
+		// Add Psych 0.7.3 style global imports using SScript.globalVariables
+		// This makes these classes available to all SScript instances
+		SScript.globalVariables.set('FlxG', flixel.FlxG);
+		SScript.globalVariables.set('FlxSprite', flixel.FlxSprite);
+		SScript.globalVariables.set('FlxCamera', flixel.FlxCamera);
+		SScript.globalVariables.set('FlxTimer', flixel.util.FlxTimer);
+		SScript.globalVariables.set('FlxTween', flixel.tweens.FlxTween);
+		SScript.globalVariables.set('FlxEase', flixel.tweens.FlxEase);
+		SScript.globalVariables.set('FlxSound', flixel.system.FlxSound);
+		SScript.globalVariables.set('StringTools', StringTools);
+		SScript.globalVariables.set('Math', Math);
+		SScript.globalVariables.set('Std', Std);
+		SScript.globalVariables.set('Reflect', Reflect);
+		SScript.globalVariables.set('Type', Type);
+		SScript.globalVariables.set('Paths', Paths);
+		SScript.globalVariables.set('Conductor', Conductor);
+		SScript.globalVariables.set('PlayState', PlayState);
+		SScript.globalVariables.set('Character', Character);
+		SScript.globalVariables.set('Alphabet', Alphabet);
+		SScript.globalVariables.set('ClientPrefs', ClientPrefs);
+		#if (!flash && sys)
+		SScript.globalVariables.set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
+		SScript.globalVariables.set('ShaderFilter', openfl.filters.ShaderFilter);
+		#end
+		
 		// Some very commonly used classes
 		set('FlxG', flixel.FlxG);
 		set('FlxMath', flixel.math.FlxMath);
@@ -353,6 +378,18 @@ class SScriptCompat extends SScript
 			set('addBehindDad', PlayState.instance.addBehindDad);
 			set('addBehindBF', PlayState.instance.addBehindBF);
 			setSpecialObject(PlayState.instance, false, []);
+			
+			// Psych 0.7.3 compatibility: Add camGame with null-safe wrappers
+			set('camGame', PlayState.instance.camGame);
+			set('camHUD', PlayState.instance.camHUD);
+			set('camOther', PlayState.instance.camOther);
+			
+			// Add null-safe helper for old mods that expect canvas property
+			set('addBehindBar', function(?spr:FlxSprite) {
+				if(spr != null && PlayState.instance != null) {
+					PlayState.instance.addBehindGF(spr);
+				}
+			});
 		}
 
 		if(varsToBring != null) {
@@ -365,12 +402,26 @@ class SScriptCompat extends SScript
 		}
 	}
 
+	/**
+	 * Executes a function in this SScript instance.
+	 * Simplified error handling based on Psych 0.7.3 style.
+	 * @param funcToRun Function name to execute
+	 * @param funcArgs Arguments to pass to the function
+	 * @return TeaCall with execution result
+	 */
 	public function executeCode(?funcToRun:String = null, ?funcArgs:Array<Dynamic> = null):TeaCall {
 		if (funcToRun == null) return null;
 
 		if(!exists(funcToRun)) {
-			// Return a successful TeaCall with null value instead of error
-			// This matches Psych 0.7.3 behavior where missing functions are silently ignored
+			// Silently ignore missing functions like Psych 0.7.3
+			#if LUA_ALLOWED
+			if(parentLua != null)
+				FunkinLua.luaTrace('$origin - No HScript function named: $funcToRun', false, false, FlxColor.RED);
+			else
+			#end
+				if(PlayState.instance != null)
+					PlayState.instance.addTextToDebug('$origin - No HScript function named: $funcToRun', FlxColor.RED);
+			
 			return {
 				succeeded: true,
 				calledFunction: funcToRun,
@@ -379,99 +430,83 @@ class SScriptCompat extends SScript
 			};
 		}
 
+		// Wrap in try-catch to handle exceptions that occur before TeaCall is generated
 		try {
+			// Simplified error handling based on Psych 0.7.3
 			if(funcArgs == null) funcArgs = [];
 			
 			final callValue = call(funcToRun, funcArgs);
 			
-			// Always return the callValue, even if it failed
-			// This prevents crashes from propagating
-			if (!callValue.succeeded)
+			// Check if call succeeded (Psych 0.7.3 style)
+			if (!callValue.succeeded && callValue.exceptions.length > 0)
 			{
 				final e = callValue.exceptions[0];
 				if (e != null) {
+					// Simple error message formatting like Psych 0.7.3
 					var msg:String = e.toString();
-					
-					// Detectar errores comunes que deben ser warnings
-					var isWarning = msg.toLowerCase().contains('null') || 
-					                msg.toLowerCase().contains('object reference') ||
-					                msg.toLowerCase().contains('exprreturn');
-					
-					if(isWarning) {
-						// Mostrar como warning en lugar de error
-						#if LUA_ALLOWED
-						if(parentLua != null)
-						{
-							FunkinLua.luaTrace('$origin: ${parentLua.lastCalledFunction} - WARNING: $msg', false, false, FlxColor.YELLOW);
-							if(sscriptWarnHandler != null) {
-								sscriptWarnHandler('${parentLua.lastCalledFunction} - $msg', origin);
-							}
-						}
-						else
-						#end
-						{
-							if(PlayState.instance != null)
-								PlayState.instance.addTextToDebug('$origin - WARNING: $msg', FlxColor.YELLOW);
-							if(sscriptWarnHandler != null) {
-								sscriptWarnHandler(msg, origin);
-							}
-						}
-						// Return successful call with null value to prevent crashes
-						return {
-							succeeded: true,
-							calledFunction: funcToRun,
-							returnValue: null,
-							exceptions: []
-						};
+					// Truncate to first line for cleaner output
+					if(msg.indexOf('\n') != -1) {
+						msg = msg.substr(0, msg.indexOf('\n'));
 					}
 					
-					// Para errores críticos, registrar pero no crashear
 					sscript_Errors++;
+					
 					#if LUA_ALLOWED
-					if(parentLua != null)
-					{
-						FunkinLua.luaTrace('$origin: ${parentLua.lastCalledFunction} - ERROR: $msg', false, false, FlxColor.RED);
+					if(parentLua != null) {
+						final calledFunc:String = if(origin == parentLua.lastCalledFunction) funcToRun else parentLua.lastCalledFunction;
+						FunkinLua.luaTrace('$origin:$calledFunc - $msg', false, false, FlxColor.RED);
 						if(sscriptErrorHandler != null) {
-							sscriptErrorHandler('${parentLua.lastCalledFunction} - $msg', origin);
+							sscriptErrorHandler('$calledFunc - $msg', origin);
 						}
 					}
 					else
 					#end
 					{
 						if(PlayState.instance != null)
-							PlayState.instance.addTextToDebug('$origin - ERROR: $msg', FlxColor.RED);
+							PlayState.instance.addTextToDebug('$origin - $msg', FlxColor.RED);
 						if(sscriptErrorHandler != null) {
 							sscriptErrorHandler(msg, origin);
 						}
 					}
 				}
-				// Return successful call with null to prevent crash propagation
-				return {
-					succeeded: true,
-					calledFunction: funcToRun,
-					returnValue: null,
-					exceptions: []
-				};
+				return null;
 			}
+			
 			return callValue;
-		}
-		catch(e:Dynamic) {
-			// Capturar cualquier error inesperado del interprete
+		} catch(e:Dynamic) {
+			// Catch exceptions that occur during call() itself (like null references)
 			var msg:String = Std.string(e);
-			trace('CRITICAL ERROR in SScript ($origin): $msg');
-			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('CRITICAL ERROR ($origin): $msg', FlxColor.RED);
-			sscript_Errors++;
-			if(sscriptErrorHandler != null) {
-				sscriptErrorHandler('CRITICAL: $msg', origin);
+			
+			// Handle SScript's crash messages (null references)
+			if(msg.indexOf("sight imma head out") != -1 || msg.indexOf("Null references are stored") != -1) {
+				// Extract more useful information from the stack if possible
+				msg = "Null object reference - tried to access property/method on null object";
+				if(funcToRun != null) {
+					msg += " in function '" + funcToRun + "'";
+				}
 			}
-			// Return successful call with null to prevent crash propagation
-			return {
-				succeeded: true,
-				calledFunction: funcToRun,
-				returnValue: null,
-				exceptions: []
-			};
+			
+			sscript_Errors++;
+			
+			#if LUA_ALLOWED
+			if(parentLua != null) {
+				final calledFunc:String = if(origin == parentLua.lastCalledFunction) funcToRun else parentLua.lastCalledFunction;
+				FunkinLua.luaTrace('$origin:$calledFunc - $msg', false, false, FlxColor.RED);
+				if(sscriptErrorHandler != null) {
+					sscriptErrorHandler('$calledFunc - $msg', origin);
+				}
+			}
+			else
+			#end
+			{
+				if(PlayState.instance != null)
+					PlayState.instance.addTextToDebug('$origin - $msg', FlxColor.RED);
+				if(sscriptErrorHandler != null) {
+					sscriptErrorHandler(msg, origin);
+				}
+			}
+			
+			return null;
 		}
 	}
 
@@ -504,16 +539,33 @@ class SScriptCompat extends SScript
 		funk.addLocalCallback("runHaxeFunction", function(funcToRun:String, ?funcArgs:Array<Dynamic> = null) {
 			if (funk.sscript != null)
 			{
-				var callValue = funk.sscript.executeFunction(funcToRun, funcArgs);
-				if (!callValue.succeeded)
-				{
-					var e = callValue.exceptions[0];
-					if (e != null)
-						FunkinLua.luaTrace('ERROR (${funk.sscript.origin}: ${callValue.calledFunction}) - ' + e.message.substr(0, e.message.indexOf('\n')), false, false, FlxColor.RED);
+				try {
+					var callValue = funk.sscript.executeFunction(funcToRun, funcArgs);
+					if (callValue == null) return null;
+					
+					if (!callValue.succeeded)
+					{
+						var e = callValue.exceptions[0];
+						if (e != null) {
+							var msg = e.message;
+							if(msg.indexOf('\n') != -1) {
+								msg = msg.substr(0, msg.indexOf('\n'));
+							}
+							FunkinLua.luaTrace('ERROR (${funk.sscript.origin}: ${callValue.calledFunction}) - $msg', false, false, FlxColor.RED);
+						}
+						return null;
+					}
+					else
+						return callValue.returnValue;
+				} catch(e:Dynamic) {
+					var msg:String = Std.string(e);
+					// Handle SScript crash messages
+					if(msg.indexOf("sight imma head out") != -1 || msg.indexOf("Null references are stored") != -1) {
+						msg = "Null object reference in function '$funcToRun'";
+					}
+					FunkinLua.luaTrace('EXCEPTION (${funk.sscript.origin}:$funcToRun) - $msg', false, false, FlxColor.RED);
 					return null;
 				}
-				else
-					return callValue.returnValue;
 			}
 			return null;
 		});

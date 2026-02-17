@@ -47,6 +47,11 @@ class StructureOld
 		'states.ModsMenuState' => 'funkin.ui.mods.ModsMenuState',
 		'states.editors.CharacterEditorState' => 'funkin.ui.debug.character.CharacterEditorState',
 		'states.editors.ChartingState' => 'funkin.ui.debug.charting.ChartingState',
+		'states.editors.MasterEditorMenu' => 'funkin.ui.debug.MasterEditorMenu',
+		'states.editors.NoteSplashEditorState' => 'funkin.ui.debug.NoteSplashEditorState',
+		'states.editors.StageEditorState' => 'funkin.ui.debug.stage.StageEditorState',
+		'states.editors.WeekEditorState' => 'funkin.ui.debug.WeekEditorState',
+		'states.editors.MenuCharacterEditorState' => 'funkin.ui.debug.MenuCharacterEditorState',
 		
 		// Objects
 		'objects.Alphabet' => 'funkin.graphics.Alphabet',
@@ -64,9 +69,17 @@ class StructureOld
 		'substates.GameOverSubstate' => 'funkin.play.substates.GameOverSubstate',
 		'substates.PauseSubState' => 'funkin.play.substates.PauseSubState',
 		'substates.CustomSubstate' => 'funkin.modding.scripting.psychlua.CustomSubstate',
+		'substates.GameplayChangersSubstate' => 'funkin.ui.options.GameplayChangersSubstate',
+		'substates.ResultsScreen' => 'funkin.play.ResultsState',
 		
 		// Options 
 		'options.OptionsState' => 'funkin.ui.options.OptionsState',
+		'options.GameplayChangersSubstate' => 'funkin.ui.options.GameplayChangersSubstate',
+		'options.NotesColorSubState' => 'funkin.ui.options.NotesColorSubState',
+		'options.NoteOffsetState' => 'funkin.ui.options.NoteOffsetState',
+		'options.VisualsSettingsSubState' => 'funkin.ui.options.VisualsSettingsSubState',
+		'options.GraphicsSettingsSubState' => 'funkin.ui.options.GraphicsSettingsSubState',
+		'options.GameplaySettingsSubState' => 'funkin.ui.options.GameplaySettingsSubState',
 		
 		// ===== OLD Psych 0.6.3 (no namespace) =====
 		'Conductor' => 'funkin.audio.Conductor',
@@ -97,6 +110,11 @@ class StructureOld
 		'ModsMenuState' => 'funkin.ui.mods.ModsMenuState',
 		'CharacterEditorState' => 'funkin.ui.debug.character.CharacterEditorState',
 		'ChartingState' => 'funkin.ui.debug.charting.ChartingState',
+		'MasterEditorMenu' => 'funkin.ui.debug.MasterEditorMenu',
+		'NoteSplashEditorState' => 'funkin.ui.debug.NoteSplashEditorState',
+		'StageEditorState' => 'funkin.ui.debug.stage.StageEditorState',
+		'WeekEditorState' => 'funkin.ui.debug.WeekEditorState',
+		'MenuCharacterEditorState' => 'funkin.ui.debug.MenuCharacterEditorState',
 		'Alphabet' => 'funkin.graphics.Alphabet',
 		'Character' => 'funkin.play.character.Character',
 		'Note' => 'funkin.play.notes.Note',
@@ -110,7 +128,14 @@ class StructureOld
 		'GameOverSubstate' => 'funkin.play.substates.GameOverSubstate',
 		'PauseSubState' => 'funkin.play.substates.PauseSubState',
 		'CustomSubstate' => 'funkin.modding.scripting.psychlua.CustomSubstate',
-		'OptionsState' => 'funkin.ui.options.OptionsState'
+		'GameplayChangersSubstate' => 'funkin.ui.options.GameplayChangersSubstate',
+		'ResultsScreen' => 'funkin.play.ResultsState',
+		'OptionsState' => 'funkin.ui.options.OptionsState',
+		'NotesColorSubState' => 'funkin.ui.options.NotesColorSubState',
+		'NoteOffsetState' => 'funkin.ui.options.NoteOffsetState',
+		'VisualsSettingsSubState' => 'funkin.ui.options.VisualsSettingsSubState',
+		'GraphicsSettingsSubState' => 'funkin.ui.options.GraphicsSettingsSubState',
+		'GameplaySettingsSubState' => 'funkin.ui.options.GameplaySettingsSubState'
 	];
 	
 	/**
@@ -133,8 +158,51 @@ class StructureOld
 				trace('[Compatibility] Redirected "$className" to "$newClassName"');
 				#end
 			}
+			else
+			{
+				// Alias exists but new class also not found - possible broken alias
+				#if debug
+				trace('[Compatibility] WARNING: Alias "$className" → "$newClassName" exists, but target class not found!');
+				#end
+			}
+		}
+		else if (myClass == null)
+		{
+			// Class not found and no alias exists
+			#if debug
+			if (!_warnedClasses.exists(className)) {
+				trace('[Compatibility] WARNING: Class "$className" not found and no alias exists. This may break old mods.');
+				trace('[Compatibility] If this is a common class, consider adding it to StructureOld.classAliasMap');
+				_warnedClasses.set(className, true);
+			}
+			#end
 		}
 		
 		return myClass;
 	}
+	
+	#if debug
+	// Track warned classes to avoid spam
+	private static var _warnedClasses:Map<String, Bool> = new Map();
+	
+	/**
+	 * Get list of all classes that failed to resolve (for debugging)
+	 */
+	public static function getWarningLog():Array<String>
+	{
+		var log:Array<String> = [];
+		for (className in _warnedClasses.keys()) {
+			log.push(className);
+		}
+		return log;
+	}
+	
+	/**
+	 * Clear warning log
+	 */
+	public static function clearWarningLog():Void
+	{
+		_warnedClasses.clear();
+	}
+	#end
 }
