@@ -134,7 +134,7 @@ class LanguageSubState extends MusicBeatSubstate
 		changeSelected();
 		updateExampleText();
 
-		addTouchPad('LEFT_FULL', 'A_B');
+		addTouchPad('UP_DOWN', 'A_B');
 	}
 
 	var changedLanguage:Bool = false;

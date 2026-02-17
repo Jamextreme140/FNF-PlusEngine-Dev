@@ -112,7 +112,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		changeSelection();
 		reloadCheckboxes();
 		
-		addTouchPad('LEFT_FULL', 'B');
+		addTouchPad('LEFT_RIGHT', 'B');
 		
 		#if mobile
 		// Initialize touch scroll
