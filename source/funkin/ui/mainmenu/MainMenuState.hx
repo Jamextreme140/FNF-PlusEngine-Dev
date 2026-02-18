@@ -15,8 +15,14 @@ enum MainMenuColumn {
 class MainMenuState extends MusicBeatState
 {
 	public static var fnfVersion:String = '0.2.8';
-    public static var plusEngineVersion:String = '1.2.5'; // Nothing interesting =)
-	public static var psychEngineVersion:String = "1.0.4 (" + plusEngineVersion + ")"; // This is also used for Discord RPC
+	public static var plusEngineBaseVersion:String = '1.2.5'; // Stable semantic version
+	#if DEV_BUILD
+	public static var devUpdate:String = 'Build 850'; // Build xxx or Beta x
+	public static var plusEngineVersion:String = plusEngineBaseVersion + ' (' + devUpdate + ')';
+	#else
+	public static var plusEngineVersion:String = plusEngineBaseVersion;
+	#end
+	public static var psychEngineVersion:String = "1.0.4 (" + plusEngineBaseVersion + ")"; // This is also used for Discord RPC
 	public static var curSelected:Int = 0;
 	public static var curColumn:MainMenuColumn = CENTER;
 	var allowMouse:Bool = true; //Turn this off to block mouse movement in menus
@@ -42,7 +48,7 @@ class MainMenuState extends MusicBeatState
 	var visualizerEnabled:Bool = true;
 
 	static var showOutdatedWarning:Bool = true;
-	static var updateWarningShown:Bool = false; // Para mostrar el aviso solo una vez por sesión
+	static var updateWarningShown:Bool = false; // Show update warning only once per session
 	
 	override function create()
 	{
@@ -101,6 +107,12 @@ class MainMenuState extends MusicBeatState
 			rightItem.x -= rightItem.width;
 		}
 
+		#if DEV_BUILD
+		var devText:FlxText = new FlxText(12, FlxG.height - 64, 0, "Dev Version: " + devUpdate, 12);
+		devText.scrollFactor.set();
+		devText.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		add(devText);
+		#end
 		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine v" + psychEngineVersion, 12);
 		psychVer.scrollFactor.set();
 		psychVer.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);

@@ -44,6 +44,10 @@
 		<define name="BASE_GAME_FILES" />
 	</section>
 
+	<section if="dev">
+		<define name="DEV_BUILD"/>
+	</section>
+
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->

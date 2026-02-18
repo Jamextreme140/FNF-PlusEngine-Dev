@@ -104,6 +104,8 @@ class TestVersionSystem
 		assert(VersionUtil.isValid("0.5"), "0.5 is valid");
 		assert(VersionUtil.isValid("2"), "2 is valid");
 		assert(VersionUtil.isValid("1.2-beta"), "1.2-beta is valid");
+		assert(VersionUtil.isValid("1.2.5 (Build 500)"), "1.2.5 (Build 500) is valid");
+		assert(VersionUtil.isValid("1.2.5 (Beta 1)"), "1.2.5 (Beta 1) is valid");
 		
 		// Invalid versions
 		assert(!VersionUtil.isValid("invalid"), "invalid is invalid");
@@ -132,6 +134,10 @@ class TestVersionSystem
 		// Mixed formats
 		assert(VersionUtil.isGreaterThan("1.3", "1.2.5"), "1.3 > 1.2.5 (1.3.0 > 1.2.5)");
 		assert(VersionUtil.isLessThan("1.2", "1.2.1"), "1.2 < 1.2.1 (1.2.0 < 1.2.1)");
+
+		// Display suffix formats
+		assert(VersionUtil.isEqual("1.2.5 (Build 500)", "1.2.5"), "1.2.5 (Build 500) == 1.2.5");
+		assert(VersionUtil.isEqual("1.2.5 (Beta 1)", "1.2.5"), "1.2.5 (Beta 1) == 1.2.5");
 		
 		trace("✓ Flexible format tests passed\n");
 	}

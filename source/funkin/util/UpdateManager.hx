@@ -94,7 +94,7 @@ class UpdateManager
 		}
 
 		trace('Checking for updates...');
-		trace('Current version: $currentVersion');
+		trace('Current version: $currentVersion (${getVersionType(currentVersion)})');
 
 		#if sys
 		// Run in separate thread for desktop platforms
@@ -120,7 +120,7 @@ class UpdateManager
 		http.onData = function(data:String)
 		{
 			var remoteVersion:String = data.split('\n')[0].trim();
-			trace('Remote version: $remoteVersion');
+			trace('Remote version: $remoteVersion (${getVersionType(remoteVersion)})');
 
 			// Validate version formats
 			if (!VersionUtil.isValid(currentVersion))
@@ -186,6 +186,29 @@ class UpdateManager
 		};
 
 		http.request();
+	}
+
+	/**
+	 * Detects the human-readable version type from a version string
+	 * @param version Version string
+	 * @return Version type label for logs
+	 */
+	private static function getVersionType(version:String):String
+	{
+		if (version == null)
+			return "unknown";
+
+		var normalized = version.trim().toLowerCase();
+		if (normalized.length == 0)
+			return "unknown";
+
+		if (normalized.indexOf("beta") != -1)
+			return "beta version";
+
+		if (normalized.indexOf("build") != -1 || normalized.indexOf("developer") != -1 || normalized.indexOf("dev") != -1)
+			return "developer build";
+
+		return "stable release";
 	}
 
 	/**

@@ -123,6 +123,7 @@ class VersionUtil
 		// Remove any pre-release tags (e.g., "-beta", "-alpha")
 		var cleaned = version.split('-')[0];
 		cleaned = cleaned.split('+')[0]; // Also remove build metadata
+		cleaned = normalizeDisplaySuffix(cleaned); // Remove display-only suffixes like " (Build 500)"
 
 		var parts:Array<String> = cleaned.split('.');
 
@@ -166,10 +167,29 @@ class VersionUtil
 		if (version == null || version.trim() == "")
 			return false;
 
+		var cleaned = normalizeDisplaySuffix(version.trim());
+
 		// Flexible regex for versioning
 		// Accepts: "1", "1.2", "1.2.3", "1.2.3-beta", "1.2.3+build"
 		var regex:EReg = ~/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
-		return regex.match(version.trim());
+		return regex.match(cleaned);
+	}
+
+	/**
+	 * Removes display-only suffixes from versions.
+	 * Example: "1.2.5 (Build 500)" -> "1.2.5"
+	 */
+	private static function normalizeDisplaySuffix(version:String):String
+	{
+		if (version == null)
+			return "";
+
+		var trimmed = version.trim();
+		var regex:EReg = ~/\s*\([^\)]*\)\s*$/;
+		if (regex.match(trimmed))
+			return regex.matchedLeft().trim();
+
+		return trimmed;
 	}
 
 	/**
