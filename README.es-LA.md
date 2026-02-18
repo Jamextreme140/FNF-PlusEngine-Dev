@@ -29,7 +29,7 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
 
 <p align="center">
   <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="rey164xds"/></a>
+  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
   <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
 </p>
 
@@ -84,7 +84,7 @@ relájate — el progreso no espera.
 
 ## Créditos del Desarrollador:
 * Lenin Asto - Programador Principal del Fork de Plus Engine
-* rey164xds - Co-Programador del Fork de Plus Engine
+* Legacy Odyssey - Co-Programador del Fork de Plus Engine
 
 ## Créditos Originales:
 * Shadow Mario - Programador Principal y Líder de Psych Engine.

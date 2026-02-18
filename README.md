@@ -29,7 +29,7 @@ Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcod
 
 <p align="center">
   <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="rey164xds"/></a>
+  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
   <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
 </p>
 
@@ -84,7 +84,7 @@ relax — progress doesn’t wait.
 
 ## Developer Credits:
 * Lenin Asto - Main Programmer for Plus Engine Fork
-* rey164xds - Co-Programmer for Plus Engine Fork
+* Legacy Odyssey - Co-Programmer for Plus Engine Fork
 
 ## Original Credits:
 * Shadow Mario - Main Programmer and Head of Psych Engine.

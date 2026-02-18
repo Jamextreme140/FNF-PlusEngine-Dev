@@ -29,7 +29,7 @@ Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan
 
 <p align="center">
   <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="rey164xds"/></a>
+  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
   <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
 </p>
 
@@ -84,7 +84,7 @@ tenang — kemajuan tidak menunggu.
 
 ## Kredit Pengembang:
 * Lenin Asto - Pengembang Utama untuk Fork Plus Engine
-* rey164xds - Co-Pengembang Kedua untuk Fork Plus Engine
+* Legacy Odyssey - Co-Pengembang Kedua untuk Fork Plus Engine
 
 ## Kredit Asli:
 * Shadow Mario - Pengembang Utama dan Kepala Psych Engine.
