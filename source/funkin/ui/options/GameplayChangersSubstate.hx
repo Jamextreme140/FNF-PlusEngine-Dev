@@ -141,7 +141,7 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 			updateTextFrom(optionsArray[i]);
 		}
 
-		addTouchPad('LEFT_RIGHT', 'A_B');
+		addTouchPad('LEFT_FULL', 'A_B');
 		addTouchPadCamera();
 
 		changeSelection();
@@ -320,7 +320,7 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		}
 
 		if (touchPad == null) { //sometimes it dosent add the tpad, hopefully this fixes it
-			addTouchPad('LEFT_RIGHT', 'A_B_C');
+			addTouchPad('LEFT_FULL', 'A_B_C');
 			addTouchPadCamera();
 		}
 		super.update(elapsed);
