@@ -5,30 +5,16 @@ class IdID
     public static var languageName:String = "Indonesian (Bahasa Ind.)";
     public static var languageCode:String = "id-ID";
     
-    // IntroTexts localized for the title screen
     public static var introTexts:Array<Array<String>> = [
-        ["shoutouts to tom fulp", "lol"],
-        ["Ludum dare", "luar biasa"],
-        ["cyberzone", "gratis"],
-        ["game ini bukan", "mod"],
-        ["banyak ritme", "untuk kamu"],
         ["game ritme", "keren banget"],
         ["kesulitan sedang", "oke lah"],
-        ["funkin", "deluxe"],
-        ["jangan berhenti", "funkin"],
-        ["hampir selesai", "ceritanya"],
-        ["dua pemain", "segera hadir"],
-        ["Psych Engine", "Plus Edition"],
-        ["engine ini", "keren"],
         ["ingat latihan", "bikin kamu lebih baik"],
-        ["engine dibuat oleh", "Shadow Mario"],
-        ["versi plus oleh", "Lenin Asto"],
-        ["tekan Enter", "untuk mulai"],
-        ["friday night", "funkin"],
         ["stecu stecu", "konoha"],
         ["jiwa yang", "bersedih"],
         ["sial sialnya", "ku bertemu dengan cinta semu"],
         ["kisah tanpa", "dirimu"],
+        ["berbukalah dengan", "yang manis"],
+        ["liburan ke", "luar kota saat lebaran"],
     ];
     
     public static var translations:Map<String, String> = [
@@ -106,9 +92,6 @@ class IdID
         "reload_button" => "MUAT ULANG",
         "enable_all_button" => "AKTIFKAN SEMUA",
         "disable_all_button" => "MATIKAN SEMUA",
-
-        // Credits
-        "description_shadow_mario" => "Tim Psych Engine",
 
         // Reset Score/Achievement
         "reset_score" => "Reset skor dari",
@@ -247,6 +230,8 @@ class IdID
         "description_framerate" => "Cukup jelas, bukan?",
         "setting_fps_rework" => "Pembenahan FPS",
         "description_fps_rework" => "Jika dicentang, ini mencegah game menjadi \"lebih lambat\" dan \"lebih halus\" saat FPS saat ini lebih rendah dari batas framerate.",
+        "setting_fps_counter" => "Penghitung FPS",
+        "description_fps_counter" => "Jika tidak dicentang, menyembunyikan penghitung FPS.",
 
         // Visuals Settings
         "setting_note_skins" => "Note Skins:",
@@ -388,6 +373,8 @@ class IdID
         "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
         "setting_use_legacy_font" => "Gunakan Font Warisan",
         "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
+        "setting_legacy_shader_init" => "Inisialisasi Shader Warisan",
+        "description_legacy_shader_init" => "Jika dicentang, menggunakan sistem inisialisasi shader Psych 0.7.3.\nMenggunakan parameter glslVersion dan langsung menggunakan FlxRuntimeShader alih-alih\nErrorHandledRuntimeShader. Aktifkan jika mod shader lama tidak berfungsi.",
 
         // Modchart Settings
         "setting_enable_3d_cameras" => "Aktifkan Kamera 3D",
@@ -451,6 +438,8 @@ class IdID
         "setting_storage_type-external_media" => "EKSTERNAL_MEDIA",
         "setting_storage_type-external_obb" => "EKSTERNAL_OBB",
         "description_storage_type" => "Pilih lokasi penyimpanan data game.\nEKSTERNAL_DATA: Disarankan, penyimpanan berbatasan.\nEKSTERNAL: Publik /sdcard/.PlusEngine/\nMengubah pengaturan ini memerlukan restart game!",
+        "setting_show_debug_buttons" => "Tampilkan Tombol Debug",
+        "description_show_debug_buttons" => "Jika dicentang, menampilkan tombol T (Trace) dan D (Debug) di pojok kanan atas.\nT mengaktifkan/menonaktifkan tampilan trace, D mengganti tingkat debug FPS.",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
