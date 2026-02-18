@@ -4,7 +4,6 @@
 
 **[EN-US](README.md) | ES-LA | ID-ID**
 
-</div>
 
 [![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)
 [![VirusTotal Scan](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml)
@@ -24,10 +23,13 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
 
 [¡Únete al Discord!](https://discord.gg/FCwACsDDMz)
 
+</div>
+
 ## Contributors
 
 <p align="center">
   <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
+  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="rey164xds"/></a>
   <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
 </p>
 
@@ -82,6 +84,7 @@ relájate — el progreso no espera.
 
 ## Créditos del Desarrollador:
 * Lenin Asto - Programador Principal del Fork de Plus Engine
+* rey164xds - Co-Programador del Fork de Plus Engine
 
 ## Créditos Originales:
 * Shadow Mario - Programador Principal y Líder de Psych Engine.
@@ -118,7 +121,7 @@ Necesitas tener:
 - Android NDK r27d
 - Java JDK 17
 
-# Características anteriores a 1.0.4
+# Características despues de la 1.0.4
 
 - Variables para la gestión de ventanas y sistema en Lua: Se agregaron muchas variables, ya sea para ocultar la barra de tareas o los bordes de la ventana, etc.
 - Visor de Teclas
