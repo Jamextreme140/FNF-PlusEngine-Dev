@@ -45,7 +45,7 @@ class CreditsState extends MusicBeatState
 		var defaultList:Array<Array<String>> = [ //Name - Icon name - Description - Link - BG Color
 			['Plus Engine Team'],
 			['Lenin Asto',          "len",              "Programmer of Plus Engine",                        "https://www.youtube.com/@Lenin_Anonimo_Of","03FC88"],
-			['Legacy Odyssey',      "",                 "Co-programmer of Plus Engine",                     "https://www.youtube.com/@LegacyOdyssey","8E07C2"]
+			['Legacy Odyssey',      "",                 "Co-programmer of Plus Engine",                     "https://www.youtube.com/@LegacyOdyssey","8E07C2"],
 			["Andres",              "slu",     "Creator and owner of several codes used based on the Slushi Engine", "https://github.com/Slushi-Github","8FD9D1"],
 			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           '','7FDBFF'], // My Bluesky account has deactivated starting tomorrow until March 20nd
 			['Hansuke H',           "hansu",            'Vietnamese translation and alphabet sprite',     'https://www.facebook.com/hansuke.hotaroshi', 'FF6C8D'],
