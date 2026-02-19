@@ -351,7 +351,7 @@ class PauseSubState extends MusicBeatSubstate
 					close();
 				#if VIDEOS_ALLOWED
 				case 'Skip Video':
-					if(PlayState.instance.videoCutscene != null)
+					if(PlayState.instance.videoCutscene != null && PlayState.instance.videoCutscene.onSkip != null)
 						PlayState.instance.videoCutscene.onSkip();
 					close();
 				#end

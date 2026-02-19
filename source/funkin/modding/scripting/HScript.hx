@@ -124,6 +124,7 @@ class HScript extends Iris
 		
 		// Register old Psych Engine paths as proxy imports for backwards compatibility
 		// This makes "import psychlua.LuaUtils" work by redirecting to the new Plus Engine path
+		Iris.proxyImports.set("shaders.RGBPalette", funkin.graphics.shaders.RGBPalette); // menos mal eh
 		Iris.proxyImports.set("psychlua.LuaUtils", funkin.modding.scripting.psychlua.LuaUtils);
 		Iris.proxyImports.set("psychlua.ReflectionFunctions", funkin.modding.scripting.psychlua.ReflectionFunctions);
 		Iris.proxyImports.set("psychlua.CustomSubstate", funkin.modding.scripting.psychlua.CustomSubstate);
@@ -422,6 +423,11 @@ class HScript extends Iris
 		set('ErrorHandledRuntimeShader', funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader);
 		#end
 		set('ShaderFilter', openfl.filters.ShaderFilter);
+		set('RGBPalette', funkin.graphics.shaders.RGBPalette);
+		set('shaders', {
+			RGBPalette: funkin.graphics.shaders.RGBPalette
+		});
+		set('shaders.RGBPalette', funkin.graphics.shaders.RGBPalette);
 		set('StringTools', StringTools);
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
@@ -808,7 +814,7 @@ class HScript extends Iris
 }
 
 class CustomFlxG {
-	// Propiedades principales de FlxG
+	// Main FlxG properties
 	public static var state(get, never):Dynamic;
 	public static var game(get, never):Dynamic;
 	public static var sound(get, never):Dynamic;
@@ -823,8 +829,12 @@ class CustomFlxG {
 	public static var autoPause(get, set):Bool;
 	public static var signals(get, never):Dynamic;
 	public static var random(get, never):Dynamic;
+	// Exposes FlxG.scaleMode so scripts can access FlxG.scaleMode.scale.x / .y
+	public static var scaleMode(get, never):Dynamic;
+	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
+	public static var elapsed(get, never):Float;
 	
-	// Getters para propiedades
+	// Getters
 	static function get_state():Dynamic return FlxG.state;
 	static function get_game():Dynamic return FlxG.game;
 	static function get_sound():Dynamic return FlxG.sound;
@@ -840,8 +850,10 @@ class CustomFlxG {
 	static function set_autoPause(value:Bool):Bool return FlxG.autoPause = value;
 	static function get_signals():Dynamic return FlxG.signals;
 	static function get_random():Dynamic return FlxG.random;
-	
-	// Funciones de compatibilidad para mods antiguos
+	static function get_scaleMode():Dynamic return FlxG.scaleMode;
+	static function get_elapsed():Float return FlxG.elapsed;
+
+	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
 		funkin.util.FlxGUtils.addChildBelowMouse(object, IndexModifier);
 	}
@@ -850,13 +862,23 @@ class CustomFlxG {
 		funkin.util.FlxGUtils.removeChild(object);
 	}
 	
-	// Delegación de métodos principales de FlxG
+	// Main FlxG method delegation
 	public static function switchState(nextState:flixel.FlxState):Void {
 		FlxG.switchState(nextState);
 	}
 	
 	public static function resetState():Void {
 		FlxG.resetState();
+	}
+
+	// Exposes FlxG.collide so scripts can call FlxG.collide(objectA, objectB)
+	public static function collide(?objectOrGroup1:Dynamic, ?objectOrGroup2:Dynamic, ?notifyCallback:Dynamic):Bool {
+		return FlxG.collide(objectOrGroup1, objectOrGroup2, notifyCallback);
+	}
+
+	// Exposes FlxG.overlap
+	public static function overlap(?objectOrGroup1:Dynamic, ?objectOrGroup2:Dynamic, ?notifyCallback:Dynamic, ?processCallback:Dynamic):Bool {
+		return FlxG.overlap(objectOrGroup1, objectOrGroup2, notifyCallback, processCallback);
 	}
 }
 

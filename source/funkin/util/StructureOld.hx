@@ -15,7 +15,7 @@ class StructureOld
         // ===== OLD Psych 0.7.3 - 1.0.4  =====
 		// backend
 		'backend.Conductor' => 'funkin.audio.Conductor',
-		'backend.ClientPrefs' => 'funkin.Preferences.ClientPrefs',
+		'backend.ClientPrefs' => 'funkin.Preferences',
 		'backend.Paths' => 'funkin.Paths',
 		'backend.CoolUtil' => 'funkin.util.CoolUtil',
 		'backend.Difficulty' => 'funkin.data.story.level.Difficulty',
@@ -83,7 +83,7 @@ class StructureOld
 		
 		// ===== OLD Psych 0.6.3 (no namespace) =====
 		'Conductor' => 'funkin.audio.Conductor',
-		'ClientPrefs' => 'funkin.Preferences.ClientPrefs',
+		'ClientPrefs' => 'funkin.Preferences',
 		'Paths' => 'funkin.Paths',
 		'CoolUtil' => 'funkin.util.CoolUtil',
 		'Difficulty' => 'funkin.data.story.level.Difficulty',

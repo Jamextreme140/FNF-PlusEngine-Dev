@@ -1300,7 +1300,7 @@ class PlayState extends MusicBeatState
 		Conductor.offset = Reflect.hasField(PlayState.SONG, 'offset') ? (PlayState.SONG.offset / value) : 0;
 		Conductor.safeZoneOffset = (ClientPrefs.data.safeFrames / 60) * 1000 * value;
 		#if VIDEOS_ALLOWED
-		if(videoCutscene != null && videoCutscene.videoSprite != null) videoCutscene.videoSprite.bitmap.rate = value;
+		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null) videoCutscene.videoSprite.bitmap.rate = value;
 		#if LUA_ALLOWED
 		// Update all Lua videos rate
 		funkin.modding.scripting.psychlua.LuaVideo.setAllVideosRate(playbackRate);
@@ -1471,7 +1471,7 @@ class PlayState extends MusicBeatState
 		if (foundFile)
 		{
 			videoCutscene = new VideoSprite(fileName, forMidSong, canSkip, loop);
-			if(forMidSong) videoCutscene.videoSprite.bitmap.rate = playbackRate;
+			if(forMidSong && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null) videoCutscene.videoSprite.bitmap.rate = playbackRate;
 
 			// Finish callback
 			if (!forMidSong)
@@ -2604,7 +2604,7 @@ class PlayState extends MusicBeatState
 		super.update(elapsed);
 
 		#if VIDEOS_ALLOWED
-		if(videoCutscene != null && videoCutscene.videoSprite != null)
+		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)
 		{
 			videoCutscene.videoSprite.bitmap.rate = paused ? 0 : playbackRate;
 		}
