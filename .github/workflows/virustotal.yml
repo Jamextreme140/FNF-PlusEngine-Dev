@@ -1,197 +1,293 @@
 name: VirusTotal Scan
 
 on:
-  release:
-    types: [published]
+  # Triggers automatically when the Build workflow finishes on main/dev
+  workflow_run:
+    workflows: ["Build"]
+    types: [completed]
+    branches: [main, dev]
+  # Also allows manual triggering (searches for the most recent Build artifacts)
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'export/release/**'
 
 jobs:
   scan-linux-x64:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Linux x64 Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: linuxBuild64
           path: ./linux-x64-build
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./linux-x64-build" ] && [ "$(ls -A ./linux-x64-build)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for linuxBuild64 — skipping scan."
+          fi
+
       - name: Zip Linux Build
+        if: steps.check.outputs.found == 'true'
         run: |
           cd ./linux-x64-build
           zip -r ../FNF-PlusEngine-Linux-x64.zip *
           cd ..
-          
+
       - name: VirusTotal Scan Linux x64
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-Linux-x64.zip
+          files: ./FNF-PlusEngine-Linux-x64.zip
 
   scan-windows-x86:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Windows x86 Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: windowsBuild32
           path: ./windows-x86-build
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./windows-x86-build" ] && [ "$(ls -A ./windows-x86-build)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for windowsBuild32 — skipping scan."
+          fi
+
       - name: Zip Windows x86 Build
+        if: steps.check.outputs.found == 'true'
         run: |
           cd ./windows-x86-build
           zip -r ../FNF-PlusEngine-Windows-x86.zip *
           cd ..
-          
+
       - name: VirusTotal Scan Windows x86
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-Windows-x86.zip
+          files: ./FNF-PlusEngine-Windows-x86.zip
 
   scan-windows-x64:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Windows x64 Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: windowsBuild64
           path: ./windows-x64-build
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./windows-x64-build" ] && [ "$(ls -A ./windows-x64-build)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for windowsBuild64 — skipping scan."
+          fi
+
       - name: Zip Windows x64 Build
+        if: steps.check.outputs.found == 'true'
         run: |
           cd ./windows-x64-build
           zip -r ../FNF-PlusEngine-Windows-x64.zip *
           cd ..
-          
+
       - name: VirusTotal Scan Windows x64
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-Windows-x64.zip
+          files: ./FNF-PlusEngine-Windows-x64.zip
 
   scan-mac-intel:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Mac Intel Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: macBuildIntel
           path: ./mac-build-intel
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./mac-build-intel" ] && [ "$(ls -A ./mac-build-intel)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for macBuildIntel — skipping scan."
+          fi
+
       - name: Zip Mac Intel Build
+        if: steps.check.outputs.found == 'true'
         run: |
           cd ./mac-build-intel
           zip -r ../FNF-PlusEngine-Mac-Intel.zip *
           cd ..
-          
+
       - name: VirusTotal Scan Mac Intel
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-Mac-Intel.zip
+          files: ./FNF-PlusEngine-Mac-Intel.zip
 
   scan-mac-arm:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Mac ARM Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: macBuildARM
           path: ./mac-build-arm
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./mac-build-arm" ] && [ "$(ls -A ./mac-build-arm)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for macBuildARM — skipping scan."
+          fi
+
       - name: Zip Mac ARM Build
+        if: steps.check.outputs.found == 'true'
         run: |
           cd ./mac-build-arm
           zip -r ../FNF-PlusEngine-Mac-ARM.zip *
           cd ..
-          
+
       - name: VirusTotal Scan Mac ARM
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-Mac-ARM.zip
+          files: ./FNF-PlusEngine-Mac-ARM.zip
 
   scan-android:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download Android Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: androidBuild
           path: ./android-build
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./android-build" ] && [ "$(ls -A ./android-build)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for androidBuild — skipping scan."
+          fi
+
       - name: Find APK
         id: find-apk
+        if: steps.check.outputs.found == 'true'
         run: |
           APK_FILE=$(find ./android-build -name "*.apk" | head -n 1)
           echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_FILE"
-          
+
       - name: VirusTotal Scan Android
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ${{ steps.find-apk.outputs.apk_path }}
-          
+          files: ${{ steps.find-apk.outputs.apk_path }}
+
   scan-ios:
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-    
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
+
     steps:
       - name: Download iOS Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
+          run_id: ${{ github.event.workflow_run.id || '' }}
           name: iOSBuild
           path: ./ios-build
-          
+          if_no_artifact_found: ignore
+
+      - name: Check artifact found
+        id: check
+        run: |
+          if [ -d "./ios-build" ] && [ "$(ls -A ./ios-build)" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "Artifact found, proceeding with scan."
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No artifact found for iOSBuild — skipping scan."
+          fi
+
       - name: Find iOS App
         id: find-ios
+        if: steps.check.outputs.found == 'true'
         run: |
-          IOS_FILE=$(find ./ios-build \( -name "*.app" \) | head -n 1)
+          IOS_FILE=$(find ./ios-build -name "*.app" | head -n 1)
           if [ -z "$IOS_FILE" ]; then
             IOS_FILE=$(find ./ios-build -type f -executable | head -n 1)
           fi
-          
           if [ -z "$IOS_FILE" ]; then
             IOS_FILE="./ios-build"
           fi
-          
           echo "ios_path=$IOS_FILE" >> $GITHUB_OUTPUT
           echo "iOS file to scan: $IOS_FILE"
-          
+
       - name: Prepare iOS Archive
+        if: steps.check.outputs.found == 'true'
         run: |
           IOS_PATH="${{ steps.find-ios.outputs.ios_path }}"
-          
           if [ -d "$IOS_PATH" ]; then
             cd "$IOS_PATH"
             zip -r ../../FNF-PlusEngine-iOS.zip *
@@ -202,10 +298,10 @@ jobs:
             echo "No iOS build found for scanning"
             exit 1
           fi
-          
+
       - name: VirusTotal Scan iOS
+        if: steps.check.outputs.found == 'true'
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            ./FNF-PlusEngine-iOS.zip
+          files: ./FNF-PlusEngine-iOS.zip
