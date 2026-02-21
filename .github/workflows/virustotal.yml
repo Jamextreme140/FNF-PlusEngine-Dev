@@ -20,11 +20,11 @@ jobs:
         with:
           workflow: main.yml
           name: linuxBuild64
-          path: ./linux-build
+          path: ./linux-x64-build
           
       - name: Zip Linux Build
         run: |
-          cd ./linux-build
+          cd ./linux-x64-build
           zip -r ../FNF-PlusEngine-Linux-x64.zip *
           cd ..
           
@@ -95,11 +95,11 @@ jobs:
         with:
           workflow: main.yml
           name: macBuildIntel
-          path: ./mac-intel-build
+          path: ./mac-build-intel
           
       - name: Zip Mac Intel Build
         run: |
-          cd ./mac-intel-build
+          cd ./mac-build-intel
           zip -r ../FNF-PlusEngine-Mac-Intel.zip *
           cd ..
           
@@ -120,11 +120,11 @@ jobs:
         with:
           workflow: main.yml
           name: macBuildARM
-          path: ./mac-arm-build
+          path: ./mac-build-arm
           
       - name: Zip Mac ARM Build
         run: |
-          cd ./mac-arm-build
+          cd ./mac-build-arm
           zip -r ../FNF-PlusEngine-Mac-ARM.zip *
           cd ..
           
