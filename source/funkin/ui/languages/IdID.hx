@@ -278,7 +278,7 @@ class IdID
         "description_key_viewer_color" => "Pilih warna untuk tombol key viewer.",
         "setting_icon_bounce" => "Ikon Pantulan",
         "setting_icon_bounce-old" => "Lama",
-        "description_icon_bounce" => "Pilih jenis ikon pantulan yang Anda sukai.",
+        "description_icon_bounce" => "Pilih jenis ikon pantulan yang Anda sukai. CATATAN: Skrip yang menggunakan pengaturan ini mungkin tidak berfungsi dengan nilai non-default. Disarankan untuk membiarkannya sebagai Default.",
         "setting_camera_zooms" => "Kamera Zoom",
         "description_camera_zooms" => "Jika tidak diaktifkan, kamera tidak akan memperbesar pada saat beat hit.",
         "setting_score_text_grow_on_hit" => "Teks Skor Bertambah Saat Dihit",
