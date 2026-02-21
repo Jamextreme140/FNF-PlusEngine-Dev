@@ -63,6 +63,7 @@ import funkin.ui.title.TitleState;
 	public var hideHud:Bool = false;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
+	public var iconBounceType:String = 'Default';
 	public var judgementCounter:Bool = true;
 	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;

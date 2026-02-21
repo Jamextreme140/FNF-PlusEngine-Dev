@@ -82,6 +82,14 @@ class CoolUtil
 		return Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
 	}
 
+	// Taken from Psych Engine 0.4.2
+	public static function boundTo(value:Float, min:Float, max:Float):Float {
+		var newValue:Float = value;
+		if(newValue < min) newValue = min;
+		else if(newValue > max) newValue = max;
+		return newValue;
+	}
+
 	#if linux
 	public static function sortAlphabetically(list:Array<String>):Array<String> {
 		if (list == null) return [];

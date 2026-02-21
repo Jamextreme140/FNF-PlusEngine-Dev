@@ -942,7 +942,15 @@ class PlayState extends MusicBeatState
 		
 		iconP1 = new HealthIcon(boyfriend != null ? boyfriend.healthIcon : 'bf', true, false);
 		if(bf_animatedIcon) iconP1.changeIcon(iconP1.getCharacter(), false, true);
-		iconP1.y = healthBar.y - 75;
+		if (ClientPrefs.data.iconBounceType = 'Old')
+		{
+			iconP1.y = healthBar.y - (iconP1.height / 2);
+		}
+
+		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+		{
+			iconP1.y = healthBar.y - 75;
+		}
 		// Ocultar iconos en NotITG
 		iconP1.visible = !ClientPrefs.data.hideHud && !isNotITG;
 		iconP1.alpha = ClientPrefs.data.healthBarAlpha;
@@ -950,7 +958,15 @@ class PlayState extends MusicBeatState
 
 		iconP2 = new HealthIcon(dad != null ? dad.healthIcon : 'dad', false, false);
 		if(dad_animatedIcon) iconP2.changeIcon(iconP2.getCharacter(), false, true);
-		iconP2.y = healthBar.y - 75;
+		if (ClientPrefs.data.iconBounceType = 'Old')
+		{
+			iconP2.y = healthBar.y - (iconP2.height / 2);
+		}
+		
+		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+		{
+			iconP2.y = healthBar.y - 75;
+		}
 		iconP2.visible = !ClientPrefs.data.hideHud && !isNotITG;
 		iconP2.alpha = ClientPrefs.data.healthBarAlpha;
 		if (!isNotITG) uiGroup.add(iconP2);
@@ -959,7 +975,15 @@ class PlayState extends MusicBeatState
 		var gf_animatedIcon:Bool = (gf != null && gf.animatedIcon == true) || (SONG.isAnimated == true);
 		iconGF = new HealthIcon(gf != null ? gf.healthIcon : 'gf', true, false);
 		if(gf_animatedIcon) iconGF.changeIcon(iconGF.getCharacter(), false, true);
-		iconGF.y = healthBar.y - 75;
+		if (ClientPrefs.data.iconBounceType = 'Old')
+		{
+			iconGF.y = healthBar.y - (iconGF.height / 2);
+		}
+
+		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+		{
+			iconGF.y = healthBar.y - 75;
+		}
 		iconGF.visible = false; // Hidden by default until event is triggered
 		iconGF.alpha = ClientPrefs.data.healthBarAlpha;
 		if (!isNotITG) uiGroup.add(iconGF);
@@ -2958,6 +2982,18 @@ class PlayState extends MusicBeatState
 		}
 		#end
 
+		// Taken from Psych Engine 0.4.2
+		if (ClientPrefs.data.iconBounceType = 'Old')
+		{
+			iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+			iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+			iconGF.setGraphicSize(Std.int(FlxMath.lerp(150, iconGF.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+
+			iconP1.updateHitbox();
+			iconP2.updateHitbox();
+			iconGF.updateHitbox();
+		}
+
 		setOnScripts('botPlay', cpuControlled);
 		callOnScripts('onUpdatePost', [elapsed]);
 	}
@@ -2965,22 +3001,41 @@ class PlayState extends MusicBeatState
 	// Health icon updaters
 	public dynamic function updateIconsScale(elapsed:Float)
 	{
-		if (iconP1 != null) {
-			var mult:Float = FlxMath.lerp(1, iconP1.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+		if (ClientPrefs.data.iconBounceType = 'NF')
+		{
+			// Taken from NovaFlare Engine
+			var mult:Float = FlxMath.lerp(1, iconP1.scale.x, FlxMath.bound((1 - (elapsed * 9 * playbackRate)) / 1.1, 0, 1));
 			iconP1.scale.set(mult, mult);
 			iconP1.updateHitbox();
-		}
 
-		if (iconP2 != null) {
-			var mult:Float = FlxMath.lerp(1, iconP2.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+			var mult:Float = FlxMath.lerp(1, iconP2.scale.x, FlxMath.bound((1 - (elapsed * 9 * playbackRate)) / 1.1, 0, 1));
 			iconP2.scale.set(mult, mult);
 			iconP2.updateHitbox();
-		}
 
-		if (iconGF != null && iconGF.visible) {
-			var mult:Float = FlxMath.lerp(1, iconGF.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+			var mult:Float = FlxMath.lerp(1, iconGF.scale.x, FlxMath.bound((1 - (elapsed * 9 * playbackRate)) / 1.1, 0, 1));
 			iconGF.scale.set(mult, mult);
 			iconGF.updateHitbox();
+		}
+
+		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+		{
+			if (iconP1 != null) {
+				var mult:Float = FlxMath.lerp(1, iconP1.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+				iconP1.scale.set(mult, mult);
+				iconP1.updateHitbox();
+			}
+
+			if (iconP2 != null) {
+				var mult:Float = FlxMath.lerp(1, iconP2.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+				iconP2.scale.set(mult, mult);
+				iconP2.updateHitbox();
+			}
+
+			if (iconGF != null && iconGF.visible) {
+				var mult:Float = FlxMath.lerp(1, iconGF.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+				iconGF.scale.set(mult, mult);
+				iconGF.updateHitbox();
+			}
 		}
 	}
 
@@ -5578,11 +5633,28 @@ class PlayState extends MusicBeatState
 		if (generatedMusic)
 			notes.sort(FlxSort.byY, ClientPrefs.data.downScroll ? FlxSort.ASCENDING : FlxSort.DESCENDING);
 
-		iconP1.scale.set(1.2, 1.2);
-		iconP2.scale.set(1.2, 1.2);
+		if (ClientPrefs.data.iconBounceType = 'Default')
+		{
+            iconP1.scale.set(1.2, 1.2);
+		    iconP2.scale.set(1.2, 1.2);
+			iconP1.updateHitbox();
+		    iconP2.updateHitbox();
+		}
+
+		if (ClientPrefs.data.iconBounceType = 'NF')
+		{
+			// Taken from NovaFlare Engine
+			iconP1.scale.set(1.3, 1.3);
+			iconP2.scale.set(1.3, 1.3);
+
+			iconP1.updateHitbox();
+			iconP2.updateHitbox();
+		}
 		
-		iconP1.updateHitbox();
-		iconP2.updateHitbox();
+		if (ClientPrefs.data.iconBounceType = 'D&B')
+		{
+			animateIcons(); // Taken from older of Plus Engine
+		}
 
 		characterBopper(curBeat);
 
@@ -5675,6 +5747,78 @@ class PlayState extends MusicBeatState
 				strum.playAnim('static', true);
 			}
 		});
+	}
+
+	// Taken from older of Plus Engine
+	public function animateIcons():Void
+	{
+		if (ClientPrefs.data.iconBounceType = 'D&B')
+		{
+			iconTurnValue = -iconTurnValue;
+
+			if (iconP1 != null) {
+				FlxTween.cancelTweensOf(iconP1);
+				FlxTween.cancelTweensOf(iconP1.scale);
+				
+				iconP1.angle = iconTurnValue;
+				iconP1.scale.set(1.2, 0.3);
+				iconP1.updateHitbox();
+				
+				FlxTween.tween(iconP1, {angle: 0}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT
+				});
+				FlxTween.tween(iconP1.scale, {x: 1, y: 1}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT,
+					onComplete: function(twn:FlxTween) {
+						iconP1.updateHitbox();
+					}
+				});
+			}
+
+			if (iconP2 != null) {
+				FlxTween.cancelTweensOf(iconP2);
+				FlxTween.cancelTweensOf(iconP2.scale);
+				
+				iconP2.angle = iconTurnValue;
+				iconP2.scale.set(1.2, 0.3);
+				iconP2.updateHitbox();
+				
+				FlxTween.tween(iconP2, {angle: 0}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT
+				});
+				FlxTween.tween(iconP2.scale, {x: 1, y: 1}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT,
+					onComplete: function(twn:FlxTween) {
+						iconP2.updateHitbox();
+					}
+				});
+			}
+
+			if (iconGF != null) {
+				FlxTween.cancelTweensOf(iconGF);
+				FlxTween.cancelTweensOf(iconGF.scale);
+				
+				iconGF.angle = iconTurnValue;
+				iconGF.scale.set(1.2, 0.3);
+				iconGF.updateHitbox();
+				
+				FlxTween.tween(iconGF, {angle: 0}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT
+				});
+				FlxTween.tween(iconGF.scale, {x: 1, y: 1}, Conductor.crochet / 1000, {
+					ease: FlxEase.circOut,
+					type: ONESHOT,
+					onComplete: function(twn:FlxTween) {
+						iconGF.updateHitbox();
+					}
+				});
+			}
+		}
 	}
 
 	public function playerDance():Void

@@ -110,7 +110,14 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			['Gray', 'Red', 'Blue', 'Green', 'Purple', 'Orange', 'Pink', 'Cyan', 'White', 'Black']);
 		addOption(option);
 		option.onChange = onChangeKeyViewerColor;
-		
+
+		var option:Option = new Option('Icon Bounce',
+		    'Select the type of bounce icon you prefer.',
+			'iconBounceType',
+			STRING,
+			['Default', 'D&B', 'Old', 'NF']);
+		addOption(option);
+
 		var option:Option = new Option('Time Bar:',
 			"What should the Time Bar display?",
 			'timeBarType',
@@ -166,7 +173,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 		
-
 		var option:Option = new Option('Show Watermark',
 			'If checked, shows the watermark on screen.',
 			'showWatermark',
