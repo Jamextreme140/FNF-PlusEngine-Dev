@@ -228,17 +228,17 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 			if (pf == null) {
-				FunkinLua.luaTrace('setModifierPath: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null) {
-				FunkinLua.luaTrace('setModifierPath: modifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: modifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 			if (!Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPath: modifier is not a PathModifier: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: modifier is not a PathModifier: ' + modName, 0xFFFF0000);
 				return;
 			}
 
@@ -257,13 +257,13 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 	 		if (pf == null) {
-				FunkinLua.luaTrace('setModifierPathOffset: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathOffset: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null || !Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPathOffset: PathModifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathOffset: PathModifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 
@@ -275,37 +275,33 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 			if (pf == null) {
-				FunkinLua.luaTrace('setModifierPathBound: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathBound: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null || !Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPathBound: PathModifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathBound: PathModifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 
 			cast(mod, PathModifier).setPathBound(bound);
 		});
         
-        // Load a chart and return a flat array of note tables for use in forNoteInChart-style loops.
-        // Each entry is: { step=<Float>, type=<Int 0-3>, time=<Float ms> }
-        // Uses Song.getChart() so it does NOT overwrite PlayState.SONG.
-        // Usage: local notes = getChartNotes("newDrums", "null-and-void")
-        //        for _, n in ipairs(notes) do ... end
+        // Inspired by Troll Engine's forNoteInChart =P
         Lua_helper.add_callback(lua, "getChartNotes", function(chartName:String, ?songName:String):Dynamic {
             if (songName == null || songName.length == 0)
                 songName = Song.loadedSongName;
 
-            PlayState.instance.addTextToDebug('[getChartNotes] looking for chart="$chartName" song="$songName"', 0xFFFFFF);
+            PlayState.instance.addTextToDebug('Looking for chart="$chartName" song="$songName"', 0xFFFFFF);
 
             var swagSong = Song.getChart(chartName, songName);
             if (swagSong == null) {
-                PlayState.instance.addTextToDebug('[getChartNotes] ERROR: chart "$chartName" not found in song "$songName"', 0xFFFF0000);
+                PlayState.instance.addTextToDebug('ERROR: chart "$chartName" not found in song "$songName"', 0xFFFF0000);
                 return null;
             }
 
-            PlayState.instance.addTextToDebug('[getChartNotes] chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', 0xFFFFFF);
+            PlayState.instance.addTextToDebug('Chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', 0xFFFFFF);
 
             // Build a 1-indexed Lua-compatible array of note tables
             var result:Array<Dynamic> = [];
@@ -330,7 +326,7 @@ class LuaModchart
             // Sort ascending by step so the caller can just iterate in order
             result.sort(function(a, b) return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0));
 
-            PlayState.instance.addTextToDebug('[getChartNotes] "$chartName" total notes=${result.length}'
+            PlayState.instance.addTextToDebug('"$chartName" total notes=${result.length}'
                 + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''), 0xFFFFFF);
 
             return result;
