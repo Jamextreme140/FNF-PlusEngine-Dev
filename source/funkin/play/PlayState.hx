@@ -3729,7 +3729,7 @@ class PlayState extends MusicBeatState
 						{
 							if (glitchOpponent == null)
 							{
-								glitchOpponent = new GlitchEffect(0.0, 0.0);
+								glitchOpponent = new GlitchEffect();
 							}
 							for (strum in opponentStrums.members)
 								if (strum != null) strum.shader = glitchOpponent.shader;
@@ -3738,7 +3738,7 @@ class PlayState extends MusicBeatState
 						{
 							if (glitchPlayer == null)
 							{
-								glitchPlayer = new GlitchEffect(0.0, 0.0);
+								glitchPlayer = new GlitchEffect();
 							}
 							for (strum in playerStrums.members)
 								if (strum != null) strum.shader = glitchPlayer.shader;
