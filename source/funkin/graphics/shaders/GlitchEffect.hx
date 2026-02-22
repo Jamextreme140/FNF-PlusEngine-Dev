@@ -1,6 +1,39 @@
 package funkin.graphics.shaders;
 
-class GlitchEffect extends FlxShader
+// Wrapper class for GlitchShader, following the WiggleEffect pattern
+class GlitchEffect
+{
+	public var shader(default, null):GlitchShader = new GlitchShader();
+	public var binaryIntensity(default, set):Float = 0.0;
+	public var negativity(default, set):Float = 0.0;
+
+	public function new(binaryIntensity:Float = 0.0, negativity:Float = 0.0):Void
+	{
+		this.binaryIntensity = binaryIntensity;
+		this.negativity = negativity;
+	}
+
+	public function update(elapsed:Float):Void
+	{
+		// No time-based updates needed for this effect
+	}
+
+	function set_binaryIntensity(v:Float):Float
+	{
+		binaryIntensity = v;
+		shader.binaryIntensity.value = [v];
+		return v;
+	}
+
+	function set_negativity(v:Float):Float
+	{
+		negativity = v;
+		shader.negativity.value = [v];
+		return v;
+	}
+}
+
+class GlitchShader extends FlxShader
 {
 	@:glFragmentSource('
 		#pragma header
@@ -45,28 +78,9 @@ class GlitchEffect extends FlxShader
 			fragColor = mix(mierdaColor, vec4(1.0 - mierdaColor.r, 1.0 - mierdaColor.g, 1.0 - mierdaColor.b, mierdaColor.a) * mierdaColor.a, negativity);
 		}
 	')
-	
-	public function new(binaryIntensity:Float = 0.0, negativity:Float = 0.0)
+
+	public function new()
 	{
 		super();
-		this.binaryIntensity.value = [binaryIntensity];
-		this.negativity.value = [negativity];
-	}
-	
-	public var binaryIntensity(default, set):Float = 0.0;
-	public var negativity(default, set):Float = 0.0;
-	
-	function set_binaryIntensity(v:Float):Float
-	{
-		binaryIntensity = v;
-		this.binaryIntensity.value = [v];
-		return v;
-	}
-	
-	function set_negativity(v:Float):Float
-	{
-		negativity = v;
-		this.negativity.value = [v];
-		return v;
 	}
 }

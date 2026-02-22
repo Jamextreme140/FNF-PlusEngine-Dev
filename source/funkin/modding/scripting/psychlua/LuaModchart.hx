@@ -297,15 +297,15 @@ class LuaModchart
             if (songName == null || songName.length == 0)
                 songName = Song.loadedSongName;
 
-            PlayState.instance.addTextToDebug('[getChartNotes] looking for chart="$chartName" song="$songName"', false, false, 0xFFFFFF);
+            PlayState.instance.addTextToDebug('[getChartNotes] looking for chart="$chartName" song="$songName"', 0xFFFFFF);
 
             var swagSong = Song.getChart(chartName, songName);
             if (swagSong == null) {
-                FunkinLua.luaTrace('[getChartNotes] ERROR: chart "$chartName" not found in song "$songName"', false, false, 0xFFFF0000);
+                PlayState.instance.addTextToDebug('[getChartNotes] ERROR: chart "$chartName" not found in song "$songName"', 0xFFFF0000);
                 return null;
             }
 
-            FunkinLua.luaTrace('[getChartNotes] chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', false, false, 0xFFFFFF);
+            PlayState.instance.addTextToDebug('[getChartNotes] chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', 0xFFFFFF);
 
             // Build a 1-indexed Lua-compatible array of note tables
             var result:Array<Dynamic> = [];
@@ -330,8 +330,8 @@ class LuaModchart
             // Sort ascending by step so the caller can just iterate in order
             result.sort(function(a, b) return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0));
 
-            FunkinLua.luaTrace('[getChartNotes] "$chartName" total notes=${result.length}'
-                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''), false, false, 0xFFFFFF);
+            PlayState.instance.addTextToDebug('[getChartNotes] "$chartName" total notes=${result.length}'
+                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''), 0xFFFFFF);
 
             return result;
         });
