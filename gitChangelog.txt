@@ -1,11 +1,9 @@
-- New option for a gradient time bar.
-- New option to use the vanilla Psych transition.
-- New option to hide hold splashes.
-- New option for heavy note support (only notes).
-- New transition sound and achievement unlock.
-- New X button on Android to exit from the Main Menu.
-- Added ModchartTweens, a variable used in Psych 0.7.3.
-- New option for people with color blindness and related conditions.
-- You can now load JSON in V-Slice format.
-- New LuaPath modifier fixed.
+- Source code restructured to match the base game. Don't worry, it won't break your mods "StructureOld".
+- Collab 1 of the base game ported.
+- Added InitState to start ModState or the game without errors.
+- Mobile: Added a new control scheme, "Hitbox Arrows," just like the mobile base game.
+- You can now use ndlls in the game for your mods. You can use Lua functions, or load them with Lua's FFI.
+- Windows: You can select your fullscreen mode from the settings: between borders or exclusive.
+- New option to quantitatively color notes, just like StepMania.
+- Added legacy settings, with the following options: Use SScript, Legacy Memory Management, Legacy FileSystem Access, Use Legacy Font, and Use Legacy Init Shader (bug).
 - And More...

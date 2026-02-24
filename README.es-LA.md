@@ -21,7 +21,7 @@
 
 Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hxcodec de mods de Psych 0.6.3 y 0.7.3.
 
-[¡Únete al Discord!](https://discord.gg/FCwACsDDMz)
+[¡Únete al Discord!](https://discord.gg/dHvGQfXy9h)
 
 </div>
 

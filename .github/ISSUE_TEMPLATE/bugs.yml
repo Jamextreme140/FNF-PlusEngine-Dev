@@ -48,6 +48,7 @@ body:
     attributes:
       label: "Which Plus Engine version you're on?"
       options:
+        - "1.2.5"
         - "1.2"
         - "1.1"
         - "1.0.6"
@@ -60,9 +61,9 @@ body:
   - type: dropdown
     id: modver
     attributes:
-      label: "Which version of Psych is the mod made for? (if you're using one)"
+      label: "Which version of Psych/Plus is the mod made for? (if you're using one)"
       options:
-        - "Psych Engine 1.0.5+"
+        - "Plus Engine 1.0.5+"
         - "Psych Engine 1.0 - 1.0.4"
         - "Psych Engine 0.7.x"
         - "Psych Engine 0.6.x"

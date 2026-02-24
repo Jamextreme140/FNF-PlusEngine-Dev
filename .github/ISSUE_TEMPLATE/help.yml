@@ -40,6 +40,7 @@ body:
     attributes:
       label: "Which plus engine version you're on?"
       options:
+        - "1.2.5"
         - "1.2"
         - "1.1"
         - "1.0.6"
