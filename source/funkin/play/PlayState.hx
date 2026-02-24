@@ -74,10 +74,6 @@ import funkin.mobile.backend.MobileData;
 import funkin.modding.modchart.Manager;
 #end
 
-#if SSCRIPT_ALLOWED
-import funkin.modding.scripting.SScript.SScriptCompat;
-#end
-
 #if HSCRIPT_ALLOWED
 import funkin.modding.scripting.HScript.HScriptInfos;
 import crowplexus.iris.Iris;
@@ -193,6 +189,7 @@ class PlayState extends MusicBeatState
 	public var dadGroup:FlxSpriteGroup;
 	public var gfGroup:FlxSpriteGroup;
 	public static var curStage:String = '';
+	public static var originalStage:String = ''; // Original stage before any Change Stage events
 
 	// Stage member tracking for Change Stage Event
 	private var stageStartIdx:Int = 0;
@@ -550,9 +547,6 @@ class PlayState extends MusicBeatState
 		// Resetear contador de errores de scripts
 		#if LUA_ALLOWED
 		FunkinLua.lua_Errors = 0;
-		#if SSCRIPT_ALLOWED
-		funkin.modding.scripting.SScript.SScriptCompat.sscript_Errors = 0;
-		#end
 		#end
 		
 		//trace('Playback Rate: ' + playbackRate);
@@ -676,6 +670,7 @@ class PlayState extends MusicBeatState
 		}
 
 		curStage = SONG.stage;
+		originalStage = curStage; // Save original stage for restart
 
 		// Flag para etapas NotITG (StepMania) donde ocultamos HUD y personajes
 		var isNotITG:Bool = (curStage == 'notitg');
@@ -2960,6 +2955,17 @@ class PlayState extends MusicBeatState
 				var dunceNote:Note = unspawnNotes[0];
 				notes.insert(0, dunceNote);
 				dunceNote.spawned = true;
+				
+				// Apply glitchy notes shader to spawned notes
+				#if !flash
+				if (glitchyNotesTarget != '' && ClientPrefs.data.shaders)
+				{
+					if ((glitchyNotesTarget == 'opponent' || glitchyNotesTarget == 'both') && !dunceNote.mustPress && glitchOpponent != null)
+						dunceNote.shader = glitchOpponent.shader;
+					else if ((glitchyNotesTarget == 'player' || glitchyNotesTarget == 'both') && dunceNote.mustPress && glitchPlayer != null)
+						dunceNote.shader = glitchPlayer.shader;
+				}
+				#end
 
 				callOnLuas('onSpawnNote', [notes.members.indexOf(dunceNote), dunceNote.noteData, dunceNote.noteType, dunceNote.isSustainNote, dunceNote.strumTime]);
 				callOnHScript('onSpawnNote', [dunceNote]);
@@ -3809,12 +3815,18 @@ class PlayState extends MusicBeatState
 				cameraBopIntensity = intensity;
 				cameraBopEnabled = (intensity > 0);
 
+			/*
 			case 'Glitchy Notes':
 				#if !flash
 				if (ClientPrefs.data.shaders)
 				{
 					var target:String = value2.trim().toLowerCase();
 					var enable:Bool = (value1.trim().toLowerCase() == 'true');
+					
+					// Get intensity values from flValue1 and flValue2, or use defaults
+					var binaryIntensity:Float = (flValue1 != null && flValue1 > 0) ? flValue1 : 1.0;
+					var negativity:Float = (flValue2 != null && flValue2 >= 0) ? flValue2 : 0.0;
+					
 					if (enable)
 					{
 						glitchyNotesTarget = target;
@@ -3822,34 +3834,58 @@ class PlayState extends MusicBeatState
 						{
 							if (glitchOpponent == null)
 							{
-								glitchOpponent = new GlitchEffect();
+								glitchOpponent = new GlitchEffect(binaryIntensity, negativity);
+							}
+							else
+							{
+								glitchOpponent.binaryIntensity = binaryIntensity;
+								glitchOpponent.negativity = negativity;
 							}
 							for (strum in opponentStrums.members)
 								if (strum != null) strum.shader = glitchOpponent.shader;
+							// Apply to opponent notes
+							for (note in notes.members)
+								if (note != null && !note.mustPress) note.shader = glitchOpponent.shader;
+							for (note in unspawnNotes)
+								if (note != null && !note.mustPress) note.shader = glitchOpponent.shader;
 						}
 						if (target == 'player' || target == 'both')
 						{
 							if (glitchPlayer == null)
 							{
-								glitchPlayer = new GlitchEffect();
+								glitchPlayer = new GlitchEffect(binaryIntensity, negativity);
+							}
+							else
+							{
+								glitchPlayer.binaryIntensity = binaryIntensity;
+								glitchPlayer.negativity = negativity;
 							}
 							for (strum in playerStrums.members)
 								if (strum != null) strum.shader = glitchPlayer.shader;
+							// Apply to player notes
+							for (note in notes.members)
+								if (note != null && note.mustPress) note.shader = glitchPlayer.shader;
+							for (note in unspawnNotes)
+								if (note != null && note.mustPress) note.shader = glitchPlayer.shader;
 						}
 					}
 					else
 					{
-						// Reset - restore default RGB shaders on strums
-						glitchyNotesTarget = '';
-						for (strum in opponentStrums.members)
-							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
-						for (strum in playerStrums.members)
-							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
-						glitchOpponent = null;
-						glitchPlayer = null;
+					// Reset - restore default RGB shaders on strums and notes
+					glitchyNotesTarget = '';
+					for (strum in opponentStrums.members)
+						if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
+					for (strum in playerStrums.members)
+						if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
+					// Restore note shaders
+					for (note in notes.members)
+						if (note != null && note.rgbShader != null) note.shader = note.rgbShader.parent.shader;
+					for (note in unspawnNotes)
+						if (note != null && note.rgbShader != null) note.shader = note.rgbShader.parent.shader;
 					}
 				}
 				#end
+			*/
 
 			case 'Destructive HUD':
 				var enable:Bool = (value1.trim().toLowerCase() == 'true');
@@ -3865,6 +3901,7 @@ class PlayState extends MusicBeatState
 					restoreHUDPositions();
 				}
 
+			/*	
 			case 'CnB Screen':
 				var val1:Bool = (value1.trim().toLowerCase() == 'true');
 				var val2:Bool = (value2.trim().toLowerCase() == 'true');
@@ -3941,10 +3978,12 @@ class PlayState extends MusicBeatState
 					SONG.stage = newStage;
 					var newStageData:StageFile = StageData.getStageFile(curStage);
 
-					// Update camera defaults
-					defaultCamZoom = newStageData.defaultZoom;
-					defaultStageZoom = newStageData.defaultZoom;
-					FlxG.camera.zoom = defaultCamZoom;
+				// Update asset folder to load from correct week directory
+				if (newStageData.directory != null && newStageData.directory.trim().length > 0)
+				{
+					Paths.setCurrentLevel(newStageData.directory);
+					trace('[Change Stage] Setting asset folder to: ' + newStageData.directory);
+				}
 
 					// Update stageUI
 					if (newStageData.stageUI != null && newStageData.stageUI.trim().length > 0)
@@ -3969,54 +4008,72 @@ class PlayState extends MusicBeatState
 					dadGroup.x = DAD_X; dadGroup.y = DAD_Y;
 					gfGroup.x = GF_X; gfGroup.y = GF_Y;
 
-					if (boyfriend != null) startCharacterPos(boyfriend);
-					if (dad != null) startCharacterPos(dad, true);
-					if (gf != null) startCharacterPos(gf);
+					// Reset character positions to 0,0 within their groups before applying offsets
+					if (boyfriend != null) {
+						boyfriend.x = 0;
+						boyfriend.y = 0;
+						startCharacterPos(boyfriend);
+					}
+					if (dad != null) {
+						dad.x = 0;
+						dad.y = 0;
+						startCharacterPos(dad, true);
+					}
+					if (gf != null) {
+						gf.x = 0;
+						gf.y = 0;
+						startCharacterPos(gf);
+					}
 
-					// Create new stage objects (inserted at stageStartIdx position)
 					var beforeLen:Int = members.length;
-					switch (curStage)
-					{
-						case 'stage': new StageWeek1();
-						case 'spooky': new Spooky();
-						case 'philly': new Philly();
-						case 'limo': new Limo();
-						case 'mall': new Mall();
-						case 'mallEvil': new MallEvil();
-						case 'school': new School();
-						case 'schoolEvil': new SchoolEvil();
-						case 'tank': new Tank();
-						case 'phillyStreets': new PhillyStreets();
-						case 'phillyBlazin': new PhillyBlazin();
-						case 'sserafim': new Sserafim();
-						case 'mainStageErect': new funkin.play.stage.erect.MainStageErect();
-						case 'spookyMansionErect': new funkin.play.stage.erect.SpookyMansionErect();
-						case 'phillyTrainErect': new funkin.play.stage.erect.PhillyTrainErect();
-						case 'limoRideErect': new funkin.play.stage.erect.LimoRideErect();
-						case 'mallXmasErect': new funkin.play.stage.erect.MallXmasErect();
-						case 'schoolErect': new funkin.play.stage.erect.SchoolErect();
-						case 'schoolEvilErect': new funkin.play.stage.erect.SchoolEvilErect();
-						case 'tankmanBattlefieldErect': new funkin.play.stage.erect.TankErect();
-						case 'phillyStreetsErect': new funkin.play.stage.erect.PhillyStreetsErect();
-					}
-					stageEndIdx = members.length;
+						switch (curStage)
+						{
+							case 'stage': new StageWeek1();
+							case 'spooky': new Spooky();
+							case 'philly': new Philly();
+							case 'limo': new Limo();
+							case 'mall': new Mall();
+							case 'mallEvil': new MallEvil();
+							case 'school': new School();
+							case 'schoolEvil': new SchoolEvil();
+							case 'tank': new Tank();
+							case 'phillyStreets': new PhillyStreets();
+							case 'phillyBlazin': new PhillyBlazin();
+							case 'sserafim': new Sserafim();
+							case 'mainStageErect': new funkin.play.stage.erect.MainStageErect();
+							case 'spookyMansionErect': new funkin.play.stage.erect.SpookyMansionErect();
+							case 'phillyTrainErect': new funkin.play.stage.erect.PhillyTrainErect();
+							case 'limoRideErect': new funkin.play.stage.erect.LimoRideErect();
+							case 'mallXmasErect': new funkin.play.stage.erect.MallXmasErect();
+							case 'schoolErect': new funkin.play.stage.erect.SchoolErect();
+							case 'schoolEvilErect': new funkin.play.stage.erect.SchoolEvilErect();
+							case 'tankmanBattlefieldErect': new funkin.play.stage.erect.TankErect();
+							case 'phillyStreetsErect': new funkin.play.stage.erect.PhillyStreetsErect();
+						}
 
-					// Move new stage members to correct position (before character groups)
-					var addedCount:Int = members.length - beforeLen;
-					if (addedCount > 0)
-					{
-						var newMembers = members.splice(beforeLen, addedCount);
-						for (i in 0...newMembers.length)
-							members.insert(stageStartIdx + i, newMembers[i]);
-						stageEndIdx = stageStartIdx + addedCount;
-					}
+				// Call createPost() before calculating stageEndIdx (some stages add sprites in createPost)
+				stagesFunc(function(stage:BaseStage) stage.createPost());
 
-					stagesFunc(function(stage:BaseStage) stage.createPost());
-					#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
-					#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
-
-					trace('Stage changed to: ' + curStage);
+				// Move new stage members to correct position (before character groups)
+				var addedCount:Int = members.length - beforeLen;
+				if (addedCount > 0)
+				{
+					var newMembers = members.splice(beforeLen, addedCount);
+					for (i in 0...newMembers.length)
+						members.insert(stageStartIdx + i, newMembers[i]);
+					stageEndIdx = stageStartIdx + addedCount;
 				}
+				else
+				{
+					stageEndIdx = stageStartIdx;
+				}
+
+				#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
+				#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
+
+				trace('Stage changed to: ' + curStage);
+			}
+			*/
 
 			case 'Lyric Event':
 				if (lyricText != null)
@@ -5679,6 +5736,13 @@ class PlayState extends MusicBeatState
 		instance = null;
 		shutdownThread = true;
 		FlxG.signals.preUpdate.remove(checkForResync);
+
+		// Restore original stage before resetting to prevent Change Stage events from persisting on restart
+		if (originalStage != null && originalStage.length > 0)
+		{
+			SONG.stage = originalStage;
+			curStage = originalStage;
+		}
 		
 		// Limpiar memoria AL FINAL del destroy, después de super.destroy()
 		super.destroy();
@@ -6010,29 +6074,6 @@ class PlayState extends MusicBeatState
 
 	public function initHScript(file:String)
 	{
-		// Check if user wants SScript compatibility mode for .hx files
-		#if SSCRIPT_ALLOWED
-		if (ClientPrefs.data.useSScriptCompat) {
-			trace('SScript (Psych 0.7.x) file load succesfully: $file');
-			var newScript:SScriptCompat = null;
-			try {
-				newScript = new SScriptCompat(null, file);
-				if (newScript != null) {
-					if (newScript.exists('onCreate'))
-						newScript.executeCode('onCreate');
-					trace('SScript loaded successfully: $file');
-				}
-			}
-			catch(e:Dynamic) {
-				trace('ERROR loading SScript file ($file): $e');
-				addTextToDebug('ERROR loading SScript: $file', FlxColor.RED);
-				if(newScript != null)
-					newScript.destroy();
-			}
-			return;
-		}
-		#end
-		
 		// Use hscript-iris (default)
 		var newScript:HScript = null;
 		try

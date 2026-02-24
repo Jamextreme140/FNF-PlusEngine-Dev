@@ -6,6 +6,7 @@ class GlitchEffect
 	public var shader(default, null):GlitchShader = new GlitchShader();
 	public var binaryIntensity(default, set):Float = 0.0;
 	public var negativity(default, set):Float = 0.0;
+	public var time:Float = 0.0;
 
 	public function new(binaryIntensity:Float = 0.0, negativity:Float = 0.0):Void
 	{
@@ -15,7 +16,8 @@ class GlitchEffect
 
 	public function update(elapsed:Float):Void
 	{
-		// No time-based updates needed for this effect
+		time += elapsed;
+		shader.iTime.value = [time];
 	}
 
 	function set_binaryIntensity(v:Float):Float
@@ -39,19 +41,21 @@ class GlitchShader extends FlxShader
 		#pragma header
 		uniform float binaryIntensity;
 		uniform float negativity;
-		
-		#define iChannel0 bitmap
-		#define iChannel1 bitmap
-		#define texture flixel_texture2D
-		#define fragColor gl_FragColor
-		#define mainImage main
+		uniform float iTime;
 		
 		void main() {
-			#pragma body
-			vec2 fragCoord = openfl_TextureCoordv * openfl_TextureSize;
-			vec2 iResolution = openfl_TextureSize;
+			vec2 uv = openfl_TextureCoordv;
 			
-			vec2 uv = fragCoord.xy / iResolution.xy;
+			// If intensity is too low, just show original texture
+			if (binaryIntensity < 0.01) {
+				vec4 color = flixel_texture2D(bitmap, uv);
+				gl_FragColor = color;
+				return;
+			}
+			
+			// Add time-based offset for animation
+			float timeOffset = sin(iTime * 2.0 + uv.y * 10.0) * 0.005 * binaryIntensity;
+			uv.x += timeOffset;
 			
 			// get snapped position
 			float psize = 0.04 * binaryIntensity;
@@ -60,7 +64,7 @@ class GlitchShader extends FlxShader
 			float px = floor(uv.x * psq + 0.5) * psize;
 			float py = floor(uv.y * psq + 0.5) * psize;
 			
-			vec4 colSnap = texture2D(bitmap, vec2(px, py));
+			vec4 colSnap = flixel_texture2D(bitmap, vec2(px, py));
 			
 			float lum = pow(1.0 - (colSnap.r + colSnap.g + colSnap.b) / 3.0, binaryIntensity);
 			
@@ -73,9 +77,11 @@ class GlitchShader extends FlxShader
 			float rx = (px - qx) * lum + uv.x;
 			float ry = (py - qy) * lum + uv.y;
 			
-			vec4 mierdaColor = texture(iChannel0, vec2(rx, ry));
+			vec4 mierdaColor = flixel_texture2D(bitmap, vec2(rx, ry));
 			
-			fragColor = mix(mierdaColor, vec4(1.0 - mierdaColor.r, 1.0 - mierdaColor.g, 1.0 - mierdaColor.b, mierdaColor.a) * mierdaColor.a, negativity);
+			// Apply negativity effect while preserving alpha
+			vec4 negativeColor = vec4(1.0 - mierdaColor.r, 1.0 - mierdaColor.g, 1.0 - mierdaColor.b, mierdaColor.a);
+			gl_FragColor = mix(mierdaColor, negativeColor, negativity);
 		}
 	')
 

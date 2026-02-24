@@ -8,7 +8,7 @@ class LegacySettingsSubState extends BaseOptionsMenu
 		rpcTitle = 'Legacy Settings Menu';
 
 		// Legacy Memory Management Option
-		option = new Option('Legacy Memory Management',
+		var option = new Option('Legacy Memory Management',
 			"If checked, uses Psych 0.7.3 style memory management.\nDisables GPU texture disposal and uses simpler cleanup.\nEnable if old mods have memory-related crashes.",
 			'legacyMemoryManagement',
 			BOOL);

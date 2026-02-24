@@ -22,8 +22,6 @@ import crowplexus.hscript.Printer;
 import crowplexus.hscript.Tools;
 import crowplexus.iris.utils.UsingEntry;
 
-import funkin.modding.scripting.SScript.SScriptCompat;
-
 import haxe.ValueException;
 
 typedef HScriptInfos = {
@@ -48,30 +46,13 @@ class HScript extends Iris
 	{
 		if(parent.hscript == null)
 		{
-			// Check if user wants SScript compatibility mode
-			#if SSCRIPT_ALLOWED
-			if (ClientPrefs.data.useSScriptCompat) {
-				trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
-				SScriptCompat.initHaxeModule(parent);
-				return;
-			}
-			#end
-			
 			trace('HScript (Psych 1.0.x) initializing for: ${parent.scriptName}');
 			parent.hscript = new HScript(parent);
 		}
 	}
 
 	public static function initHaxeModuleCode(parent:FunkinLua, code:String, ?varsToBring:Any = null)
-	{
-		// Check if user wants SScript compatibility mode
-		#if SSCRIPT_ALLOWED
-		if (ClientPrefs.data.useSScriptCompat) {
-			SScriptCompat.initHaxeModuleCode(parent, code, varsToBring);
-			return;
-		}
-		#end
-		
+	{	
 		var hs:HScript = try parent.hscript catch (e) null;
 		if(hs == null)
 		{

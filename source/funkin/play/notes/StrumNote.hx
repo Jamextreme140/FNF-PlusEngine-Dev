@@ -87,11 +87,11 @@ class StrumNote extends FlxSprite
 	
 	public function checkNotITGSkin():Void
 	{
-		// Verificar si el skin actual contiene "notitg" en el nombre
+		// Verificar si el skin actual contiene "notitg" o "psych" en el nombre
 		var skinLower:String = texture.toLowerCase();
-		if(skinLower.contains('notitg'))
+		if(skinLower.contains('notitg') || skinLower.contains('psych'))
 		{
-			useRGBShader = false; // Desactivar shader RGB para NotITG
+			useRGBShader = false; // Desactivar shader RGB para NotITG y Psych
 			animateOnBeat = true; // Activar animación sincronizada con el beat
 			
 			// Desactivar el shader completamente y BLOQUEAR su activación
@@ -105,7 +105,7 @@ class StrumNote extends FlxSprite
 		}
 		else
 		{
-			// Restaurar valores por defecto si no es NotITG
+			// Restaurar valores por defecto si no es NotITG ni Psych
 			useRGBShader = true;
 			animateOnBeat = false;
 			if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) useRGBShader = false;
