@@ -51,6 +51,9 @@ class CreditsState extends MusicBeatState
 			['Hansuke H',           "hansu",            'Vietnamese translation and alphabet sprite',     'https://www.facebook.com/hansuke.hotaroshi', 'FF6C8D'],
 			['TheoDev',             "theo",             "Owner, Lead coder of Funkin Modchart",                    "https://github.com/TheoDevelops",   "FFB347"],
 			[''],
+			['NovaFlare Engine Creator']
+			['beihu',		'beihu',		'Owner of NovaFlare Engine\n(some codes used from NovaFlare Engine)',	'https://youtube.com/@hoyou235',	'FFC0CB'],
+			['']
 			['Mobile Porting Team'],
 			['HomuHomu833',			'homura', 'Head Porter of Psych Engine and Author of linc_luajit-rewriten',  'https://youtube.com/@HomuHomu833',	'FFE7C0'],
 			['Karim Akra',			'karim',			'Second Porter of Psych Engine',						'https://youtube.com/@Karim0690',		'FFB4F0'],
