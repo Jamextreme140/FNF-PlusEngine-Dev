@@ -50,10 +50,14 @@ class CreditsState extends MusicBeatState
 			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           '','7FDBFF'], // My Bluesky account has deactivated starting tomorrow until March 20nd
 			['Hansuke H',           "hansu",            'Vietnamese translation and alphabet sprite',     'https://www.facebook.com/hansuke.hotaroshi', 'FF6C8D'],
 			['TheoDev',             "theo",             "Owner, Lead coder of Funkin Modchart",                    "https://github.com/TheoDevelops",   "FFB347"],
+			['DaffyToons',             "daffytoons",             "Failed Attempt at Plus Engine Programmer",                    "https://github.com/DaffyToons",   "0A8451"],
 			[''],
-			['NovaFlare Engine Creator']
+			['NovaFlare Engine Creator'],
 			['beihu',		'beihu',		'Owner of NovaFlare Engine\n(some codes used from NovaFlare Engine)',	'https://youtube.com/@hoyou235',	'FFC0CB'],
-			['']
+			[''],
+			['Psych Extended 1.0.2 Creator'],
+			['ArkoseLabs',		'arkoselabs',		'Insists on calling her old engine useless, but she still did\nA Great Job every time',	'https://youtube.com/@arkoselabsofficial',	'95240E'],
+			[''],
 			['Mobile Porting Team'],
 			['HomuHomu833',			'homura', 'Head Porter of Psych Engine and Author of linc_luajit-rewriten',  'https://youtube.com/@HomuHomu833',	'FFE7C0'],
 			['Karim Akra',			'karim',			'Second Porter of Psych Engine',						'https://youtube.com/@Karim0690',		'FFB4F0'],
