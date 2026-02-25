@@ -41,6 +41,19 @@ class ReflectionFunctions
 			return LuaUtils.getVarInArray(LuaUtils.getTargetInstance(), variable, allowMaps);
 		});
 		Lua_helper.add_callback(lua, "setProperty", function(variable:String, value:Dynamic, ?allowMaps:Bool = false, ?allowInstances:Bool = false) {
+			#if mobile
+			// Ignore receptor modifications when aligned mode is enabled
+			if (ClientPrefs.data.mobileReceptorAlign)
+			{
+				var varLower = variable.toLowerCase();
+				if (varLower.contains('playerstrum') || varLower.contains('opponentstrum') || varLower.contains('strumlinenote'))
+				{
+					FunkinLua.luaTrace('setProperty: Receptor modifications are disabled when Mobile Receptor Align is active.', false, false, FlxColor.YELLOW);
+					return value;
+				}
+			}
+			#end
+			
 			var split:Array<String> = variable.split('.');
 			if(split.length > 1) {
 				LuaUtils.setVarInArray(LuaUtils.getPropertyLoop(split, true, allowMaps), split[split.length-1], allowInstances ? parseInstances(value) : value, allowMaps);
@@ -121,6 +134,19 @@ class ReflectionFunctions
 			return null;
 		});
 		Lua_helper.add_callback(lua, "setPropertyFromGroup", function(group:String, index:Int, variable:Dynamic, value:Dynamic, ?allowMaps:Bool = false, ?allowInstances:Bool = false) {
+			#if mobile
+			// Ignore receptor group modifications when aligned mode is enabled
+			if (ClientPrefs.data.mobileReceptorAlign)
+			{
+				var groupLower = group.toLowerCase();
+				if (groupLower == 'playerstrums' || groupLower == 'opponentstrums' || groupLower == 'strumlinenotes')
+				{
+					FunkinLua.luaTrace('setPropertyFromGroup: Receptor modifications are disabled when Mobile Receptor Align is active.', false, false, FlxColor.YELLOW);
+					return value;
+				}
+			}
+			#end
+			
 			var split:Array<String> = group.split('.');
 			var realObject:Dynamic = null;
 			if(split.length > 1)

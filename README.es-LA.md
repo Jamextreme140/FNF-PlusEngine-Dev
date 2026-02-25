@@ -25,7 +25,7 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
 
 </div>
 
-## Contributors
+## Colaboradores
 
 <p align="center">
   <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
@@ -33,7 +33,7 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
   <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
 </p>
 
-## Special Thanks
+## Agradecimiento Especial
 
 <p align="center">
   <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
@@ -121,7 +121,7 @@ Necesitas tener:
 - Android NDK r27d
 - Java JDK 17
 
-# Características despues de la 1.0.4
+# Características después de 1.0.4
 
 - Variables para la gestión de ventanas y sistema en Lua: Se agregaron muchas variables, ya sea para ocultar la barra de tareas o los bordes de la ventana, etc.
 - Visor de Teclas

@@ -22,8 +22,6 @@ import crowplexus.hscript.Printer;
 import crowplexus.hscript.Tools;
 import crowplexus.iris.utils.UsingEntry;
 
-import funkin.modding.scripting.SScript.SScriptCompat;
-
 import haxe.ValueException;
 
 typedef HScriptInfos = {
@@ -48,30 +46,13 @@ class HScript extends Iris
 	{
 		if(parent.hscript == null)
 		{
-			// Check if user wants SScript compatibility mode
-			#if SSCRIPT_ALLOWED
-			if (ClientPrefs.data.useSScriptCompat) {
-				trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
-				SScriptCompat.initHaxeModule(parent);
-				return;
-			}
-			#end
-			
 			trace('HScript (Psych 1.0.x) initializing for: ${parent.scriptName}');
 			parent.hscript = new HScript(parent);
 		}
 	}
 
 	public static function initHaxeModuleCode(parent:FunkinLua, code:String, ?varsToBring:Any = null)
-	{
-		// Check if user wants SScript compatibility mode
-		#if SSCRIPT_ALLOWED
-		if (ClientPrefs.data.useSScriptCompat) {
-			SScriptCompat.initHaxeModuleCode(parent, code, varsToBring);
-			return;
-		}
-		#end
-		
+	{	
 		var hs:HScript = try parent.hscript catch (e) null;
 		if(hs == null)
 		{
@@ -124,7 +105,24 @@ class HScript extends Iris
 		
 		// Register old Psych Engine paths as proxy imports for backwards compatibility
 		// This makes "import psychlua.LuaUtils" work by redirecting to the new Plus Engine path
+		Iris.proxyImports.set("vlc.MP4Handler", funkin.graphics.video.v3.MP4Handler);
+		Iris.proxyImports.set("vlc.MP4Sprite", funkin.graphics.video.v3.MP4Sprite);
+		Iris.proxyImports.set("hxcodec.VideoHandler", funkin.graphics.video.v2.VideoHandler);
+		Iris.proxyImports.set("hxcodec.VideoSprite", funkin.graphics.video.v2.VideoSprite);
+		Iris.proxyImports.set("hxcodec.flixel.FlxVideo", funkin.graphics.video.legacy.FlxVideo); // Backwards compatibility
+		Iris.proxyImports.set("hxcodec.flixel.FlxVideoSprite", funkin.graphics.video.legacy.FlxVideoSprite);
+
 		Iris.proxyImports.set("shaders.RGBPalette", funkin.graphics.shaders.RGBPalette); // menos mal eh
+		Iris.proxyImports.set("shaders.WiggleEffect", funkin.graphics.shaders.WiggleEffect);
+		Iris.proxyImports.set("shaders.WiggleEffectType", funkin.graphics.shaders.WiggleEffect.WiggleEffectType);
+		Iris.proxyImports.set("shaders.ColorSwap", funkin.graphics.shaders.ColorSwap);
+		Iris.proxyImports.set("shaders.OverlayShader", funkin.graphics.shaders.OverlayShader);
+		// Root level shader imports for old mods
+		Iris.proxyImports.set("WiggleEffect", funkin.graphics.shaders.WiggleEffect);
+		Iris.proxyImports.set("WiggleEffectType", funkin.graphics.shaders.WiggleEffect.WiggleEffectType);
+		Iris.proxyImports.set("ColorSwap", funkin.graphics.shaders.ColorSwap);
+		Iris.proxyImports.set("OverlayShader", funkin.graphics.shaders.OverlayShader);
+		
 		Iris.proxyImports.set("psychlua.LuaUtils", funkin.modding.scripting.psychlua.LuaUtils);
 		Iris.proxyImports.set("psychlua.ReflectionFunctions", funkin.modding.scripting.psychlua.ReflectionFunctions);
 		Iris.proxyImports.set("psychlua.CustomSubstate", funkin.modding.scripting.psychlua.CustomSubstate);
@@ -155,6 +153,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("objects.Note", funkin.play.notes.Note);
 		Iris.proxyImports.set("objects.StrumNote", funkin.play.notes.StrumNote);
 		Iris.proxyImports.set("objects.NoteSplash", funkin.play.notes.NoteSplash);
+		Iris.proxyImports.set("objects.BGSprite", funkin.play.stage.BGSprite);
 		
 		// States compatibility (old 0.7.3 paths)
 		Iris.proxyImports.set("states.PlayState", PlayState);
@@ -188,6 +187,9 @@ class HScript extends Iris
 		Iris.proxyImports.set("options.VisualsSettingsSubState", funkin.ui.options.VisualsSettingsSubState);
 		Iris.proxyImports.set("options.GraphicsSettingsSubState", funkin.ui.options.GraphicsSettingsSubState);
 		Iris.proxyImports.set("options.GameplaySettingsSubState", funkin.ui.options.GameplaySettingsSubState);
+
+		Iris.proxyImports.set("flixel.Math.FlxPoint", CustomFlxPoint);
+		Iris.proxyImports.set("flash.filters.ShaderFilter", flash.filters.ShaderFilter);
 		
 		true;
 	};
@@ -322,8 +324,12 @@ class HScript extends Iris
 		// scripts access the same map across the game (matches legacy behaviour).
 		#if LUA_ALLOWED
 		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
+		set('modchartSprites', PlayState.instance != null ? PlayState.instance.modchartSprites : null);
+		set('modchartTexts', PlayState.instance != null ? PlayState.instance.modchartTexts : null);
 		#else
 		set('modchartTweens', null);
+		set('modchartSprites', null);
+		set('modchartTexts', null);
 		#end
 		set('FlxFlicker', flixel.effects.FlxFlicker);
 		set('FlxColor', CustomFlxColor);
@@ -331,6 +337,7 @@ class HScript extends Iris
 		set('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
 		set('FlxTypedGroup', flixel.group.FlxTypedGroup);
 		set('FlxGroup', flixel.group.FlxGroup);
+		set('FlxPoint', CustomFlxPoint);
 		set('Capabilities', openfl.system.Capabilities);
 		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		set('Lib', openfl.Lib);
@@ -404,7 +411,8 @@ class HScript extends Iris
 			Alphabet: funkin.ui.Alphabet,
 			Note: funkin.play.notes.Note,
 			StrumNote: StrumNote,
-			NoteSplash: NoteSplash
+			NoteSplash: NoteSplash,
+			BGSprite: funkin.play.stage.BGSprite
 		};
 		set('objects', objectsCompat);
 		
@@ -422,23 +430,38 @@ class HScript extends Iris
 		set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
 		set('ErrorHandledRuntimeShader', funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader);
 		#end
-		set('ShaderFilter', openfl.filters.ShaderFilter);
+		set('ShaderFilter', flash.filters.ShaderFilter);
+		set('flash.filters.ShaderFilter', flash.filters.ShaderFilter);
 		set('RGBPalette', funkin.graphics.shaders.RGBPalette);
+		set('WiggleEffect', funkin.graphics.shaders.WiggleEffect);
 		set('shaders', {
-			RGBPalette: funkin.graphics.shaders.RGBPalette
+			RGBPalette: funkin.graphics.shaders.RGBPalette,
+			WiggleEffect: funkin.graphics.shaders.WiggleEffect
 		});
 		set('shaders.RGBPalette', funkin.graphics.shaders.RGBPalette);
+		set('BGSprite', funkin.play.stage.BGSprite);
 		set('StringTools', StringTools);
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
 		#end
 		#if (hxvlc)
+		// hxvlc - Current video library (v3)
 		set('VideoSprite', funkin.graphics.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
-		// Compatibilidad con versiones anteriores
+		// v2 and v3 handlers
 		set('VideoHandler', funkin.graphics.video.v2.VideoHandler);
 		set('MP4Handler', funkin.graphics.video.v3.MP4Handler);
+		set('MP4Sprite', funkin.graphics.video.v3.MP4Sprite);
+		// Legacy compatibility (hxcodec paths)
+		set('hxcodec', {
+			flixel: {
+				FlxVideo: funkin.graphics.video.legacy.FlxVideo,
+				FlxVideoSprite: funkin.graphics.video.legacy.FlxVideoSprite
+			},
+			VideoHandler: funkin.graphics.video.v2.VideoHandler,
+			VideoSprite: funkin.graphics.video.v2.VideoSprite
+		});
 		#end
 
 		// ===== VARIABLES & INSTANCES =====
@@ -450,9 +473,13 @@ class HScript extends Iris
 		set('parentLua', parentLua);
 		// Backwards compatibility: older mods expect a global `modchartTweens` map
 		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
+		set('modchartSprites', PlayState.instance != null ? PlayState.instance.modchartSprites : null);
+		set('modchartTexts', PlayState.instance != null ? PlayState.instance.modchartTexts : null);
 		#else
 		set('parentLua', null);
 		set('modchartTweens', null);
+		set('modchartSprites', null);
+		set('modchartTexts', null);
 		#end
 		set('customSubstate', CustomSubstate.instance);
 		set('customSubstateName', CustomSubstate.name);
@@ -829,10 +856,13 @@ class CustomFlxG {
 	public static var autoPause(get, set):Bool;
 	public static var signals(get, never):Dynamic;
 	public static var random(get, never):Dynamic;
+	public static var log(get, never):Dynamic;
 	// Exposes FlxG.scaleMode so scripts can access FlxG.scaleMode.scale.x / .y
 	public static var scaleMode(get, never):Dynamic;
 	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
 	public static var elapsed(get, never):Float;
+	// Exposes FlxG.bitmap for direct access to bitmap cache and _cache field
+	public static var bitmap(get, never):Dynamic;
 	
 	// Getters
 	static function get_state():Dynamic return FlxG.state;
@@ -850,8 +880,13 @@ class CustomFlxG {
 	static function set_autoPause(value:Bool):Bool return FlxG.autoPause = value;
 	static function get_signals():Dynamic return FlxG.signals;
 	static function get_random():Dynamic return FlxG.random;
+	static function get_log():Dynamic return FlxG.log;
 	static function get_scaleMode():Dynamic return FlxG.scaleMode;
 	static function get_elapsed():Float return FlxG.elapsed;
+	static function get_bitmap():Dynamic {
+		// Return a wrapper that exposes both BitmapFrontEnd methods and _cache
+		return BitmapFrontEndWrapper.instance;
+	}
 
 	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
@@ -994,6 +1029,140 @@ class CustomFlxTextBorderStyle {
 	public static var SHADOW(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.SHADOW;
 	public static var OUTLINE(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.OUTLINE;
 	public static var OUTLINE_FAST(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.OUTLINE_FAST;
+}
+
+class CustomFlxPoint {
+	/**
+	 * Recycle or create new FlxPoint.
+	 * Be sure to put() them back into the pool after you're done with them!
+	 */
+	public static inline function get(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
+		return flixel.math.FlxPoint.get(x, y);
+	}
+
+	/**
+	 * Recycle or create a new FlxPoint which will automatically be released
+	 * to the pool when passed into a flixel function.
+	 */
+	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
+		return flixel.math.FlxPoint.weak(x, y);
+	}
+}
+
+@:privateAccess(flixel.system.frontEnds.BitmapFrontEnd)
+class BitmapFrontEndWrapper {
+	public static var instance(get, never):BitmapFrontEndWrapper;
+	private static var _instance:BitmapFrontEndWrapper;
+	
+	static function get_instance():BitmapFrontEndWrapper {
+		if (_instance == null)
+			_instance = new BitmapFrontEndWrapper();
+		return _instance;
+	}
+	
+	/**
+	 * Exposes the private _cache field from FlxG.bitmap
+	 */
+	public var _cache(get, never):CacheWrapper;
+	
+	private function new() {}
+	
+	function get__cache():CacheWrapper {
+		return new CacheWrapper(@:privateAccess FlxG.bitmap._cache);
+	}
+	
+	// Delegate common BitmapFrontEnd methods
+	public function add(graphic:flixel.graphics.FlxGraphic, ?persistent:Bool = false, ?key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.add(graphic, persistent, key);
+	}
+	
+	public function removeByKey(key:String):Void {
+		FlxG.bitmap.removeByKey(key);
+	}
+	
+	public function remove(graphic:flixel.graphics.FlxGraphic):Void {
+		FlxG.bitmap.remove(graphic);
+	}
+	
+	public function get(key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.get(key);
+	}
+	
+	public function checkCache(key:String):Bool {
+		return FlxG.bitmap.checkCache(key);
+	}
+	
+	public function create(width:Int, height:Int, color:Int, ?unique:Bool = false, ?key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.create(width, height, color, unique, key);
+	}
+	
+	public function reset():Void {
+		FlxG.bitmap.reset();
+	}
+	
+	public function clearCache():Void {
+		FlxG.bitmap.clearCache();
+	}
+	
+	public function clearUnused():Void {
+		FlxG.bitmap.clearUnused();
+	}
+}
+
+/**
+ * Wrapper class that exposes Map methods for bitmap cache access in scripts.
+ * Allows scripts to use FlxG.bitmap._cache.exists() and FlxG.bitmap._cache.get()
+ */
+class CacheWrapper {
+	private var cache:Map<String, flixel.graphics.FlxGraphic>;
+	
+	public function new(cache:Map<String, flixel.graphics.FlxGraphic>) {
+		this.cache = cache;
+	}
+	
+	/**
+	 * Check if a bitmap with the given key exists in the cache
+	 */
+	public function exists(key:String):Bool {
+		return cache.exists(key);
+	}
+	
+	/**
+	 * Get a bitmap from the cache by its key
+	 */
+	public function get(key:String):flixel.graphics.FlxGraphic {
+		return cache.get(key);
+	}
+	
+	/**
+	 * Remove a bitmap from the cache by its key
+	 */
+	public function remove(key:String):Bool {
+		return cache.remove(key);
+	}
+	
+	/**
+	 * Set a bitmap in the cache with the given key
+	 */
+	public function set(key:String, value:flixel.graphics.FlxGraphic):Void {
+		cache.set(key, value);
+	}
+	
+	/**
+	 * Get all keys in the cache
+	 */
+	public function keys():Iterator<String> {
+		return cache.keys();
+	}
+	
+	/**
+	 * Get the number of items in the cache
+	 */
+	public function count():Int {
+		var count = 0;
+		for (key in cache.keys()) count++;
+		return count;
+	}
 }
 
 class CustomInterp extends crowplexus.hscript.Interp
@@ -1193,6 +1362,24 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 	
 	override function set(o:Dynamic, field:String, value:Dynamic):Dynamic {
+		#if mobile
+		// Check if trying to modify receptors when aligned mode is enabled
+		if (ClientPrefs.data.mobileReceptorAlign && o != null)
+		{
+			var className = try Type.getClassName(Type.getClass(o)) catch(e:Dynamic) null;
+			if (className == "funkin.play.notes.StrumNote")
+			{
+				// Block position and visual modifications to receptors
+				var blockedFields = ['x', 'y', 'alpha', 'visible', 'angle', 'scale'];
+				if (blockedFields.contains(field.toLowerCase()))
+				{
+					trace('HScript: Receptor modifications are disabled when Mobile Receptor Align is active.');
+					return value;
+				}
+			}
+		}
+		#end
+		
 		// Si el objeto es null, mostrar warning y guardar en variables globales
 		if (o == null) {
 			// Silently save to global variables to avoid spam

@@ -329,13 +329,13 @@ class FreeplayState extends MusicBeatState
 
 		#if mobile
 		// Initialize touch scroll for song list
-		touchScroll = new funkin.mobile.backend.TouchScroll(true);
-		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		// touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		// funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
 		#end
 
 		super.create();
 		
-		addTouchPad('NONE', 'B_C_X_Y_Z');
+		addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
 		addTouchPadCamera();
 		if(touchPad != null) {
 			touchPad.visible = true;
@@ -349,7 +349,7 @@ class FreeplayState extends MusicBeatState
 		persistentUpdate = true;
 		super.closeSubState();
 		removeTouchPad();
-		addTouchPad('NONE', 'B_C_X_Y_Z');
+		addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
 		addTouchPadCamera();
 		if(touchPad != null) {
 			touchPad.visible = true;
@@ -465,6 +465,7 @@ class FreeplayState extends MusicBeatState
 						changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 					}
 
+					/*
 					#if mobile
 					// Touch scroll with smooth selection (like mouse scroll)
 					if (touchScroll != null)
@@ -521,6 +522,7 @@ class FreeplayState extends MusicBeatState
 						}
 					}
 					#end
+					*/
 				}
 			}
 			else
@@ -1049,11 +1051,6 @@ class FreeplayState extends MusicBeatState
 			return;
 
 		curSelected = FlxMath.wrap(curSelected + change, 0, songs.length-1);
-		
-		#if mobile
-		// Sync lerpSelected to prevent conflict with lerp in updateTexts()
-		lerpSelected = curSelected;
-		#end
 		
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);

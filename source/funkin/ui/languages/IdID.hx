@@ -370,8 +370,6 @@ class IdID
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
         // Legacy Settings
-        "setting_use_sscript" => "Gunakan SScript",
-        "description_use_sscript" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
         "setting_legacy_memory_management" => "Manajemen Memori Lama",
         "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
         "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",

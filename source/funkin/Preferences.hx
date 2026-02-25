@@ -18,7 +18,7 @@ import funkin.ui.title.TitleState;
 	public var screensaver:Bool = false;
 	public var infinityDisplay:Bool = false; // Extend viewport vertically for modern screens while keeping game at 16:9
 	#if android
-	public var storageType:String = "EXTERNAL";
+	public var storageType:String = "EXTERNAL_DATA";
 	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
 	#end
 	public var hitboxType:String = "Gradient";

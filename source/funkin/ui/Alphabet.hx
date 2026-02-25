@@ -360,6 +360,10 @@ class AlphaCharacter extends FlxSprite
 		
 		if(character != null)
 		{
+			// Initialize allLetters if it's null (important for Android)
+			if(allLetters == null)
+				loadAlphabetData();
+			
 			this.character = character;
 			curLetter = null;
 			var lowercase:String = this.character.toLowerCase();

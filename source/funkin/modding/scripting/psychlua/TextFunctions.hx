@@ -15,6 +15,12 @@ class TextFunctions
 			leText.scrollFactor.set();
 			leText.borderSize = 2;
 			MusicBeatState.getVariables().set(tag, leText);
+			
+			// Backwards compatibility: also add to modchartTexts like Psych 0.7.3
+			#if LUA_ALLOWED
+			if(PlayState.instance != null)
+				PlayState.instance.modchartTexts.set(tag, leText);
+			#end
 		});
 
 		Lua_helper.add_callback(lua, "setTextString", function(tag:String, text:String) {
@@ -197,6 +203,12 @@ class TextFunctions
 			{
 				text.destroy();
 				variables.remove(tag);
+				
+				// Backwards compatibility: also remove from modchartTexts like Psych 0.7.3
+				#if LUA_ALLOWED
+				if(PlayState.instance != null)
+					PlayState.instance.modchartTexts.remove(tag);
+				#end
 			}
 		});
 	}

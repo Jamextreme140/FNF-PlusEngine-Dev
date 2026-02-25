@@ -1,9 +1,7 @@
-- Source code restructured to match the base game. Don't worry, it won't break your mods "StructureOld".
-- Collab 1 of the base game ported.
-- Added InitState to start ModState or the game without errors.
-- Mobile: Added a new control scheme, "Hitbox Arrows," just like the mobile base game.
-- You can now use ndlls in the game for your mods. You can use Lua functions, or load them with Lua's FFI.
-- Windows: You can select your fullscreen mode from the settings: between borders or exclusive.
-- New option to quantitatively color notes, just like StepMania.
-- Added legacy settings, with the following options: Use SScript, Legacy Memory Management, Legacy FileSystem Access, Use Legacy Font, and Use Legacy Init Shader (bug).
-- And More...
+- SScript is dead; many checks have been added to HScript for mods in both 0.7.3 and 1.0.4
+- Fixed a bug that prevented the Alphabet from loading on mobile
+- Fixed a crash on mobile when starting the game due to incorrect assets (uninstalling and reinstalling is required)
+- Fixed a bug in the Character Editor that caused a crash when importing a Texture Atlas
+- Re-added controls in freeplay mode to allow normal navigation; previously, the list could not be moved
+- Some hardcoded events have been removed
+- Improved Hibox Arrows on mobile

@@ -121,7 +121,7 @@ Anda memerlukan:
 - Android NDK r27d
 - Java JDK 17
 
-# Fitur-fitur sebelum 1.0.4
+# Fitur-fitur setelah 1.0.4
 
 - Variabel untuk pengelolaan jendela dan sistem di Lua: Banyak variabel ditambahkan, baik untuk menyembunyikan taskbar atau batas jendela, dll.
 - Key Viewer

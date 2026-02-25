@@ -106,7 +106,12 @@ class Character extends FlxSprite
 	public function changeCharacter(character:String)
 	{
 		animationsArray = [];
-		animOffsets = [];
+		animOffsets = new Map<String, Array<Dynamic>>();
+		
+		// Ensure animation controller exists (required for all characters)
+		if(animation == null)
+			animation = new PsychAnimationController(this);
+		
 		curCharacter = character;
 		var characterPath:String = 'characters/$character.json';
 
@@ -207,6 +212,8 @@ class Character extends FlxSprite
 			{
 				FlxG.log.warn('Could not load atlas ${json.image}: $e');
 				trace(e.stack);
+				isAnimateAtlas = false;
+				atlas = FlxDestroyUtil.destroy(atlas);
 			}
 		}
 		#end
@@ -252,7 +259,7 @@ class Character extends FlxSprite
 						animation.addByPrefix(animAnim, animName, animFps, animLoop);
 				}
 				#if flxanimate
-				else
+				else if(atlas != null && atlas.anim != null)
 				{
 					if(animIndices != null && animIndices.length > 0)
 						atlas.anim.addBySymbolIndices(animAnim, animName, animIndices, animFps, animLoop);
@@ -266,16 +273,16 @@ class Character extends FlxSprite
 			}
 		}
 		#if flxanimate
-		if(isAnimateAtlas) copyAtlasValues();
+		if(isAnimateAtlas && atlas != null) copyAtlasValues();
 		#end
 		//trace('Loaded file to character ' + curCharacter);
 	}
 
 	override function update(elapsed:Float)
 	{
-		if(isAnimateAtlas) atlas.update(elapsed);
+		if(isAnimateAtlas && atlas != null) atlas.update(elapsed);
 
-		if(debugMode || (!isAnimateAtlas && animation.curAnim == null) || (isAnimateAtlas && (atlas.anim.curInstance == null || atlas.anim.curSymbol == null)))
+		if(debugMode || (!isAnimateAtlas && animation.curAnim == null) || (isAnimateAtlas && atlas != null && (atlas.anim.curInstance == null || atlas.anim.curSymbol == null)))
 		{
 			super.update(elapsed);
 			return;
@@ -340,7 +347,7 @@ class Character extends FlxSprite
 
 	inline public function isAnimationNull():Bool
 	{
-		return !isAnimateAtlas ? (animation.curAnim == null) : (atlas.anim.curInstance == null || atlas.anim.curSymbol == null);
+		return !isAnimateAtlas ? (animation.curAnim == null) : (atlas == null || atlas.anim == null || atlas.anim.curInstance == null || atlas.anim.curSymbol == null);
 	}
 
 	var _lastPlayedAnimation:String;
@@ -352,7 +359,7 @@ class Character extends FlxSprite
 	public function isAnimationFinished():Bool
 	{
 		if(isAnimationNull()) return false;
-		return !isAnimateAtlas ? animation.curAnim.finished : atlas.anim.finished;
+		return !isAnimateAtlas ? animation.curAnim.finished : (atlas != null && atlas.anim != null && atlas.anim.finished);
 	}
 
 	public function finishAnimation():Void
@@ -360,7 +367,7 @@ class Character extends FlxSprite
 		if(isAnimationNull()) return;
 
 		if(!isAnimateAtlas) animation.curAnim.finish();
-		else atlas.anim.curFrame = atlas.anim.length - 1;
+		else if(atlas != null && atlas.anim != null) atlas.anim.curFrame = atlas.anim.length - 1;
 	}
 
 	public function hasAnimation(anim:String):Bool
@@ -372,13 +379,13 @@ class Character extends FlxSprite
 	private function get_animPaused():Bool
 	{
 		if(isAnimationNull()) return false;
-		return !isAnimateAtlas ? animation.curAnim.paused : atlas.anim.isPlaying;
+		return !isAnimateAtlas ? animation.curAnim.paused : (atlas != null && atlas.anim != null && atlas.anim.isPlaying);
 	}
 	private function set_animPaused(value:Bool):Bool
 	{
 		if(isAnimationNull()) return value;
 		if(!isAnimateAtlas) animation.curAnim.paused = value;
-		else
+		else if(atlas != null)
 		{
 			if(value) atlas.pauseAnimation();
 			else atlas.resumeAnimation();
@@ -415,12 +422,26 @@ class Character extends FlxSprite
 		specialAnim = false;
 		if(!isAnimateAtlas)
 		{
-			animation.play(AnimName, Force, Reversed, Frame);
+			if(animation != null)
+				animation.play(AnimName, Force, Reversed, Frame);
+			else
+			{
+				trace('WARNING: animation is null for character $curCharacter! This should not happen, risk of crashing.');
+				return;
+			}
 		}
 		else
 		{
-			atlas.anim.play(AnimName, Force, Reversed, Frame);
-			atlas.update(0);
+			if(atlas != null && atlas.anim != null)
+			{
+				atlas.anim.play(AnimName, Force, Reversed, Frame);
+				atlas.update(0);
+			}
+			else
+			{
+				trace('WARNING: atlas or atlas.anim is null for character $curCharacter! This should not happen, risk of crashing.');
+				return;
+			}
 		}
 		_lastPlayedAnimation = AnimName;
 
@@ -514,9 +535,9 @@ class Character extends FlxSprite
 			color = FlxColor.BLACK;
 		}
 
-		if(isAnimateAtlas)
+		if(isAnimateAtlas && atlas != null)
 		{
-			if(atlas.anim.curInstance != null)
+			if(atlas.anim != null && atlas.anim.curInstance != null)
 			{
 				copyAtlasValues();
 				atlas.draw();

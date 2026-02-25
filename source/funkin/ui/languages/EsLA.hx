@@ -393,7 +393,6 @@ class EsLA
         "description_heavy_charts_mode" => "Si está marcado, se optimiza la carga de los charts pesados para mejor rendimiento.\nSolo notas, no holds, por bugs encontrados",
 
         // Legacy Options
-        "setting_use_sscript" => "Usar SScript",
         "description_use_sscript" => "Si está marcado, se usará SScript en lugar de hscript-iris para correr scripts haxe.\nActiva para usarlo en mods de psych 0.7.3",
         "setting_legacy_memory_management" => "Gestión de memoria heredada",
         "description_legacy_memory_management" => "Si está marcado, usara el sistema de Psych 0.7.3 para la gestion de memoria, Deshabilita disposicion de texturas en GPU y usa un sistema limpio. Activa si tienes problemas con mods anteriores.",

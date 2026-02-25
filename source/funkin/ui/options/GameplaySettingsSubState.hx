@@ -26,20 +26,20 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeMiddlescroll;
 		#end
 
-		var option:Option = new Option('Opponent Notes',
-			'If unchecked, opponent notes get hidden.',
-			'opponentStrums',
-			BOOL);
-		addOption(option);
-
 		#if mobile
 		var option:Option = new Option('Aligned Receptors',
-			"ONLY FOR HITBOX-ARROWS MODE!\nAligns player receptors with hitbox lanes,\nopponent receptors in top-left corner.\n\nWARNING: May break scripts!",
+			"ONLY FOR HITBOX-ARROWS MODE!\nAligns player receptors with hitbox lanes,\nopponent receptors in top-left corner.\n\nWARNING: Blocks script modifications to receptors\nto maintain alignment!",
 			'mobileReceptorAlign',
 			BOOL);
 		addOption(option);
 		option.onChange = onChangeMobileReceptorAlign;
 		#end
+
+		var option:Option = new Option('Opponent Notes',
+			'If unchecked, opponent notes get hidden.',
+			'opponentStrums',
+			BOOL);
+		addOption(option);
 
 		var option:Option = new Option('Ghost Tapping',
 			"If checked, you won't get misses from pressing keys\nwhile there are no notes able to be hit.",

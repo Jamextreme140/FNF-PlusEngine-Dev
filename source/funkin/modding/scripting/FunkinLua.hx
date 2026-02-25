@@ -34,7 +34,6 @@ import hxluajit.Types;
 
 #if HSCRIPT_ALLOWED
 import funkin.modding.scripting.HScript;
-import funkin.modding.scripting.SScript;
 #end
 
 import funkin.modding.scripting.psychlua.*;
@@ -52,9 +51,6 @@ class FunkinLua {
 
 	#if HSCRIPT_ALLOWED
 	public var hscript:HScript = null;
-	#end
-	#if SSCRIPT_ALLOWED
-	public var sscript:SScriptCompat = null; // Para compatibilidad con mods antiguos
 	#end
 
 	public var callbacks:Map<String, Dynamic> = new Map<String, Dynamic>();
@@ -1801,12 +1797,6 @@ class FunkinLua {
 		#if ACHIEVEMENTS_ALLOWED Achievements.addLuaCallbacks(lua); #end
 		#if TRANSLATIONS_ALLOWED Language.addLuaCallbacks(lua); #end
 		HScript.implement(this);
-		// Only implement SScript callbacks if compatibility mode is enabled
-		#if SSCRIPT_ALLOWED 
-		if (ClientPrefs.data.useSScriptCompat) {
-			SScriptCompat.implement(this);
-		}
-		#end
 		#if flxanimate FlxAnimateFunctions.implement(this); #end
 		ReflectionFunctions.implement(this);
 		TextFunctions.implement(this);
@@ -1931,13 +1921,6 @@ class FunkinLua {
 		{
 			hscript.destroy();
 			hscript = null;
-		}
-		#end
-		#if SSCRIPT_ALLOWED
-		if(sscript != null)
-		{
-			sscript.destroy();
-			sscript = null;
 		}
 		#end
 	}

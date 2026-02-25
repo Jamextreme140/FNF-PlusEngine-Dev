@@ -10,7 +10,6 @@ haxelib git flixel https://github.com/kittycathy233/flixel --quiet
 haxelib install flixel-addons 3.3.2 --quiet
 haxelib install flixel-tools 1.5.1 --quiet
 haxelib install hscript-iris 1.1.3 --quiet
-haxelib git sscript-parch https://github.com/Psych-Plus-Team/SScript-Parch.git --quiet
 haxelib install moonchart 0.5.1 --quiet
 haxelib install tjson 1.4.0 --quiet
 haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate 768740a56b26aa0c072720e0d1236b94afe68e3e --quiet

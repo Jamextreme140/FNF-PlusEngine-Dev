@@ -287,9 +287,15 @@ class NoteSplash extends FlxSprite
 			offset.y += offsets[1];
 		}
 
+		// Clear any previous callback before setting new one
+		if (animation.finishCallback != null)
+			animation.finishCallback = null;
+			
 		animation.finishCallback = function(name:String) {
-			kill();
-			spawned = false;
+			if (spawned) // Only kill if still marked as spawned
+			{
+				kill();
+			}
 		}
 
 		alpha = ClientPrefs.data.splashAlpha;
@@ -341,7 +347,28 @@ class NoteSplash extends FlxSprite
 		if (spawned)
 		{
 			aliveTime += elapsed;
-			if (animation.curAnim == null && aliveTime >= buggedKillTime)
+			
+			// Check if animation is finished or broken
+			var shouldKill:Bool = false;
+			
+			if (animation.curAnim == null)
+			{
+				// Animation object is null - definitely broken
+				if (aliveTime >= buggedKillTime)
+					shouldKill = true;
+			}
+			else if (animation.curAnim.finished)
+			{
+				// Animation has completed
+				shouldKill = true;
+			}
+			else if (aliveTime >= buggedKillTime)
+			{
+				// Animation is taking too long - likely paused/stuck
+				shouldKill = true;
+			}
+			
+			if (shouldKill)
 			{
 				kill();
 				spawned = false;
@@ -357,6 +384,29 @@ class NoteSplash extends FlxSprite
 				y = babyArrow.y - Note.swagWidth;
 		}
 		super.update(elapsed);
+	}
+
+	override public function kill():Void
+	{
+		// Clean up state before killing
+		spawned = false;
+		aliveTime = 0;
+		
+		// Clear animation callback to prevent memory leaks
+		if (animation != null && animation.finishCallback != null)
+			animation.finishCallback = null;
+		
+		super.kill();
+	}
+
+	override public function revive():Void
+	{
+		// Reset state when recycled from pool
+		super.revive();
+		
+		spawned = false;
+		aliveTime = 0;
+		alpha = 1;
 	}
 
 	public static function getSplashSkinPostfix()

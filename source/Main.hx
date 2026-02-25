@@ -214,9 +214,21 @@ class Main extends Sprite
 		// before we can properly check existing files
 		#if android
 		var needsPermissions:Bool = false;
-		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
-			// Check if we have the necessary permissions for external storage
-			needsPermissions = !AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+		var grantedPerms = AndroidPermissions.getGrantedPermissions();
+		
+		if (ClientPrefs.data.storageType == "EXTERNAL") {
+			// Check permissions based on Android version
+			if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU) {
+				// Android 12 and below use legacy storage permissions
+				needsPermissions = !grantedPerms.contains('android.permission.WRITE_EXTERNAL_STORAGE');
+			} else {
+				// Android 13+ use granular media permissions
+				// For file operations, we need at least one media permission
+				needsPermissions = !grantedPerms.contains('android.permission.READ_MEDIA_IMAGES') &&
+								   !grantedPerms.contains('android.permission.READ_MEDIA_VIDEO') &&
+								   !grantedPerms.contains('android.permission.READ_MEDIA_AUDIO');
+				trace('[Main] Android 13+ detected, checking media permissions: ' + !needsPermissions);
+			}
 		}
 		
 		// If we need permissions and don't have them yet, always go to CopyState
@@ -224,7 +236,7 @@ class Main extends Sprite
 		if (needsPermissions || !CopyState.checkExistingFiles()) {
 			initialState = CopyState;
 			if (needsPermissions) {
-				trace('[Main] Permissions not granted yet for EXTERNAL storage, going to CopyState');
+				trace('[Main] Permissions not granted yet for EXTERNAL storage (SDK: ' + AndroidVersion.SDK_INT + '), going to CopyState');
 			}
 		} else {
 			trace('[Main] All files exist, skipping CopyState');

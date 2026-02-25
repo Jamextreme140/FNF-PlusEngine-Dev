@@ -39,7 +39,6 @@ import openfl.filters.ShaderFilter;
 #end
 
 import funkin.graphics.shaders.ErrorHandledShader;
-import funkin.graphics.shaders.GlitchEffect;
 import flixel.util.FlxGradient;
 import openfl.geom.Rectangle;
 
@@ -72,10 +71,6 @@ import funkin.mobile.backend.MobileData;
 
 #if LUA_ALLOWED
 import funkin.modding.modchart.Manager;
-#end
-
-#if SSCRIPT_ALLOWED
-import funkin.modding.scripting.SScript.SScriptCompat;
 #end
 
 #if HSCRIPT_ALLOWED
@@ -162,6 +157,8 @@ class PlayState extends MusicBeatState
 
 	#if LUA_ALLOWED
 	public var modchartTweens:Map<String, FlxTween> = new Map<String, FlxTween>();
+	public var modchartSprites:Map<String, FlxSprite> = new Map<String, FlxSprite>();
+	public var modchartTexts:Map<String, FlxText> = new Map<String, FlxText>();
 	#end
 
 	public var BF_X:Float = 770;
@@ -191,6 +188,7 @@ class PlayState extends MusicBeatState
 	public var dadGroup:FlxSpriteGroup;
 	public var gfGroup:FlxSpriteGroup;
 	public static var curStage:String = '';
+	public static var originalStage:String = ''; // Original stage before any Change Stage events
 
 	// Stage member tracking for Change Stage Event
 	private var stageStartIdx:Int = 0;
@@ -285,6 +283,18 @@ class PlayState extends MusicBeatState
 	public var healthBar:Bar;
 	public var timeBar:Bar;
 	var songPercent:Float = 0;
+	
+	// Backwards compatibility: Psych 0.7.3 scripts expect healthBarBG and timeBarBG
+	public var healthBarBG(get, never):FlxSprite;
+	public var timeBarBG(get, never):FlxSprite;
+	
+	function get_healthBarBG():FlxSprite {
+		return healthBar != null ? healthBar.bg : null;
+	}
+	
+	function get_timeBarBG():FlxSprite {
+		return timeBar != null ? timeBar.bg : null;
+	}
 
 	public var ratingsData:Array<Rating> = Rating.loadDefault();
 
@@ -338,7 +348,7 @@ class PlayState extends MusicBeatState
 	private var lastScoreTxtContent:String = ""; // Último texto conocido del motor
 	public var maxCombo:Int = 0;
 	public var totalNotes:Int = 0;
-	var timeTxt:FlxText;
+	public var timeTxt:FlxText;
 	var scoreTxtTween:FlxTween;
 	var timeTxtTween:FlxTween;
 
@@ -355,12 +365,6 @@ class PlayState extends MusicBeatState
 	public var destructiveHUDMode:String = 'zoom'; // 'zoom' or 'note'
 	var _hudOrigPos:Map<String, Array<Float>> = [];
 
-	// Glitchy Notes Event
-	#if !flash
-	public var glitchyNotesTarget:String = ''; // 'opponent', 'player', 'both'
-	var glitchOpponent:GlitchEffect;
-	var glitchPlayer:GlitchEffect;
-	#end
 	var versionTextTween:FlxTween;
 	var judgementCounter:JudCounter;
 	
@@ -536,9 +540,6 @@ class PlayState extends MusicBeatState
 		// Resetear contador de errores de scripts
 		#if LUA_ALLOWED
 		FunkinLua.lua_Errors = 0;
-		#if SSCRIPT_ALLOWED
-		funkin.modding.scripting.SScript.SScriptCompat.sscript_Errors = 0;
-		#end
 		#end
 		
 		//trace('Playback Rate: ' + playbackRate);
@@ -662,6 +663,7 @@ class PlayState extends MusicBeatState
 		}
 
 		curStage = SONG.stage;
+		originalStage = curStage; // Save original stage for restart
 
 		// Flag para etapas NotITG (StepMania) donde ocultamos HUD y personajes
 		var isNotITG:Bool = (curStage == 'notitg');
@@ -2741,17 +2743,6 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
-		#if !flash
-		// Update Glitchy Notes shaders
-		if (glitchyNotesTarget != '' && ClientPrefs.data.shaders)
-		{
-			if ((glitchyNotesTarget == 'opponent' || glitchyNotesTarget == 'both') && glitchOpponent != null)
-				glitchOpponent.update(elapsed);
-			if ((glitchyNotesTarget == 'player' || glitchyNotesTarget == 'both') && glitchPlayer != null)
-				glitchPlayer.update(elapsed);
-		}
-		#end
-
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)
 		{
@@ -3795,48 +3786,6 @@ class PlayState extends MusicBeatState
 				cameraBopIntensity = intensity;
 				cameraBopEnabled = (intensity > 0);
 
-			case 'Glitchy Notes':
-				#if !flash
-				if (ClientPrefs.data.shaders)
-				{
-					var target:String = value2.trim().toLowerCase();
-					var enable:Bool = (value1.trim().toLowerCase() == 'true');
-					if (enable)
-					{
-						glitchyNotesTarget = target;
-						if (target == 'opponent' || target == 'both')
-						{
-							if (glitchOpponent == null)
-							{
-								glitchOpponent = new GlitchEffect();
-							}
-							for (strum in opponentStrums.members)
-								if (strum != null) strum.shader = glitchOpponent.shader;
-						}
-						if (target == 'player' || target == 'both')
-						{
-							if (glitchPlayer == null)
-							{
-								glitchPlayer = new GlitchEffect();
-							}
-							for (strum in playerStrums.members)
-								if (strum != null) strum.shader = glitchPlayer.shader;
-						}
-					}
-					else
-					{
-						// Reset - restore default RGB shaders on strums
-						glitchyNotesTarget = '';
-						for (strum in opponentStrums.members)
-							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
-						for (strum in playerStrums.members)
-							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
-						glitchOpponent = null;
-						glitchPlayer = null;
-					}
-				}
-				#end
-
 			case 'Destructive HUD':
 				var enable:Bool = (value1.trim().toLowerCase() == 'true');
 				if (enable)
@@ -3850,160 +3799,7 @@ class PlayState extends MusicBeatState
 					destructiveHUDActive = false;
 					restoreHUDPositions();
 				}
-
-			case 'CnB Screen':
-				var val1:Bool = (value1.trim().toLowerCase() == 'true');
-				var val2:Bool = (value2.trim().toLowerCase() == 'true');
-
-				if (!val1 && !val2)
-				{
-					// Bad Apple: white bg, black characters
-					cnbActive = true;
-					cnbOverlay.color = FlxColor.WHITE;
-					cnbOverlay.alpha = 1;
-					if (dad != null)       dad.color = FlxColor.BLACK;
-					if (boyfriend != null) boyfriend.color = FlxColor.BLACK;
-					if (gf != null)        gf.color = FlxColor.BLACK;
-				}
-				else if (val1 && !val2)
-				{
-					// Inverted Bad Apple: black bg, characters visible (white-tinted)
-					// True white silhouette would need a shader; this shows normal chars on black bg
-					cnbActive = true;
-					cnbOverlay.color = FlxColor.BLACK;
-					cnbOverlay.alpha = 1;
-					if (dad != null)       dad.color = FlxColor.WHITE;
-					if (boyfriend != null) boyfriend.color = FlxColor.WHITE;
-					if (gf != null)        gf.color = FlxColor.WHITE;
-				}
-				else if (val1 && val2)
-				{
-					// Icon color mode: black bg, characters tinted by health icon colors
-					cnbActive = true;
-					cnbOverlay.color = FlxColor.BLACK;
-					cnbOverlay.alpha = 1;
-					var dadCol:Array<Int>  = dadHealthColor.length > 0 ? dadHealthColor : [255, 0, 0];
-					var bfCol:Array<Int>   = boyfriendHealthColor.length > 0 ? boyfriendHealthColor : [0, 255, 0];
-					var gfCol:Array<Int>   = gfHealthColor.length > 0 ? gfHealthColor : [255, 255, 0];
-					if (dad != null)       dad.color = FlxColor.fromRGB(dadCol[0], dadCol[1], dadCol[2]);
-					if (boyfriend != null) boyfriend.color = FlxColor.fromRGB(bfCol[0], bfCol[1], bfCol[2]);
-					if (gf != null)        gf.color = FlxColor.fromRGB(gfCol[0], gfCol[1], gfCol[2]);
-				}
-				else
-				{
-					// Reset CnB
-					cnbActive = false;
-					cnbOverlay.alpha = 0;
-					if (dad != null)       dad.color = FlxColor.WHITE;
-					if (boyfriend != null) boyfriend.color = FlxColor.WHITE;
-					if (gf != null)        gf.color = FlxColor.WHITE;
-				}
-
-			case 'Change Stage':
-				var newStage:String = value1.trim();
-				if (newStage.length > 0 && newStage != curStage)
-				{
-					// Destroy old stage script instances
-					#if LUA_ALLOWED
-					for (lua in luaArray)
-						if (lua.scriptName != null && lua.scriptName.contains('stages/'))
-							lua.stop();
-					#end
-
-					// Destroy old stage BaseStage instances
-					for (stage in stages) stage.destroy();
-					stages = [];
-
-					// Remove old stage display objects (added to members before character groups)
-					var removeCount:Int = stageEndIdx - stageStartIdx;
-					for (i in 0...removeCount)
-					{
-						var m = members[stageStartIdx];
-						if (m != null) { m.destroy(); members.splice(stageStartIdx, 1); }
-					}
-
-					// Load new stage data
-					curStage = newStage;
-					SONG.stage = newStage;
-					var newStageData:StageFile = StageData.getStageFile(curStage);
-
-					// Update camera defaults
-					defaultCamZoom = newStageData.defaultZoom;
-					defaultStageZoom = newStageData.defaultZoom;
-					FlxG.camera.zoom = defaultCamZoom;
-
-					// Update stageUI
-					if (newStageData.stageUI != null && newStageData.stageUI.trim().length > 0)
-						stageUI = newStageData.stageUI;
-					else if (newStageData.isPixelStage == true)
-						stageUI = "pixel";
-					else
-						stageUI = "normal";
-
-					// Update camera offsets
-					if (newStageData.camera_speed != null) cameraSpeed = newStageData.camera_speed;
-					boyfriendCameraOffset = newStageData.camera_boyfriend != null ? newStageData.camera_boyfriend : [0.0, 0.0];
-					opponentCameraOffset = newStageData.camera_opponent != null ? newStageData.camera_opponent : [0.0, 0.0];
-					girlfriendCameraOffset = newStageData.camera_girlfriend != null ? newStageData.camera_girlfriend : [0.0, 0.0];
-
-					// Update character positions
-					BF_X = newStageData.boyfriend[0]; BF_Y = newStageData.boyfriend[1];
-					GF_X = newStageData.girlfriend[0]; GF_Y = newStageData.girlfriend[1];
-					DAD_X = newStageData.opponent[0]; DAD_Y = newStageData.opponent[1];
-
-					boyfriendGroup.x = BF_X; boyfriendGroup.y = BF_Y;
-					dadGroup.x = DAD_X; dadGroup.y = DAD_Y;
-					gfGroup.x = GF_X; gfGroup.y = GF_Y;
-
-					if (boyfriend != null) startCharacterPos(boyfriend);
-					if (dad != null) startCharacterPos(dad, true);
-					if (gf != null) startCharacterPos(gf);
-
-					// Create new stage objects (inserted at stageStartIdx position)
-					var beforeLen:Int = members.length;
-					switch (curStage)
-					{
-						case 'stage': new StageWeek1();
-						case 'spooky': new Spooky();
-						case 'philly': new Philly();
-						case 'limo': new Limo();
-						case 'mall': new Mall();
-						case 'mallEvil': new MallEvil();
-						case 'school': new School();
-						case 'schoolEvil': new SchoolEvil();
-						case 'tank': new Tank();
-						case 'phillyStreets': new PhillyStreets();
-						case 'phillyBlazin': new PhillyBlazin();
-						case 'sserafim': new Sserafim();
-						case 'mainStageErect': new funkin.play.stage.erect.MainStageErect();
-						case 'spookyMansionErect': new funkin.play.stage.erect.SpookyMansionErect();
-						case 'phillyTrainErect': new funkin.play.stage.erect.PhillyTrainErect();
-						case 'limoRideErect': new funkin.play.stage.erect.LimoRideErect();
-						case 'mallXmasErect': new funkin.play.stage.erect.MallXmasErect();
-						case 'schoolErect': new funkin.play.stage.erect.SchoolErect();
-						case 'schoolEvilErect': new funkin.play.stage.erect.SchoolEvilErect();
-						case 'tankmanBattlefieldErect': new funkin.play.stage.erect.TankErect();
-						case 'phillyStreetsErect': new funkin.play.stage.erect.PhillyStreetsErect();
-					}
-					stageEndIdx = members.length;
-
-					// Move new stage members to correct position (before character groups)
-					var addedCount:Int = members.length - beforeLen;
-					if (addedCount > 0)
-					{
-						var newMembers = members.splice(beforeLen, addedCount);
-						for (i in 0...newMembers.length)
-							members.insert(stageStartIdx + i, newMembers[i]);
-						stageEndIdx = stageStartIdx + addedCount;
-					}
-
-					stagesFunc(function(stage:BaseStage) stage.createPost());
-					#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
-					#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
-
-					trace('Stage changed to: ' + curStage);
-				}
-
+				
 			case 'Lyric Event':
 				if (lyricText != null)
 				{
@@ -5341,7 +5137,7 @@ class PlayState extends MusicBeatState
 			var animToPlay:String = singAnimations[Std.int(Math.abs(Math.min(singAnimations.length-1, note.noteData)))] + note.animSuffix;
 			if(note.gfNote) char = gf;
 
-			if(char != null)
+			if(char != null && char.animation != null)
 			{
 				var canPlay:Bool = true;
 				if(note.isSustainNote)
@@ -5410,7 +5206,7 @@ class PlayState extends MusicBeatState
 					animCheck = 'cheer';
 				}
 
-				if(char != null)
+				if(char != null && char.animation != null)
 				{
 					var canPlay:Bool = true;
 					if(note.isSustainNote)
@@ -5665,6 +5461,13 @@ class PlayState extends MusicBeatState
 		instance = null;
 		shutdownThread = true;
 		FlxG.signals.preUpdate.remove(checkForResync);
+
+		// Restore original stage before resetting to prevent Change Stage events from persisting on restart
+		if (originalStage != null && originalStage.length > 0)
+		{
+			SONG.stage = originalStage;
+			curStage = originalStage;
+		}
 		
 		// Limpiar memoria AL FINAL del destroy, después de super.destroy()
 		super.destroy();
@@ -5719,9 +5522,9 @@ class PlayState extends MusicBeatState
 		// Taken from Kade Engine
 		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
-			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
-			iconP2.setGraphicSize(Std.int(iconP2.width + 30));
-			iconGF.setGraphicSize(Std.int(iconGF.width + 30));
+			iconP1.setGraphicSize(Std.int(iconP1.width + 40));
+			iconP2.setGraphicSize(Std.int(iconP2.width + 40));
+			iconGF.setGraphicSize(Std.int(iconGF.width + 40));
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
 			iconGF.updateHitbox();
@@ -5996,29 +5799,6 @@ class PlayState extends MusicBeatState
 
 	public function initHScript(file:String)
 	{
-		// Check if user wants SScript compatibility mode for .hx files
-		#if SSCRIPT_ALLOWED
-		if (ClientPrefs.data.useSScriptCompat) {
-			trace('SScript (Psych 0.7.x) file load succesfully: $file');
-			var newScript:SScriptCompat = null;
-			try {
-				newScript = new SScriptCompat(null, file);
-				if (newScript != null) {
-					if (newScript.exists('onCreate'))
-						newScript.executeCode('onCreate');
-					trace('SScript loaded successfully: $file');
-				}
-			}
-			catch(e:Dynamic) {
-				trace('ERROR loading SScript file ($file): $e');
-				addTextToDebug('ERROR loading SScript: $file', FlxColor.RED);
-				if(newScript != null)
-					newScript.destroy();
-			}
-			return;
-		}
-		#end
-		
 		// Use hscript-iris (default)
 		var newScript:HScript = null;
 		try

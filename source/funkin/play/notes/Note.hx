@@ -514,7 +514,8 @@ class Note extends FlxSprite
 				offsetX -= _lastNoteOffX;
 				
 				// Reapply RGB shader for pixel sustain notes only if enabled
-				if(rgbShader != null && rgbShader.enabled && !skin.toLowerCase().contains('notitg'))
+				var skinLower = skin.toLowerCase();
+				if(rgbShader != null && rgbShader.enabled && !skinLower.contains('notitg') && !skinLower.contains('psych'))
 					shader = rgbShader.parent.shader;
 			}
 		} else {
@@ -535,21 +536,25 @@ class Note extends FlxSprite
 		if(animName != null)
 			animation.play(animName, true);
 		
-		// Detectar si es NotITG y bloquear el shader
-		if(skin != null && skin.toLowerCase().contains('notitg'))
+		// Detectar si es NotITG o Psych y bloquear el shader
+		if(skin != null)
 		{
-			if(rgbShader != null)
+			var skinLower = skin.toLowerCase();
+			if(skinLower.contains('notitg') || skinLower.contains('psych'))
 			{
-				rgbShader.forceDisabled = true;
-				rgbShader.enabled = false;
+				if(rgbShader != null)
+				{
+					rgbShader.forceDisabled = true;
+					rgbShader.enabled = false;
+				}
+				shader = null;
 			}
-			shader = null;
-		}
-		else
-		{
-			// Desbloquear shader para skins normales
-			if(rgbShader != null)
-				rgbShader.forceDisabled = false;
+			else
+			{
+				// Desbloquear shader para skins normales
+				if(rgbShader != null)
+					rgbShader.forceDisabled = false;
+			}
 		}
 	}
 

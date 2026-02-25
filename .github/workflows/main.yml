@@ -462,8 +462,16 @@ jobs:
       - name: Compile
         run: haxelib run lime build ios -nosign --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
+      - name: Create IPA Package
+        run: |
+          cd export/release/ios/build/Release-iphoneos
+          mkdir -p Payload
+          cp -r *.app Payload/
+          zip -r PlusEngine-iOS-Unsigned.ipa Payload
+          rm -rf Payload
+      
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: iOSBuild
-          path: export/release/ios/build/Release-iphoneos/*
+          path: export/release/ios/build/Release-iphoneos/*.ipa

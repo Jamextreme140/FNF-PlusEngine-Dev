@@ -110,6 +110,12 @@ class Bar extends FlxSpriteGroup
 		if (right != null)
 			rightBar.color = right;
 	}
+	
+	// Backwards compatibility with Psych 0.7.3: createFilledBar() sets the bar colors
+	public function createFilledBar(left:FlxColor, right:FlxColor):Void
+	{
+		setColors(left, right);
+	}
 
 	public function updateBar()
 	{

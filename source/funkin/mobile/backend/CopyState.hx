@@ -161,10 +161,15 @@ class CopyState extends MusicBeatState
 				if (failedFiles.length > 0)
 				{
 					CoolUtil.showPopUp(failedFiles.join('\n'), 'Failed To Copy ${failedFiles.length} File.');
-					final folder:String = #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
-					if (!FileSystem.exists(folder))
-						FileSystem.createDirectory(folder);
-					File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '-CopyState' + '.txt', failedFilesStack.join('\n'));
+					// Use app-specific directory for Android 14/15 compatibility (no permissions needed)
+					final folder:String = #if android haxe.io.Path.addTrailingSlash(lime.system.System.applicationStorageDirectory) + 'logs/' #else Sys.getCwd() + 'logs/' #end;
+					try {
+						if (!FileSystem.exists(folder))
+							FileSystem.createDirectory(folder);
+						File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '-CopyState' + '.txt', failedFilesStack.join('\n'));
+					} catch (e:Dynamic) {
+						trace('[CopyState] Could not save error log: ' + e);
+					}
 				}
 				
 				FlxG.sound.play(Paths.sound('confirmMenu')).onComplete = () ->
@@ -244,14 +249,28 @@ class CopyState extends MusicBeatState
 		
 		try
 		{
-			var fileData:String = OpenFLAssets.getText(getFile(file));
-			if (fileData == null)
-				fileData = '';
+			// Use ByteArray for Android 14/15 compatibility instead of direct File.getContent
+			var fileBytes:openfl.utils.ByteArray = null;
+			try {
+				fileBytes = OpenFLAssets.getBytes(getFile(file));
+			} catch (e:Dynamic) {
+				// Fallback to getText for text files
+				var fileData:String = OpenFLAssets.getText(getFile(file));
+				if (fileData == null)
+					fileData = '';
+				fileBytes = openfl.utils.ByteArray.fromBytes(haxe.io.Bytes.ofString(fileData));
+			}
+			
+			if (fileBytes == null)
+				throw 'Could not read asset data';
+				
 			if (!FileSystem.exists(directory))
 			{
 				FileSystem.createDirectory(directory);
 			}
-			File.saveContent(fullPath, fileData);
+			
+			// Use saveBytes instead of saveContent for better Android 14/15 compatibility
+			File.saveBytes(fullPath, fileBytes);
 		}
 		catch (e:haxe.Exception)
 		{
