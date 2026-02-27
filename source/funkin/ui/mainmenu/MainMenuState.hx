@@ -39,7 +39,7 @@ class MainMenuState extends MusicBeatState
 		'credits'
 	];
 
-	var leftOption:String = #if ACHIEVEMENTS_ALLOWED 'awards' #else null #end;
+	var leftOption:String = #if ACHIEVEMENTS_ALLOWED 'achievements' #else null #end;
 	var rightOption:String = 'options';
 
 	var magenta:FlxSprite;
@@ -322,7 +322,7 @@ class MainMenuState extends MusicBeatState
 						case 'story_mode':
 						MusicBeatState.switchState(new funkin.ui.story.StoryMenuState());
 					case 'freeplay':
-						MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
+						MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState_New());
 
 					#if MODS_ALLOWED
 					case 'mods':

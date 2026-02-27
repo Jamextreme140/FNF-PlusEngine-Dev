@@ -157,11 +157,10 @@ class FreeplayState extends MusicBeatState
 		blackOverlay.alpha = 0.1;
 		add(blackOverlay);
 		
-		layerFree = new FlxSprite().loadGraphic(Paths.image('ui/layerfree'));
+		layerFree = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/dinamic'));
 		layerFree.antialiasing = ClientPrefs.data.antialiasing;
 		layerFree.setGraphicSize(FlxG.width, FlxG.height);
 		layerFree.updateHitbox();
-		layerFree.alpha = 0.5;
 		add(layerFree);
 
 		// Primero crear y añadir las cards (fondo)
