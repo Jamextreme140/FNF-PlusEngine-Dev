@@ -472,6 +472,12 @@ class FreeplayState extends MusicBeatState {
                 modTextItem.ID = i;
                 cardModText.add(modTextItem);
                 
+                // Set mod context for proper icon loading
+                var previousMod:String = Mods.currentModDirectory;
+                if(songs[i].folder != null && songs[i].folder != '') {
+                    Mods.currentModDirectory = songs[i].folder;
+                }
+                
                 var characterName = songs[i].songCharacter;
                 if (characterName == null || characterName == "") {
                     characterName = 'face';
@@ -484,6 +490,9 @@ class FreeplayState extends MusicBeatState {
                 icon.y = 235 + (i * 74);
                 iconArray.push(icon);
                 add(icon);
+                
+                // Restore previous mod context
+                Mods.currentModDirectory = previousMod;
                 
             } catch (e:Dynamic) {
                 trace('Error creating card for song ${songs[i].songName}: $e');
@@ -1017,6 +1026,14 @@ class FreeplayState extends MusicBeatState {
         if (player.playingMusic || songs.length == 0)
             return;
 
+        // Periodic GC for large song lists to prevent memory buildup
+        #if MODS_ALLOWED
+        if(change != 0 && songs.length > 100) {
+            @:privateAccess
+            openfl.system.System.gc();
+        }
+        #end
+
         var visibleIndices:Array<Int> = [];
         if(showingFavorites) {
             for(i in 0...songs.length) {
@@ -1064,11 +1081,20 @@ class FreeplayState extends MusicBeatState {
             }
         }
 
+        // Set proper mod directory for loading assets
         if (!songs[curSelected].isStepMania) {
             Mods.currentModDirectory = songs[curSelected].folder;
         } else {
             Mods.currentModDirectory = '';
         }
+        
+        // Clear bitmap cache of unused songs to reduce memory usage
+        #if MODS_ALLOWED
+        if(songs.length > 50) { // Only cleanup when there are many songs
+            var currentSongName:String = songs[curSelected].songName;
+            openfl.system.System.gc();
+        }
+        #end
         
         PlayState.storyWeek = songs[curSelected].week;
         
@@ -1204,21 +1230,26 @@ class FreeplayState extends MusicBeatState {
             availableDiffs.push(diff);
         }
         
-        var erectDiffs:Array<String> = ['Erect', 'Nightmare'];
-        for (diff in erectDiffs) {
-            if (!availableDiffs.contains(diff)) {
-                var diffFile:String = Highscore.formatSong(songName, Difficulty.list.indexOf(diff));
-                var path:String = Paths.getPath('data/$songName/$diffFile.json', TEXT);
-                
-                #if MODS_ALLOWED
-                if(FileSystem.exists(path) || Assets.exists(path)) {
-                    availableDiffs.push(diff);
+        // Only check for erect/nightmare in base game songs (not mods)
+        var isBaseGame:Bool = (songs[curSelected].folder == null || songs[curSelected].folder == '');
+        
+        if(isBaseGame) {
+            var erectDiffs:Array<String> = ['Erect', 'Nightmare'];
+            for (diff in erectDiffs) {
+                if (!availableDiffs.contains(diff)) {
+                    var diffFile:String = Highscore.formatSong(songName, Difficulty.list.indexOf(diff));
+                    var path:String = Paths.getPath('data/$songName/$diffFile.json', TEXT);
+                    
+                    #if MODS_ALLOWED
+                    if(FileSystem.exists(path) || Assets.exists(path)) {
+                        availableDiffs.push(diff);
+                    }
+                    #else
+                    if(Assets.exists(path)) {
+                        availableDiffs.push(diff);
+                    }
+                    #end
                 }
-                #else
-                if(Assets.exists(path)) {
-                    availableDiffs.push(diff);
-                }
-                #end
             }
         }
         
@@ -1338,6 +1369,12 @@ class FreeplayState extends MusicBeatState {
     function loadChartMetadata():Void {
         if(songs.length == 0 || curSelected >= songs.length) return;
         
+        // Set mod context for proper asset loading
+        var previousMod:String = Mods.currentModDirectory;
+        if(songs[curSelected].folder != null && songs[curSelected].folder != '') {
+            Mods.currentModDirectory = songs[curSelected].folder;
+        }
+        
         var songName:String = Paths.formatToSongPath(songs[curSelected].songName);
         var chartPath:String = Highscore.formatSong(songName, curDifficulty);
         
@@ -1436,6 +1473,9 @@ class FreeplayState extends MusicBeatState {
             noteDiffText.text = '(?) 0 notes';
             updateNoteDensityBars([0,0,0,0,0,0,0,0,0,0,0,0,0]);
         }
+        
+        // Restore previous mod context
+        Mods.currentModDirectory = previousMod;
     }
     
     /**
@@ -1866,6 +1906,27 @@ class FreeplayState extends MusicBeatState {
         if (FlxG.sound.music != null && FlxG.sound.music.volume < 0.7) {
             FlxG.sound.music.volume = 0.7;
         }
+        
+        // Clear icon array to free memory
+        if(iconArray != null) {
+            for(icon in iconArray) {
+                if(icon != null) {
+                    icon.destroy();
+                }
+            }
+            iconArray = null;
+        }
+        
+        // Clear songs array
+        if(songs != null) {
+            songs = null;
+        }
+        
+        // Force garbage collection for large song lists
+        #if MODS_ALLOWED
+        @:privateAccess
+        openfl.system.System.gc();
+        #end
         
         #if mobile
         if (difficultyScroll != null) {
