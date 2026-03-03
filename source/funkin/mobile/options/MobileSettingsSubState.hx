@@ -28,9 +28,11 @@ import funkin.ui.options.Option;
 class MobileSettingsSubState extends BaseOptionsMenu
 {
 	#if android
-	var storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL_OBB", "EXTERNAL_MEDIA", "EXTERNAL", "EXTERNAL_GLOBAL"];
+	var storageTypes:Array<String> = [];
+	var storageTypeNames:Array<String> = [];
 	var externalPaths:Array<String> = StorageUtil.checkExternalPaths(true);
 	final lastStorageType:String = ClientPrefs.data.storageType;
+	var storageInfos:Array<StorageTypeInfo> = [];
 	#end
 	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
@@ -38,13 +40,37 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	var initialStorageType:String;
 	var pendingStorageType:String;
 	var storageTypeChanged:Bool = false;
+	var currentStorageOptionIndex:Int = -1;
 	#end
 	var option:Option;
 
 	public function new()
 	{
-		#if android if (!externalPaths.contains('\n'))
-			storageTypes = storageTypes.concat(externalPaths); #end
+		#if android
+		// Get available storage types
+		storageInfos = StorageUtil.getAvailableStorageTypes();
+		
+		// Build ID and name arrays
+		for (info in storageInfos)
+		{
+			storageTypes.push(info.id);
+			storageTypeNames.push(info.name);
+		}
+		
+		// Add external paths if available
+		if (!externalPaths.contains('\n'))
+		{
+			for (path in externalPaths)
+			{
+				if (path != null && path.trim().length > 0)
+				{
+					storageTypes.push(path);
+					storageTypeNames.push('SD Card: ' + path);
+				}
+			}
+		}
+		#end
+		
 		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
 		rpcTitle = 'Mobile Settings Menu'; // for Discord Rich Presence
 		#if android
@@ -91,17 +117,34 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		#end
 		
 		#if android
+		// Storage Type option with dynamic descriptions
 		option = new Option('Storage Type',
-			'Select where the game should store its data.\nEXTERNAL_DATA: Recommended, scoped storage.\nEXTERNAL: Public /sdcard/.PlusEngine/\nChanging this requires restarting the game!',
-			'storageType', STRING, storageTypes);
-		option.onChange = () -> 
-		{
-			var newType = curOption.getValue();
-			pendingStorageType = newType;
-			storageTypeChanged = (pendingStorageType != initialStorageType);
-			// Don't save here, we'll save on close with the correct value
+			getStorageDescription(ClientPrefs.data.storageType),
+			'storageType', STRING, storageTypeNames);
+		
+		// Override getValue/setValue to map between IDs and names
+		option.getValue = function():Dynamic {
+			var currentID = ClientPrefs.data.storageType;
+			var index = Lambda.indexOf(storageTypes, currentID);
+			if (index >= 0 && index < storageTypeNames.length)
+				return storageTypeNames[index];
+			return storageTypeNames[0]; // Fallback to first option
 		};
+		
+		option.setValue = function(value:Dynamic):Dynamic {
+			var selectedName:String = cast value;
+			var index = Lambda.indexOf(storageTypeNames, selectedName);
+			if (index >= 0 && index < storageTypes.length)
+			{
+				ClientPrefs.data.storageType = storageTypes[index];
+				return storageTypes[index];
+			}
+			return ClientPrefs.data.storageType;
+		};
+		
+		option.onChange = onChangeStorageType;
 		addOption(option);
+		currentStorageOptionIndex = optionsArray.length - 1;
 		#end
 
 		if (MobileData.mode == 3)
@@ -140,11 +183,61 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	}
 
 	#if android
+	function onChangeStorageType()
+	{
+		// Get the actual storage ID (not the display name)
+		var newTypeID = ClientPrefs.data.storageType;
+		pendingStorageType = newTypeID;
+		storageTypeChanged = (pendingStorageType != initialStorageType);
+		
+		// Update description
+		if (currentStorageOptionIndex >= 0 && currentStorageOptionIndex < optionsArray.length)
+		{
+			optionsArray[currentStorageOptionIndex].description = getStorageDescription(newTypeID);
+			if (descText != null)
+				descText.text = optionsArray[currentStorageOptionIndex].description;
+		}
+	}
+	
+	function getStorageDescription(typeID:String):String
+	{
+		// Find the storage info for this type
+		for (info in storageInfos)
+		{
+			if (info.id == typeID)
+			{
+				var desc = info.description;
+				desc += '\n\nCurrent: ' + StorageUtil.getStoragePathForType(typeID);
+				desc += '\n\nChanging this requires restarting the game!';
+				return desc;
+			}
+		}
+		
+		// Fallback for external paths
+		if (typeID.startsWith('/storage/'))
+		{
+			return 'External SD Card storage\nPath: ' + typeID + '\n\nChanging this requires restarting the game!';
+		}
+		
+		return 'Select where the game should store its data.\nChanging this requires restarting the game!';
+	}
+	#end
+
+	#if android
 	override public function close()
 	{
 		if (storageTypeChanged)
 		{
 			trace('[MobileSettings] Storage type changing from ' + initialStorageType + ' to ' + pendingStorageType);
+			
+			// Check permissions if needed
+			if (StorageUtil.requiresSpecialPermissions(pendingStorageType))
+			{
+				var permMessage = 'The selected storage type requires special permissions.\n\n';
+				permMessage += 'Please grant "All Files Access" permission when prompted.\n';
+				permMessage += 'The game will restart after changing permissions.';
+				FlxG.stage.window.alert(permMessage, 'Permissions Required');
+			}
 			
 			// Update ClientPrefs.data FIRST
 			ClientPrefs.data.storageType = pendingStorageType;
@@ -164,12 +257,14 @@ class MobileSettingsSubState extends BaseOptionsMenu
 			// Copy data and delete old directory to free up space
 			StorageUtil.migrateStorage(initialStorageType, pendingStorageType);
 
-			var message = 'Storage directory changed.\n\n';
-			message += 'The game will now close. Please reopen it.\n\n';
-			message += 'Old: ' + oldPath + '\n';
-			message += 'New: ' + newPath + '\n\n';
-			message += 'Your data has been copied to the new location.\n';
-			message += 'The old directory will be cleaned up to free space.';
+			// Build detailed message
+			var storageInfo = getStorageInfoByID(pendingStorageType);
+			var message = 'Storage Type Changed!\n\n';
+			message += 'New Type: ' + (storageInfo != null ? storageInfo.name : pendingStorageType) + '\n';
+			message += 'Location: ' + newPath + '\n\n';
+			message += 'Your game data has been migrated automatically.\n';
+			message += 'The old directory has been cleaned up to save space.\n\n';
+			message += 'The game will now restart to apply changes.';
 			
 			FlxG.stage.window.alert(message, 'Restart Required');
 			lime.system.System.exit(0);
@@ -177,6 +272,16 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		}
 
 		super.close();
+	}
+	
+	function getStorageInfoByID(id:String):StorageTypeInfo
+	{
+		for (info in storageInfos)
+		{
+			if (info.id == id)
+				return info;
+		}
+		return null;
 	}
 	#end
 }

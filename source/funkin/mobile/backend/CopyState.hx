@@ -79,18 +79,24 @@ class CopyState extends MusicBeatState
 		funkin.graphics.shaders.ColorblindFilter.UpdateColors();
 		
 		#if android
-		// For Android < 11 with EXTERNAL storage, verify we have permissions before checking files
-		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
-			var hasPermissions = AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+		// Verify storage permissions based on Android version and storage type
+		if (ClientPrefs.data.storageType == "EXTERNAL" || ClientPrefs.data.storageType == "EXTERNAL_GLOBAL") {
+			var hasPermissions = false;
+			
+			if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU) {
+				// Android 13+ uses MANAGE_EXTERNAL_STORAGE for full access
+				hasPermissions = AndroidEnvironment.isExternalStorageManager();
+				if (!hasPermissions)
+					trace('[CopyState] MANAGE_EXTERNAL_STORAGE permission not granted for ${ClientPrefs.data.storageType}');
+			} else {
+				// Android 12 and below use WRITE_EXTERNAL_STORAGE
+				hasPermissions = AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+				if (!hasPermissions)
+					trace('[CopyState] WRITE_EXTERNAL_STORAGE permission not granted for ${ClientPrefs.data.storageType}');
+			}
 			
 			if (!hasPermissions) {
-				trace('[CopyState] EXTERNAL storage selected but permissions not granted yet. Waiting for user response...');
-				// Give some time for the permission dialog to be processed
-				// The permission was already requested in Main.hx, so we just need to wait briefly
-				// If after this brief wait we still don't have permissions, the checkExistingFiles
-				// will handle it (files will appear as missing and be copied when permissions are granted)
-			} else {
-				trace('[CopyState] EXTERNAL storage permissions confirmed');
+				trace('[CopyState] Files may appear as missing until permissions are granted');
 			}
 		}
 		#end
@@ -161,8 +167,8 @@ class CopyState extends MusicBeatState
 				if (failedFiles.length > 0)
 				{
 					CoolUtil.showPopUp(failedFiles.join('\n'), 'Failed To Copy ${failedFiles.length} File.');
-					// Use app-specific directory for Android 14/15 compatibility (no permissions needed)
-					final folder:String = #if android haxe.io.Path.addTrailingSlash(lime.system.System.applicationStorageDirectory) + 'logs/' #else Sys.getCwd() + 'logs/' #end;
+					// Save error log to configured storage directory
+					final folder:String = #if android StorageUtil.getStorageDirectory() + 'logs/' #else Sys.getCwd() + 'logs/' #end;
 					try {
 						if (!FileSystem.exists(folder))
 							FileSystem.createDirectory(folder);
@@ -213,10 +219,12 @@ class CopyState extends MusicBeatState
 						var path:String = '';
 						#if android
 						if (file.startsWith('mods/'))
-							path = StorageUtil.getExternalStorageDirectory() + file;
+							path = StorageUtil.getExternalStorageDirectory() + file; // Mods go to public storage
 						else
+							path = StorageUtil.getStorageDirectory() + file; // Game assets follow storage type
+						#else
+						path = file;
 						#end
-							path = file;
 						File.saveBytes(path, getFileBytes(getFile(file)));
 					}		
 				}
