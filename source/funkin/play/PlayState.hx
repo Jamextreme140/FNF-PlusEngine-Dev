@@ -223,6 +223,14 @@ class PlayState extends MusicBeatState
 	// Ruta personalizada para archivos de audio de StepMania
 	public static var customAudioPath:String = null;
 
+	// Window state restoration - save window state before gameplay
+	static var savedWindowX:Int = 0;
+	static var savedWindowY:Int = 0;
+	static var savedWindowWidth:Int = 0;
+	static var savedWindowHeight:Int = 0;
+	static var savedWindowBorderless:Bool = false;
+	static var savedWindowFullscreen:Bool = false;
+
 	public var spawnTime:Float = 2000;
 
 	public var dadHealthColor:Array<Int> = [];
@@ -496,6 +504,52 @@ class PlayState extends MusicBeatState
 	private static var _lastLoadedModDirectory:String = '';
 	public static var nextReloadAll:Bool = false;
 
+	/**
+	 * Restores the window state to what it was before entering PlayState.
+	 * Call this before switching states to ensure window modifications during gameplay are reverted.
+	 */
+	public static function restoreWindowState():Void
+	{
+		#if desktop
+		var window = openfl.Lib.current.stage.window;
+		if (window != null) {
+			// Only restore if the window state has changed
+			var hasChanged = (window.x != savedWindowX || 
+							  window.y != savedWindowY || 
+							  window.width != savedWindowWidth || 
+							  window.height != savedWindowHeight ||
+							  window.borderless != savedWindowBorderless ||
+							  window.fullscreen != savedWindowFullscreen);
+			
+			if (hasChanged) {
+				// Restore fullscreen state first
+				if (window.fullscreen != savedWindowFullscreen) {
+					try {
+						window.fullscreen = savedWindowFullscreen;
+					} catch (_:Dynamic) {}
+				}
+				
+				// Restore borderless state
+				if (window.borderless != savedWindowBorderless) {
+					window.borderless = savedWindowBorderless;
+				}
+				
+				// Restore size and position
+				if (window.width != savedWindowWidth || window.height != savedWindowHeight) {
+					window.resize(savedWindowWidth, savedWindowHeight);
+				}
+				
+				if (window.x != savedWindowX || window.y != savedWindowY) {
+					window.x = savedWindowX;
+					window.y = savedWindowY;
+				}
+				
+				trace('Window state restored to: ${savedWindowWidth}x${savedWindowHeight} at (${savedWindowX}, ${savedWindowY})');
+			}
+		}
+		#end
+	}
+
 	public var luaTouchPad:TouchPad;
 	public var pauseButton:TouchButton;
 
@@ -558,6 +612,19 @@ class PlayState extends MusicBeatState
 			Language.reloadPhrases();
 		}
 		nextReloadAll = false;
+
+		// Save window state before gameplay starts
+		#if desktop
+		var window = openfl.Lib.current.stage.window;
+		if (window != null) {
+			savedWindowX = window.x;
+			savedWindowY = window.y;
+			savedWindowWidth = window.width;
+			savedWindowHeight = window.height;
+			savedWindowBorderless = window.borderless;
+			savedWindowFullscreen = window.fullscreen;
+		}
+		#end
 
 		startCallback = startCountdown;
 		endCallback = endSong;
@@ -3291,6 +3358,7 @@ class PlayState extends MusicBeatState
 		DiscordClient.resetClientID();
 		#end
 
+		restoreWindowState();
 		MusicBeatState.switchState(new funkin.ui.debug.charting.ChartEditorState());
 	}
 
@@ -3309,6 +3377,7 @@ class PlayState extends MusicBeatState
 			opponentVocals.pause();
 
 		#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
+		restoreWindowState();
 		MusicBeatState.switchState(new funkin.ui.debug.character.CharacterEditorState(SONG.player2));
 	}
 
@@ -4041,6 +4110,7 @@ class PlayState extends MusicBeatState
 				// INICIAR FREAKYMENU ANTES DE IR A RESULTSSTATE
 				FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7, true);
 				
+				restoreWindowState();
 				MusicBeatState.switchState(new ResultsState({
 					score: songScore,
 					prevHighScore: Highscore.getScore(Song.loadedSongName, storyDifficulty),
@@ -4160,6 +4230,7 @@ class PlayState extends MusicBeatState
 					changedDifficulty = false;
 					
 					// Ir a ResultsState con las estadísticas de toda la semana
+					restoreWindowState();
 					MusicBeatState.switchState(new ResultsState({
 						score: campaignScore,
 						prevHighScore: Highscore.getWeekScore(WeekData.getWeekFileName(), storyDifficulty),
@@ -4213,6 +4284,7 @@ class PlayState extends MusicBeatState
 				#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
 
 				canResync = false;
+				restoreWindowState();
 				MusicBeatState.switchState(new FreeplayState());
 				FlxG.sound.playMusic(Paths.music('freakyMenu'));
 				changedDifficulty = false;

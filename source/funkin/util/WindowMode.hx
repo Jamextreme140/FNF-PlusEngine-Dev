@@ -41,6 +41,8 @@ class WindowMode
 		var mode = ClientPrefs.data.fullscreenMode;
 		if (mode == 'Exclusive')
 			setExclusiveFullscreen(!exclusiveFullscreen);
+		else if (mode == 'Borderless Fix')
+			setBorderlessFullscreenFix(!borderlessFullscreen);
 		else
 			setBorderlessFullscreen(!borderlessFullscreen);
 		#else
@@ -84,7 +86,7 @@ class WindowMode
 		{
 			window.fullscreen = false;
 
-			// Restore previous windowed size/position if we have it
+			// Restore saved windowed state if available
 			if (hasWindowedState && lastWindowedW > 0 && lastWindowedH > 0)
 			{
 				window.resize(lastWindowedW, lastWindowedH);
@@ -131,14 +133,9 @@ class WindowMode
 			} catch (_:Dynamic) {}
 			window.borderless = true;
 
-			// Get accurate screen dimensions using native Windows API
-			#if windows
-			var screenW = WindowsCPP.getScreenWidth();
-			var screenH = WindowsCPP.getScreenHeight();
-			#else
+			// Use standard screen dimensions (no WindowsCPP)
 			var screenW = Std.int(Capabilities.screenResolutionX);
 			var screenH = Std.int(Capabilities.screenResolutionY);
-			#end
 
 			// Move/resize to cover the primary monitor.
 			window.x = 0;
@@ -149,7 +146,7 @@ class WindowMode
 		{
 			window.borderless = false;
 
-			// Restore previous windowed size/position if we have it.
+			// Restore saved windowed state if available
 			if (hasWindowedState && lastWindowedW > 0 && lastWindowedH > 0)
 			{
 				window.resize(lastWindowedW, lastWindowedH);
@@ -160,5 +157,85 @@ class WindowMode
 
 		borderlessFullscreen = enable;
 		#end
+	}
+
+	/**
+	 * Sets borderless fullscreen using WindowsCPP for more accurate screen dimensions.
+	 * This is the "Borderless Fix" mode that works better on some systems.
+	 */
+	public static function setBorderlessFullscreenFix(enable:Bool):Void
+	{
+		#if desktop
+		var window = Lib.current.stage.window;
+		if (window == null) return;
+
+		if (enable)
+		{
+			// Save current windowed state to restore later
+			if (!borderlessFullscreen && !exclusiveFullscreen)
+			{
+				lastWindowedX = window.x;
+				lastWindowedY = window.y;
+				lastWindowedW = window.width;
+				lastWindowedH = window.height;
+				hasWindowedState = true;
+			}
+
+			// Disable exclusive fullscreen if it was active
+			if (exclusiveFullscreen)
+			{
+				try {
+					window.fullscreen = false;
+				} catch (_:Dynamic) {}
+				exclusiveFullscreen = false;
+			}
+
+			// Avoid exclusive fullscreen where supported
+			try {
+				window.fullscreen = false;
+			} catch (_:Dynamic) {}
+			window.borderless = true;
+
+			// Always use native Windows API for accurate screen dimensions
+			#if windows
+			var screenW = WindowsCPP.getScreenWidth();
+			var screenH = WindowsCPP.getScreenHeight();
+			#else
+			var screenW = Std.int(Capabilities.screenResolutionX);
+			var screenH = Std.int(Capabilities.screenResolutionY);
+			#end
+
+			// Move/resize to cover the primary monitor
+			window.x = 0;
+			window.y = 0;
+			window.resize(screenW, screenH);
+		}
+		else
+		{
+			window.borderless = false;
+
+			// Restore saved windowed state if available
+			if (hasWindowedState && lastWindowedW > 0 && lastWindowedH > 0)
+			{
+				window.resize(lastWindowedW, lastWindowedH);
+				window.x = lastWindowedX;
+				window.y = lastWindowedY;
+			}
+		}
+
+		borderlessFullscreen = enable;
+		#end
+	}
+
+	/**
+	 * Updates the saved windowed size when resolution is changed while in fullscreen.
+	 * This ensures that when exiting fullscreen, the correct resolution is used.
+	 */
+	public static function updateWindowedSize(width:Int, height:Int):Void
+	{
+		if (hasWindowedState) {
+			lastWindowedW = width;
+			lastWindowedH = height;
+		}
 	}
 }

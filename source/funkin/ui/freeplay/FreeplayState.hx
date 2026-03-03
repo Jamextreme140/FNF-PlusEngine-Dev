@@ -10,6 +10,7 @@ import funkin.play.HealthIcon;
 import funkin.ui.MusicPlayer;
 import funkin.ui.options.GameplayChangersSubstate;
 import funkin.play.substates.ResetScoreSubState;
+import funkin.ui.components.PsychUIInputText;
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxTimer;
@@ -66,10 +67,11 @@ class FreeplayState extends MusicBeatState {
     var defaultAlbumZoom:Float = 0.75;
     
     var intendedColor:Int;
-    var _curOnDarkColor:Int = 0xFFF0DDFF;
-    var _curHeaderColor:Int = 0xFF3A006F;
-    var _curAccentColor:Int = FlxColor.PURPLE;
-    var _curLabelColor:Int = FlxColor.GRAY;
+    // Material Design 3 default color scheme (purple-based)
+    var _curOnDarkColor:Int = 0xFFF3EBFF;  // On-Surface: light purple for primary text
+    var _curHeaderColor:Int = 0xFF6B11AA;  // Primary: vibrant purple for headers
+    var _curAccentColor:Int = 0xFFB566FF;  // Primary Variant: bright purple for interactive elements (improved visibility)
+    var _curLabelColor:Int = 0xFF6B6875;   // On-Surface Variant: muted purple-gray for labels
     
     // Audio
     public static var vocals:FlxSound = null;
@@ -134,8 +136,8 @@ class FreeplayState extends MusicBeatState {
     static inline var BAR_MAX_H:Int    = 64;
 
     // Full-width bottom spectral visualizer bar constants
-    static inline var VIZ_BAR_COUNT:Int = 128;
-    static inline var VIZ_BAR_MAX_H:Int = 120;
+    static inline var VIZ_BAR_COUNT:Int = 256;
+    static inline var VIZ_BAR_MAX_H:Int = 240;
     var blurEffect:BlurEffect;
     //var diff:Array<FlxSpriteGroup>;
 
@@ -154,6 +156,8 @@ class FreeplayState extends MusicBeatState {
     var trophyIcon:FlxSprite;
 
     var freeplayText:FlxText;
+    var searchInput:PsychUIInputText;
+    var searchQuery:String = '';
 
     var speedText:FlxText;
     var timerText:FlxText;
@@ -286,8 +290,23 @@ class FreeplayState extends MusicBeatState {
         searchIcon.updateHitbox();
         add(searchIcon);
 
-        searchTipText = new FlxText(920, 169, 0, 'Search here..');
-        searchTipText.setFormat(Paths.font('inter-bold.otf'), 12, FlxColor.GRAY, 'center');
+        // Functional search input
+        searchInput = new PsychUIInputText(920, 165, 240, '', 14);
+        searchInput.onChange = function(old:String, cur:String) {
+            searchQuery = cur.toLowerCase();
+            filterSongs();
+            if(cur == '') {
+                searchTipText.visible = true;
+            } else {
+                searchTipText.visible = false;
+            }
+        };
+                
+        
+        add(searchInput);
+
+        searchTipText = new FlxText(925, 168, 0, 'Search here..');
+        searchTipText.setFormat(Paths.font('inter-bold.otf'), 12, FlxColor.GRAY, 'left');
         add(searchTipText);
 
         playIcon = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/icons/play'));
@@ -751,7 +770,10 @@ class FreeplayState extends MusicBeatState {
         if((FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ.pressed)) && !player.playingMusic) 
             shiftMult = 3;
 
-        if (!player.playingMusic) {
+        // Disable navigation when typing in search
+        var isTyping:Bool = (PsychUIInputText.focusOn == searchInput);
+
+        if (!player.playingMusic && !isTyping) {
             var mouseOverPills:Bool = FlxG.mouse.y > 475 && FlxG.mouse.y < 515;
 
             if (FlxG.mouse.wheel != 0 && !mouseOverPills) {
@@ -866,7 +888,7 @@ class FreeplayState extends MusicBeatState {
             }
         }
         
-        if (FlxG.keys.justPressed.TAB && !player.playingMusic) {
+        if (FlxG.keys.justPressed.TAB && !player.playingMusic && !isTyping) {
             viewingOpponentScores = !viewingOpponentScores;
             FlxG.sound.play(Paths.sound('scrollMenu'));
             
@@ -883,7 +905,7 @@ class FreeplayState extends MusicBeatState {
             }
         }
 
-        if (controls.BACK || (touchPad != null && touchPad.buttonB.justPressed)) {
+        if ((controls.BACK || (touchPad != null && touchPad.buttonB.justPressed)) && !isTyping) {
             if (player.playingMusic) {
                 FlxG.sound.music.stop();
                 destroyFreeplayVocals();
@@ -899,13 +921,13 @@ class FreeplayState extends MusicBeatState {
         }
 
         // Gameplay changers
-        if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !player.playingMusic) {
+        if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !player.playingMusic && !isTyping) {
             persistentUpdate = false;
             removeTouchPad();
             openSubState(new GameplayChangersSubstate());
         }
         
-        if(FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX.justPressed)) {
+        if((FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX.justPressed)) && !isTyping) {
             if(instPlaying != curSelected && !player.playingMusic) {
                 playInstPreview();
             } else if (instPlaying == curSelected && !player.playingMusic) {
@@ -913,12 +935,12 @@ class FreeplayState extends MusicBeatState {
             }
         }
         
-        if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && !player.playingMusic) {
+        if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && !player.playingMusic && !isTyping) {
             playSong();
         }
         
         // Reset score
-        if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic) {
+        if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic && !isTyping) {
             persistentUpdate = false;
             removeTouchPad();
             openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
@@ -1418,6 +1440,32 @@ class FreeplayState extends MusicBeatState {
     }
     
     /**
+     * Filter songs based on search query
+     */
+    function filterSongs():Void {
+        if(searchQuery == null || searchQuery == '') {
+            // No filter, show all songs
+            changeSelection(0, false);
+            return;
+        }
+        
+        // Find first matching song
+        for(i in 0...songs.length) {
+            var song = songs[i];
+            var songLower = song.songName.toLowerCase();
+            var folderLower = song.folder != null ? song.folder.toLowerCase() : '';
+            
+            if(songLower.contains(searchQuery) || folderLower.contains(searchQuery)) {
+                curSelected = i;
+                viewOffset = i;
+                lerpViewOffset = i;
+                changeSelection(0, false);
+                return;
+            }
+        }
+    }
+    
+    /**
      * Load chart metadata for the currently selected song and difficulty.
      * Updates BPM, duration, note count texts dynamically.
      */
@@ -1800,11 +1848,16 @@ class FreeplayState extends MusicBeatState {
         var targetTint:Int = FlxColor.interpolate(0xFFFFFF, intendedColor, 0.30);
         uiprincipal.color = FlxColor.interpolate(uiprincipal.color, targetTint, elapsed * 3.0);
 
+        // Material Design 3 color roles based on dynamic theme
         var hueColor:FlxColor = FlxColor.fromInt(intendedColor);
-        var targetOnDark:Int  = FlxColor.fromHSL(hueColor.hue, 0.70, 0.88);
-        var targetHeader:Int  = FlxColor.fromHSL(hueColor.hue, 0.85, 0.22);
-        var targetAccent:Int  = FlxColor.fromHSL(hueColor.hue, 0.65, 0.35);
-        var targetLabel:Int   = FlxColor.fromHSL(hueColor.hue, 0.28, 0.38);
+        // On-Surface: Primary text on light backgrounds (high luminosity, moderate saturation)
+        var targetOnDark:Int  = FlxColor.fromHSL(hueColor.hue, 0.50, 0.92);
+        // Primary: Main brand color for headers and prominent components (high saturation, medium-low luminosity)
+        var targetHeader:Int  = FlxColor.fromHSL(hueColor.hue, 0.90, 0.35);
+        // Primary Variant: Interactive elements and accents (high saturation, higher luminosity for visibility)
+        var targetAccent:Int  = FlxColor.fromHSL(hueColor.hue, 0.80, 0.65);
+        // On-Surface Variant: Secondary text and labels (low saturation, medium-low luminosity)
+        var targetLabel:Int   = FlxColor.fromHSL(hueColor.hue, 0.15, 0.45);
         _curOnDarkColor = FlxColor.interpolate(_curOnDarkColor, targetOnDark, elapsed * 3.0);
         _curHeaderColor = FlxColor.interpolate(_curHeaderColor, targetHeader, elapsed * 3.0);
         _curAccentColor = FlxColor.interpolate(_curAccentColor, targetAccent, elapsed * 3.0);
@@ -1847,6 +1900,14 @@ class FreeplayState extends MusicBeatState {
         medalIcon.color      = _curLabelColor;
         searchIcon.color     = _curLabelColor;
         
+        // Data values use header color for prominence
+        scoreData.color      = _curHeaderColor;
+        accuracyData.color   = _curHeaderColor;
+        comboData.color      = _curHeaderColor;
+        ratingData.color     = _curHeaderColor;
+        notesText.color      = _curHeaderColor;
+        noteDiffText.color   = _curLabelColor;
+        
         if(noFavoritesText != null) {
             noFavoritesText.color = _curLabelColor;
         }
@@ -1869,9 +1930,17 @@ class FreeplayState extends MusicBeatState {
         if(_needsAnalyzerInit && FlxG.sound.music != null && FlxG.sound.music.playing) {
             @:privateAccess
             if(FlxG.sound.music._channel != null && FlxG.sound.music._channel.__audioSource != null) {
-                _analyzer = new SpectralAnalyzer(FlxG.sound.music._channel.__audioSource, VIZ_BAR_COUNT, 0.1, 40);
+                // Improved spectral analyzer calibration
+                _analyzer = new SpectralAnalyzer(FlxG.sound.music._channel.__audioSource, VIZ_BAR_COUNT, 0.08, 25);
+                // Better frequency range for music visualization
+                _analyzer.minFreq = 40;
+                _analyzer.maxFreq = 18000;
+                // Adjust dB range for better sensitivity
+                _analyzer.minDb = -80;
+                _analyzer.maxDb = -15;
                 #if !web
-                _analyzer.fftN = 256;
+                // Higher FFT size for better frequency resolution
+                _analyzer.fftN = 512;
                 #end
                 _needsAnalyzerInit = false;
             }
@@ -2048,6 +2117,12 @@ class FreeplayState extends MusicBeatState {
                 if(t != null) t.cancel();
             }
             _barTweens = null;
+        }
+
+        // Clean up search input
+        if(searchInput != null) {
+            searchInput.destroy();
+            searchInput = null;
         }
 
         // Destroy full-width bottom spectral visualizer bars

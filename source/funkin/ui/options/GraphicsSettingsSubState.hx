@@ -113,6 +113,15 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeFPSCounter;
 		addOption(option);
 
+		#if windows
+		var option:Option = new Option('Fullscreen Mode',
+			'Changes how fullscreen behaves.\\n\\nBorderless: Standard borderless window\\nBorderless Fix: Uses native API for better accuracy\\nExclusive: Traditional fullscreen (may minimize on alt-tab)',
+			'fullscreenMode',
+			STRING,
+			['Borderless', 'Borderless Fix', 'Exclusive']);
+		addOption(option);
+		#end
+
 		super();
 		insert(1, boyfriend);
 	}
