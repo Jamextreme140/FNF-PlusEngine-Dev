@@ -163,6 +163,11 @@ import funkin.ui.title.TitleState;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode for heavy charts
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
 	
+	// New Gameplay Features (Issue #72)
+	public var pauseCountdown:Bool = false; // Enable countdown when resuming from pause
+	public var heyIntro:Bool = false; // Boyfriend and Girlfriend do Hey! animation on countdown Go!
+	public var breakTimer:Bool = false; // Show timer when next notes are approaching
+	
 	// Compatibility Settings
 	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
 	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)

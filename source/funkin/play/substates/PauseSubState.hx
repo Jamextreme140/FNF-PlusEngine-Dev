@@ -348,7 +348,16 @@ class PauseSubState extends MusicBeatSubstate
 			{
 				case "Resume":
 					Paths.clearUnusedMemory();
-					close();
+					if (ClientPrefs.data.pauseCountdown && PlayState.instance != null)
+					{
+						// Start countdown before resuming - keep pause active until countdown ends
+						PlayState.instance.resumeWithCountdown(this);
+					}
+					else
+					{
+						// Resume immediately without countdown
+						close();
+					}
 				#if VIDEOS_ALLOWED
 				case 'Skip Video':
 					if(PlayState.instance.videoCutscene != null && PlayState.instance.videoCutscene.onSkip != null)

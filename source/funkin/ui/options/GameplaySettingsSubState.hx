@@ -198,6 +198,24 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			['Psych', 'Codename']); // No V-Slice here :frowning_face:
 		addOption(option);
 
+		var option:Option = new Option('Pause Countdown',
+			"If checked, when you resume from pause a countdown will play\nsimilar to the intro countdown.",
+			'pauseCountdown',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Hey! Intro',
+			"If checked, when the countdown says Go! both BF and GF\nwill automatically do the Hey! animation.",
+			'heyIntro',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Break Timer',
+			"If checked, a timer will appear when next notes are approaching\n(Inspired by FNF Vs Matt Void Chronicles).",
+			'breakTimer',
+			BOOL);
+		addOption(option);
+
 		var option:Option = new Option('Heavy Charts Mode',
 			"If checked, enables the Heavy Charts system for better performance\nwith charts that have many notes (1000+).",
 			'heavyCharts',
