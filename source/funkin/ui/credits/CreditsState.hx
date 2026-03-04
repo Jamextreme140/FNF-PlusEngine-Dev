@@ -48,7 +48,7 @@ class CreditsState extends MusicBeatState
 			['Legacy Odyssey',      "",                 "Co-programmer of Plus Engine",                     "https://www.youtube.com/@LegacyOdyssey","8E07C2"],
 			['DaffyToons',             "daffytoons",             "Failed Attempt at Plus Engine Programmer",                    "https://github.com/DaffyToons",   "0A8451"],
 			["Andres",              "slu",     "Creator and owner of several codes used based on the Slushi Engine", "https://github.com/Slushi-Github","8FD9D1"],
-			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           '','7FDBFF'], // My Bluesky account has deactivated starting tomorrow until March 20nd
+			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           '','7FDBFF'], // My Bluesky account has deactivated starting February 18 until March 21
 			['Hansuke H',           "hansu",            'Vietnamese translation and alphabet sprite',     'https://www.facebook.com/hansuke.hotaroshi', 'FF6C8D'],
 			['TheoDev',             "theo",             "Owner, Lead coder of Funkin Modchart",                    "https://github.com/TheoDevelops",   "FFB347"],
 			[''],
