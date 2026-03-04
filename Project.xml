@@ -247,11 +247,11 @@
 
 	<assets path='art/icons/iconOG.png' rename='icon.png' if="linux || mac" />
 	
-	<!-- Desktop and other platforms icons (excluding Android which uses adaptive icons) -->
-	<icon path="art/icons/icon16.png" size='16' unless="android"/>
-	<icon path="art/icons/icon32.png" size='32' unless="android"/>
-	<icon path="art/icons/icon64.png" size='64' unless="android"/>
-	<icon path="art/icons/iconOG.png" unless="android"/>
+	<!-- Desktop and other platforms icons (excluding Android and iOS) -->
+	<icon path="art/icons/icon16.png" size='16' unless="android || ios"/>
+	<icon path="art/icons/icon32.png" size='32' unless="android || ios"/>
+	<icon path="art/icons/icon64.png" size='64' unless="android || ios"/>
+	<icon path="art/icons/iconOG.png" unless="android || ios"/>
 	
 	<section if="android">
 		<!-- Force adaptive launcher icon from our Android res template -->
@@ -294,7 +294,8 @@
 	</section>
 
 	<section if="ios">
-	    <!-- Copy our custom lanucher icon resources into Assets.xsassets for iOS -->
-	    <assets path="art/icons/ios/AppIcon.appiconset" rename="Assets.xcassets/Images.xcassets/AppIcon.appiconset" />
+	    <!-- iOS icons -->
+		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-60x60@2x.png" rename="AppIcon60x60@2x" size='120'/>
+		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-76x76@2x.png" rename="AppIcon76x76@2x~ipad" size='152'/>
 	</section>
 </project>
