@@ -456,6 +456,7 @@ class IdID
         // Loading Screen
         "now_loading" => "Sekarang Memuat",
         "loading_timeout" => "Pemuatan memakan waktu terlalu lama... \nTekan ESC untuk kembali",
+        "loading_timeout_mobile" => "Pemuatan memakan waktu terlalu lama... \nTekan B untuk kembali",
 
         // Difficulties
         "difficulty_easy" => "Mudah",

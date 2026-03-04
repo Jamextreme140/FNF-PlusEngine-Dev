@@ -42,7 +42,11 @@ class LoadingState extends MusicBeatState
 	// Timeout system
 	public static var returnState:FlxState = null; // Estado al que volver si falla la carga
 	var loadingTimer:Float = 0; // Contador de tiempo de carga
+	#if mobile
+	var timeoutWarningMobile:FlxText;
+	#else
 	var timeoutWarning:FlxText; // Mensaje de advertencia
+	#end
 	var canEscape:Bool = false; // Si se puede presionar ESC para salir
 	static final TIMEOUT_DURATION:Float = 5.0; // 5 segundos
 
@@ -179,11 +183,19 @@ class LoadingState extends MusicBeatState
 		#end
 		
 		// Timeout warning message
+		#if mobile
+		timeoutWarningMobile = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
+		timeoutWarningMobile.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		timeoutWarningMobile.borderSize = 2;
+		timeoutWarningMobile.visible = false;
+		add(timeoutWarningMobile);
+		#else
 		timeoutWarning = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
 		timeoutWarning.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		timeoutWarning.borderSize = 2;
 		timeoutWarning.visible = false;
 		add(timeoutWarning);
+		#end
 		
 		// Añadir touchpad para Android
 		addTouchPad('NONE', 'B');
@@ -217,8 +229,13 @@ class LoadingState extends MusicBeatState
 			if (loadingTimer >= TIMEOUT_DURATION && !canEscape)
 			{
 				canEscape = true;
+				#if mobile
+				timeoutWarningMobile.text = Language.getPhrase('loading_timeout_mobile', 'Loading is taking too long...\nPress B to return', []);
+				timeoutWarningMobile.visible = true;
+				#else
 				timeoutWarning.text = Language.getPhrase('loading_timeout', 'Loading is taking too long...\nPress ESC to return', []);
 				timeoutWarning.visible = true;
+				#end
 				FlxG.sound.play(Paths.sound('cancelMenu'));
 			}
 			
