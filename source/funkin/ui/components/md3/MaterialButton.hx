@@ -7,6 +7,7 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Button Component
@@ -90,6 +91,7 @@ class MaterialButton extends FlxSpriteGroup
 		add(labelText);
 		
 		updateAppearance();
+		MD3Theme.addListener(updateAppearance);
 		trace('[MaterialButton] new() complete');
 	}
 	
@@ -154,7 +156,7 @@ class MaterialButton extends FlxSpriteGroup
 		var graphics = sprite.pixels;
 		graphics.fillRect(graphics.rect, FlxColor.TRANSPARENT);
 		
-		var color = enabled ? OUTLINE_COLOR : DISABLED_TEXT_COLOR;
+		var color = enabled ? MD3Theme.outline : DISABLED_TEXT_COLOR;
 		
 		// Draw outline using rectangles for each side
 		for (i in 0...OUTLINE_WIDTH)
@@ -233,20 +235,20 @@ class MaterialButton extends FlxSpriteGroup
 			switch (buttonType)
 			{
 				case FILLED:
-					container.color = PRIMARY_COLOR;
+					container.color = MD3Theme.primary;
 					container.alpha = 1;
 					container.visible = true;
 					outline.visible = false;
-					labelText.color = ON_PRIMARY_COLOR;
+					labelText.color = MD3Theme.onPrimary;
 				case OUTLINED:
 					container.visible = false;
 					outline.visible = true;
 					drawOutline(outline, Std.int(buttonWidth), BUTTON_HEIGHT, CORNER_RADIUS);
-					labelText.color = PRIMARY_COLOR;
+					labelText.color = MD3Theme.primary;
 				case TEXT:
 					container.visible = false;
 					outline.visible = false;
-					labelText.color = PRIMARY_COLOR;
+					labelText.color = MD3Theme.primary;
 			}
 		}
 	}
@@ -315,6 +317,7 @@ class MaterialButton extends FlxSpriteGroup
 	
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(updateAppearance);
 		if (hoverTween != null) hoverTween.cancel();
 		if (pressTween != null) pressTween.cancel();
 		

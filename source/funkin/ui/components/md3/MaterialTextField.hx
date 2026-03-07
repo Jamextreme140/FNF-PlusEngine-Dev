@@ -10,6 +10,7 @@ import flixel.util.FlxColor;
 import flixel.math.FlxMath;
 import flixel.input.keyboard.FlxKey;
 import flash.events.KeyboardEvent;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Outlined Text Field Component
@@ -28,6 +29,10 @@ class MaterialTextField extends FlxSpriteGroup
 	public var onChange:String->Void = null;
 	public var onFocus:Void->Void = null;
 	public var onBlur:Void->Void = null;
+
+	/** True while this field has keyboard focus. Check this to gate navigation input. */
+	public var focused(get, never):Bool;
+	inline function get_focused():Bool return isFocused;
 	
 	// Visual components
 	var container:FlxSprite;
@@ -77,8 +82,6 @@ class MaterialTextField extends FlxSpriteGroup
 	{
 		super(x, y);
 		
-		Cursor.show();
-		
 		this.fieldWidth = width;
 		this.label = label;
 		
@@ -105,7 +108,7 @@ class MaterialTextField extends FlxSpriteGroup
 		
 		// Create cursor (relative to group)
 		cursor = new FlxSprite(0, 28);
-		cursor.makeGraphic(2, 20, CURSOR_COLOR);
+		cursor.makeGraphic(2, 20, MD3Theme.primary);
 		cursor.alpha = 0;
 		cursor.offset.x = -PADDING_HORIZONTAL;
 		add(cursor);
@@ -120,6 +123,7 @@ class MaterialTextField extends FlxSpriteGroup
 		
 		// Listen to keyboard events
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		MD3Theme.addListener(_onThemeChange);
 	}
 	
 	function drawOutline(sprite:FlxSprite, width:Int, height:Int, thickness:Int, focused:Bool):Void
@@ -127,7 +131,7 @@ class MaterialTextField extends FlxSpriteGroup
 		var graphics = sprite.pixels;
 		graphics.fillRect(graphics.rect, FlxColor.TRANSPARENT);
 		
-		var color = focused ? OUTLINE_COLOR_FOCUSED : (hasError ? OUTLINE_COLOR_ERROR : OUTLINE_COLOR);
+		var color = focused ? MD3Theme.primary : (hasError ? OUTLINE_COLOR_ERROR : OUTLINE_COLOR);
 		var cornerRadius = 4;
 		
 		// Draw outline using rectangles for each side
@@ -227,7 +231,7 @@ class MaterialTextField extends FlxSpriteGroup
 		drawOutline(outline, Std.int(fieldWidth), FIELD_HEIGHT, thickness, isFocused);
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? LABEL_COLOR_FOCUSED : LABEL_COLOR);
+		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? MD3Theme.primary : LABEL_COLOR);
 	}
 	
 	function updateSupportingText():Void
@@ -374,8 +378,15 @@ class MaterialTextField extends FlxSpriteGroup
 		return hasError;
 	}
 	
+	function _onThemeChange():Void
+	{
+		if (cursor != null) cursor.color = MD3Theme.primary;
+		updateOutline();
+	}
+
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
 		if (labelTween != null) labelTween.cancel();

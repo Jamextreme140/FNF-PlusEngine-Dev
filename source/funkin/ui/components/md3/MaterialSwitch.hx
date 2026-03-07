@@ -6,6 +6,7 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
 import flixel.math.FlxMath;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Switch Component
@@ -46,8 +47,6 @@ class MaterialSwitch extends FlxSpriteGroup
 	public function new(x:Float = 0, y:Float = 0, ?checked:Bool = false)
 	{
 		super(x, y);
-
-        Cursor.show();
 		
 		// Create track (background pill shape)
 		track = new FlxSprite();
@@ -78,6 +77,7 @@ class MaterialSwitch extends FlxSpriteGroup
 		// Set initial state without animation
 		this.checked = checked;
 		updateVisuals(false);
+		MD3Theme.addListener(_onThemeChange);
 	}
 	
 	function drawRoundedRect(sprite:FlxSprite, width:Int, height:Int, radius:Float):Void
@@ -257,9 +257,9 @@ class MaterialSwitch extends FlxSpriteGroup
 		}
 		
 		// Animate colors
-		var targetTrackColor = checked ? TRACK_COLOR_ON : TRACK_COLOR_OFF;
-		var targetThumbColor = checked ? THUMB_COLOR_ON : THUMB_COLOR_OFF;
-		var targetIconColor = checked ? ICON_COLOR_ON : ICON_COLOR_OFF;
+		var targetTrackColor:FlxColor = checked ? MD3Theme.primary : MD3Theme.surfaceVariant;
+		var targetThumbColor:FlxColor = checked ? MD3Theme.onPrimary : MD3Theme.outline;
+		var targetIconColor:FlxColor = checked ? MD3Theme.primary : MD3Theme.onPrimary;
 		
 		if (animate)
 		{
@@ -344,6 +344,11 @@ class MaterialSwitch extends FlxSpriteGroup
 			onChange(checked);
 	}
 	
+	function _onThemeChange():Void
+	{
+		updateVisuals(false);
+	}
+
 	function set_checked(value:Bool):Bool
 	{
 		if (checked != value)
@@ -356,6 +361,7 @@ class MaterialSwitch extends FlxSpriteGroup
 	
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		if (thumbTween != null) thumbTween.cancel();
 		if (trackColorTween != null) trackColorTween.cancel();
 		if (thumbColorTween != null) thumbColorTween.cancel();

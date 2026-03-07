@@ -7,6 +7,7 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Checkbox Component
@@ -100,6 +101,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 		this.checked = checked;
 		
 		updateAppearance();
+		MD3Theme.addListener(updateAppearance);
 		trace('[MaterialCheckbox] new() complete');
 	}
 	
@@ -236,7 +238,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 		
 		if (!enabled)
 		{
-			container.color = checked ? PRIMARY_COLOR : FlxColor.WHITE;
+			container.color = checked ? MD3Theme.primary : FlxColor.WHITE;
 			container.alpha = 0.38;
 			checkIcon.alpha = checked ? 1 : 0;
 			drawCheckmark(checkIcon, DISABLED_COLOR);
@@ -247,10 +249,10 @@ class MaterialCheckbox extends FlxSpriteGroup
 		{
 			if (checked)
 			{
-				container.color = PRIMARY_COLOR;
+				container.color = MD3Theme.primary;
 				container.alpha = 1;
 				checkIcon.alpha = 1;
-				drawCheckmark(checkIcon, ON_PRIMARY_COLOR);
+				drawCheckmark(checkIcon, MD3Theme.onPrimary);
 			}
 			else
 			{
@@ -298,8 +300,8 @@ class MaterialCheckbox extends FlxSpriteGroup
 								inCorner = (dx * dx + dy * dy > CORNER_RADIUS * CORNER_RADIUS);
 							}
 							
-							if (!inCorner)
-								graphics.setPixel32(x, y, OUTLINE_COLOR);
+						if (!inCorner)
+							graphics.setPixel32(x, y, MD3Theme.outline);
 						}
 					}
 				}
@@ -308,7 +310,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 			}
 			
 			if (labelText != null)
-				labelText.color = ON_SURFACE_VARIANT;
+				labelText.color = MD3Theme.onSurfaceVariant;
 		}
 	}
 	
@@ -394,6 +396,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 	
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(updateAppearance);
 		if (checkTween != null) checkTween.cancel();
 		if (hoverTween != null) hoverTween.cancel();
 		if (pressTween != null) pressTween.cancel();

@@ -7,6 +7,7 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
 import flixel.math.FlxMath;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Slider Component
@@ -58,8 +59,6 @@ class MaterialSlider extends FlxSpriteGroup
 	{
 		super(x, y);
 		
-		Cursor.show();
-		
 		this.sliderWidth = width;
 		this.min = min;
 		this.max = max;
@@ -75,7 +74,7 @@ class MaterialSlider extends FlxSpriteGroup
 		add(trackInactive);
 		trackInactive.x = sliderX;
 		trackInactive.y = sliderY;
-		trackInactive.color = TRACK_INACTIVE_COLOR;
+		trackInactive.color = MD3Theme.surfaceVariant;
 		
 		// Create active track (variable width based on value, starts thin)
 		trackActive = new FlxSprite();
@@ -86,7 +85,7 @@ class MaterialSlider extends FlxSpriteGroup
 		trackActive.x = sliderX;
 		trackActive.y = sliderY;
 		trackActive.offset.set(0, 0);
-		trackActive.color = TRACK_ACTIVE_COLOR;
+		trackActive.color = MD3Theme.primary;
 		
 		// Create separator bar (vertical bar that divides active/inactive)
 		thumb = new FlxSprite();
@@ -106,13 +105,14 @@ class MaterialSlider extends FlxSpriteGroup
 		valueLabel.makeGraphic(LABEL_WIDTH, LABEL_HEIGHT, FlxColor.WHITE);
 		valueLabel.antialiasing = ClientPrefs.data.antialiasing;
 		drawRoundedRect(valueLabel, LABEL_WIDTH, LABEL_HEIGHT, 4);
-		valueLabel.color = LABEL_BG_COLOR;
+		valueLabel.color = MD3Theme.primary;
 		valueLabel.alpha = 0;
 		add(valueLabel);
 		
 		// Set initial value
 		this.value = value;
 		updateVisuals(false);
+		MD3Theme.addListener(_onThemeChange);
 	}
 	
 	function drawRoundedRect(sprite:FlxSprite, width:Int, height:Int, radius:Float):Void
@@ -181,6 +181,14 @@ class MaterialSlider extends FlxSpriteGroup
 		}
 	}
 	
+	function _onThemeChange():Void
+	{
+		trackInactive.color = MD3Theme.surfaceVariant;
+		trackActive.color = MD3Theme.primary;
+		thumb.color = MD3Theme.primary;
+		valueLabel.color = MD3Theme.primary;
+	}
+
 	function updateVisuals(animate:Bool = true):Void
 	{
 		var duration = animate ? 0.15 : 0;
@@ -375,6 +383,7 @@ class MaterialSlider extends FlxSpriteGroup
 	
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		if (thumbTween != null) thumbTween.cancel();
 		if (thumbScaleTween != null) thumbScaleTween.cancel();
 		if (labelTween != null) labelTween.cancel();

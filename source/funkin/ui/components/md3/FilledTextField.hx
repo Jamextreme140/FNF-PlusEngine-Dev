@@ -10,6 +10,7 @@ import flixel.util.FlxColor;
 import flixel.math.FlxMath;
 import flixel.input.keyboard.FlxKey;
 import flash.events.KeyboardEvent;
+import funkin.ui.components.md3.MD3Theme;
 
 /**
  * Material Design 3 Filled Text Field Component
@@ -28,6 +29,10 @@ class FilledTextField extends FlxSpriteGroup
 	public var onChange:String->Void = null;
 	public var onFocus:Void->Void = null;
 	public var onBlur:Void->Void = null;
+
+	/** True while this field has keyboard focus. Check this to gate navigation input. */
+	public var focused(get, never):Bool;
+	inline function get_focused():Bool return isFocused;
 	
 	// Visual components
 	var background:FlxSprite;
@@ -80,8 +85,6 @@ class FilledTextField extends FlxSpriteGroup
 	{
 		super(x, y);
 		
-		Cursor.show();
-		
 		this.fieldWidth = width;
 		this.label = label;
 		
@@ -115,7 +118,7 @@ class FilledTextField extends FlxSpriteGroup
 		
 		// Create cursor (relative to group)
 		cursor = new FlxSprite(0, 28);
-		cursor.makeGraphic(2, 20, CURSOR_COLOR);
+		cursor.makeGraphic(2, 20, MD3Theme.primary);
 		cursor.alpha = 0;
 		cursor.offset.x = -PADDING_HORIZONTAL;
 		add(cursor);
@@ -130,6 +133,7 @@ class FilledTextField extends FlxSpriteGroup
 		
 		// Listen to keyboard events
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+		MD3Theme.addListener(_onThemeChange);
 	}
 	
 	function drawRoundedRectTop(sprite:FlxSprite, width:Int, height:Int, radius:Int):Void
@@ -230,7 +234,7 @@ class FilledTextField extends FlxSpriteGroup
 	function updateBottomLine():Void
 	{
 		var height = isFocused ? BOTTOM_LINE_HEIGHT_FOCUSED : BOTTOM_LINE_HEIGHT;
-		var color = hasError ? LINE_COLOR_ERROR : (isFocused ? LINE_COLOR_FOCUSED : LINE_COLOR);
+		var color = hasError ? LINE_COLOR_ERROR : (isFocused ? MD3Theme.primary : LINE_COLOR);
 		
 		bottomLine.makeGraphic(Std.int(fieldWidth), height, color);
 		bottomLine.offset.y = -(FIELD_HEIGHT - height);
@@ -266,7 +270,7 @@ class FilledTextField extends FlxSpriteGroup
 		cursor.offset.x = -(PADDING_HORIZONTAL + (inputText.textField != null ? inputText.textField.textWidth : 0) + 2);
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : LABEL_COLOR_FOCUSED;
+		labelText.color = hasError ? LABEL_COLOR_ERROR : MD3Theme.primary;
 		
 		if (onFocus != null)
 			onFocus();
@@ -399,13 +403,20 @@ class FilledTextField extends FlxSpriteGroup
 		updateSupportingText();
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? LABEL_COLOR_FOCUSED : LABEL_COLOR);
+		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? MD3Theme.primary : LABEL_COLOR);
 		
 		return hasError;
 	}
 	
+	function _onThemeChange():Void
+	{
+		if (cursor != null) cursor.color = MD3Theme.primary;
+		updateBottomLine();
+	}
+
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		
 		if (labelTween != null) labelTween.cancel();

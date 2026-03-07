@@ -98,7 +98,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			trace('[MaterialRadioButton] creating labelText');
 			labelText = new FlxText(ICON_SIZE + LABEL_SPACING, 0, 0, label, 14);
-			labelText.setFormat(Paths.font("phantom.ttf"), 14, ON_SURFACE_VARIANT, LEFT);
+			labelText.setFormat(Paths.font("phantom.ttf"), 14, MD3Theme.onSurfaceVariant, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
 			labelText.y = (ICON_SIZE - labelText.height) / 2;
 			add(labelText);
@@ -114,6 +114,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 			selectThis();
 		}
 		trace('[MaterialRadioButton] new() complete');
+		MD3Theme.addListener(updateAppearance);
 	}
 	
 	function drawCircle(sprite:FlxSprite, cx:Float, cy:Float, radius:Float):Void
@@ -176,18 +177,18 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			if (selected)
 			{
-				drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, PRIMARY_COLOR);
-				innerCircle.color = PRIMARY_COLOR;
+				drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, MD3Theme.primary);
+				innerCircle.color = MD3Theme.primary;
 				innerCircle.alpha = 1;
 			}
 			else
 			{
-				drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, ON_SURFACE_VARIANT);
+				drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, MD3Theme.onSurfaceVariant);
 				innerCircle.alpha = 0;
 			}
 			
 			if (labelText != null)
-				labelText.color = ON_SURFACE_VARIANT;
+				labelText.color = MD3Theme.onSurfaceVariant;
 		}
 	}
 	
@@ -306,6 +307,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 	
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(updateAppearance);
 		// Unregister from group
 		if (radioGroups.exists(groupName))
 		{
