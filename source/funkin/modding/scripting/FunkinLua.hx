@@ -1803,7 +1803,9 @@ class FunkinLua {
 		ExtraFunctions.implement(this);
 		CustomSubstate.implement(this);
 		ShaderFunctions.implement(this);
-		Cam3DFunctions.implement(this);
+		CameraFunctions.implement(this);
+		CharacterFunctions.implement(this);
+		MiscellaneousFunctions.implement(this);
 		DeprecatedFunctions.implement(this);
 		#if MODCHARTS_NOTITG_ALLOWED LuaModchart.implement(this); #end
 		#if WINDOWS_FUNCTIONS_ALLOWED WindowsFunctions.implement(this); #end
