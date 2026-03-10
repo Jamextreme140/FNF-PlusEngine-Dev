@@ -298,8 +298,5 @@
 		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-60x60@2x.png" rename="AppIcon60x60@2x" size='120'/>
 		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-76x76@2x.png" rename="AppIcon76x76@2x~ipad" size='152'/>
 
-		<ios>
-			<plist key="UIPrerenderedIcon" value="true"/>
-		</ios>
 	</section>
 </project>
