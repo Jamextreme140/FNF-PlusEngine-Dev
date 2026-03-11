@@ -27,7 +27,7 @@ import openfl.display.Shape;
 import flixel.graphics.FlxGraphic;
 import flixel.util.FlxSignal.FlxTypedSignal;
 import openfl.geom.Matrix;
-import funkin.mobile.backend.MobileScaleMode;
+import flixel.system.scaleModes.MobileScaleMode;
 
 /**
  * A zone with 4 hint's (A hitbox).
@@ -37,8 +37,8 @@ import funkin.mobile.backend.MobileScaleMode;
  */
 class Hitbox extends MobileInputManager implements IMobileControls
 {
-	final offsetFir:Int = (ClientPrefs.data.hitboxPos ? Std.int(FlxG.height / 4) * 3 : 0);
-	final offsetSec:Int = (ClientPrefs.data.hitboxPos ? 0 : Std.int(FlxG.height / 4));
+	final offsetFir:Int = (ClientPrefs.data.hitboxPos ? Std.int(MobileScaleMode.getSafeHeight() / 4) * 3 : 0);
+	final offsetSec:Int = (ClientPrefs.data.hitboxPos ? 0 : Std.int(MobileScaleMode.getSafeHeight() / 4));
 
 	public var buttonLeft:TouchButton = new TouchButton(0, 0, [MobileInputID.HITBOX_LEFT, MobileInputID.NOTE_LEFT]);
 	public var buttonDown:TouchButton = new TouchButton(0, 0, [MobileInputID.HITBOX_DOWN, MobileInputID.NOTE_DOWN]);
@@ -72,44 +72,44 @@ class Hitbox extends MobileInputManager implements IMobileControls
 		// V-Slice style arrows layout (centered, fixed size)
 		if (arrowsLayout)
 		{
-			final SCREEN_MIDDLE = FlxG.width / 2;
+			final SCREEN_MIDDLE = MobileScaleMode.getSafeWidth() / 2;
 			final ARROW_HITBOX_SIZE = 270;
 			final ARROW_DISTANCE = 220;
 			final ARROW_SPREAD = 30;
 
 			add(buttonLeft = createHint(SCREEN_MIDDLE - (ARROW_DISTANCE * 1.5) - (ARROW_HITBOX_SIZE / 2) - ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
-				FlxG.height, 0xFFC24B99));
+				MobileScaleMode.getSafeHeight(), 0xFFC24B99));
 			add(buttonDown = createHint(SCREEN_MIDDLE - (ARROW_DISTANCE * 0.5) - (ARROW_HITBOX_SIZE / 2) - ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
-				FlxG.height, 0xFF00FFFF));
+				MobileScaleMode.getSafeHeight(), 0xFF00FFFF));
 			add(buttonUp = createHint(SCREEN_MIDDLE + (ARROW_DISTANCE * 0.5) - (ARROW_HITBOX_SIZE / 2) + ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
-				FlxG.height, 0xFF12FA05));
+				MobileScaleMode.getSafeHeight(), 0xFF12FA05));
 			add(buttonRight = createHint(SCREEN_MIDDLE + (ARROW_DISTANCE * 1.5) - (ARROW_HITBOX_SIZE / 2) + ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
-				FlxG.height, 0xFFF9393F));
+				MobileScaleMode.getSafeHeight(), 0xFFF9393F));
 		}
 		else
 		{
 			switch (extraMode)
 			{
 				case NONE:
-					add(buttonLeft = createHint(0, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFC24B99));
-					add(buttonDown = createHint(FlxG.width / 4, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF00FFFF));
-					add(buttonUp = createHint(FlxG.width / 2, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF12FA05));
-					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFF9393F));
+					add(buttonLeft = createHint(0, 0, Std.int(MobileScaleMode.getSafeWidth() / 4), MobileScaleMode.getSafeHeight(), 0xFFC24B99));
+					add(buttonDown = createHint(MobileScaleMode.getSafeWidth() / 4, 0, Std.int(MobileScaleMode.getSafeWidth() / 4), MobileScaleMode.getSafeHeight(), 0xFF00FFFF));
+					add(buttonUp = createHint(MobileScaleMode.getSafeWidth() / 2, 0, Std.int(MobileScaleMode.getSafeWidth() / 4), MobileScaleMode.getSafeHeight(), 0xFF12FA05));
+					add(buttonRight = createHint((MobileScaleMode.getSafeWidth() / 2) + (MobileScaleMode.getSafeWidth() / 4), 0, Std.int(MobileScaleMode.getSafeWidth() / 4), MobileScaleMode.getSafeHeight(), 0xFFF9393F));
 				case SINGLE:
-					add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
-					add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
-					add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
-					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
+					add(buttonLeft = createHint(0, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFFC24B99));
+					add(buttonDown = createHint(MobileScaleMode.getSafeWidth() / 4, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFF00FFFF));
+					add(buttonUp = createHint(MobileScaleMode.getSafeWidth() / 2, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFF12FA05));
+					add(buttonRight = createHint((MobileScaleMode.getSafeWidth() / 2) + (MobileScaleMode.getSafeWidth() / 4), offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3,
 						0xFFF9393F));
-					add(buttonExtra = createHint(0, offsetFir, FlxG.width, Std.int(FlxG.height / 4), 0xFF0066FF));
+					add(buttonExtra = createHint(0, offsetFir, MobileScaleMode.getSafeWidth(), Std.int(MobileScaleMode.getSafeHeight() / 4), 0xFF0066FF));
 				case DOUBLE:
-					add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
-					add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
-					add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
-					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
+					add(buttonLeft = createHint(0, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFFC24B99));
+					add(buttonDown = createHint(MobileScaleMode.getSafeWidth() / 4, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFF00FFFF));
+					add(buttonUp = createHint(MobileScaleMode.getSafeWidth() / 2, offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3, 0xFF12FA05));
+					add(buttonRight = createHint((MobileScaleMode.getSafeWidth() / 2) + (MobileScaleMode.getSafeWidth() / 4), offsetSec, Std.int(MobileScaleMode.getSafeWidth() / 4), Std.int(MobileScaleMode.getSafeHeight() / 4) * 3,
 						0xFFF9393F));
-					add(buttonExtra2 = createHint(Std.int(FlxG.width / 2), offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xA6FF00));
-					add(buttonExtra = createHint(0, offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xFF0066FF));
+					add(buttonExtra2 = createHint(Std.int(MobileScaleMode.getSafeWidth() / 2), offsetFir, Std.int(MobileScaleMode.getSafeWidth() / 2), Std.int(MobileScaleMode.getSafeHeight() / 4), 0xA6FF00));
+					add(buttonExtra = createHint(0, offsetFir, Std.int(MobileScaleMode.getSafeWidth() / 2), Std.int(MobileScaleMode.getSafeHeight() / 4), 0xFF0066FF));
 			}
 		}
 
@@ -131,21 +131,24 @@ class Hitbox extends MobileInputManager implements IMobileControls
 	}
 	
 	/**
-	 * Apply vertical offset for infinity display mode
+	 * Apply offsets for infinity display mode to center controls in safe area
 	 */
 	function applyInfinityDisplayOffset():Void
 	{
-		var offset:Float = MobileScaleMode.getVerticalOffset();
-		if (offset == 0) return;
+		var offsetX:Float = MobileScaleMode.getHorizontalOffset();
+		var offsetY:Float = MobileScaleMode.getVerticalOffset();
 		
-		// Apply offset to all buttons
+		if (offsetX == 0 && offsetY == 0) return;
+		
+		// Apply offsets to all buttons
 		for (fieldName in Reflect.fields(this))
 		{
 			var field = Reflect.field(this, fieldName);
 			if (Std.isOfType(field, TouchButton))
 			{
 				var button:TouchButton = cast field;
-				button.y += offset;
+				button.x += offsetX;
+				button.y += offsetY;
 			}
 		}
 	}

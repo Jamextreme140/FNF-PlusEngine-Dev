@@ -204,7 +204,7 @@ class Main extends Sprite
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
+			FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
 		});
 		#end
 		

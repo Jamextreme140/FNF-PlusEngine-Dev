@@ -150,24 +150,31 @@ class TitleState extends MusicBeatState
 		#if TITLE_SCREEN_EASTER_EGG easterEggData(); #end
 		Conductor.bpm = musicBPM;
 
+
+		// Position logo and gf using safe area and offset for mobile
+		#if mobile
+		logoBl = new FlxSprite(logoPosition.x + MobileScaleMode.getHorizontalOffset(), logoPosition.y + MobileScaleMode.getVerticalOffset());
+		#else
 		logoBl = new FlxSprite(logoPosition.x, logoPosition.y);
+		#end
 		logoBl.frames = Paths.getSparrowAtlas('logoBumpin');
 		logoBl.antialiasing = ClientPrefs.data.antialiasing;
-
 		logoBl.animation.addByPrefix('bump', 'logo bumpin', 24, false);
 		logoBl.animation.play('bump');
 		logoBl.updateHitbox();
 
+		#if mobile
+		gfDance = new FlxSprite(gfPosition.x + MobileScaleMode.getHorizontalOffset(), gfPosition.y + MobileScaleMode.getVerticalOffset());
+		#else
 		gfDance = new FlxSprite(gfPosition.x, gfPosition.y);
+		#end
 		gfDance.antialiasing = ClientPrefs.data.antialiasing;
-		
 		if(ClientPrefs.data.shaders)
 		{
 			swagShader = new ColorSwap();
 			gfDance.shader = swagShader.shader;
 			logoBl.shader = swagShader.shader;
 		}
-		
 		gfDance.frames = Paths.getSparrowAtlas(characterImage);
 		if(!useIdle)
 		{
@@ -183,11 +190,10 @@ class TitleState extends MusicBeatState
 
 
 		var animFrames:Array<FlxFrame> = [];
-		#if mobile
-		var enterPositionMobileX = 50;
-		var enterPositionMobileY = 590;
 
-		titleTextMobile = new FlxSprite(enterPositionMobileX, enterPositionMobileY);
+		// Position 'Press Enter' text using safe area and offset for mobile
+		#if mobile
+		titleTextMobile = new FlxSprite(enterPosition.x + MobileScaleMode.getHorizontalOffset(), enterPosition.y + MobileScaleMode.getVerticalOffset());
 		titleTextMobile.frames = Paths.getSparrowAtlas('mobile/titleEnter');
 		#else
 		titleText = new FlxSprite(enterPosition.x, enterPosition.y);
@@ -234,8 +240,13 @@ class TitleState extends MusicBeatState
 		titleText.updateHitbox();
 		#end
 
+		// Use full screen dimensions to cover entire display
 		blackScreen = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
+		#if mobile
+		blackScreen.scale.set(MobileScaleMode.getScreenWidth(), MobileScaleMode.getScreenHeight());
+		#else
 		blackScreen.scale.set(FlxG.width, FlxG.height);
+		#end
 		blackScreen.updateHitbox();
 		credGroup.add(blackScreen);
 
@@ -243,11 +254,20 @@ class TitleState extends MusicBeatState
 		credTextShit.screenCenter();
 		credTextShit.visible = false;
 
+		// Position in safe area with offset
+		#if mobile
+		ngSpr = new FlxSprite(0, MobileScaleMode.getSafeHeight() * 0.52 + MobileScaleMode.getVerticalOffset()).loadGraphic(Paths.image('newgrounds_logo'));
+		#else
 		ngSpr = new FlxSprite(0, FlxG.height * 0.52).loadGraphic(Paths.image('newgrounds_logo'));
+		#end
 		ngSpr.visible = false;
 		ngSpr.setGraphicSize(Std.int(ngSpr.width * 0.8));
 		ngSpr.updateHitbox();
+		#if mobile
+		ngSpr.x = (MobileScaleMode.getSafeWidth() - ngSpr.width) / 2 + MobileScaleMode.getHorizontalOffset();
+		#else
 		ngSpr.screenCenter(X);
+		#end
 		ngSpr.antialiasing = ClientPrefs.data.antialiasing;
 
 		add(gfDance);
@@ -260,19 +280,31 @@ class TitleState extends MusicBeatState
 		add(credGroup);
 		add(ngSpr);
 
-		// Create update notification text
+		// Create update notification text (positioned in safe area)
+		#if mobile
+		updateNotificationText = new FlxText(0, 10 + MobileScaleMode.getVerticalOffset(), 0, "Checking Updates...", 20);
+		#else
 		updateNotificationText = new FlxText(0, 10, 0, "Checking Updates...", 20);
+		#end
 		updateNotificationText.setFormat("PhantomMuff 1.5", 20, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		updateNotificationText.borderSize = 2;
 		updateNotificationText.scrollFactor.set();
-		updateNotificationText.x = FlxG.width + 50; // Start off-screen to the right
+		#if mobile
+		updateNotificationText.x = MobileScaleMode.getSafeWidth() + MobileScaleMode.getHorizontalOffset() + 50; // Start off-screen to the right
+		#else
+		updateNotificationText.x = FlxG.width + 50;
+		#end
 		updateNotificationText.cameras = [FlxG.camera];
 		add(updateNotificationText);
 
 		#if CHECK_FOR_UPDATES
 		if (ClientPrefs.data.checkForUpdates) {
 			// Show the text immediately with animation (from right to left)
+			#if mobile
+			FlxTween.tween(updateNotificationText, {x: MobileScaleMode.getSafeWidth() + MobileScaleMode.getHorizontalOffset() - updateNotificationText.width - 10}, 0.5, {ease: FlxEase.backOut});
+			#else
 			FlxTween.tween(updateNotificationText, {x: FlxG.width - updateNotificationText.width - 10}, 0.5, {ease: FlxEase.backOut});
+			#end
 			
 			// Start checking for updates in background (non-blocking)
 			try {
@@ -283,7 +315,11 @@ class TitleState extends MusicBeatState
 						// Wait a bit and then hide (slide back to the right)
 						new FlxTimer().start(1.0, function(tmr:FlxTimer) {
 							if(updateNotificationText != null) {
-								FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+									#if mobile
+									FlxTween.tween(updateNotificationText, {x: MobileScaleMode.getSafeWidth() + MobileScaleMode.getHorizontalOffset() + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+									#else
+									FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+									#end
 									if(updateNotificationText != null)
 										updateNotificationText.visible = false;
 								}});
@@ -297,7 +333,11 @@ class TitleState extends MusicBeatState
 					updateNotificationText.text = "Error!";
 					new FlxTimer().start(1.0, function(tmr:FlxTimer) {
 						if(updateNotificationText != null) {
+							#if mobile
+							FlxTween.tween(updateNotificationText, {x: MobileScaleMode.getSafeWidth() + MobileScaleMode.getHorizontalOffset() + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+							#else
 							FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+							#end
 								if(updateNotificationText != null)
 									updateNotificationText.visible = false;
 							}});
@@ -542,8 +582,13 @@ class TitleState extends MusicBeatState
 
 							FlxG.sound.play(Paths.sound('secret'));
 
+							// Easter egg black screen - cover full display
 							var black:FlxSprite = new FlxSprite(0, 0).makeGraphic(1, 1, FlxColor.BLACK);
+							#if mobile
+							black.scale.set(MobileScaleMode.getScreenWidth(), MobileScaleMode.getScreenHeight());
+							#else
 							black.scale.set(FlxG.width, FlxG.height);
+							#end
 							black.updateHitbox();
 							black.alpha = 0;
 							add(black);

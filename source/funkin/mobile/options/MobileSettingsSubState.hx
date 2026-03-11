@@ -112,7 +112,7 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		option = new Option('Infinity Display',
 			'Extends the viewport vertically for modern screens\nwhile keeping the game in 16:9 for mod compatibility.\nTouchpad controls will adjust automatically.',
 			'infinityDisplay', BOOL);
-		option.onChange = () -> FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
+		option.onChange = () -> FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
 		addOption(option);
 		#end
 		

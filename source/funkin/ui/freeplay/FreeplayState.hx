@@ -92,6 +92,17 @@ class FreeplayState extends MusicBeatState {
 
     var _lastDiffCurSelected:Int = -1;
     var _lastDiffListLen:Int = -1;
+    var _lastDiffForStyle:Int = -1;   // gate setBorderStyle rebuilds
+    var _cachedModsCount:Int = 0;     // Mods.parseList() cached — never changes during freeplay
+    var _timeAccum:Float = 0.0;       // throttle Date.now() to 1/sec
+    var _lastIntendedColor:Int = -1;  // gate HSL recompute
+    var _cachedTargetOnDark:Int = 0;
+    var _cachedTargetHeader:Int = 0;
+    var _cachedTargetAccent:Int = 0;
+    var _cachedTargetLabel:Int = 0;
+    var _cachedVisibleIndices:Array<Int> = [];
+    var _visCacheValid:Bool = false;
+    var _lastShowingFavorites:Bool = false;
 
     var diffViewOffset:Float = 0;
     var lerpDiffViewOffset:Float = 0;
@@ -224,9 +235,11 @@ class FreeplayState extends MusicBeatState {
 		add(bg);
 		bg.screenCenter();
 		
+		#if !mobile
 		blurEffect = new BlurEffect();
-		blurEffect.strength = 5.0; 
+		blurEffect.strength = 5.0;
 		bg.shader = blurEffect.shader;
+		#end
 		//bgZoom = defaultBgZoom = 1;
 
         blackOverlay = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
@@ -697,6 +710,12 @@ class FreeplayState extends MusicBeatState {
         loadFavorites();
         
         Mods.loadTopMod();
+
+        // Cache mods count once — never changes while inside freeplay.
+        #if MODS_ALLOWED
+        var _ml = Mods.parseList();
+        _cachedModsCount = (_ml != null) ? _ml.enabled.length : 0;
+        #end
     }
     
     /**
@@ -798,6 +817,7 @@ class FreeplayState extends MusicBeatState {
                 else if (allLevels != null && FlxG.mouse.overlaps(allLevels)) {
                     if(showingFavorites) {
                         showingFavorites = false;
+                        _visCacheValid = false;
                         refreshSongList();
                         FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
                     }
@@ -805,6 +825,7 @@ class FreeplayState extends MusicBeatState {
                 else if (favorites != null && FlxG.mouse.overlaps(favorites)) {
                     if(!showingFavorites) {
                         showingFavorites = true;
+                        _visCacheValid = false;
                         refreshSongList();
                         FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
                     }
@@ -961,13 +982,16 @@ class FreeplayState extends MusicBeatState {
         var ratingDisplay:String = ratingSplit.join('.');
         if(ratingPercent < 0) ratingDisplay = '-' + ratingDisplay;
         
-        scoreData.text = Std.string(lerpScore);
-        accuracyData.text = ratingDisplay + '%';
+        // Gate score/rating text rebuilds — FlxText redraws its bitmap every time .text is set.
+        var scoreStr:String = Std.string(lerpScore);
+        if(scoreData.text != scoreStr) scoreData.text = scoreStr;
+        var accStr:String = ratingDisplay + '%';
+        if(accuracyData.text != accStr) accuracyData.text = accStr;
         
         #if !switch
-        var maxCombo:Int = 0; 
+        var maxCombo:Int = 0;
         comboData.text = maxCombo + 'x';
-        
+
         var ratingLetter:String = 'N/A';
         if(lerpRating >= 1.0) ratingLetter = 'S++';
         else if(lerpRating >= 0.95) ratingLetter = 'S+';
@@ -977,34 +1001,38 @@ class FreeplayState extends MusicBeatState {
         else if(lerpRating >= 0.65) ratingLetter = 'C';
         else if(lerpRating >= 0.50) ratingLetter = 'D';
         else ratingLetter = 'F';
-        ratingData.text = ratingLetter;
+        if(ratingData.text != ratingLetter) ratingData.text = ratingLetter;
         #end
-        
-        themeText.text = songs[curSelected].songName;
-        modText.text = songs[curSelected].folder != '' ? songs[curSelected].folder : 'Friday Night Funkin\'';
-        
-        totalSongsText.text = 'TOTAL SONGS\n' + songs.length;
-        
-        var modsCount:Int = 0;
-        #if MODS_ALLOWED
-        if(Mods.parseList() != null) {
-            modsCount = Mods.parseList().enabled.length;
+
+        var themeName:String = songs[curSelected].songName;
+        if(themeText.text != themeName) themeText.text = themeName;
+        var folderName:String = songs[curSelected].folder != '' ? songs[curSelected].folder : 'Friday Night Funkin\'';
+        if(modText.text != folderName) modText.text = folderName;
+
+        var totalStr:String = 'TOTAL SONGS\n' + songs.length;
+        if(totalSongsText.text != totalStr) totalSongsText.text = totalStr;
+
+        // Use cached mods count — computed once at create, no disk I/O per frame.
+        var modsStr:String = 'MODS LOADED\n' + _cachedModsCount;
+        if(modsLoadedText.text != modsStr) modsLoadedText.text = modsStr;
+
+        var diffStr:String = 'Select Difficulty (' + Difficulty.list.length + '):';
+        if(diffText.text != diffStr) diffText.text = diffStr;
+
+        // Throttle clock to once per second — Date.now() every frame is wasteful.
+        _timeAccum += FlxG.elapsed;
+        if(_timeAccum >= 1.0 || todayText.text == '') {
+            _timeAccum = 0.0;
+            var now = Date.now();
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var day = now.getDate();
+            var month = now.getMonth() + 1;
+            var year = now.getFullYear();
+            var timeStr = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+            var dateStr = (day < 10 ? '0' : '') + day + '/' + (month < 10 ? '0' : '') + month + '/' + year;
+            todayText.text = timeStr + '\n' + dateStr;
         }
-        #end
-        modsLoadedText.text = 'MODS LOADED\n' + modsCount;
-        
-        diffText.text = 'Select Difficulty (' + Difficulty.list.length + '):';
-        
-        var now = Date.now();
-        var hours = now.getHours();
-        var minutes = now.getMinutes();
-        var day = now.getDate();
-        var month = now.getMonth() + 1;
-        var year = now.getFullYear();
-        
-        var timeStr = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
-        var dateStr = (day < 10 ? '0' : '') + day + '/' + (month < 10 ? '0' : '') + month + '/' + year;
-        todayText.text = timeStr + '\n' + dateStr;
     }
     
     /**
@@ -1065,10 +1093,10 @@ class FreeplayState extends MusicBeatState {
                 lbl.x = targetX + (pill.width / 2) - (lbl.width / 2);
                 lbl.y = 495.5;
                 lbl.alpha = targetAlpha;
-                if (i == curDifficulty) {
-                    lbl.setBorderStyle(OUTLINE, FlxColor.YELLOW, 2);
-                } else {
-                    lbl.setBorderStyle(NONE);
+                // Gate setBorderStyle — each call forces a FlxText bitmap rebuild.
+                if(_lastDiffForStyle != curDifficulty) {
+                    if (i == curDifficulty) lbl.setBorderStyle(OUTLINE, FlxColor.YELLOW, 2);
+                    else lbl.setBorderStyle(NONE);
                 }
                 applyHorizontalClip(lbl, PILL_CLIP_X_MIN, PILL_CLIP_X_MAX);
                 if (targetAlpha <= 0) { lbl.visible = false; lbl.clipRect = null; }
@@ -1760,19 +1788,21 @@ class FreeplayState extends MusicBeatState {
      */
     public function updateTexts(elapsed:Float = 0.0):Void {
         lerpViewOffset = FlxMath.lerp(viewOffset, lerpViewOffset, Math.exp(-elapsed * 9.6));
-        
-        var visibleIndices:Array<Int> = [];
-        if(showingFavorites) {
-            for(i in 0...songs.length) {
-                if(songs[i].isFavorite) {
-                    visibleIndices.push(i);
+
+        // Rebuild visible-index cache only when the list or filter mode changes.
+        if(!_visCacheValid || _lastShowingFavorites != showingFavorites || _cachedVisibleIndices.length == 0) {
+            _cachedVisibleIndices = [];
+            if(showingFavorites) {
+                for(i in 0...songs.length) {
+                    if(songs[i].isFavorite) _cachedVisibleIndices.push(i);
                 }
+            } else {
+                for(i in 0...songs.length) _cachedVisibleIndices.push(i);
             }
-        } else {
-            for(i in 0...songs.length) {
-                visibleIndices.push(i);
-            }
+            _visCacheValid = true;
+            _lastShowingFavorites = showingFavorites;
         }
+        var visibleIndices:Array<Int> = _cachedVisibleIndices;
         
         for (i in 0...cardsGroup.members.length) {
             var card = cardsGroup.members[i];
@@ -1848,20 +1878,19 @@ class FreeplayState extends MusicBeatState {
         var targetTint:Int = FlxColor.interpolate(0xFFFFFF, intendedColor, 0.30);
         uiprincipal.color = FlxColor.interpolate(uiprincipal.color, targetTint, elapsed * 3.0);
 
-        // Material Design 3 color roles based on dynamic theme
-        var hueColor:FlxColor = FlxColor.fromInt(intendedColor);
-        // On-Surface: Primary text on light backgrounds (high luminosity, moderate saturation)
-        var targetOnDark:Int  = FlxColor.fromHSL(hueColor.hue, 0.50, 0.92);
-        // Primary: Main brand color for headers and prominent components (high saturation, medium-low luminosity)
-        var targetHeader:Int  = FlxColor.fromHSL(hueColor.hue, 0.90, 0.35);
-        // Primary Variant: Interactive elements and accents (high saturation, higher luminosity for visibility)
-        var targetAccent:Int  = FlxColor.fromHSL(hueColor.hue, 0.80, 0.65);
-        // On-Surface Variant: Secondary text and labels (low saturation, medium-low luminosity)
-        var targetLabel:Int   = FlxColor.fromHSL(hueColor.hue, 0.15, 0.45);
-        _curOnDarkColor = FlxColor.interpolate(_curOnDarkColor, targetOnDark, elapsed * 3.0);
-        _curHeaderColor = FlxColor.interpolate(_curHeaderColor, targetHeader, elapsed * 3.0);
-        _curAccentColor = FlxColor.interpolate(_curAccentColor, targetAccent, elapsed * 3.0);
-        _curLabelColor  = FlxColor.interpolate(_curLabelColor,  targetLabel,  elapsed * 3.0);
+        // Recompute HSL target colors only when intendedColor changes — fromHSL is expensive.
+        if(_lastIntendedColor != intendedColor) {
+            _lastIntendedColor = intendedColor;
+            var hueColor:FlxColor = FlxColor.fromInt(intendedColor);
+            _cachedTargetOnDark = FlxColor.fromHSL(hueColor.hue, 0.50, 0.92);
+            _cachedTargetHeader = FlxColor.fromHSL(hueColor.hue, 0.90, 0.35);
+            _cachedTargetAccent = FlxColor.fromHSL(hueColor.hue, 0.80, 0.65);
+            _cachedTargetLabel  = FlxColor.fromHSL(hueColor.hue, 0.15, 0.45);
+        }
+        _curOnDarkColor = FlxColor.interpolate(_curOnDarkColor, _cachedTargetOnDark, elapsed * 3.0);
+        _curHeaderColor = FlxColor.interpolate(_curHeaderColor, _cachedTargetHeader, elapsed * 3.0);
+        _curAccentColor = FlxColor.interpolate(_curAccentColor, _cachedTargetAccent, elapsed * 3.0);
+        _curLabelColor  = FlxColor.interpolate(_curLabelColor,  _cachedTargetLabel,  elapsed * 3.0);
 
         freeplayText.color    = _curOnDarkColor;
 
@@ -1930,16 +1959,12 @@ class FreeplayState extends MusicBeatState {
         if(_needsAnalyzerInit && FlxG.sound.music != null && FlxG.sound.music.playing) {
             @:privateAccess
             if(FlxG.sound.music._channel != null && FlxG.sound.music._channel.__audioSource != null) {
-                // Improved spectral analyzer calibration
                 _analyzer = new SpectralAnalyzer(FlxG.sound.music._channel.__audioSource, VIZ_BAR_COUNT, 0.08, 25);
-                // Better frequency range for music visualization
                 _analyzer.minFreq = 40;
                 _analyzer.maxFreq = 18000;
-                // Adjust dB range for better sensitivity
                 _analyzer.minDb = -80;
                 _analyzer.maxDb = -15;
                 #if !web
-                // Higher FFT size for better frequency resolution
                 _analyzer.fftN = 512;
                 #end
                 _needsAnalyzerInit = false;
@@ -1962,11 +1987,10 @@ class FreeplayState extends MusicBeatState {
                     vbar.alpha = 1.0;
                 }
             } else {
-                // No audio — shrink bars to minimum height, keep alpha=1.
                 for(i in 0...vizBarsGroup.members.length) {
                     var vbar = vizBarsGroup.members[i];
                     if(vbar == null) continue;
-                    vbar.setGraphicSize(Std.int(FlxG.width / VIZ_BAR_COUNT) - 1, 2);
+                    vbar.setGraphicSize(vizBarW - 1, 2);
                     vbar.updateHitbox();
                     vbar.y = FlxG.height - 2;
                     vbar.alpha = 1.0;
@@ -1978,6 +2002,7 @@ class FreeplayState extends MusicBeatState {
         lerpDiffViewOffset = FlxMath.lerp(diffViewOffset, lerpDiffViewOffset, Math.exp(-elapsed * 9.6));
 
         updateDifficultyDisplay();
+        _lastDiffForStyle = curDifficulty;
     }
     
     /**
