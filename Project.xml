@@ -254,6 +254,10 @@
 	<icon path="art/icons/iconOG.png" unless="android || ios"/>
 	
 	<section if="android">
+		<!-- Enable Content Provider to share files with other apps -->
+		<define name="SHARE_FILES" />
+		<define name="ANDROID_USE_ANDROIDX" />
+		
 		<!-- Force adaptive launcher icon from our Android res template -->
 		<config:android>
 			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
