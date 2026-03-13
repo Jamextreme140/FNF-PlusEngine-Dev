@@ -23,7 +23,8 @@
 package funkin.mobile.backend;
 
 #if COPYSTATE_ALLOWED
-import states.TitleState;
+import funkin.ui.title.TitleState;
+import funkin.ui.Language;
 import lime.utils.Assets as LimeAssets;
 import openfl.utils.Assets as OpenFLAssets;
 import openfl.utils.ByteArray;
@@ -54,19 +55,54 @@ class CopyState extends MusicBeatState
 	var shouldCopy:Bool = false;
 	var canUpdate:Bool = true;
 	var loopTimes:Int = 0;
+	var currentFile:String = '';
 
 	override function create()
 	{
+		// Load ClientPrefs and Language early for translations
+		ClientPrefs.loadPrefs();
+		
+		// Auto-detect system language on first run
+		#if (TRANSLATIONS_ALLOWED && mobile)
+		if (FlxG.save.data.languageAutoDetected == null) {
+			var detectedLang = Language.detectSystemLanguage();
+			if (detectedLang != null && detectedLang != ClientPrefs.data.language) {
+				ClientPrefs.data.language = detectedLang;
+				FlxG.save.data.language = detectedLang;
+			}
+			FlxG.save.data.languageAutoDetected = true;
+			FlxG.save.flush();
+		}
+		#end
+		
+		Language.reloadPhrases();
+		funkin.graphics.shaders.ColorblindFilter.UpdateColors();
+		
+		#if android
+		// Using scoped storage (EXTERNAL_DATA) - no special permissions needed
+		// Scoped storage is always accessible by the app without additional permissions
+		#end
+		
 		locatedFiles = [];
 		maxLoopTimes = 0;
 		checkExistingFiles();
+		
 		if (maxLoopTimes <= 0)
 		{
 			MusicBeatState.switchState(new TitleState());
 			return;
 		}
 
-		CoolUtil.showPopUp("Seems like you have some missing files that are necessary to run the game\nPress OK to begin the copy process", Language.getPhrase('mobile_notice', 'Notice!'));
+		var filesList:String = '';
+		var maxFilesToShow:Int = 10;
+		for (i in 0...Math.floor(Math.min(locatedFiles.length, maxFilesToShow)))
+		{
+			filesList += '\n- ' + locatedFiles[i];
+		}
+		if (locatedFiles.length > maxFilesToShow)
+			filesList += '\n... and ${locatedFiles.length - maxFilesToShow} more files';
+		
+		CoolUtil.showPopUp(Language.getPhrase('files_missing', "Seems like you have some missing files that are necessary to run the game\nPress OK to begin the copy process") + '\n\nMissing files ($maxLoopTimes):' + filesList, Language.getPhrase('mobile_notice', 'Notice!'));
 
 		shouldCopy = true;
 
@@ -83,7 +119,7 @@ class CopyState extends MusicBeatState
 		add(loadingBar);
 
 		loadedText = new FlxText(loadingBar.x, loadingBar.y + 4, FlxG.width, '', 16);
-		loadedText.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, CENTER);
+		loadedText.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.BLACK, CENTER);
 		add(loadedText);
 
 		thread = new ThreadPool(0, CoolUtil.getCPUThreadsCount());
@@ -91,6 +127,7 @@ class CopyState extends MusicBeatState
 		{
 			for (file in locatedFiles)
 			{
+				currentFile = file;
 				loopTimes++;
 				copyAsset(file);
 			}
@@ -112,10 +149,15 @@ class CopyState extends MusicBeatState
 				if (failedFiles.length > 0)
 				{
 					CoolUtil.showPopUp(failedFiles.join('\n'), 'Failed To Copy ${failedFiles.length} File.');
-					final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
-					if (!FileSystem.exists(folder))
-						FileSystem.createDirectory(folder);
-					File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '-CopyState' + '.txt', failedFilesStack.join('\n'));
+					// Save error log to configured storage directory
+					final folder:String = #if android StorageUtil.getStorageDirectory() + 'logs/' #else Sys.getCwd() + 'logs/' #end;
+					try {
+						if (!FileSystem.exists(folder))
+							FileSystem.createDirectory(folder);
+						File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '-CopyState' + '.txt', failedFilesStack.join('\n'));
+					} catch (e:Dynamic) {
+						trace('[CopyState] Could not save error log: ' + e);
+					}
 				}
 				
 				FlxG.sound.play(Paths.sound('confirmMenu')).onComplete = () ->
@@ -129,7 +171,12 @@ class CopyState extends MusicBeatState
 			if (loopTimes >= maxLoopTimes)
 				loadedText.text = "Completed!";
 			else
-				loadedText.text = '$loopTimes/$maxLoopTimes';
+			{
+				var fileName:String = currentFile;
+				if (fileName.length > 50)
+					fileName = '...' + fileName.substr(fileName.length - 47);
+				loadedText.text = '$loopTimes/$maxLoopTimes - $fileName';
+			}
 
 			loadingBar.percent = Math.min((loopTimes / maxLoopTimes) * 100, 100);
 		}
@@ -153,11 +200,11 @@ class CopyState extends MusicBeatState
 					{
 						var path:String = '';
 						#if android
-						if (file.startsWith('mods/'))
-							path = StorageUtil.getExternalStorageDirectory() + file;
-						else
+						// All files go to scoped storage (EXTERNAL_DATA)
+						path = StorageUtil.getStorageDirectory() + file;
+						#else
+						path = file;
 						#end
-							path = file;
 						File.saveBytes(path, getFileBytes(getFile(file)));
 					}		
 				}
@@ -180,17 +227,36 @@ class CopyState extends MusicBeatState
 		var fileName = Path.withoutDirectory(file);
 		var directory = Path.directory(file);
 		#if android
-		if (fileName.startsWith('mods/'))
-			directory = StorageUtil.getExternalStorageDirectory() + directory;
+		// All files go to scoped storage (EXTERNAL_DATA)
+		directory = StorageUtil.getStorageDirectory() + directory;
 		#end
+		
+		var fullPath = Path.join([directory, fileName]);
+		
 		try
 		{
-			var fileData:String = OpenFLAssets.getText(getFile(file));
-			if (fileData == null)
-				fileData = '';
+			// Use ByteArray for Android 14/15 compatibility instead of direct File.getContent
+			var fileBytes:openfl.utils.ByteArray = null;
+			try {
+				fileBytes = OpenFLAssets.getBytes(getFile(file));
+			} catch (e:Dynamic) {
+				// Fallback to getText for text files
+				var fileData:String = OpenFLAssets.getText(getFile(file));
+				if (fileData == null)
+					fileData = '';
+				fileBytes = openfl.utils.ByteArray.fromBytes(haxe.io.Bytes.ofString(fileData));
+			}
+			
+			if (fileBytes == null)
+				throw 'Could not read asset data';
+				
 			if (!FileSystem.exists(directory))
+			{
 				FileSystem.createDirectory(directory);
-			File.saveContent(Path.join([directory, fileName]), fileData);
+			}
+			
+			// Use saveBytes instead of saveContent for better Android 14/15 compatibility
+			File.saveBytes(fullPath, fileBytes);
 		}
 		catch (e:haxe.Exception)
 		{
@@ -233,12 +299,24 @@ class CopyState extends MusicBeatState
 		var assets = locatedFiles.filter(folder -> folder.startsWith('assets/'));
 		var mods = locatedFiles.filter(folder -> folder.startsWith('mods/'));
 		locatedFiles = assets.concat(mods);
-		locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(file));
+		
 		#if android
-		for (file in locatedFiles)
-			if (file.startsWith('mods/'))
-				locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file));
+		// Check if files exist in scoped storage (EXTERNAL_DATA)
+		locatedFiles = locatedFiles.filter(file -> {
+			try {
+				// All files are checked in scoped storage
+				return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
+			} catch (e:Dynamic) {
+				// If we can't access the file, assume it's missing
+				trace('[CopyState] Could not check file: $file - ${e}');
+				return true;
+			}
+		});
+		#else
+		locatedFiles = locatedFiles.filter(file -> !FileSystem.exists(file));
 		#end
+		
+
 
 		var filesToRemove:Array<String> = [];
 

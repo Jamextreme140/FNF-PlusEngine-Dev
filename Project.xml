@@ -255,7 +255,7 @@
 	
 	<section if="android">
 		<!-- Enable Content Provider to share files with other apps -->
-		<define name="SHARE_FILES" />
+		<define name="SHARE_MOBILE_FILES" />
 		<define name="ANDROID_USE_ANDROIDX" />
 		
 		<!-- Force adaptive launcher icon from our Android res template -->

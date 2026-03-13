@@ -27,35 +27,34 @@ import funkin.ui.options.Option;
 
 class MobileSettingsSubState extends BaseOptionsMenu
 {
+	// Storage selection removed - now using only scoped storage (EXTERNAL_DATA)
+	/*
 	#if android
 	var storageTypes:Array<String> = [];
 	var storageTypeNames:Array<String> = [];
 	var externalPaths:Array<String> = StorageUtil.checkExternalPaths(true);
 	final lastStorageType:String = ClientPrefs.data.storageType;
 	var storageInfos:Array<StorageTypeInfo> = [];
-	#end
-	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
-	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
-	#if android
 	var initialStorageType:String;
 	var pendingStorageType:String;
 	var storageTypeChanged:Bool = false;
 	var currentStorageOptionIndex:Int = -1;
 	#end
+	*/
+	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
+	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	var option:Option;
 
 	public function new()
 	{
 		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
 		rpcTitle = 'Mobile Settings Menu'; // for Discord Rich Presence
-		#if android
-		initialStorageType = ClientPrefs.data.storageType;
-		pendingStorageType = initialStorageType;
 		
+		#if android
 		// Show detected device tier (informational only)
 		var tierName = funkin.mobile.AndroidOptimizer.getTierName();
 		var gpuName = funkin.util.Native.detectGPU();
-		var tierInfo = 'Detected: $tierName | GPU: $gpuName\n\nQuality settings were auto-configured.\nYou can manually override in Graphics Settings.';
+		var tierInfo = 'Detected: $tierName | GPU: $gpuName\n\nQuality settings were auto-configured.\nYou can manually override in Graphics Settings.\n\nStorage: Scoped (Android/data)';
 		option = new Option('Device Performance Info', tierInfo, '', STRING, []);
 		addOption(option);
 		#end
