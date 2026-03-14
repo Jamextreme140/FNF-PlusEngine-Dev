@@ -265,6 +265,10 @@
 		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
 		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
 		
+		<!-- Copy Kotlin source files to Android project -->
+		<template path="source/kotlin/FileManagerActivity.kt" rename="app/src/main/java/com/leninasto/plusengine/FileManagerActivity.kt" />
+		<template path="source/kotlin/PlusEngineExtension.kt" rename="app/src/main/java/com/leninasto/plusengine/PlusEngineExtension.kt" />
+		
 		<!-- Android Permissions -->
 		<config:android permission="android.permission.INTERNET" />
 		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />

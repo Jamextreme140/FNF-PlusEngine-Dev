@@ -45,6 +45,13 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	var option:Option;
 
+	#if android
+	// JNI method handles for native file manager integration (lazy initialization)
+	private static var openFileManager_jni:Dynamic = null;
+	private static var openModsFolder_jni:Dynamic = null;
+	private static var openSavesFolder_jni:Dynamic = null;
+	#end
+
 	public function new()
 	{
 		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
@@ -112,6 +119,27 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeMobileDebugButtons;
 		addOption(option);
 
+		#if android
+		// File Manager options (BUTTON type shows checkboxes but only triggers onChange, doesn't save values)
+		option = new Option('Open File Manager',
+			'Browse and edit game files using a native Android file manager.\nPress ACCEPT to open.',
+			'', BUTTON, []);
+		option.onChange = openFileManager;
+		addOption(option);
+
+		option = new Option('Manage Mods',
+			'Quick access to mods folder. Add, remove or edit mod files.',
+			'', BUTTON, []);
+		option.onChange = openModsFolder;
+		addOption(option);
+
+		option = new Option('Browse Saves',
+			'View and manage your save files.',
+			'', BUTTON, []);
+		option.onChange = openSavesFolder;
+		addOption(option);
+		#end
+
 		super();
 	}
 
@@ -124,4 +152,83 @@ class MobileSettingsSubState extends BaseOptionsMenu
 			Main.debugButton.visible = ClientPrefs.data.showMobileDebugButtons;
 		#end
 	}
+
+	#if android
+	/**
+	 * Open native Android File Manager to browse game files
+	 */
+	function openFileManager():Void
+	{
+		try
+		{
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openFileManager_jni == null) {
+				openFileManager_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openFileManager',
+					'(Ljava/lang/String;)V'
+				);
+			}
+			
+			// Call Kotlin extension via JNI
+			var scopedPath = StorageUtil.getStorageDirectory();
+			openFileManager_jni(scopedPath);
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening file manager: ' + e);
+			CoolUtil.showPopUp('Could not open file manager.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
+	}
+
+	/**
+	 * Open file manager directly to mods folder
+	 */
+	function openModsFolder():Void
+	{
+		try
+		{
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openModsFolder_jni == null) {
+				openModsFolder_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openModsFolder',
+					'()V'
+				);
+			}
+			
+			openModsFolder_jni();
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening mods folder: ' + e);
+			CoolUtil.showPopUp('Could not open mods folder.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
+	}
+
+	/**
+	 * Open file manager directly to saves folder
+	 */
+	function openSavesFolder():Void
+	{
+		try
+		{
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openSavesFolder_jni == null) {
+				openSavesFolder_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openSavesFolder',
+					'()V'
+				);
+			}
+			
+			openSavesFolder_jni();
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening saves folder: ' + e);
+			CoolUtil.showPopUp('Could not open saves folder.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
+	}
+	#end
 }
