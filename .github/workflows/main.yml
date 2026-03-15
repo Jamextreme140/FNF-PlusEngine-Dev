@@ -383,7 +383,6 @@ jobs:
       - name: Setup Android SDK
         uses: amyu/setup-android@v5.5
         with:
-          cache-disabled: true
           sdk-version: 35
           build-tools-version: 35.0.0
           cmake-version: 4.2.3
