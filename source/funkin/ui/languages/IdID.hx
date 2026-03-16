@@ -453,10 +453,6 @@ class IdID
         "description_show_debug_buttons" => "Jika dicentang, menampilkan tombol T (Trace) dan D (Debug) di pojok kanan atas.\nT mengaktifkan/menonaktifkan tampilan trace, D mengganti tingkat debug FPS.",
         "setting_open_file_manager" => "Buka Pengelola Berkas",
         "description_open_file_manager" => "Telusuri dan edit berkas game menggunakan pengelola berkas bawaan Android.\nTekan ACCEPT untuk membuka.",
-        "setting_manage_mods" => "Kelola Mods",
-        "description_manage_mods" => "Akses cepat ke folder mods. Tambahkan, hapus, atau edit file mod.",
-        "setting_browse_saves" => "Telusuri Saves",
-        "description_browse_saves" => "Lihat dan kelola berkas saves anda.",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",

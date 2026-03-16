@@ -18,6 +18,7 @@
 	<template path="languages/Language.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/Language.kt" />
 	<template path="languages/English.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/English.kt" />
 	<template path="languages/Spanish.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/Spanish.kt" />
+        <template path="languages/Indonesia.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/Indonesia.kt" />
 	
 	<!-- Android Permissions -->
 	<config:android permission="android.permission.INTERNET" />
