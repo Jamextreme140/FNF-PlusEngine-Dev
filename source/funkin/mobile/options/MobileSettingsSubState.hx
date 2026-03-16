@@ -126,18 +126,6 @@ class MobileSettingsSubState extends BaseOptionsMenu
 			'', BUTTON, []);
 		option.onChange = openFileManager;
 		addOption(option);
-
-		option = new Option('Manage Mods',
-			'Quick access to mods folder. Add, remove or edit mod files.',
-			'', BUTTON, []);
-		option.onChange = openModsFolder;
-		addOption(option);
-
-		option = new Option('Browse Saves',
-			'View and manage your save files.',
-			'', BUTTON, []);
-		option.onChange = openSavesFolder;
-		addOption(option);
 		#end
 
 		super();

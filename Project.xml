@@ -254,51 +254,8 @@
 	<icon path="art/icons/iconOG.png" unless="android || ios"/>
 	
 	<section if="android">
-		<!-- Enable Content Provider to share files with other apps -->
-		<define name="SHARE_MOBILE_FILES" />
-		<define name="ANDROID_USE_ANDROIDX" />
-		
-		<!-- Force adaptive launcher icon from our Android res template -->
-		<config:android>
-			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
-		</config:android>
-		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
 		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
-		
-		<!-- Copy Kotlin source files to Android project -->
-		<template path="source/kotlin/FileManagerActivity.kt" rename="app/src/main/java/com/leninasto/plusengine/FileManagerActivity.kt" />
-		<template path="source/kotlin/PlusEngineExtension.kt" rename="app/src/main/java/com/leninasto/plusengine/PlusEngineExtension.kt" />
-		
-		<!-- Android Permissions -->
-		<config:android permission="android.permission.INTERNET" />
-		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
-		
-		<!-- Storage Permissions - Legacy (Android 12 and below) -->
-		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
-		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
-		
-		<!-- Storage Permissions - Modern (Android 13+) -->
-		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
-		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
-		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
-		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
-		<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-		
-		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
-		<config:android target-sdk-version="35" />
-		<config:android min-sdk-version="21" />
-		<android target-sdk-version="35" />
-		
-		<!-- Scoped Storage Configuration -->
-		<!-- Android 10 (API 29): Use legacy external storage for compatibility -->
-		<config:android>
-			<application android:requestLegacyExternalStorage="true" />
-		</config:android>
-		
-		<!-- Android 11+ (API 30+): Enable preserveLegacyExternalStorage for app updates -->
-		<config:android>
-			<application android:preserveLegacyExternalStorage="true" />
-		</config:android>
+		<include path="source/kotlin/include_android.xml" />
 	</section>
 
 	<section if="ios">

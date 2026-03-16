@@ -21,16 +21,22 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.leninasto.plusengine.languages.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-/**
- * Native Android File Manager Activity for FNF: Plus Engine
- * Material Design 3 implementation with proper runtime permission handling
- */
 class FileManagerActivity : AppCompatActivity() {
 
     companion object {
@@ -40,181 +46,57 @@ class FileManagerActivity : AppCompatActivity() {
         private const val REQUEST_MANAGE_STORAGE = 1002
     }
 
-    // MD3 Dark color tokens
-    private val colorBackground              = Color.parseColor("#1C1B1F")
-    private val colorSurface                 = Color.parseColor("#1C1B1F")
-    private val colorSurfaceContainer        = Color.parseColor("#211F26")
-    private val colorSurfaceContainerHigh    = Color.parseColor("#2B2930")
-    private val colorSurfaceContainerHighest = Color.parseColor("#36343B")
-    private val colorOnSurface               = Color.parseColor("#E6E1E5")
-    private val colorOnSurfaceVariant        = Color.parseColor("#CAC4D0")
-    private val colorPrimary                 = Color.parseColor("#D0BCFF")
-    private val colorPrimaryContainer        = Color.parseColor("#4F378B")
-    private val colorSecondaryContainer      = Color.parseColor("#4A4458")
-    private val colorOnSecondaryContainer    = Color.parseColor("#E8DEF8")
-    private val colorOutline                 = Color.parseColor("#938F99")
-    private val colorOutlineVariant          = Color.parseColor("#49454F")
-
     private val textExtensions  = setOf("txt", "json", "xml", "lua", "hx", "hxs", "log", "md", "ini", "cfg", "yaml", "yml")
     private val imageExtensions = setOf("png", "jpg", "jpeg", "webp", "gif")
     private val audioExtensions = setOf("ogg", "mp3", "wav", "flac")
+    private val videoExtensions = setOf("mp4", "mkv", "mov", "3gp", "webm")
 
     private lateinit var currentPath: File
     private lateinit var listView: ListView
     private lateinit var pathText: TextView
     private lateinit var searchEdit: EditText
     private lateinit var fileAdapter: ArrayAdapter<String>
+    private lateinit var actionLayout: LinearLayout
+    private lateinit var lang: Language
 
-    // Parallel list to the adapter - avoids ALL emoji string-parsing bugs
-    private val fileList = mutableListOf<File?>() // null = parent ".." entry
+    private val fileList = mutableListOf<File?>()
     private var searchQuery = ""
 
-    private fun dp(v: Int): Int = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics
-    ).toInt()
+    private var clipboardFile: File? = null
+    private var isCutOperation: Boolean = false
 
-    // ── Lifecycle ──────────────────────────────────────────────────────────
+    // MD3 Colors
+    private val colorSurface get() = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, Color.BLACK)
+    private val colorPrimary get() = MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, Color.BLUE)
+    private val colorOnSurface get() = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.WHITE)
+    private val colorSurfaceContainer get() = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceContainer, Color.DKGRAY)
+
+    private fun dp(v: Int): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        DynamicColors.applyToActivityIfAvailable(this)
         super.onCreate(savedInstanceState)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.statusBarColor = colorSurfaceContainerHigh
-            window.navigationBarColor = colorBackground
-        }
-
+        
+        setupLanguage()
         buildUI()
-
+        
         val initial = resolveInitialPath()
         currentPath = initial
-
-        if (needsPermission(initial)) {
-            requestStorageAccess { loadDirectory(currentPath) }
-        } else {
-            loadDirectory(currentPath)
-        }
+        
+        if (needsPermission(initial)) requestStorageAccess { loadDirectory(currentPath) }
+        else loadDirectory(currentPath)
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        val parent = currentPath.parentFile
-        val scoped = getExternalFilesDir(null)
-
-        val atScopedRoot = scoped != null &&
-            try { currentPath.canonicalPath == scoped.canonicalPath } catch (e: Exception) { false }
-
-        when {
-            // Still inside accessible dirs - go up
-            parent != null && parent.canRead() && !atScopedRoot -> loadDirectory(parent)
-            // At scoped root but have full permission - allow going up
-            parent != null && parent.canRead() && hasStoragePermission() -> loadDirectory(parent)
-            // Nowhere to go - exit to game
-            else -> {
-                @Suppress("DEPRECATION")
-                super.onBackPressed()
-            }
-        }
+    private fun setupLanguage() {
+        val currentLocale = Locale.getDefault().language
+        lang = if (currentLocale == "es") Spanish() else English()
     }
-
-    // ── Permissions ────────────────────────────────────────────────────────
-
-    private fun needsPermission(file: File): Boolean {
-        val scoped = getExternalFilesDir(null) ?: return false
-        return try {
-            !file.canonicalPath.startsWith(scoped.canonicalPath)
-        } catch (e: Exception) { false }
-    }
-
-    private fun hasStoragePermission(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            return Environment.isExternalStorageManager()
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                PackageManager.PERMISSION_GRANTED
-        }
-        return true
-    }
-
-    private fun requestStorageAccess(onGranted: () -> Unit) {
-        if (hasStoragePermission()) { onGranted(); return }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Storage Access Required")
-            .setMessage(
-                "To browse external storage (e.g. the mods folder), this app needs full storage access permission."
-            )
-            .setPositiveButton("Grant Permission") { _, _ ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    try {
-                        startActivityForResult(
-                            Intent(
-                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                Uri.parse("package:$packageName")
-                            ),
-                            REQUEST_MANAGE_STORAGE
-                        )
-                    } catch (e: Exception) {
-                        startActivityForResult(
-                            Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
-                            REQUEST_MANAGE_STORAGE
-                        )
-                    }
-                } else {
-                    requestPermissions(
-                        arrayOf(
-                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                        ),
-                        REQUEST_STORAGE_PERMISSION
-                    )
-                }
-            }
-            .setNegativeButton("Use App Folder") { _, _ ->
-                currentPath = getExternalFilesDir(null)!!
-                loadDirectory(currentPath)
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_STORAGE_PERMISSION) {
-            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                loadDirectory(currentPath)
-            } else {
-                currentPath = getExternalFilesDir(null)!!
-                loadDirectory(currentPath)
-            }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        @Suppress("DEPRECATION")
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_MANAGE_STORAGE) {
-            val granted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                Environment.isExternalStorageManager()
-            if (!granted) {
-                currentPath = getExternalFilesDir(null)!!
-            }
-            loadDirectory(currentPath)
-        }
-    }
-
-    // ── UI construction ────────────────────────────────────────────────────
 
     private fun buildUI() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            setBackgroundColor(colorBackground)
+            setBackgroundColor(colorSurface)
         }
 
         root.addView(buildTopBar())
@@ -223,399 +105,360 @@ class FileManagerActivity : AppCompatActivity() {
         root.addView(divider())
         root.addView(buildFileList())
         root.addView(divider())
-        root.addView(buildActionBar())
 
+        actionLayout = buildActionBar()
+        root.addView(actionLayout)
         setContentView(root)
     }
 
-    private fun buildTopBar(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(8), dp(8), dp(8), dp(8))
-            setBackgroundColor(colorSurfaceContainerHigh)
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(56)
-
-            addView(outlinedBtn("← Back") { finish() }.apply {
-                setTextColor(colorPrimary)
-                strokeColor = ColorStateList.valueOf(colorPrimaryContainer)
-            })
-
-            addView(View(this@FileManagerActivity).apply {
-                layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
-            })
-
-            addView(chipBtn("Mods")  { navigateTo("mods")  })
-            addView(chipBtn("Saves") { navigateTo("saves") })
-            addView(chipBtn("Logs")  { navigateTo("logs")  })
-        }
+    private fun buildTopBar() = LinearLayout(this).apply {
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        setBackgroundColor(colorSurfaceContainer)
+        gravity = Gravity.CENTER_VERTICAL
+        addView(outlinedBtn(lang.back) { finish() }.apply { 
+            layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, dp(48))
+            setIconResource(android.R.drawable.ic_menu_revert)
+        })
+        addView(View(context).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) })
+        addView(chipBtn(lang.mods) { navigateTo("mods") })
+        addView(chipBtn(lang.saves) { navigateTo("saves") })
     }
 
-    private fun buildPathBar(): TextView {
-        pathText = TextView(this).apply {
-            textSize = 11f
-            setTextColor(colorOnSurfaceVariant)
-            setPadding(dp(16), dp(6), dp(16), dp(6))
-            setBackgroundColor(colorSurfaceContainer)
-            typeface = Typeface.MONOSPACE
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-            isSingleLine = true
-            ellipsize = android.text.TextUtils.TruncateAt.START
-        }
-        return pathText
+    private fun buildPathBar() = TextView(this).apply {
+        pathText = this
+        textSize = 13f
+        setTextColor(colorPrimary)
+        setPadding(dp(20), dp(12), dp(20), dp(12))
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        isSingleLine = true
+        ellipsize = android.text.TextUtils.TruncateAt.START
     }
 
-    private fun buildSearchBar(): EditText {
-        searchEdit = EditText(this).apply {
-            hint = "Search files..."
-            setHintTextColor(colorOutline)
-            setTextColor(colorOnSurface)
-            setPadding(dp(16), dp(10), dp(16), dp(10))
-            setSingleLine(true)
-            background = null
-            setBackgroundColor(colorSurfaceContainerHigh)
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    searchQuery = s?.toString() ?: ""
-                    refreshDisplay()
-                }
-                override fun afterTextChanged(s: Editable?) {}
-            })
+    private fun buildSearchBar() = EditText(this).apply {
+        searchEdit = this
+        hint = lang.searchHint
+        setPadding(dp(16), dp(14), dp(16), dp(14))
+        background = MaterialShapeDrawable(ShapeAppearanceModel.builder().setAllCorners(CornerFamily.ROUNDED, dp(28).toFloat()).build()).apply {
+            fillColor = ColorStateList.valueOf(colorSurfaceContainer)
         }
-        return searchEdit
+        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { setMargins(dp(16), dp(8), dp(16), dp(8)) }
+        addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) { searchQuery = s?.toString() ?: ""; refreshDisplay() }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
     }
 
-    private fun buildFileList(): ListView {
-        fileAdapter = object : ArrayAdapter<String>(this, 0, mutableListOf()) {
+    private fun buildFileList() = ListView(this).apply {
+        listView = this
+        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f)
+        divider = null
+        fileAdapter = object : ArrayAdapter<String>(this@FileManagerActivity, 0, mutableListOf()) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val tv = (convertView as? TextView) ?: TextView(context).apply {
-                    setPadding(dp(16), dp(14), dp(16), dp(14))
-                    textSize = 15f
-                    layoutParams = AbsListView.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+                val item = (convertView as? LinearLayout) ?: LinearLayout(context).apply {
+                    setPadding(dp(16), dp(12), dp(16), dp(12))
+                    gravity = Gravity.CENTER_VERTICAL
                 }
+                item.removeAllViews()
                 val file = fileList.getOrNull(position)
-                tv.text = getItem(position) ?: ""
-                tv.setBackgroundColor(colorSurface)
-                tv.setTextColor(when {
-                    file == null        -> colorOnSurfaceVariant  // ".." icon
-                    file.isDirectory    -> colorPrimary
-                    else                -> colorOnSurface
-                })
-                return tv
+                
+                val iconView = ImageView(context).apply {
+                    setImageResource(if (file == null) android.R.drawable.ic_menu_up_indicator else getFileIconResource(file))
+                    setPadding(0, 0, dp(16), 0)
+                    layoutParams = LinearLayout.LayoutParams(dp(24), dp(24))
+                }
+                
+                val nameView = TextView(context).apply {
+                    text = getItem(position)?.substringAfter("  ") ?: ""
+                    textSize = 16f
+                    setTextColor(if (file?.isDirectory == true) colorPrimary else colorOnSurface)
+                    layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+                }
+                
+                item.addView(iconView)
+                item.addView(nameView)
+                return item
             }
         }
+        adapter = fileAdapter
+        setOnItemClickListener { _, _, pos, _ -> handleItemClick(pos) }
+        setOnItemLongClickListener { _, _, pos, _ -> showFileOptions(pos); true }
+    }
 
-        listView = ListView(this).apply {
-            adapter = fileAdapter
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f)
+    private fun getFileIconResource(file: File): Int {
+        val ext = file.extension.lowercase()
+        return when {
+            file.isDirectory -> android.R.drawable.ic_menu_archive
+            ext in imageExtensions -> android.R.drawable.ic_menu_gallery
+            ext in videoExtensions -> android.R.drawable.ic_menu_slideshow
+            ext in audioExtensions -> android.R.drawable.ic_lock_silent_mode_off
+            else -> android.R.drawable.ic_menu_file
+        }
+    }
+
+    private fun buildActionBar() = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        setPadding(dp(16), dp(16), dp(16), dp(16))
+        setBackgroundColor(colorSurfaceContainer)
+        updateActionButtons(this)
+    }
+
+    private fun updateActionButtons(layout: LinearLayout) {
+        layout.removeAllViews()
+        layout.addView(filledBtn(lang.newFolder, colorPrimary, colorSurface) { promptCreate(true) }.apply { 
+            layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { rightMargin = dp(8) }
+        })
+        layout.addView(filledBtn(lang.newFile, colorPrimary, colorSurface) { promptCreate(false) }.apply { 
+            layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+        })
+        if (clipboardFile != null) {
+            layout.addView(filledBtn(lang.paste, colorOnSurface, colorSurface) { pasteFile() }.apply { 
+                layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { leftMargin = dp(8) }
+            })
+        }
+    }
+
+    private fun showFileOptions(position: Int) {
+        val file = fileList.getOrNull(position) ?: return
+        val sheet = BottomSheetDialog(this)
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(32))
             setBackgroundColor(colorSurface)
-            divider = android.graphics.drawable.ColorDrawable(Color.argb(50, 147, 143, 153))
-            dividerHeight = 1
-            setOnItemClickListener { _, _, pos, _ -> handleItemClick(pos) }
-            setOnItemLongClickListener { _, _, pos, _ -> handleItemLongClick(pos); true }
-        }
-        return listView
-    }
 
-    private fun buildActionBar(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-            setBackgroundColor(colorSurfaceContainer)
+            addView(TextView(context).apply {
+                text = file.name
+                textSize = 18f
+                typeface = Typeface.DEFAULT_BOLD
+                setPadding(dp(16), dp(8), dp(16), dp(16))
+                setTextColor(colorOnSurface)
+            })
 
-            addView(filledBtn("📁  New Folder", colorSecondaryContainer, colorOnSecondaryContainer) {
-                promptCreate(isDir = true)
-            }.apply { layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { rightMargin = dp(6) } })
+            val options = listOf(
+                lang.open to { openFile(file) },
+                lang.cut to { clipboardFile = file; isCutOperation = true; updateActionButtons(actionLayout); NativeUI.showToast(context, "Cut") },
+                lang.copy to { clipboardFile = file; isCutOperation = false; updateActionButtons(actionLayout); NativeUI.showToast(context, "Copied") },
+                lang.rename to { promptRename(file) },
+                lang.delete to { confirmDelete(file) }
+            )
 
-            addView(filledBtn("📄  New File", colorSurfaceContainerHighest, colorOnSurface) {
-                promptCreate(isDir = false)
-            }.apply { layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { leftMargin = dp(6) } })
-        }
-    }
-
-    // ── Button factories ───────────────────────────────────────────────────
-
-    private fun outlinedBtn(label: String, onClick: () -> Unit) =
-        MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = label
-            cornerRadius = dp(8)
-            setOnClickListener { onClick() }
-        }
-
-    private fun chipBtn(label: String, onClick: () -> Unit) =
-        MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = label
-            textSize = 12f
-            setTextColor(colorOnSurfaceVariant)
-            strokeColor = ColorStateList.valueOf(colorOutlineVariant)
-            cornerRadius = dp(20)
-            setPadding(dp(10), 0, dp(10), 0)
-            layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { leftMargin = dp(6) }
-            setOnClickListener { onClick() }
-        }
-
-    private fun filledBtn(label: String, bg: Int, fg: Int, onClick: () -> Unit) =
-        MaterialButton(this).apply {
-            text = label
-            setTextColor(fg)
-            backgroundTintList = ColorStateList.valueOf(bg)
-            cornerRadius = dp(8)
-            setOnClickListener { onClick() }
-        }
-
-    private fun divider() = View(this).apply {
-        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 1)
-        setBackgroundColor(colorOutlineVariant)
-    }
-
-    private fun inputField(hint: String, prefill: String = "") = EditText(this).apply {
-        this.hint = hint
-        setText(prefill)
-        setHintTextColor(colorOutline)
-        setTextColor(colorOnSurface)
-        setBackgroundColor(colorSurfaceContainerHigh)
-        setPadding(dp(16), dp(12), dp(16), dp(12))
-    }
-
-    // ── Navigation ─────────────────────────────────────────────────────────
-
-    private fun resolveInitialPath(): File {
-        return when (intent.getStringExtra(EXTRA_START_LOCATION)) {
-            "mods"  -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods")
-            "saves" -> File(getExternalFilesDir(null), "saves")
-            "logs"  -> File(getExternalFilesDir(null), "logs")
-            else    -> intent.getStringExtra(EXTRA_INITIAL_PATH)
-                            ?.let { File(it) }
-                            ?: getExternalFilesDir(null)!!
-        } ?: getExternalFilesDir(null)!!
-    }
-
-    private fun navigateTo(location: String) {
-        val target = when (location) {
-            "mods"  -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods")
-            "saves" -> File(getExternalFilesDir(null), "saves")
-            "logs"  -> File(getExternalFilesDir(null), "logs")
-            else    -> getExternalFilesDir(null)!!
-        }
-        if (needsPermission(target) && !hasStoragePermission()) {
-            currentPath = target
-            requestStorageAccess { loadDirectory(currentPath) }
-        } else {
-            target.mkdirs()
-            loadDirectory(target)
-        }
-    }
-
-    private fun loadDirectory(dir: File) {
-        if (!dir.exists()) {
-            try { dir.mkdirs() } catch (e: Exception) {
-                Toast.makeText(this, "Cannot create directory: ${e.message}", Toast.LENGTH_SHORT).show()
-                return
+            options.forEach { (label, action) ->
+                addView(MaterialButton(context, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
+                    text = label
+                    setPadding(dp(16), dp(12), dp(16), dp(12))
+                    gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                    setTextColor(colorOnSurface)
+                    setOnClickListener { action(); sheet.dismiss() }
+                    textAllCaps = false
+                })
             }
         }
-
-        if (!dir.canRead()) {
-            Toast.makeText(this, "Access denied: ${dir.name}", Toast.LENGTH_LONG).show()
-            val fallback = getExternalFilesDir(null)!!
-            if (!dir.canonicalPath.equals(fallback.canonicalPath)) {
-                currentPath = fallback
-                loadDirectory(fallback)
-            }
-            return
-        }
-
-        currentPath = dir
-        pathText.text = dir.absolutePath
-        searchEdit.setText("")
-        searchQuery = ""
-        refreshDisplay()
+        sheet.setContentView(content)
+        sheet.show()
     }
 
-    private fun refreshDisplay() {
-        val all = currentPath.listFiles()
-            ?.sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() })
-            ?: emptyList()
-
-        val shown = if (searchQuery.isBlank()) all
-                    else all.filter { it.name.lowercase().contains(searchQuery.lowercase()) }
-
-        fileAdapter.clear()
-        fileList.clear()
-
-        if (searchQuery.isBlank() && currentPath.parentFile != null) {
-            fileAdapter.add("⬆   ..")
-            fileList.add(null)
-        }
-
-        shown.forEach { file ->
-            val icon = when {
-                file.isDirectory -> "📁  "
-                file.extension.lowercase() in textExtensions  -> "📝  "
-                file.extension.lowercase() in imageExtensions -> "🖼   "
-                file.extension.lowercase() in audioExtensions -> "🎵  "
-                else -> "📄  "
-            }
-            fileAdapter.add("$icon${file.name}")
-            fileList.add(file)
-        }
-
-        fileAdapter.notifyDataSetChanged()
+    private fun handleItemClick(pos: Int) {
+        val f = fileList.getOrNull(pos)
+        if (f == null) loadDirectory(currentPath.parentFile!!) else if (f.isDirectory) loadDirectory(f) else openFile(f)
     }
 
-    // ── Item handlers ──────────────────────────────────────────────────────
-
-    private fun handleItemClick(position: Int) {
-        val file = fileList.getOrNull(position)
+    private fun openFile(file: File) {
+        val ext = file.extension.lowercase()
         when {
-            file == null       -> currentPath.parentFile?.let { loadDirectory(it) }
-            file.isDirectory   -> loadDirectory(file)
-            else               -> openFile(file)
+            ext in textExtensions -> openCodeEditor(file)
+            ext in imageExtensions -> showImagePreview(file)
+            ext in videoExtensions -> openVideoPlayer(file)
+            else -> openWithSystem(file)
         }
     }
 
-    private fun handleItemLongClick(position: Int) {
-        val file = fileList.getOrNull(position) ?: return // ".." – ignore
+    private fun openCodeEditor(file: File) {
+        val ext = file.extension.lowercase()
+        val editor = EditText(this).apply {
+            setText(file.readText())
+            typeface = Typeface.MONOSPACE
+            textSize = 14f
+            // Syntax coloring simple simulation
+            val textColor = when(ext) {
+                "lua" -> "#569CD6" // Blue
+                "hx", "hxs" -> "#DCDCAA" // Yellowish
+                "xml", "json" -> "#9CDCFE" // Light Blue
+                else -> "#CE9178" // Orange-ish
+            }
+            setTextColor(Color.parseColor(textColor))
+            setBackgroundColor(Color.parseColor("#1E1E1E")) // VSCode Dark
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            gravity = Gravity.TOP
+        }
 
         MaterialAlertDialogBuilder(this)
             .setTitle(file.name)
-            .setItems(arrayOf("Open", "Rename", "Delete", "Info")) { _, which ->
-                when (which) {
-                    0 -> if (file.isFile) openFile(file) else loadDirectory(file)
-                    1 -> promptRename(file)
-                    2 -> confirmDelete(file)
-                    3 -> showFileInfo(file)
-                }
+            .setView(ScrollView(this).apply { addView(editor) })
+            .setPositiveButton(lang.save) { _, _ ->
+                file.writeText(editor.text.toString())
+                NativeUI.showToast(this, "Saved")
             }
+            .setNegativeButton(lang.cancel, null)
             .show()
     }
 
-    // ── File operations ────────────────────────────────────────────────────
+    private fun showImagePreview(file: File) {
+        val img = ImageView(this).apply { 
+            setImageURI(Uri.fromFile(file))
+            adjustViewBounds = true
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+        }
+        MaterialAlertDialogBuilder(this).setTitle(file.name).setView(img).setPositiveButton(lang.back, null).show()
+    }
 
-    private fun openFile(file: File) {
-        if (file.extension.lowercase() !in textExtensions) {
-            Toast.makeText(this, "Cannot edit .${file.extension} files", Toast.LENGTH_SHORT).show()
-            return
+    private fun openVideoPlayer(file: File) {
+        val videoView = VideoView(this).apply {
+            setVideoURI(Uri.fromFile(file))
+            val mc = MediaController(this@FileManagerActivity)
+            mc.setAnchorView(this)
+            setMediaController(mc)
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, dp(300))
         }
-        if (file.length() > 1024 * 1024) {
-            Toast.makeText(this, "File too large (max 1 MB)", Toast.LENGTH_SHORT).show()
-            return
-        }
+        
+        MaterialAlertDialogBuilder(this)
+            .setTitle(file.name)
+            .setView(videoView)
+            .setPositiveButton(lang.back) { _, _ -> videoView.stopPlayback() }
+            .setOnDismissListener { videoView.stopPlayback() }
+            .show()
+        
+        videoView.start()
+    }
+
+    private fun openWithSystem(file: File) {
         try {
-            val edit = inputField("").apply {
-                setText(file.readText())
-                typeface = Typeface.MONOSPACE
-                textSize = 13f
+            val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, contentResolver.getType(uri) ?: "*/*")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-
-            MaterialAlertDialogBuilder(this)
-                .setTitle("✏️  ${file.name}")
-                .setView(ScrollView(this).apply { addView(edit) })
-                .setPositiveButton("Save") { _, _ ->
-                    try {
-                        file.writeText(edit.text.toString())
-                        Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "Save error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            startActivity(Intent.createChooser(intent, lang.open))
         } catch (e: Exception) {
-            Toast.makeText(this, "Error reading file: ${e.message}", Toast.LENGTH_SHORT).show()
+            NativeUI.showToast(this, "No app found")
         }
     }
 
     private fun promptCreate(isDir: Boolean) {
-        val hint = if (isDir) "Folder name" else "e.g. config.json"
-        val title = if (isDir) "📁  New Folder" else "📄  New File"
-        val input = inputField(hint)
+        val input = TextInputEditText(this)
+        val container = TextInputLayout(this).apply {
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+            hint = if (isDir) lang.folderName else lang.fileName
+            addView(input)
+        }
 
         MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setView(input)
-            .setPositiveButton("Create") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isEmpty()) return@setPositiveButton
-                val target = File(currentPath, name)
-                try {
-                    val ok = if (isDir) target.mkdirs() else target.createNewFile()
-                    if (ok) {
-                        Toast.makeText(this, if (isDir) "Folder created" else "File created", Toast.LENGTH_SHORT).show()
-                        refreshDisplay()
-                        if (!isDir) openFile(target)
-                    } else {
-                        Toast.makeText(this, "Already exists", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            .setTitle(if (isDir) lang.newFolder else lang.newFile)
+            .setView(container)
+            .setPositiveButton(lang.create) { _, _ ->
+                val name = input.text.toString()
+                if (name.isNotEmpty()) {
+                    val f = File(currentPath, name)
+                    if (isDir) f.mkdirs() else f.createNewFile()
+                    refreshDisplay()
                 }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+            }.setNegativeButton(lang.cancel, null).show()
     }
 
     private fun promptRename(file: File) {
-        val input = inputField(file.name, file.name)
-
+        val input = TextInputEditText(this).apply { setText(file.name) }
+        val container = TextInputLayout(this).apply {
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+            hint = lang.rename
+            addView(input)
+        }
         MaterialAlertDialogBuilder(this)
-            .setTitle("✏️  Rename")
-            .setView(input)
-            .setPositiveButton("Rename") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isEmpty()) return@setPositiveButton
-                if (file.renameTo(File(currentPath, name))) {
-                    Toast.makeText(this, "Renamed", Toast.LENGTH_SHORT).show()
-                    refreshDisplay()
-                } else {
-                    Toast.makeText(this, "Failed to rename", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+            .setTitle(lang.rename)
+            .setView(container)
+            .setPositiveButton("OK") { _, _ ->
+                val newFile = File(file.parentFile, input.text.toString())
+                if (file.renameTo(newFile)) refreshDisplay()
+            }.setNegativeButton(lang.cancel, null).show()
     }
 
     private fun confirmDelete(file: File) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("🗑️  Delete?")
-            .setMessage(
-                "\"${file.name}\"\n" +
-                if (file.isDirectory) "This will delete the folder and all its contents." else "This action cannot be undone."
-            )
-            .setPositiveButton("Delete") { _, _ ->
-                if (file.deleteRecursively()) {
-                    Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
-                    refreshDisplay()
-                } else {
-                    Toast.makeText(this, "Failed to delete", Toast.LENGTH_SHORT).show()
-                }
+            .setTitle(lang.delete)
+            .setMessage(file.name)
+            .setPositiveButton(lang.delete) { _, _ ->
+                if (file.deleteRecursively()) refreshDisplay()
+            }.setNegativeButton(lang.cancel, null).show()
+    }
+
+    private fun pasteFile() {
+        val source = clipboardFile ?: return
+        val target = File(currentPath, source.name)
+        if (isCutOperation) {
+            if (source.renameTo(target)) {
+                clipboardFile = null
+                isCutOperation = false
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        } else {
+            source.copyRecursively(target, overwrite = true)
+        }
+        updateActionButtons(actionLayout)
+        refreshDisplay()
     }
 
-    private fun showFileInfo(file: File) {
-        val size = if (file.isDirectory) "${file.listFiles()?.size ?: 0} items" else formatSize(file.length())
-        val date = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(file.lastModified())
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("ℹ️  ${file.name}")
-            .setMessage(
-                "Path:\n${file.absolutePath}\n\n" +
-                "Size: $size\n" +
-                "Modified: $date\n" +
-                "Readable: ${file.canRead()}   Writable: ${file.canWrite()}"
-            )
-            .setPositiveButton("OK", null)
-            .show()
+    private fun loadDirectory(dir: File) {
+        currentPath = dir
+        pathText.text = "📂  ${dir.absolutePath}"
+        refreshDisplay()
     }
 
-    private fun formatSize(bytes: Long): String = when {
-        bytes < 1024L            -> "$bytes B"
-        bytes < 1024L * 1024     -> "${bytes / 1024} KB"
-        bytes < 1024L * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-        else                     -> "${bytes / (1024L * 1024 * 1024)} GB"
+    private fun refreshDisplay() {
+        val files = currentPath.listFiles()?.sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() }) ?: emptyList()
+        val filtered = files.filter { it.name.contains(searchQuery, true) }
+        fileAdapter.clear()
+        fileList.clear()
+        if (searchQuery.isEmpty() && currentPath.parentFile != null) { 
+            fileAdapter.add("  ..") 
+            fileList.add(null) 
+        }
+        filtered.forEach { 
+            fileAdapter.add("  ${it.name}")
+            fileList.add(it) 
+        }
     }
+
+    private fun resolveInitialPath(): File {
+        val startLoc = intent.getStringExtra(EXTRA_START_LOCATION)
+        return when (startLoc) {
+            "mods" -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods")
+            "saves" -> File(getExternalFilesDir(null), "saves")
+            else -> intent.getStringExtra(EXTRA_INITIAL_PATH)?.let { File(it) } ?: getExternalFilesDir(null)!!
+        }
+    }
+
+    private fun navigateTo(location: String) {
+        val target = if (location == "mods") File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods") else getExternalFilesDir(null)!!
+        target.mkdirs()
+        loadDirectory(target)
+    }
+
+    private fun needsPermission(file: File) = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()
+
+    private fun requestStorageAccess(onGranted: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            startActivityForResult(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName")), REQUEST_MANAGE_STORAGE)
+        }
+    }
+
+    private fun filledBtn(l: String, bg: Int, fg: Int, onClick: () -> Unit) = MaterialButton(this).apply {
+        text = l; setTextColor(fg); backgroundTintList = ColorStateList.valueOf(bg); cornerRadius = dp(16); setOnClickListener { onClick() }; textAllCaps = false
+    }
+    
+    private fun chipBtn(l: String, onClick: () -> Unit) = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        text = l; cornerRadius = dp(20); setOnClickListener { onClick() }; layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { leftMargin = dp(8) }
+    }
+    
+    private fun outlinedBtn(l: String, onClick: () -> Unit) = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        text = l; cornerRadius = dp(12); setOnClickListener { onClick() }
+    }
+    
+    private fun divider() = View(this).apply { layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 1); setBackgroundColor(colorOnSurface); alpha = 0.1f }
 }
