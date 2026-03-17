@@ -271,8 +271,10 @@ class PsychUIInputText extends FlxSpriteGroup
 				else
 				{
 					var lastText = text;
-					text = text.substring(0, caretIndex-1) + text.substring(caretIndex);
+					// Decrement first so set_text's internal updateCaret uses the already-correct position,
+					// avoiding a double-step on platforms where set_text clamps caretIndex to text.length.
 					caretIndex--;
+					text = text.substring(0, caretIndex) + text.substring(caretIndex + 1);
 					if(onChange != null) onChange(lastText, text);
 					if(broadcastInputTextEvent) PsychUIEventHandler.event(CHANGE_EVENT, this);
 				}

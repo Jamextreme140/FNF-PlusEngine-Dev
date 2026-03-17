@@ -93,7 +93,7 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		final refreshRate:Int = FlxG.stage.application.window.displayMode.refreshRate;
-		option.minValue = 60;
+		option.minValue = #if mobile 30 #else 60 #end;
 		option.maxValue = 240;
 		option.defaultValue = Std.int(FlxMath.bound(refreshRate, option.minValue, option.maxValue));
 		option.displayFormat = '%v FPS';
@@ -112,6 +112,15 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		option.onChange = onChangeFPSCounter;
 		addOption(option);
+
+		#if windows
+		var option:Option = new Option('Fullscreen Mode',
+			'Changes how fullscreen behaves.\\n\\nBorderless: Standard borderless window\\nBorderless Fix: Uses native API for better accuracy\\nExclusive: Traditional fullscreen (may minimize on alt-tab)',
+			'fullscreenMode',
+			STRING,
+			['Borderless', 'Borderless Fix', 'Exclusive']);
+		addOption(option);
+		#end
 
 		super();
 		insert(1, boyfriend);

@@ -89,14 +89,14 @@ class ResultsState extends MusicBeatState
         add(menuBG);
 
         backdropImage = new FlxSprite();
-        backdropImage.loadGraphic(Paths.image('ui/backdrop'));
+        backdropImage.loadGraphic(Paths.image('ui/results/backdrop'));
         backdropImage.setGraphicSize(FlxG.width, FlxG.height + 1);
         backdropImage.updateHitbox();
         backdropImage.alpha = 0.8;
         add(backdropImage);
 
         flxGroupImage = new FlxSprite();
-        flxGroupImage.loadGraphic(Paths.image('ui/flxgroup'));
+        flxGroupImage.loadGraphic(Paths.image('ui/results/flxgroup'));
         flxGroupImage.setGraphicSize(FlxG.width, FlxG.height + 1);
         flxGroupImage.updateHitbox();
         flxGroupImage.alpha = 0.4;

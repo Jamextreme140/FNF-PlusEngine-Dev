@@ -1,7 +1,7 @@
 package funkin.mobile.objects;
 
 import flixel.util.FlxSignal.FlxTypedSignal;
-import funkin.mobile.backend.MobileScaleMode;
+import flixel.system.scaleModes.MobileScaleMode;
 
 /**
  * ...
@@ -93,11 +93,11 @@ class TouchPad extends MobileInputManager implements IMobileControls
 		switch (Extra)
 		{
 			case SINGLE:
-				add(buttonExtra = createButton(0, FlxG.height - 137, 's', 0xFF0066FF));
+				add(buttonExtra = createButton(0, MobileScaleMode.getSafeHeight() - 137, 's', 0xFF0066FF));
 				setExtrasPos();
 			case DOUBLE:
-				add(buttonExtra = createButton(0, FlxG.height - 137, 's', 0xFF0066FF));
-				add(buttonExtra2 = createButton(FlxG.width - 132, FlxG.height - 137, 'g', 0xA6FF00));
+				add(buttonExtra = createButton(0, MobileScaleMode.getSafeHeight() - 137, 's', 0xFF0066FF));
+				add(buttonExtra2 = createButton(MobileScaleMode.getSafeWidth() - 132, MobileScaleMode.getSafeHeight() - 137, 'g', 0xA6FF00));
 				setExtrasPos();
 			case NONE: // nothing
 		}
@@ -113,21 +113,24 @@ class TouchPad extends MobileInputManager implements IMobileControls
 	}
 	
 	/**
-	 * Apply vertical offset for infinity display mode
+	 * Apply offsets for infinity display mode to center controls in safe area
 	 */
 	function applyInfinityDisplayOffset():Void
 	{
-		var offset:Float = MobileScaleMode.getVerticalOffset();
-		if (offset == 0) return;
+		var offsetX:Float = MobileScaleMode.getHorizontalOffset();
+		var offsetY:Float = MobileScaleMode.getVerticalOffset();
 		
-		// Apply offset to all buttons
+		if (offsetX == 0 && offsetY == 0) return;
+		
+		// Apply offsets to all buttons
 		for (fieldName in Reflect.fields(this))
 		{
 			var field = Reflect.field(this, fieldName);
 			if (Std.isOfType(field, TouchButton))
 			{
 				var button:TouchButton = cast field;
-				button.y += offset;
+				button.x += offsetX;
+				button.y += offsetY;
 			}
 		}
 	}

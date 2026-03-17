@@ -179,15 +179,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 		option.onChange = onChangeWatermark;
-
-		#if windows
-		var option:Option = new Option('Fullscreen Mode:',
-			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
-			'fullscreenMode',
-			STRING,
-			['Borderless', 'Exclusive']);
-		addOption(option);
-		#end
 		
 		var option:Option = new Option('Pause Music:',
 			"What song do you prefer for the Pause Screen?",

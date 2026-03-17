@@ -369,6 +369,7 @@ class EsES
         "dialogue_editor" => "Editor de Diálogos",
         "dialogue_portrait_editor" => "Editor de Dial. Avatar",
         "note_splash_editor" => "Editor de Salpicaduras",
+        "hold_splash_editor" => "Editor de Sostenidos",
         "no_mod_directory_loaded" => "< No se ha cargado ningún directorio de mods. >",
         "loaded_mod_directory" => "< Directorio de mods cargado: {1} >",
 

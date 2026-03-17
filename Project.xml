@@ -96,11 +96,13 @@
 		<assets path="assets/translations" rename="assets" exclude="*.mp3"  unless="web"/>
 	</section>
 
+	<!-- Spectral analysis libs - always enabled for visualizers like FreeplayState and ABotSpeaker -->
+	<haxelib name="grig.audio"/>
+	<haxelib name="funkin.vis"/>
+
 	<section if="BASE_GAME_FILES">
 		<assets path="assets/base_game" rename="assets" exclude="*.ogg" if="web"/>
 		<assets path="assets/base_game" rename="assets" exclude="*.mp3"  unless="web"/>
-		<haxelib name="grig.audio" if="BASE_GAME_FILES"/>
-		<haxelib name="funkin.vis" if="BASE_GAME_FILES"/>
 	</section>
 
 	<define name="CHECK_FOR_UPDATES" if="officialBuild"/>
@@ -245,55 +247,21 @@
 
 	<assets path='art/icons/iconOG.png' rename='icon.png' if="linux || mac" />
 	
-	<!-- Desktop and other platforms icons (excluding Android which uses adaptive icons) -->
-	<icon path="art/icons/icon16.png" size='16' unless="android"/>
-	<icon path="art/icons/icon32.png" size='32' unless="android"/>
-	<icon path="art/icons/icon64.png" size='64' unless="android"/>
-	<icon path="art/icons/iconOG.png" unless="android"/>
+	<!-- Desktop and other platforms icons (excluding Android and iOS) -->
+	<icon path="art/icons/icon16.png" size='16' unless="android || ios"/>
+	<icon path="art/icons/icon32.png" size='32' unless="android || ios"/>
+	<icon path="art/icons/icon64.png" size='64' unless="android || ios"/>
+	<icon path="art/icons/iconOG.png" unless="android || ios"/>
 	
 	<section if="android">
-		<!-- Force adaptive launcher icon from our Android res template -->
-		<config:android>
-			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
-		</config:android>
-		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
 		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
-		
-		<!-- Android Permissions -->
-		<config:android permission="android.permission.INTERNET" />
-		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
-		
-		<!-- Storage Permissions - Legacy (Android 12 and below) -->
-		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
-		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
-		
-		<!-- Storage Permissions - Modern (Android 13+) -->
-		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
-		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
-		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
-		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
-		<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-		
-		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
-		<config:android target-sdk-version="35" />
-		<config:android min-sdk-version="21" />
-		<android target-sdk-version="35" />
-		
-		<!-- Scoped Storage Configuration -->
-		<!-- Android 10 (API 29): Use legacy external storage for compatibility -->
-		<config:android>
-			<application android:requestLegacyExternalStorage="true" />
-		</config:android>
-		
-		<!-- Android 11+ (API 30+): Enable preserveLegacyExternalStorage for app updates -->
-		<config:android>
-			<application android:preserveLegacyExternalStorage="true" />
-		</config:android>
+		<include path="source/kotlin/include_android.xml" />
 	</section>
 
 	<section if="ios">
-	    <icon path="art/icons/PlusEngine.appiconset/iOS-Default.png"/>
-		<icon path="art/icons/PlusEngine.appiconset/iOS-Dark.png"/>
-		<icon path="art/icons/PlusEngine.appiconset/iOS-Tinted.png"/>
+	    <!-- iOS icons -->
+		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-60x60@2x.png" rename="AppIcon60x60@2x" size='120'/>
+		<icon path="art/icons/ios/AppIcon.appiconset/Icon-App-76x76@2x.png" rename="AppIcon76x76@2x~ipad" size='152'/>
+
 	</section>
 </project>

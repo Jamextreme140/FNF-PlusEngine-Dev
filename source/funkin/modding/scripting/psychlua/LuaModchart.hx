@@ -288,6 +288,112 @@ class LuaModchart
 			cast(mod, PathModifier).setPathBound(bound);
 		});
         
+        // ===== "NOW" VARIANTS FOR USE IN CALLBACKS =====
+        // These functions automatically calculate the current beat,
+        // allowing you to use modcharts from onBeatHit/onStepHit/onUpdatePost
+        
+        // Set modifier percent immediately (current beat)
+        Lua_helper.add_callback(lua, "setNow", function(nameOrMods:Dynamic, ?value:Dynamic, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            var currentBeat:Float = Conductor.songPosition / Conductor.crochet;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: setNow('modname', value, player, field)
+                Manager.instance.set(cast nameOrMods, currentBeat, cast value, player, field);
+            } else {
+                // Multiple mods: setNow({mod1=100, mod2=50}, player, field)
+                final mods:Dynamic = nameOrMods;
+                final actualPlayer:Int = value != null ? cast value : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.set(modName, currentBeat, modValue, actualPlayer, actualField);
+                }
+            }
+        });
+        
+        // Ease modifier from current beat
+        Lua_helper.add_callback(lua, "easeNow", function(nameOrMods:Dynamic, length:Float, ?value:Dynamic, ?easeName:String, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            var currentBeat:Float = Conductor.songPosition / Conductor.crochet;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: easeNow('modname', length, value, ease, player, field)
+                var easeFunc = getEaseFunction(easeName);
+                Manager.instance.ease(cast nameOrMods, currentBeat, length, cast value, easeFunc, player, field);
+            } else {
+                // Multiple mods: easeNow({mod1=100, mod2=50}, length, ease, player, field)
+                final mods:Dynamic = nameOrMods;
+                final actualEaseName:String = cast value;
+                final actualPlayer:Int = easeName != null ? Std.parseInt(easeName) : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                var easeFunc = getEaseFunction(actualEaseName);
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.ease(modName, currentBeat, length, modValue, easeFunc, actualPlayer, actualField);
+                }
+            }
+        });
+        
+        // Add modifier with easing from current beat
+        Lua_helper.add_callback(lua, "addNow", function(nameOrMods:Dynamic, length:Float, ?value:Dynamic, ?easeName:String, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            var currentBeat:Float = Conductor.songPosition / Conductor.crochet;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: addNow('modname', length, value, ease, player, field)
+                var easeFunc = getEaseFunction(easeName);
+                Manager.instance.add(cast nameOrMods, currentBeat, length, cast value, easeFunc, player, field);
+            } else {
+                // Multiple mods: addNow({mod1=100, mod2=50}, length, ease, player, field)
+                final mods:Dynamic = nameOrMods;
+                final actualEaseName:String = cast value;
+                final actualPlayer:Int = easeName != null ? Std.parseInt(easeName) : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                var easeFunc = getEaseFunction(actualEaseName);
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.add(modName, currentBeat, length, modValue, easeFunc, actualPlayer, actualField);
+                }
+            }
+        });
+        
+        // SetAdd helper from current beat
+        Lua_helper.add_callback(lua, "setAddNow", function(nameOrMods:Dynamic, ?value:Dynamic, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            var currentBeat:Float = Conductor.songPosition / Conductor.crochet;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: setAddNow('modname', value, player, field)
+                Manager.instance.setAdd(cast nameOrMods, currentBeat, cast value, player, field);
+            } else {
+                // Multiple mods: setAddNow({mod1=100, mod2=50}, player, field)
+                final mods:Dynamic = nameOrMods;
+                final actualPlayer:Int = value != null ? cast value : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.setAdd(modName, currentBeat, modValue, actualPlayer, actualField);
+                }
+            }
+        });
+        
         // Inspired by Troll Engine's forNoteInChart =P
         Lua_helper.add_callback(lua, "getChartNotes", function(chartName:String, ?songName:String):Dynamic {
             if (songName == null || songName.length == 0)

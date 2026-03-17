@@ -478,6 +478,7 @@ class PhillyStreets extends BaseStage
 				case 'weekend-1-cockgun':
 					precacheCasing();
 				case 'weekend-1-firegun':
+					createCan();
 					bonkSnd = new FlxSound();
 					FlxG.sound.list.add(bonkSnd);
 					bonkSnd.loadEmbedded(Paths.sound('Pico_Bonk'));

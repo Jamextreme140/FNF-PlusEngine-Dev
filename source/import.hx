@@ -24,6 +24,7 @@ import funkin.mobile.input.MobileInputID;
 import funkin.mobile.backend.MobileData;
 import funkin.mobile.input.MobileInputManager;
 import funkin.mobile.backend.TouchUtil;
+import flixel.system.scaleModes.MobileScaleMode;
 
 // Android
 #if android
@@ -47,6 +48,7 @@ import js.html.*;
 
 import funkin.Paths;
 import funkin.input.Controls;
+import funkin.input.Cursor;
 import funkin.util.CoolUtil;
 import funkin.util.MemoryManager;
 import funkin.util.ThreadUtil;

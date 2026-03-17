@@ -21,7 +21,8 @@ class MasterEditorMenu extends MusicBeatState
         'menu_character_editor',
         'dialogue_editor',
         'dialogue_portrait_editor',
-        'note_splash_editor'
+        'note_splash_editor',
+        'hold_splash_editor'
 	];
 	private var grpTexts:FlxTypedGroup<Alphabet>;
 	private var directories:Array<String> = [null];
@@ -79,7 +80,7 @@ class MasterEditorMenu extends MusicBeatState
 		#end
 		changeSelection();
 
-		FlxG.mouse.visible = false;
+		Cursor.hide();
 
 		addTouchPad(#if MODS_ALLOWED 'LEFT_FULL' #else 'UP_DOWN' #end, 'A_B');
 
@@ -97,7 +98,8 @@ class MasterEditorMenu extends MusicBeatState
             Language.getPhrase('menu_character_editor', 'Menu Character Editor'),
             Language.getPhrase('dialogue_editor', 'Dialogue Editor'),
             Language.getPhrase('dialogue_portrait_editor', 'Dialogue Portrait Editor'),
-            Language.getPhrase('note_splash_editor', 'Note Splash Editor')
+            Language.getPhrase('note_splash_editor', 'Note Splash Editor'),
+            Language.getPhrase('hold_splash_editor', 'Hold Splash Editor')
         ];
     }
 
@@ -149,6 +151,8 @@ class MasterEditorMenu extends MusicBeatState
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.dialogue.DialogueCharacterEditorState(), false);
                 case 7: // Note Splash Editor
 					MusicBeatState.switchState(new NoteSplashEditorState());
+                case 8: // Hold Splash Editor
+					MusicBeatState.switchState(new HoldSplashEditorState());
 			}
 			FlxG.sound.music.volume = 0;
 			FreeplayState.destroyFreeplayVocals();

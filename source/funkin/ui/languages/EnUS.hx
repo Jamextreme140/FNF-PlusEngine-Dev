@@ -370,6 +370,7 @@ class EnUS
         "dialogue_editor" => "Dialogue Editor",
         "dialogue_portrait_editor" => "Dialogue Portrait Editor",
         "note_splash_editor" => "Note Splash Editor",
+        "hold_splash_editor" => "Hold Splash Editor",
         "no_mod_directory_loaded" => "< No mod directory loaded. >",
         "loaded_mod_directory" => "< Mod directory loaded: {1} >",
 

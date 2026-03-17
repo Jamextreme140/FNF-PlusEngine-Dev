@@ -57,20 +57,8 @@ class CopyState extends MusicBeatState
 		funkin.graphics.shaders.ColorblindFilter.UpdateColors();
 		
 		#if android
-		// For Android < 11 with EXTERNAL storage, verify we have permissions before checking files
-		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
-			var hasPermissions = AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
-			
-			if (!hasPermissions) {
-				trace('[CopyState] EXTERNAL storage selected but permissions not granted yet. Waiting for user response...');
-				// Give some time for the permission dialog to be processed
-				// The permission was already requested in Main.hx, so we just need to wait briefly
-				// If after this brief wait we still don't have permissions, the checkExistingFiles
-				// will handle it (files will appear as missing and be copied when permissions are granted)
-			} else {
-				trace('[CopyState] EXTERNAL storage permissions confirmed');
-			}
-		}
+		// Using scoped storage (EXTERNAL_DATA) - no special permissions needed
+		// Scoped storage is always accessible by the app without additional permissions
 		#end
 		
 		locatedFiles = [];
@@ -139,8 +127,8 @@ class CopyState extends MusicBeatState
 				if (failedFiles.length > 0)
 				{
 					CoolUtil.showPopUp(failedFiles.join('\n'), 'Failed To Copy ${failedFiles.length} File.');
-					// Use app-specific directory for Android 14/15 compatibility (no permissions needed)
-					final folder:String = #if android haxe.io.Path.addTrailingSlash(lime.system.System.applicationStorageDirectory) + 'logs/' #else Sys.getCwd() + 'logs/' #end;
+					// Save error log to configured storage directory
+					final folder:String = #if android StorageUtil.getStorageDirectory() + 'logs/' #else Sys.getCwd() + 'logs/' #end;
 					try {
 						if (!FileSystem.exists(folder))
 							FileSystem.createDirectory(folder);
@@ -190,11 +178,11 @@ class CopyState extends MusicBeatState
 					{
 						var path:String = '';
 						#if android
-						if (file.startsWith('mods/'))
-							path = StorageUtil.getExternalStorageDirectory() + file;
-						else
+						// All files go to scoped storage (EXTERNAL_DATA)
+						path = StorageUtil.getStorageDirectory() + file;
+						#else
+						path = file;
 						#end
-							path = file;
 						File.saveBytes(path, getFileBytes(getFile(file)));
 					}		
 				}
@@ -217,10 +205,8 @@ class CopyState extends MusicBeatState
 		var fileName = Path.withoutDirectory(file);
 		var directory = Path.directory(file);
 		#if android
-		if (file.startsWith('mods/'))
-			directory = StorageUtil.getExternalStorageDirectory() + directory; // Mods in public storage
-		else
-			directory = StorageUtil.getStorageDirectory() + directory; // Game assets follow storage type
+		// All files go to scoped storage (EXTERNAL_DATA)
+		directory = StorageUtil.getStorageDirectory() + directory;
 		#end
 		
 		var fullPath = Path.join([directory, fileName]);
@@ -293,17 +279,15 @@ class CopyState extends MusicBeatState
 		locatedFiles = assets.concat(mods);
 		
 		#if android
-		// Check if files exist in their respective storage locations
+		// Check if files exist in scoped storage (EXTERNAL_DATA)
 		locatedFiles = locatedFiles.filter(file -> {
 			try {
-				if (file.startsWith('mods/'))
-					return !FileSystem.exists(StorageUtil.getExternalStorageDirectory() + file);
-				else
-					return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
+				// All files are checked in scoped storage
+				return !FileSystem.exists(StorageUtil.getStorageDirectory() + file);
 			} catch (e:Dynamic) {
-				// If we can't access the file (e.g., no permissions), assume it's missing
+				// If we can't access the file, assume it's missing
 				trace('[CopyState] Could not check file: $file - ${e}');
-				return true; // Treat as missing so it will be copied when permissions are granted
+				return true;
 			}
 		});
 		#else

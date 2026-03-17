@@ -487,7 +487,9 @@ class Note extends FlxSprite
 		var lastScaleY:Float = scale.y;
 		var skinPostfix:String = getNoteSkinPostfix();
 		var customSkin:String = skin + skinPostfix;
-		var path:String = PlayState.isPixelStage ? 'pixelUI/' : '';
+		// NotITG/Psych skins have no pixel variant - treat them as normal skins on any stage
+		var isSpecialSkin:Bool = skin.toLowerCase().contains('notitg');
+		var path:String = (PlayState.isPixelStage && !isSpecialSkin) ? 'pixelUI/' : '';
 		if(customSkin == _lastValidChecked || Paths.fileExists('images/' + path + customSkin + '.png', IMAGE))
 		{
 			skin = customSkin;
@@ -495,7 +497,7 @@ class Note extends FlxSprite
 		}
 		else skinPostfix = '';
 
-		if(PlayState.isPixelStage) {
+		if(PlayState.isPixelStage && !isSpecialSkin) {
 			if(isSustainNote) {
 				var graphic = Paths.image('pixelUI/' + skinPixel + 'ENDS' + skinPostfix);
 				loadGraphic(graphic, true, Math.floor(graphic.width / 4), Math.floor(graphic.height / 2));

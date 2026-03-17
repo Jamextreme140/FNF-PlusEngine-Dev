@@ -371,6 +371,10 @@ class Paths
 		return graph;
 	}
 
+	/** Removes UTF-8 BOM (U+FEFF) from a string if present, preventing JSON/XML parse errors. */
+	inline static public function stripBOM(str:String):String
+		return (str != null && str.charCodeAt(0) == 0xFEFF) ? str.substr(1) : str;
+
 	inline static public function getTextFromFile(key:String, ?ignoreMods:Bool = false):String
 	{
 		var path:String = getPath(key, TEXT, !ignoreMods);
@@ -431,7 +435,7 @@ class Paths
 		if(OpenFlAssets.exists(myXml) #if MODS_ALLOWED || (FileSystem.exists(myXml) && (useMod = true)) #end )
 		{
 			#if MODS_ALLOWED
-			return FlxAtlasFrames.fromSparrow(imageLoaded, (useMod ? File.getContent(myXml) : myXml));
+			return FlxAtlasFrames.fromSparrow(imageLoaded, (useMod ? stripBOM(File.getContent(myXml)) : myXml));
 			#else
 			return FlxAtlasFrames.fromSparrow(imageLoaded, myXml);
 			#end
@@ -442,7 +446,7 @@ class Paths
 			if(OpenFlAssets.exists(myJson) #if MODS_ALLOWED || (FileSystem.exists(myJson) && (useMod = true)) #end )
 			{
 				#if MODS_ALLOWED
-				return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, (useMod ? File.getContent(myJson) : myJson));
+				return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, (useMod ? stripBOM(File.getContent(myJson)) : myJson));
 				#else
 				return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, myJson);
 				#end
@@ -480,7 +484,7 @@ class Paths
 		var xml:String = modsXml(key);
 		if(FileSystem.exists(xml)) xmlExists = true;
 
-		return FlxAtlasFrames.fromSparrow(imageLoaded, (xmlExists ? File.getContent(xml) : getPath(Language.getFileTranslation('images/$key') + '.xml', TEXT, parentFolder)));
+		return FlxAtlasFrames.fromSparrow(imageLoaded, (xmlExists ? stripBOM(File.getContent(xml)) : getPath(Language.getFileTranslation('images/$key') + '.xml', TEXT, parentFolder)));
 		#else
 		return FlxAtlasFrames.fromSparrow(imageLoaded, getPath(Language.getFileTranslation('images/$key') + '.xml', TEXT, parentFolder));
 		#end
@@ -495,7 +499,7 @@ class Paths
 		var txt:String = modsTxt(key);
 		if(FileSystem.exists(txt)) txtExists = true;
 
-		return FlxAtlasFrames.fromSpriteSheetPacker(imageLoaded, (txtExists ? File.getContent(txt) : getPath(Language.getFileTranslation('images/$key') + '.txt', TEXT, parentFolder)));
+		return FlxAtlasFrames.fromSpriteSheetPacker(imageLoaded, (txtExists ? stripBOM(File.getContent(txt)) : getPath(Language.getFileTranslation('images/$key') + '.txt', TEXT, parentFolder)));
 		#else
 		return FlxAtlasFrames.fromSpriteSheetPacker(imageLoaded, getPath(Language.getFileTranslation('images/$key') + '.txt', TEXT, parentFolder));
 		#end
@@ -510,7 +514,7 @@ class Paths
 		var json:String = modsImagesJson(key);
 		if(FileSystem.exists(json)) jsonExists = true;
 
-		return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, (jsonExists ? File.getContent(json) : getPath(Language.getFileTranslation('images/$key') + '.json', TEXT, parentFolder)));
+		return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, (jsonExists ? stripBOM(File.getContent(json)) : getPath(Language.getFileTranslation('images/$key') + '.json', TEXT, parentFolder)));
 		#else
 		return FlxAtlasFrames.fromTexturePackerJson(imageLoaded, getPath(Language.getFileTranslation('images/$key') + '.json', TEXT, parentFolder));
 		#end
@@ -748,67 +752,92 @@ class Paths
 		var changedAnimJson = false;
 		var changedAtlasJson = false;
 		var changedImage = false;
-		
+
 		if(spriteJson != null)
 		{
 			changedAtlasJson = true;
 			spriteJson = File.getContent(spriteJson);
 		}
 
-		if(animationJson != null) 
+		if(animationJson != null)
 		{
 			changedAnimJson = true;
 			animationJson = File.getContent(animationJson);
 		}
 
-		// is folder or image path
+		// Folder/path-based auto-detection with full multi-page support
 		if(Std.isOfType(folderOrImg, String))
 		{
 			var originalPath:String = folderOrImg;
-			for (i in 0...10)
-			{
-				var st:String = '$i';
-				if(i == 0) st = '';
 
-				if(!changedAtlasJson)
+			// Arrays to hold each spritemap page (JSON content + loaded graphic)
+			var spritePages:Array<String> = [];
+			var spriteImgs:Array<FlxGraphic> = [];
+
+			if(!changedAtlasJson)
+			{
+				// Auto-detect all spritemap pages: spritemap.json, spritemap1.json, spritemap2.json, ...
+				for (i in 0...10)
 				{
-					spriteJson = getTextFromFile('images/$originalPath/spritemap$st.json');
-					if(spriteJson != null)
+					var st:String = (i == 0) ? '' : '$i';
+					var pageJson:String = getTextFromFile('images/$originalPath/spritemap$st.json');
+					if(pageJson != null)
 					{
-						//trace('found Sprite Json');
 						changedImage = true;
-						changedAtlasJson = true;
-						folderOrImg = image('$originalPath/spritemap$st');
-						break;
+						spritePages.push(pageJson);
+						spriteImgs.push(image('$originalPath/spritemap$st'));
 					}
+					else if(spritePages.length > 0)
+						break; // No more consecutive pages found
 				}
-				else if(fileExists('images/$originalPath/spritemap$st.png', IMAGE))
+
+				if(spritePages.length > 0)
+					changedAtlasJson = true;
+			}
+			else
+			{
+				// spriteJson was given externally - just locate matching image(s)
+				for (i in 0...10)
 				{
-					//trace('found Sprite PNG');
-					changedImage = true;
-					folderOrImg = image('$originalPath/spritemap$st');
-					break;
+					var st:String = (i == 0) ? '' : '$i';
+					if(fileExists('images/$originalPath/spritemap$st.png', IMAGE))
+					{
+						changedImage = true;
+						spriteImgs.push(image('$originalPath/spritemap$st'));
+					}
+					else if(changedImage)
+						break;
 				}
 			}
 
+			// Fallback to loading the folder as a plain image
 			if(!changedImage)
 			{
-				//trace('Changing folderOrImg to FlxGraphic');
 				changedImage = true;
 				folderOrImg = image(originalPath);
 			}
 
 			if(!changedAnimJson)
 			{
-				//trace('found Animation Json');
 				changedAnimJson = true;
 				animationJson = getTextFromFile('images/$originalPath/Animation.json');
 			}
+
+			// Route to multi-page loader when more than one spritemap page was found
+			if(spritePages.length > 1)
+			{
+				spr.loadAtlasExMulti(spriteImgs, spritePages, animationJson);
+				return;
+			}
+			else if(spritePages.length == 1)
+			{
+				folderOrImg = spriteImgs[0];
+				spriteJson = spritePages[0];
+			}
+			else if(spriteImgs.length > 0)
+				folderOrImg = spriteImgs[0];
 		}
 
-		//trace(folderOrImg);
-		//trace(spriteJson);
-		//trace(animationJson);
 		spr.loadAtlasEx(folderOrImg, spriteJson, animationJson);
 	}
 	#end

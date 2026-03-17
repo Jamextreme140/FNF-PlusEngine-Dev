@@ -16,11 +16,9 @@ class StorageUtil
 	public static function getStorageDirectory():String
 	{
 		#if android
-		// Use the configured storage type from ClientPrefs
-		if (ClientPrefs.data != null && ClientPrefs.data.storageType != null)
-			return getStoragePathForType(ClientPrefs.data.storageType);
-		else
-			return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()); // Fallback to default
+		// Always use scoped storage (EXTERNAL_DATA): Android/data/<package>/files/
+		// This is the recommended approach for modern Android versions
+		return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 		#elseif ios
 		return lime.system.System.documentsDirectory;
 		#else
@@ -33,20 +31,21 @@ class StorageUtil
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
-		// modsList.txt always goes to public storage (/sdcard/.PlusEngine/)
+		// All files go to scoped storage (EXTERNAL_DATA)
 		var folder:String;
 		if (fileName == 'modsList.txt')
 		{
+			// modsList.txt goes to root of scoped storage
 			#if android
-			folder = getExternalStorageDirectory();
+			folder = getStorageDirectory();
 			#else
 			folder = Sys.getCwd();
 			#end
 		}
 		else
 		{
-			// Other files go to the configured storage + saves/
-			folder = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
+			// Other files go to scoped storage + saves/
+			folder = #if android getStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
 		}
 		
 		try
@@ -60,22 +59,8 @@ class StorageUtil
 		}
 		catch (e:Dynamic)
 		{
-			// Fallback: if the selected storage is not writable (common on newer Android versions),
-			// try app-specific external files dir.
-			#if android
-			try
-			{
-				final fallbackFolder:String = haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) + 'saves/';
-				if (!FileSystem.exists(fallbackFolder))
-					FileSystem.createDirectory(fallbackFolder);
-				File.saveContent('$fallbackFolder/$fileName', fileData);
-				if (alert)
-					CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
-				return;
-			}
-			catch (_:Dynamic) {}
-			#end
-
+			// Using scoped storage (EXTERNAL_DATA), no fallback needed
+			// as this storage is always writable by the app
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]), Language.getPhrase('mobile_error', "Error!"));
 			else
@@ -90,13 +75,16 @@ class StorageUtil
 
 	public static function requestPermissions():Void
 	{
+		// Request read permissions for accessing media files (images, audio, video)
+		// Scoped storage doesn't require WRITE_EXTERNAL_STORAGE for app-specific directory
 		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU)
-			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO', 'READ_MEDIA_VISUAL_USER_SELECTED']);
+			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO']);
 		else
-			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
+			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE']);
 
-		if (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU && !AndroidEnvironment.isExternalStorageManager())
-			AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
+		// No need for MANAGE_EXTERNAL_STORAGE with scoped storage
+		// if (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU && !AndroidEnvironment.isExternalStorageManager())
+		// 	AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
 
 		if ((AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU
 			&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_MEDIA_IMAGES'))
@@ -118,15 +106,15 @@ class StorageUtil
 			LimeSystem.exit(1);
 		}
 
-		// Create mods directory in public external storage
+		// Create mods directory in scoped storage
 		try
 		{
-			if (!FileSystem.exists(StorageUtil.getExternalStorageDirectory() + 'mods'))
-				FileSystem.createDirectory(StorageUtil.getExternalStorageDirectory() + 'mods');
+			if (!FileSystem.exists(StorageUtil.getStorageDirectory() + 'mods'))
+				FileSystem.createDirectory(StorageUtil.getStorageDirectory() + 'mods');
 		}
 		catch (e:Dynamic)
 		{
-			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getExternalStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
 			lime.system.System.exit(1);
 		}
 
@@ -164,65 +152,19 @@ class StorageUtil
 	}
 
 	/**
-	 * Best-effort migration when switching storage types.
-	 * Copies game data (saves, logs, assets) from old storage to new storage.
-	 * Mods and modsList.txt are NOT migrated as they remain in public storage.
+	 * Migration function kept for compatibility but disabled.
+	 * Now using only scoped storage (EXTERNAL_DATA), so no migration needed.
 	 */
+	/*
 	public static function migrateStorage(oldType:String, newType:String):Void
 	{
-		if (oldType == null || newType == null || oldType == newType) return;
-
-		var oldRoot = haxe.io.Path.addTrailingSlash(getStoragePathForType(oldType));
-		var newRoot = haxe.io.Path.addTrailingSlash(getStoragePathForType(newType));
-		if (oldRoot == newRoot) return;
-
-		// Ensure target directory exists and is writable
-		try
-		{
-			if (!FileSystem.exists(newRoot))
-				FileSystem.createDirectory(newRoot);
-			
-			// Test write permission
-			var testFile = newRoot + '.write_test';
-			File.saveContent(testFile, 'test');
-			FileSystem.deleteFile(testFile);
-		}
-		catch (e:Dynamic)
-		{
-			return;
-		}
-
-		// Migrate game data only (saves, logs, assets)
-		// Mods and modsList.txt stay in /sdcard/.PlusEngine/ and are not migrated
-		copyDirectoryIfExists(oldRoot + 'saves', newRoot + 'saves');
-		copyDirectoryIfExists(oldRoot + 'logs', newRoot + 'logs');
-		copyDirectoryIfExists(oldRoot + 'assets', newRoot + 'assets');
-
-		// Cleanup old data to avoid duplicated storage usage and prevent filling up device storage
-		deleteDirectoryIfExists(oldRoot + 'saves');
-		deleteDirectoryIfExists(oldRoot + 'logs');
-		deleteDirectoryIfExists(oldRoot + 'assets');
-		
-		// Try to delete the entire old root directory if it's now empty
-		try
-		{
-			if (FileSystem.exists(oldRoot) && FileSystem.isDirectory(oldRoot))
-			{
-				var contents = FileSystem.readDirectory(oldRoot);
-				// Only delete if empty or only contains hidden files
-				if (contents.length == 0 || !Lambda.exists(contents, f -> !f.startsWith('.')))
-				{
-					deleteDirectoryIfExists(oldRoot);
-					trace('[StorageUtil] Deleted old storage directory: ' + oldRoot);
-				}
-			}
-		}
-		catch (e:Dynamic)
-		{
-			trace('[StorageUtil] Could not delete old root directory: ' + e);
-		}
+		// Migration disabled - using only scoped storage
+		return;
 	}
+	*/
 
+	// Migration helper functions commented out - no longer needed with single storage type
+	/*
 	static function copyFileIfExists(src:String, dst:String):Void
 	{
 		try
@@ -275,86 +217,46 @@ class StorageUtil
 		}
 		catch (_:Dynamic) {}
 	}
+	*/
 	
 	/**
-	 * Returns an array of available storage types with their descriptions
+	 * Storage type info - kept for compatibility but only EXTERNAL_DATA is used
 	 */
+	/*
 	public static function getAvailableStorageTypes():Array<StorageTypeInfo>
 	{
 		return [
 			{
 				id: "EXTERNAL_DATA",
-				name: "App Data (Recommended)",
+				name: "App Data (Scoped Storage)",
 				description: "Android/data/<package>/files/\nScoped storage, no special permissions needed.\nData cleared when app is uninstalled."
-			},
-			{
-				id: "EXTERNAL",
-				name: "Public Storage",
-				description: "Stores in /sdcard/.PlusEngine/\nOnly requires file manager permission on Android 11+.\nRemains after uninstall, easily accessible with file manager. (Only on Android 11+)"
-			},
-			{
-				id: "EXTERNAL_MEDIA",
-				name: "Media Storage",
-				description: "Android/media/<package>/files/\nSuitable for media files.\nData cleared when app is uninstalled."
-			},
-			{
-				id: "EXTERNAL_OBB",
-				name: "OBB Storage",
-				description: "Android/obb/<package>/files/\nFor large expansion files and DLCs.\nData cleared when app is uninstalled."
-			},
-			{
-				id: "EXTERNAL_GLOBAL",
-				name: "Global App Data",
-				description: "Android/data/<package>/files/\nSame as App Data (kept for compatibility).\nData cleared when app is uninstalled."
 			}
 		];
 	}
+	*/
 	
 	/**
-	 * Gets the storage path for a specific storage type (useful for migration)
+	 * Gets the storage path - now always returns EXTERNAL_DATA (scoped storage)
+	 * Function kept for compatibility with existing code
 	 */
+	/*
 	public static function getStoragePathForType(storageType:String):String
 	{
-		switch(storageType)
-		{
-			case "EXTERNAL":
-				return AndroidEnvironment.getExternalStorageDirectory() + '/.PlusEngine/';
-				
-			case "EXTERNAL_DATA":
-				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
-				
-			case "EXTERNAL_MEDIA":
-				// Android/media/<package>/files/
-				var externalFilesPath = AndroidContext.getExternalFilesDir();
-				if (externalFilesPath != null && externalFilesPath.length > 0)
-				{
-					// Replace '/Android/data/' with '/Android/media/'
-					var mediaPath = externalFilesPath.replace('/Android/data/', '/Android/media/');
-					return haxe.io.Path.addTrailingSlash(mediaPath);
-				}
-				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
-				
-			case "EXTERNAL_OBB":
-				// Android/obb/<package>/
-				return haxe.io.Path.addTrailingSlash(AndroidContext.getObbDir());
-				
-			case "EXTERNAL_GLOBAL":
-				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
-				
-			default:
-				// Fallback to EXTERNAL_DATA
-				return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
-		}
+		// Always return scoped storage path
+		return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 	}
+	*/
 	
 	/**
-	 * Checks if storage type requires special permissions
+	 * Scoped storage (EXTERNAL_DATA) does not require special permissions
 	 */
+	/*
 	public static function requiresSpecialPermissions(storageType:String):Bool
 	{
-		return (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU) && 
-			(storageType == "EXTERNAL" || storageType == "EXTERNAL_GLOBAL");
+		// Scoped storage doesn't need special permissions
+		return false;
 	}
+	*/
 	#end
 	#end
 }

@@ -121,7 +121,10 @@ class StrumNote extends FlxSprite
 		var lastAnim:String = null;
 		if(animation.curAnim != null) lastAnim = animation.curAnim.name;
 
-		if(PlayState.isPixelStage)
+		// NotITG/Psych skins have no pixel variant - treat them as normal skins on any stage
+		var isSpecialSkin:Bool = texture.toLowerCase().contains('notitg');
+
+		if(PlayState.isPixelStage && !isSpecialSkin)
 		{
 			loadGraphic(Paths.image('pixelUI/' + texture));
 			width = width / 4;

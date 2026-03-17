@@ -170,6 +170,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("states.editors.CharacterEditorState", funkin.ui.debug.character.CharacterEditorState);
 		Iris.proxyImports.set("states.editors.ChartingState", funkin.ui.debug.charting.ChartEditorState);
 		Iris.proxyImports.set("states.editors.NoteSplashEditorState", funkin.ui.debug.NoteSplashEditorState);
+		Iris.proxyImports.set("states.editors.HoldSplashEditorState", funkin.ui.debug.HoldSplashEditorState);
 		Iris.proxyImports.set("states.editors.StageEditorState", funkin.ui.debug.stage.StageEditorState);
 		Iris.proxyImports.set("states.editors.WeekEditorState", funkin.ui.debug.WeekEditorState);
 		Iris.proxyImports.set("states.editors.MenuCharacterEditorState", funkin.ui.debug.MenuCharacterEditorState);

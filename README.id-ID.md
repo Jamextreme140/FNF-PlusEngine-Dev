@@ -21,7 +21,7 @@
 
 Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan video hxcodec dari mod Psych 0.6.3 dan 0.7.3.
 
-[Bergabunglah dengan Discord!!](https://discord.gg/dHvGQfXy9h)
+[Bergabunglah dengan Discord!!](https://discord.gg/EBvUWcMdqV)
 
 </div>
 

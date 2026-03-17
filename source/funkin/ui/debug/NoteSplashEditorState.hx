@@ -35,7 +35,7 @@ class NoteSplashEditorState extends MusicBeatState
         if (imageSkin == null)
             imageSkin =  NoteSplash.defaultNoteSplash + NoteSplash.getSplashSkinPostfix();
 
-        FlxG.mouse.visible = true;
+        Cursor.show();
 
         FlxG.sound.volumeUpKeys = [];
         FlxG.sound.volumeDownKeys = [];

@@ -268,8 +268,8 @@ class KeyButton extends FlxSprite
 		super(x, y);
 		this.keyIndex = keyIndex;
 		
-		if (Paths.fileExists('images/ui/key.png', IMAGE)) {
-			loadGraphic(Paths.image('ui/key'));
+		if (Paths.fileExists('images/ui/others/key.png', IMAGE)) {
+			loadGraphic(Paths.image('ui/others/key'));
 			setGraphicSize(Std.int(size), Std.int(size));
 			updateHitbox();
 		} else {

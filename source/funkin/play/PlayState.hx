@@ -223,6 +223,14 @@ class PlayState extends MusicBeatState
 	// Ruta personalizada para archivos de audio de StepMania
 	public static var customAudioPath:String = null;
 
+	// Window state restoration - save window state before gameplay
+	static var savedWindowX:Int = 0;
+	static var savedWindowY:Int = 0;
+	static var savedWindowWidth:Int = 0;
+	static var savedWindowHeight:Int = 0;
+	static var savedWindowBorderless:Bool = false;
+	static var savedWindowFullscreen:Bool = false;
+
 	public var spawnTime:Float = 2000;
 
 	public var dadHealthColor:Array<Int> = [];
@@ -408,6 +416,10 @@ class PlayState extends MusicBeatState
 	var lastEndCountdown:Int = -1;
 	var lastJudName:String = "None";
 	
+	// Break Timer Feature variables
+	var breakTimerText:FlxText = null;
+	var lastBreakTimerValue:Float = -1;
+	
 	#if windows
 	// Window border color tween system (Slushi Engine method)
 	var windowBorderColorTween:flixel.tweens.misc.NumTween;
@@ -496,6 +508,52 @@ class PlayState extends MusicBeatState
 	private static var _lastLoadedModDirectory:String = '';
 	public static var nextReloadAll:Bool = false;
 
+	/**
+	 * Restores the window state to what it was before entering PlayState.
+	 * Call this before switching states to ensure window modifications during gameplay are reverted.
+	 */
+	public static function restoreWindowState():Void
+	{
+		#if desktop
+		var window = openfl.Lib.current.stage.window;
+		if (window != null) {
+			// Only restore if the window state has changed
+			var hasChanged = (window.x != savedWindowX || 
+							  window.y != savedWindowY || 
+							  window.width != savedWindowWidth || 
+							  window.height != savedWindowHeight ||
+							  window.borderless != savedWindowBorderless ||
+							  window.fullscreen != savedWindowFullscreen);
+			
+			if (hasChanged) {
+				// Restore fullscreen state first
+				if (window.fullscreen != savedWindowFullscreen) {
+					try {
+						window.fullscreen = savedWindowFullscreen;
+					} catch (_:Dynamic) {}
+				}
+				
+				// Restore borderless state
+				if (window.borderless != savedWindowBorderless) {
+					window.borderless = savedWindowBorderless;
+				}
+				
+				// Restore size and position
+				if (window.width != savedWindowWidth || window.height != savedWindowHeight) {
+					window.resize(savedWindowWidth, savedWindowHeight);
+				}
+				
+				if (window.x != savedWindowX || window.y != savedWindowY) {
+					window.x = savedWindowX;
+					window.y = savedWindowY;
+				}
+				
+				trace('Window state restored to: ${savedWindowWidth}x${savedWindowHeight} at (${savedWindowX}, ${savedWindowY})');
+			}
+		}
+		#end
+	}
+
 	public var luaTouchPad:TouchPad;
 	public var pauseButton:TouchButton;
 
@@ -558,6 +616,19 @@ class PlayState extends MusicBeatState
 			Language.reloadPhrases();
 		}
 		nextReloadAll = false;
+
+		// Save window state before gameplay starts
+		#if desktop
+		var window = openfl.Lib.current.stage.window;
+		if (window != null) {
+			savedWindowX = window.x;
+			savedWindowY = window.y;
+			savedWindowWidth = window.width;
+			savedWindowHeight = window.height;
+			savedWindowBorderless = window.borderless;
+			savedWindowFullscreen = window.fullscreen;
+		}
+		#end
 
 		startCallback = startCountdown;
 		endCallback = endSong;
@@ -994,6 +1065,18 @@ class PlayState extends MusicBeatState
 		scoreTxt.borderSize = 1.25;
 		scoreTxt.visible = !ClientPrefs.data.hideHud;
 		uiGroup.add(scoreTxt);
+		
+		// Break Timer Feature - Create timer display
+		if (ClientPrefs.data.breakTimer)
+		{
+			breakTimerText = new FlxText(0, 0, 0, "", 48);
+			breakTimerText.setFormat(Paths.font("phantom.ttf"), 48, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			breakTimerText.cameras = [camHUD];
+			breakTimerText.scrollFactor.set();
+			breakTimerText.borderSize = 3;
+			breakTimerText.visible = false;
+			add(breakTimerText);
+		}
 	
 		// Detectar si es un chart de StepMania o si usa el stage notitg
 		isStepManiaChart = (customAudioPath != null && (customAudioPath.contains('/sm/') || customAudioPath.contains('sm/'))) || (curStage == 'notitg');		// Crear UI de StepMania si es necesario
@@ -1722,6 +1805,23 @@ class PlayState extends MusicBeatState
 						countdownGo = createCountdownSprite(introAlts[3], antialias);
 						FlxG.sound.play(Paths.sound('introGo' + introSoundsSuffix), 0.6);
 						tick = GO;
+						
+						// Hey! Intro Feature
+						if (ClientPrefs.data.heyIntro)
+						{
+							if (boyfriend != null && boyfriend.hasAnimation('hey'))
+							{
+								boyfriend.playAnim('hey', true);
+								boyfriend.specialAnim = true;
+								boyfriend.heyTimer = 0.6;
+							}
+							if (gf != null && gf.hasAnimation('cheer'))
+							{
+								gf.playAnim('cheer', true);
+								gf.specialAnim = true;
+								gf.heyTimer = 0.6;
+							}
+						}
 					case 4:
 						tick = START;
 				}
@@ -1777,6 +1877,73 @@ class PlayState extends MusicBeatState
 			}
 		});
 		return spr;
+	}
+
+	public function resumeWithCountdown(?pauseSubState:PauseSubState):Void
+	{
+		// Pause Countdown Feature - Play countdown when resuming from pause
+		// Game remains PAUSED during countdown and resumes AFTER it finishes
+		var ret:Dynamic = callOnScripts('onResumeCountdown', null, true);
+		if(ret != LuaUtils.Function_Stop)
+		{
+			var swagCounter:Int = 0;
+			
+			new FlxTimer().start(Conductor.crochet / 1000 / playbackRate, function(tmr:FlxTimer)
+			{
+				var introAssets:Map<String, Array<String>> = new Map<String, Array<String>>();
+				var introImagesArray:Array<String> = switch(stageUI) {
+					case "pixel": ['pixelUI/get-pixel', 'pixelUI/ready-pixel', 'pixelUI/set-pixel', 'pixelUI/date-pixel'];
+					case "normal": ["get", "ready", "set" ,"go"];
+					default: ['${uiPrefix}UI/get${uiPostfix}', '${uiPrefix}UI/ready${uiPostfix}', '${uiPrefix}UI/set${uiPostfix}', '${uiPrefix}UI/go${uiPostfix}'];
+				}
+				introAssets.set(stageUI, introImagesArray);
+
+				var introAlts:Array<String> = introAssets.get(stageUI);
+				var antialias:Bool = (ClientPrefs.data.antialiasing && !isPixelStage);
+				var tick:Countdown = THREE;
+
+				switch (swagCounter)
+				{
+					case 0:
+						FlxG.sound.play(Paths.sound('intro3' + introSoundsSuffix), 0.6);
+						tick = THREE;
+					case 1:
+						countdownReady = createCountdownSprite(introAlts[1], antialias);
+						FlxG.sound.play(Paths.sound('intro2' + introSoundsSuffix), 0.6);
+						tick = TWO;
+					case 2:
+						countdownSet = createCountdownSprite(introAlts[2], antialias);
+						FlxG.sound.play(Paths.sound('intro1' + introSoundsSuffix), 0.6);
+						tick = ONE;
+					case 3:
+						countdownGo = createCountdownSprite(introAlts[3], antialias);
+						FlxG.sound.play(Paths.sound('introGo' + introSoundsSuffix), 0.6);
+						tick = GO;
+					case 4:
+						// Countdown finished - now close pause and continue game
+						if (pauseSubState != null)
+						{
+							pauseSubState.close();
+						}
+						callOnScripts('onResumeCountdownFinished');
+						return;
+				}
+
+				stagesFunc(function(stage:BaseStage) stage.countdownTick(tick, swagCounter));
+				callOnLuas('onCountdownTick', [swagCounter]);
+				callOnHScript('onCountdownTick', [tick, swagCounter]);
+
+				swagCounter += 1;
+			}, 5);
+		}
+		else
+		{
+			// Script stopped the countdown - close pause immediately
+			if (pauseSubState != null)
+			{
+				pauseSubState.close();
+			}
+		}
 	}
 
 	public function addBehindGF(obj:FlxBasic)
@@ -3027,6 +3194,73 @@ class PlayState extends MusicBeatState
 				spawnHeavyNotes();
 
 			checkEventNote();
+			
+			// Break Timer Feature - Show timer when next notes are approaching
+			if (ClientPrefs.data.breakTimer && breakTimerText != null && playerStrums != null && playerStrums.length > 0)
+			{
+				var nextNoteTime:Float = -1;
+				var currentTime:Float = Conductor.songPosition;
+				
+				// Find next player note
+				for (note in notes)
+				{
+					if (note != null && note.mustPress && !note.isSustainNote && !note.wasGoodHit && note.strumTime > currentTime)
+					{
+						if (nextNoteTime < 0 || note.strumTime < nextNoteTime)
+							nextNoteTime = note.strumTime;
+					}
+				}
+				
+				// Also check unspawned notes
+				if (unspawnNotes != null && unspawnNotes.length > 0)
+				{
+					for (note in unspawnNotes)
+					{
+						if (note != null && note.mustPress && !note.isSustainNote && note.strumTime > currentTime)
+						{
+							if (nextNoteTime < 0 || note.strumTime < nextNoteTime)
+								nextNoteTime = note.strumTime;
+							break; // unspawnNotes is sorted, so we can break early
+						}
+					}
+				}
+				
+				// Display timer if next note is within 3 seconds
+				var timeUntilNext:Float = (nextNoteTime - currentTime) / 1000;
+				if (nextNoteTime > 0 && timeUntilNext >= 0 && timeUntilNext <= 3.0)
+				{
+					breakTimerText.visible = true;
+					
+					// Show countdown from 3 to 0
+					var displayValue:Int = Math.floor(timeUntilNext);
+					breakTimerText.text = Std.string(displayValue);
+					
+					// Position timer at player lane (center of player strums)
+					var centerX:Float = 0;
+					for (strum in playerStrums)
+					{
+						if (strum != null)
+							centerX += strum.x + strum.width / 2;
+					}
+					centerX /= playerStrums.length;
+					
+					breakTimerText.x = centerX - breakTimerText.width / 2;
+					breakTimerText.y = (ClientPrefs.data.downScroll ? FlxG.height - 200 : 120);
+					
+					// Animate on value change
+					if (lastBreakTimerValue != displayValue)
+					{
+						breakTimerText.scale.set(1.5, 1.5);
+						FlxTween.tween(breakTimerText.scale, {x: 1, y: 1}, 0.2, {ease: FlxEase.circOut});
+						lastBreakTimerValue = displayValue;
+					}
+				}
+				else
+				{
+					breakTimerText.visible = false;
+					lastBreakTimerValue = -1;
+				}
+			}
 		}
 
 		#if debug
@@ -3291,6 +3525,7 @@ class PlayState extends MusicBeatState
 		DiscordClient.resetClientID();
 		#end
 
+		restoreWindowState();
 		MusicBeatState.switchState(new funkin.ui.debug.charting.ChartEditorState());
 	}
 
@@ -3309,6 +3544,7 @@ class PlayState extends MusicBeatState
 			opponentVocals.pause();
 
 		#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
+		restoreWindowState();
 		MusicBeatState.switchState(new funkin.ui.debug.character.CharacterEditorState(SONG.player2));
 	}
 
@@ -4041,6 +4277,7 @@ class PlayState extends MusicBeatState
 				// INICIAR FREAKYMENU ANTES DE IR A RESULTSSTATE
 				FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7, true);
 				
+				restoreWindowState();
 				MusicBeatState.switchState(new ResultsState({
 					score: songScore,
 					prevHighScore: Highscore.getScore(Song.loadedSongName, storyDifficulty),
@@ -4160,6 +4397,7 @@ class PlayState extends MusicBeatState
 					changedDifficulty = false;
 					
 					// Ir a ResultsState con las estadísticas de toda la semana
+					restoreWindowState();
 					MusicBeatState.switchState(new ResultsState({
 						score: campaignScore,
 						prevHighScore: Highscore.getWeekScore(WeekData.getWeekFileName(), storyDifficulty),
@@ -4213,6 +4451,7 @@ class PlayState extends MusicBeatState
 				#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
 
 				canResync = false;
+				restoreWindowState();
 				MusicBeatState.switchState(new FreeplayState());
 				FlxG.sound.playMusic(Paths.music('freakyMenu'));
 				changedDifficulty = false;
@@ -5317,6 +5556,7 @@ class PlayState extends MusicBeatState
 	public function spawnHoldSplash(note:Note) {
 		// No mostrar hold splashes en niveles de StepMania NotITG
 		if(curStage == 'notitg') return;
+		if(ClientPrefs.data.hideSustainSplash) return;
 		
 		var end:Note = note.isSustainNote ? note.parent.tail[note.parent.tail.length - 1] : note.tail[note.tail.length - 1];
 		var splash:SustainSplash = grpHoldSplashes.recycle(SustainSplash);

@@ -112,6 +112,7 @@ class StructureOld
 		'ChartingState' => 'funkin.ui.debug.charting.ChartingState',
 		'MasterEditorMenu' => 'funkin.ui.debug.MasterEditorMenu',
 		'NoteSplashEditorState' => 'funkin.ui.debug.NoteSplashEditorState',
+		'HoldSplashEditorState' => 'funkin.ui.debug.HoldSplashEditorState',
 		'StageEditorState' => 'funkin.ui.debug.stage.StageEditorState',
 		'WeekEditorState' => 'funkin.ui.debug.WeekEditorState',
 		'MenuCharacterEditorState' => 'funkin.ui.debug.MenuCharacterEditorState',

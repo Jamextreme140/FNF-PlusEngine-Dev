@@ -206,10 +206,10 @@ class NoteOffsetState extends MusicBeatState
 		if(controls.controllerMode != _lastControllerMode)
 		{
 			//trace('changed controller mode');
-			FlxG.mouse.visible = !controls.controllerMode;
-			controllerPointer.visible = controls.controllerMode;
-
-			// changed to controller mid state
+			if (!controls.controllerMode)
+				Cursor.show();
+			else
+				Cursor.hide();
 			if(controls.controllerMode)
 			{
 				var mousePos = FlxG.mouse.getScreenPosition(camHUD);
@@ -471,9 +471,8 @@ class NoteOffsetState extends MusicBeatState
 					FlxG.sound.music.volume = 0;
 			}
 			else FlxG.sound.playMusic(Paths.music('freakyMenu'));
-		FlxG.mouse.visible = false;
-	}
-
+			Cursor.hide();
+		}
 	Conductor.songPosition = FlxG.sound.music.time;
 }
 
@@ -597,11 +596,10 @@ override public function beatHit()
 		if(currentMode == 2) dumbTexts.visible = true; // Mostrar textos también en modo KeyViewer
 
 		controllerPointer.visible = false;
-		FlxG.mouse.visible = false;
+		Cursor.hide();
 		if(currentMode == 1 || currentMode == 2) // Combo or KeyViewer mode
 		{
-			FlxG.mouse.visible = !controls.controllerMode;
-			controllerPointer.visible = controls.controllerMode;
+			if (!controls.controllerMode) Cursor.show(); else Cursor.hide();
 		}
 
 		removeTouchPad();

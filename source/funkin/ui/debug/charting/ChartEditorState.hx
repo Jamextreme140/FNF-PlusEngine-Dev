@@ -236,7 +236,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 		if(_shouldReset) Conductor.songPosition = 0;
 		persistentUpdate = false;
-		FlxG.mouse.visible = true;
+		Cursor.show();
 		FlxG.sound.list.add(vocals);
 		FlxG.sound.list.add(opponentVocals);
 
@@ -4386,7 +4386,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			PlayState.chartingMode = false;
 			MusicBeatState.switchState(new funkin.ui.debug.MasterEditorMenu());
 			FlxG.sound.playMusic(Paths.music('freakyMenu'));
-			FlxG.mouse.visible = false;
+			Cursor.hide();
 		}, btnWid);
 		btn.text.alignment = LEFT;
 		tab_group.add(btn);
@@ -5170,7 +5170,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	function goToPlayState()
 	{
 		persistentUpdate = false;
-		FlxG.mouse.visible = false;
+		Cursor.hide();
 		chartEditorSave.flush();
 
 		setSongPlaying(false);

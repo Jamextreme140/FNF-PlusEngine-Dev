@@ -444,7 +444,15 @@ class EsLA
         "setting_infinity_display" => "Pantalla infinita",
         "description_infinity_display" => "Si está marcado, ajusta la relación de aspecto del juego para adaptarse a pantallas más anchas.\nPuede causar errores y crashes en algunos dispositivos.",
         "setting_storage_type" => "Tipo de almacenamiento",
-        "description_storage_type" => "Selecciona el tipo de almacenamiento para guardar tus datos de juego.\nRecomendado: EXTERNAL_DATA",
+        "description_storage_type" => "Selecciona dónde guardar los datos del juego.\nVer descripción detallada al cambiar de opción.\n\n¡Cambiar esto requiere reiniciar el juego!",
+        
+        // Storage type names (friendly names for UI)
+        "storage_type_name_app_data" => "Datos de App (Recomendado)",
+        "storage_type_name_public" => "Almacenamiento Público",
+        "storage_type_name_media" => "Almacenamiento de Media",
+        "storage_type_name_obb" => "Almacenamiento OBB",
+        "storage_type_name_global" => "Datos de App Global",
+        
         "description_hitbox_design" => "Selecciona el diseño de hitbox preferido.",
         "setting_hitbox_position" => "Posición de hitbox",
         "description_hitbox_position" => "Si esta marcado, las hitboxes estaran abajo.\nSi no, estaran arriba.",
@@ -521,6 +529,7 @@ class EsLA
         "dialogue_editor" => "Editor de Diálogos",
         "dialogue_portrait_editor" => "Editor de Dial. Ava.",
         "note_splash_editor" => "Editor de Salpicaduras",
+        "hold_splash_editor" => "Editor de Sostenidos",
         "no_mod_directory_loaded" => "< No se ha cargado ningúna carpeta de mods. >",
         "loaded_mod_directory" => "< Carpeta de mods cargada: {1} >",
 

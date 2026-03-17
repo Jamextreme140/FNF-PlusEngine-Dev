@@ -83,7 +83,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 			optionText.targetY = i;
 			grpOptions.add(optionText);
 
-			if(optionsArray[i].type == BOOL)
+			if(optionsArray[i].type == BOOL || optionsArray[i].type == BUTTON)
 			{
 				var checkbox:CheckboxThingie = new CheckboxThingie(optionText.x - 105, optionText.y, Std.string(optionsArray[i].getValue()) == 'true');
 				checkbox.sprTracker = optionText;
@@ -203,6 +203,13 @@ class BaseOptionsMenu extends MusicBeatSubstate
 						if (curOption.variable == 'judgementCounter')
                             ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
 						reloadCheckboxes();
+					}
+				
+				case BUTTON:
+					if(controls.ACCEPT)
+					{
+						FlxG.sound.play(Paths.sound('scrollMenu'));
+						curOption.change();
 					}
 
 				case KEYBIND:
@@ -561,6 +568,11 @@ class BaseOptionsMenu extends MusicBeatSubstate
 							if (optionsArray[i].variable == 'judgementCounter')
 								ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
 							reloadCheckboxes();
+						
+						case BUTTON:
+							FlxG.sound.play(Paths.sound('scrollMenu'));
+							optionsArray[i].change();
+						
 						default:
 							// For other types, they use keyboard/button input
 					}
@@ -582,11 +594,18 @@ class BaseOptionsMenu extends MusicBeatSubstate
 				if (checkbox.ID == curSelected)
 				{
 					FlxG.sound.play(Paths.sound('scrollMenu'));
-					optionsArray[checkbox.ID].setValue((optionsArray[checkbox.ID].getValue() == true) ? false : true);
-					optionsArray[checkbox.ID].change();
-					if (optionsArray[checkbox.ID].variable == 'judgementCounter')
-						ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
-					reloadCheckboxes();
+					var opt = optionsArray[checkbox.ID];
+					
+					// Only toggle value for BOOL type, not BUTTON
+					if (opt.type == BOOL) {
+						opt.setValue((opt.getValue() == true) ? false : true);
+						if (opt.variable == 'judgementCounter')
+							ClientPrefs.judgementCounter = ClientPrefs.data.judgementCounter;
+						reloadCheckboxes();
+					}
+					
+					// Always call change() for both BOOL and BUTTON
+					opt.change();
 				}
 				else
 				{

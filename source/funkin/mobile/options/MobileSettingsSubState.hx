@@ -10,34 +10,41 @@ import funkin.ui.options.Option;
  */
 class MobileSettingsSubState extends BaseOptionsMenu
 {
+	// Storage selection removed - now using only scoped storage (EXTERNAL_DATA)
+	/*
 	#if android
-	var storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL_OBB", "EXTERNAL_MEDIA", "EXTERNAL", "EXTERNAL_GLOBAL"];
+	var storageTypes:Array<String> = [];
+	var storageTypeNames:Array<String> = [];
 	var externalPaths:Array<String> = StorageUtil.checkExternalPaths(true);
 	final lastStorageType:String = ClientPrefs.data.storageType;
-	#end
-	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
-	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
-	#if android
+	var storageInfos:Array<StorageTypeInfo> = [];
 	var initialStorageType:String;
 	var pendingStorageType:String;
 	var storageTypeChanged:Bool = false;
+	var currentStorageOptionIndex:Int = -1;
 	#end
+	*/
+	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
+	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	var option:Option;
+
+	#if android
+	// JNI method handles for native file manager integration (lazy initialization)
+	private static var openFileManager_jni:Dynamic = null;
+	private static var openModsFolder_jni:Dynamic = null;
+	private static var openSavesFolder_jni:Dynamic = null;
+	#end
 
 	public function new()
 	{
-		#if android if (!externalPaths.contains('\n'))
-			storageTypes = storageTypes.concat(externalPaths); #end
 		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
 		rpcTitle = 'Mobile Settings Menu'; // for Discord Rich Presence
-		#if android
-		initialStorageType = ClientPrefs.data.storageType;
-		pendingStorageType = initialStorageType;
 		
+		#if android
 		// Show detected device tier (informational only)
 		var tierName = funkin.mobile.AndroidOptimizer.getTierName();
 		var gpuName = funkin.util.Native.detectGPU();
-		var tierInfo = 'Detected: $tierName | GPU: $gpuName\n\nQuality settings were auto-configured.\nYou can manually override in Graphics Settings.';
+		var tierInfo = 'Detected: $tierName | GPU: $gpuName\n\nQuality settings were auto-configured.\nYou can manually override in Graphics Settings.\n\nStorage: Scoped (Android/data)';
 		option = new Option('Device Performance Info', tierInfo, '', STRING, []);
 		addOption(option);
 		#end
@@ -69,21 +76,7 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		option = new Option('Infinity Display',
 			'Extends the viewport vertically for modern screens\nwhile keeping the game in 16:9 for mod compatibility.\nTouchpad controls will adjust automatically.',
 			'infinityDisplay', BOOL);
-		option.onChange = () -> FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
-		addOption(option);
-		#end
-		
-		#if android
-		option = new Option('Storage Type',
-			'Select where the game should store its data.\nEXTERNAL_DATA: Recommended, scoped storage.\nEXTERNAL: Public /sdcard/.PlusEngine/\nChanging this requires restarting the game!',
-			'storageType', STRING, storageTypes);
-		option.onChange = () -> 
-		{
-			var newType = curOption.getValue();
-			pendingStorageType = newType;
-			storageTypeChanged = (pendingStorageType != initialStorageType);
-			// Don't save here, we'll save on close with the correct value
-		};
+		option.onChange = () -> FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
 		addOption(option);
 		#end
 
@@ -109,6 +102,15 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeMobileDebugButtons;
 		addOption(option);
 
+		#if android
+		// File Manager options (BUTTON type shows checkboxes but only triggers onChange, doesn't save values)
+		option = new Option('Open File Manager',
+			'Browse and edit game files using a native Android file manager.\nPress ACCEPT to open.',
+			'', BUTTON, []);
+		option.onChange = openFileManager;
+		addOption(option);
+		#end
+
 		super();
 	}
 
@@ -123,43 +125,81 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	}
 
 	#if android
-	override public function close()
+	/**
+	 * Open native Android File Manager to browse game files
+	 */
+	function openFileManager():Void
 	{
-		if (storageTypeChanged)
+		try
 		{
-			trace('[MobileSettings] Storage type changing from ' + initialStorageType + ' to ' + pendingStorageType);
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openFileManager_jni == null) {
+				openFileManager_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openFileManager',
+					'(Ljava/lang/String;)V'
+				);
+			}
 			
-			// Update ClientPrefs.data FIRST
-			ClientPrefs.data.storageType = pendingStorageType;
-			
-			// Now save settings (this will copy data.storageType to FlxG.save.data.storageType)
-			ClientPrefs.saveSettings();
-			
-			trace('[MobileSettings] Verifying save: ClientPrefs.data.storageType = ' + ClientPrefs.data.storageType);
-			trace('[MobileSettings] Verifying save: FlxG.save.data.storageType = ' + FlxG.save.data.storageType);
-			
-			var oldPath = StorageUtil.getStoragePathForType(initialStorageType);
-			var newPath = StorageUtil.getStoragePathForType(pendingStorageType);
-
-			trace('[MobileSettings] Old path: ' + oldPath);
-			trace('[MobileSettings] New path: ' + newPath);
-
-			// Copy data and delete old directory to free up space
-			StorageUtil.migrateStorage(initialStorageType, pendingStorageType);
-
-			var message = 'Storage directory changed.\n\n';
-			message += 'The game will now close. Please reopen it.\n\n';
-			message += 'Old: ' + oldPath + '\n';
-			message += 'New: ' + newPath + '\n\n';
-			message += 'Your data has been copied to the new location.\n';
-			message += 'The old directory will be cleaned up to free space.';
-			
-			FlxG.stage.window.alert(message, 'Restart Required');
-			lime.system.System.exit(0);
-			return;
+			// Call Kotlin extension via JNI
+			var scopedPath = StorageUtil.getStorageDirectory();
+			openFileManager_jni(scopedPath);
 		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening file manager: ' + e);
+			CoolUtil.showPopUp('Could not open file manager.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
+	}
 
-		super.close();
+	/**
+	 * Open file manager directly to mods folder
+	 */
+	function openModsFolder():Void
+	{
+		try
+		{
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openModsFolder_jni == null) {
+				openModsFolder_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openModsFolder',
+					'()V'
+				);
+			}
+			
+			openModsFolder_jni();
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening mods folder: ' + e);
+			CoolUtil.showPopUp('Could not open mods folder.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
+	}
+
+	/**
+	 * Open file manager directly to saves folder
+	 */
+	function openSavesFolder():Void
+	{
+		try
+		{
+			// Initialize JNI handle if needed (lazy initialization)
+			if (openSavesFolder_jni == null) {
+				openSavesFolder_jni = lime.system.JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'openSavesFolder',
+					'()V'
+				);
+			}
+			
+			openSavesFolder_jni();
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MobileSettings] Error opening saves folder: ' + e);
+			CoolUtil.showPopUp('Could not open saves folder.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+		}
 	}
 	#end
 }

@@ -158,7 +158,7 @@ class CharacterEditorState extends MusicBeatState implements PsychUIEventHandler
 		add(frameAdvanceText);
 
 		addHelpScreen();
-		FlxG.mouse.visible = true;
+		Cursor.show();
 		FlxG.camera.zoom = 1;
 
 		makeUIMenu();
@@ -1160,7 +1160,7 @@ class CharacterEditorState extends MusicBeatState implements PsychUIEventHandler
 			}
 			else
 			{
-				FlxG.mouse.visible = false;
+				Cursor.hide();
 				MusicBeatState.switchState(new PlayState());
 			}
 			return;

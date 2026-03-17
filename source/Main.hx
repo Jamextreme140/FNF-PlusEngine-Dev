@@ -30,6 +30,7 @@ import funkin.mobile.backend.CopyState;
 #end
 import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
+import funkin.input.Cursor;
 
 import lenin.slushithings.windows.WindowsAPI;
 
@@ -203,7 +204,7 @@ class Main extends Sprite
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
+			FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
 		});
 		#end
 		
@@ -255,6 +256,7 @@ class Main extends Sprite
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
+		
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		fpsVar.visible = ClientPrefs.data.showFPS;
 		addChild(fpsVar);
@@ -292,7 +294,7 @@ class Main extends Sprite
 
 		#if html5
 		FlxG.autoPause = false;
-		FlxG.mouse.visible = false;
+		Cursor.hide();
 		#end
 
 		FlxG.fixedTimestep = false;
