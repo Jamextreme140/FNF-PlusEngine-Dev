@@ -2,6 +2,7 @@ package funkin.play.notes;
 
 import funkin.graphics.animation.PsychAnimationController;
 import funkin.graphics.shaders.RGBPalette;
+import flixel.graphics.frames.FlxAtlasFrames;
 
 typedef HoldSplashAnim = {
 	var name:String;
@@ -46,6 +47,22 @@ class SustainSplash extends FlxSprite
 
 		loadHoldSplash(holdSplash);
 	}
+
+	private function safeLoadAtlas(key:String):FlxAtlasFrames
+	{
+		if (key == null || key.trim().length < 1)
+			return null;
+
+		try
+		{
+			return Paths.getSparrowAtlas(key);
+		}
+		catch (e:Dynamic)
+		{
+			trace('[SustainSplash] Failed to load hold splash atlas "' + key + '": ' + Std.string(e));
+		}
+		return null;
+	}
 	
 	public function loadHoldSplash(?holdSplash:String)
 	{
@@ -61,15 +78,21 @@ class SustainSplash extends FlxSprite
 		}
 		
 		texture = holdSplash;
-		frames = Paths.getSparrowAtlas(texture);
+		frames = safeLoadAtlas(texture);
 		if (frames == null)
 		{
 			texture = path + defaultHoldSplash + getHoldSplashPostfix();
-			frames = Paths.getSparrowAtlas(texture);
+			frames = safeLoadAtlas(texture);
 			if (frames == null)
 			{
 				texture = path + defaultHoldSplash + '-Vanilla';
-				frames = Paths.getSparrowAtlas(texture);
+				frames = safeLoadAtlas(texture);
+				if (frames == null)
+				{
+					// Keep the object alive without visuals instead of crashing on invalid XML/atlas data.
+					visible = false;
+					active = false;
+				}
 			}
 		}
 		
