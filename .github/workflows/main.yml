@@ -46,6 +46,7 @@ on:
 
 env:
   APP_VERSION: 4.0.0-${{ github.run_id }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ╔═══════════════════════════════════════════════════════════════════╗
@@ -155,7 +156,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -193,7 +194,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -244,7 +245,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -280,7 +281,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -329,7 +330,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -370,7 +371,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
@@ -443,7 +444,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v2.0.2
+      - uses: sirthegamercoder/setup-haxe@master
         with:
           haxe-version: 4.3.7
       
