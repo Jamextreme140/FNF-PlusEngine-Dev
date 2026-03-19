@@ -873,7 +873,7 @@ class HoldSplashEditorHelpSubState extends MusicBeatSubstate
 	{
 		super.update(elapsed);
 
-		if (controls.ACCEPT || controls.BACK #if mobile || FlxG.android.justReleased.BACK #end)
+			if (controls.ACCEPT || controls.BACK #if android || FlxG.android.justReleased.BACK #end)
 		{
 			FlxG.sound.play(Paths.sound('cancelMenu'));
 			close();
