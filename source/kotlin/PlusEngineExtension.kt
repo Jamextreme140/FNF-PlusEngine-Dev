@@ -25,13 +25,25 @@
 package com.leninasto.plusengine
 
 import android.content.Intent
+import android.os.Bundle
 import org.haxe.extension.Extension
+import com.leninasto.plusengine.WavyTimebarManager
 
 /**
  * JNI Extension for FNF: Plus Engine
  * Provides native Android functionality accessible from Haxe
  */
 class PlusEngineExtension : Extension() {
+    
+    /**
+     * Called when the extension is created
+     * Initialize crash handler for Java/Kotlin exceptions
+     */
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Install crash handler to catch Java/Kotlin exceptions
+        NativeCrashHandler.install()
+    }
     
     companion object {
         
@@ -145,6 +157,79 @@ class PlusEngineExtension : Extension() {
                     positiveText = "OK"
                 )
             }
+        }
+        
+        // ========== WavyTimebar Methods ==========
+        
+        /**
+         * Initialize the Wavy Timebar overlay
+         * Call this once when PlayState is created
+         */
+        @JvmStatic
+        fun initializeTimebar() {
+            WavyTimebarManager.initialize()
+        }
+        
+        /**
+         * Destroy timebar and free resources
+         * Call this when leaving PlayState
+         */
+        @JvmStatic
+        fun destroyTimebar() {
+            WavyTimebarManager.destroy()
+        }
+        
+        /**
+         * Update timebar progress
+         * @param progress Value from 0.0 (start of song) to 1.0 (end of song)
+         */
+        @JvmStatic
+        fun setTimebarProgress(progress: Float) {
+            WavyTimebarManager.setProgress(progress)
+        }
+        
+        /**
+         * Show timebar
+         */
+        @JvmStatic
+        fun showTimebar() {
+            WavyTimebarManager.show()
+        }
+        
+        /**
+         * Hide timebar
+         */
+        @JvmStatic
+        fun hideTimebar() {
+            WavyTimebarManager.hide()
+        }
+        
+        /**
+         * Set timebar visibility alpha
+         * @param alpha 0.0 = invisible, 1.0 = fully visible
+         */
+        @JvmStatic
+        fun setTimebarAlpha(alpha: Float) {
+            WavyTimebarManager.setVisibility(alpha)
+        }
+        
+        /**
+         * Check if timebar is ready to use
+         * @return true if initialized and ready
+         */
+        @JvmStatic
+        fun isTimebarReady(): Boolean {
+            return WavyTimebarManager.isReady()
+        }
+
+        /**
+         * Configure native timebar layout.
+         * @param widthPercent Relative width in range [0.2, 1.0]
+         * @param yPx Top margin in physical pixels
+         */
+        @JvmStatic
+        fun setTimebarLayout(widthPercent: Float, yPx: Float) {
+            WavyTimebarManager.setLayout(widthPercent, yPx)
         }
     }
 }

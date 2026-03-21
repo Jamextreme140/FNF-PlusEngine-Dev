@@ -308,8 +308,6 @@ class MemoryManager
      */
     public static function aggressiveCleanup():Void
     {
-        trace('[MemoryManager] Running AGGRESSIVE cleanup...');
-        
         // Clear Paths caches
         Paths.clearUnusedMemory();
         Paths.clearStoredMemory();
@@ -342,7 +340,6 @@ class MemoryManager
             #end
         }
         
-        trace('[MemoryManager] Aggressive cleanup complete');
     }
     
     /**
@@ -352,8 +349,6 @@ class MemoryManager
      */
     public static function ultraCleanup():Void
     {
-        trace('[MemoryManager] ⚠️ ULTRA CLEANUP - This may cause temporary issues');
-        
         // Run aggressive cleanup first
         aggressiveCleanup();
         
@@ -384,7 +379,6 @@ class MemoryManager
             #end
         }
         
-        trace('[MemoryManager] Ultra cleanup complete - ${Math.round(getMemoryUsage())}MB in use');
     }
     
     /**
@@ -426,9 +420,9 @@ class MemoryManager
     {
         var memoryMB:Float = getMemoryUsage();
         if (memoryMB > 0)
-            trace('[MemoryManager] Current memory usage: ${Math.round(memoryMB)}MB');
+            trace('Current memory usage: ${Math.round(memoryMB)}MB');
         else
-            trace('[MemoryManager] Memory usage reporting not available on this platform');
+            trace('Memory usage reporting not available on this platform');
     }
 
     /**
@@ -449,7 +443,6 @@ class MemoryManager
         if (PlayState.instance.camOther != null && PlayState.instance.camOther.filters != null)
             PlayState.instance.camOther.filters = [];
         
-        trace('[MemoryManager] Shaders cleared');
     }
 
     /**
@@ -463,7 +456,6 @@ class MemoryManager
         
         if (currentMemory > 0 && currentMemory > thresholdMB)
         {
-            trace('[MemoryManager] Threshold exceeded (${Math.round(currentMemory)}MB > ${thresholdMB}MB). Running cleanup...');
             if (aggressiveMode)
                 aggressiveCleanup();
             else

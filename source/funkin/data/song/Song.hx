@@ -12,6 +12,9 @@ typedef SwagSong =
 	var song:String;
 	var notes:Array<SwagSection>;
 	var events:Array<Dynamic>;
+	@:optional var notesV2:Array<SongNoteV2>;
+	@:optional var eventsV2:Array<SongEventV2>;
+	@:optional var bpmChangesV2:Array<BpmChangeV2>;
 	var bpm:Float;
 	var needsVoices:Bool;
 	var speed:Float;
@@ -442,6 +445,124 @@ class Song
 		return song;
 	}
 
+		private static function buildRuntimeSectionsFromV2(v2:Dynamic):Array<SwagSection>
+		{
+			var rawChanges:Array<Dynamic> = v2.bpmChanges != null ? cast v2.bpmChanges : [];
+			var baseBpm:Float = v2.bpm != null ? v2.bpm : 100.0;
+			var bpmChanges:Array<Dynamic> = rawChanges.copy();
+			bpmChanges.sort(function(a, b) return Std.int(a.time - b.time));
+			if (bpmChanges.length == 0 || bpmChanges[0].time > 0)
+				bpmChanges.unshift({ time: 0.0, bpm: baseBpm });
+
+			var getBpmAt = function(t:Float):Float
+			{
+				var bpm:Float = baseBpm;
+				for (change in bpmChanges)
+				{
+					if (change.time <= t + 1) bpm = change.bpm;
+					else break;
+				}
+				return bpm;
+			};
+
+			var flatNotes:Array<Dynamic> = v2.notes != null ? cast v2.notes : [];
+			var flatEvents:Array<Dynamic> = v2.events != null ? cast v2.events : [];
+
+			var lastTime:Float = 0;
+			for (note in flatNotes)
+			{
+				var end:Float = note.t + (note.l != null && note.l > 0 ? note.l : 0.0);
+				if (end > lastTime) lastTime = end;
+			}
+			for (ev in flatEvents)
+			{
+				if (ev != null && ev.t != null && ev.t > lastTime)
+					lastTime = ev.t;
+			}
+			for (change in bpmChanges)
+			{
+				if (change != null && change.time != null && change.time > lastTime)
+					lastTime = change.time;
+			}
+			if (lastTime <= 0) lastTime = (60000.0 / baseBpm) * 4;
+
+			var sectionTimes:Array<Float> = [];
+			var t:Float = 0;
+			while (t <= lastTime + 1)
+			{
+				sectionTimes.push(t);
+				t += (60000.0 / getBpmAt(t)) * 4;
+			}
+
+			var cameraEvents:Array<Dynamic> = [];
+			for (ev in flatEvents)
+			{
+				if (ev != null && ev.name == 'Camera Focus')
+					cameraEvents.push(ev);
+			}
+			cameraEvents.sort(function(a, b) return Std.int(a.t - b.t));
+
+			var sectionMustHits:Array<Bool> = [];
+			var camIdx:Int = 0;
+			var lastMustHit:Bool = false;
+			for (i in 0...sectionTimes.length)
+			{
+				var secStart:Float = sectionTimes[i];
+				var secEnd:Float = (i + 1 < sectionTimes.length) ? sectionTimes[i + 1] : Math.POSITIVE_INFINITY;
+				while (camIdx < cameraEvents.length && cameraEvents[camIdx].t < secEnd)
+				{
+					var cam:Dynamic = cameraEvents[camIdx++];
+					if (cam.t >= secStart)
+					{
+						var payload:Dynamic = Reflect.field(cam, 'v');
+						if (payload != null && Reflect.hasField(payload, 'target'))
+							lastMustHit = Std.string(Reflect.field(payload, 'target')) == 'player';
+					}
+				}
+				sectionMustHits.push(lastMustHit);
+			}
+
+			var sections:Array<SwagSection> = [];
+			var lastBpm:Float = baseBpm;
+			for (i in 0...sectionTimes.length)
+			{
+				var bpm:Float = getBpmAt(sectionTimes[i]);
+				var sec:SwagSection = {
+					sectionNotes: [],
+					sectionBeats: 4.0,
+					mustHitSection: sectionMustHits[i]
+				};
+				if (bpm != lastBpm)
+				{
+					sec.changeBPM = true;
+					sec.bpm = bpm;
+					lastBpm = bpm;
+				}
+				sections.push(sec);
+			}
+
+			return sections;
+		}
+
+		private static function prepareRuntimeFromV2(songJson:SwagSong):SwagSong
+		{
+			var chars:Dynamic = Reflect.field(songJson, 'characters');
+			if (chars != null)
+			{
+				songJson.player1 = Reflect.hasField(chars, 'player') ? Reflect.field(chars, 'player') : songJson.player1;
+				songJson.player2 = Reflect.hasField(chars, 'opponent') ? Reflect.field(chars, 'opponent') : songJson.player2;
+				songJson.gfVersion = Reflect.hasField(chars, 'girlfriend') ? Reflect.field(chars, 'girlfriend') : songJson.gfVersion;
+			}
+
+			songJson.notesV2 = cast (Reflect.hasField(songJson, 'notes') ? Reflect.field(songJson, 'notes') : []);
+			songJson.eventsV2 = cast (Reflect.hasField(songJson, 'events') ? Reflect.field(songJson, 'events') : []);
+			songJson.bpmChangesV2 = cast (Reflect.hasField(songJson, 'bpmChanges') ? Reflect.field(songJson, 'bpmChanges') : []);
+
+			songJson.notes = buildRuntimeSectionsFromV2(songJson);
+			songJson.events = [];
+			return songJson;
+		}
+
 	public static var chartPath:String;
 	public static var loadedSongName:String;
 	public static function loadFromJson(jsonInput:String, ?folder:String):SwagSong
@@ -636,8 +757,8 @@ class Song
 					{
 						if (fmt == 'psych_v2')
 						{
-							trace('loading v2 chart $nameForError, downgrading to runtime format...');
-							songJson = cast downgradeFromV2(cast songJson);
+							trace('loading v2 chart $nameForError, using native runtime v2 path...');
+							songJson = prepareRuntimeFromV2(songJson);
 						}
 						else
 						{

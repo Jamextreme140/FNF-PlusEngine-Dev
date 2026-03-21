@@ -56,7 +56,6 @@ object DropDown {
 
 	@JvmStatic
 	fun showDropDown(title: String?, itemsJson: String, selectedIndex: Int): Boolean {
-		NativeCrashHandler.install()
 		val activity = Extension.mainActivity ?: return false
 		val items = parseItems(itemsJson)
 		if (items.isEmpty()) return false

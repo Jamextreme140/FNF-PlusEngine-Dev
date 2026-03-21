@@ -17,6 +17,7 @@
 	<template path="NativeUI.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeUI.kt" />
 	<template path="NativeCrashHandler.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeCrashHandler.kt" />
 	<template path="NativeCrashActivity.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeCrashActivity.kt" />
+	<template path="WavyTimebarManager.kt" rename="app/src/main/java/com/leninasto/plusengine/WavyTimebarManager.kt" />
 	<template path="components/DropDown.kt" rename="app/src/main/java/com/leninasto/plusengine/components/DropDown.kt" />
 	<template path="languages/Language.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/Language.kt" />
 	<template path="languages/English.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/English.kt" />
@@ -38,8 +39,8 @@
 	<config:android permission="android.permission.READ_MEDIA_AUDIO" />
 	<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 	
-	<!-- Android SDK versions (updated to 36 for Android 16 support) -->
-	<android target-sdk-version="36" minimum-sdk-version="21" build-tools-version="36.0.0" />
+	<!-- Android SDK versions | From Android 6 - 16 -->
+	<android target-sdk-version="36" minimum-sdk-version="23" build-tools-version="36.0.0" />
 	
 	<!-- Gradle and Build Configuration for Android 16 -->
 	<config:android gradle-version="8.12" />

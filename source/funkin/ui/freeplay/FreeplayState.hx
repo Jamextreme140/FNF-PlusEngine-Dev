@@ -103,6 +103,18 @@ class FreeplayState extends MusicBeatState {
     var _cachedVisibleIndices:Array<Int> = [];
     var _visCacheValid:Bool = false;
     var _lastShowingFavorites:Bool = false;
+    var _vizUpdateAccum:Float = 0.0;
+    var _vizTargetHeights:Array<Float> = [];
+    var _vizCurrentHeights:Array<Float> = [];
+    #if mobile
+    static inline var VIZ_UPDATE_INTERVAL:Float = 1 / 45;
+    #else
+    static inline var VIZ_UPDATE_INTERVAL:Float = 1 / 60;
+    #end
+    static inline var VIZ_MIN_H:Float = 2;
+    static inline var VIZ_SMOOTH_SPEED:Float = 18;
+    var _lastAppliedBgZoom:Float = -1;
+    var _lastAppliedAlbumZoom:Float = -1;
 
     var diffViewOffset:Float = 0;
     var lerpDiffViewOffset:Float = 0;
@@ -147,7 +159,11 @@ class FreeplayState extends MusicBeatState {
     static inline var BAR_MAX_H:Int    = 64;
 
     // Full-width bottom spectral visualizer bar constants
-    static inline var VIZ_BAR_COUNT:Int = 256;
+    #if mobile
+    static inline var VIZ_BAR_COUNT:Int = 96;
+    #else
+    static inline var VIZ_BAR_COUNT:Int = 160;
+    #end
     static inline var VIZ_BAR_MAX_H:Int = 240;
     var blurEffect:BlurEffect;
     //var diff:Array<FlxSpriteGroup>;
@@ -253,13 +269,14 @@ class FreeplayState extends MusicBeatState {
         for(i in 0...VIZ_BAR_COUNT) {
             var vbar:FlxSprite = new FlxSprite();
             vbar.makeGraphic(vizBarW - 1, VIZ_BAR_MAX_H, FlxColor.WHITE);
-            vbar.setGraphicSize(vizBarW - 1, 2);
-            vbar.updateHitbox();
             vbar.x = i * vizBarW;
             vbar.y = FlxG.height - 2;
+            vbar.scale.y = 2 / VIZ_BAR_MAX_H;
             vbar.alpha = 0.0;
             vbar.ID = i;
             vizBarsGroup.add(vbar);
+            _vizTargetHeights.push(VIZ_MIN_H);
+            _vizCurrentHeights.push(VIZ_MIN_H);
         }
         add(vizBarsGroup);
 
@@ -756,9 +773,12 @@ class FreeplayState extends MusicBeatState {
         Conductor.songPosition = FlxG.sound.music.time;
         
         bgZoom = FlxMath.lerp(defaultBgZoom, bgZoom, Math.exp(-elapsed * 3.125));
-        bg.scale.set(bgZoom, bgZoom);
-        bg.updateHitbox();
-        bg.screenCenter();
+        if (_lastAppliedBgZoom < 0 || Math.abs(bgZoom - _lastAppliedBgZoom) > 0.0008) {
+            bg.scale.set(bgZoom, bgZoom);
+            bg.updateHitbox();
+            bg.screenCenter();
+            _lastAppliedBgZoom = bgZoom;
+        }
         
         albumZoom = FlxMath.lerp(defaultAlbumZoom, albumZoom, Math.exp(-elapsed * 4));
         albumZoom = Math.min(albumZoom, 1.01);
@@ -769,9 +789,12 @@ class FreeplayState extends MusicBeatState {
         var centerX:Float = baseX + (baseSize / 2);
         var centerY:Float = baseY + (baseSize / 2);
         
-        album.scale.set(albumZoom, albumZoom);
-        album.updateHitbox();
-        
+        if (_lastAppliedAlbumZoom < 0 || Math.abs(albumZoom - _lastAppliedAlbumZoom) > 0.001) {
+            album.scale.set(albumZoom, albumZoom);
+            album.updateHitbox();
+            _lastAppliedAlbumZoom = albumZoom;
+        }
+
         album.x = centerX - (album.width / 2);
         album.y = centerY - (album.height / 2);
 
@@ -1964,37 +1987,49 @@ class FreeplayState extends MusicBeatState {
                 _analyzer.maxFreq = 18000;
                 _analyzer.minDb = -80;
                 _analyzer.maxDb = -15;
-                #if !web
+                #if mobile
+                _analyzer.fftN = 256;
+                #elseif !web
                 _analyzer.fftN = 512;
                 #end
                 _needsAnalyzerInit = false;
             }
         }
+        _vizUpdateAccum += elapsed;
         if(vizBarsGroup != null) {
             var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
-            if(_analyzer != null) {
-                _analyzerLevels = _analyzer.getLevels(_analyzerLevels);
-                for(i in 0...vizBarsGroup.members.length) {
-                    var vbar = vizBarsGroup.members[i];
-                    if(vbar == null) continue;
-                    var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
-                    var h:Int = Std.int(Math.max(2, level * VIZ_BAR_MAX_H));
-                    vbar.setGraphicSize(vizBarW - 1, h);
-                    vbar.updateHitbox();
-                    vbar.x = i * vizBarW;
-                    vbar.y = FlxG.height - h;
-                    vbar.color = _curAccentColor;
-                    vbar.alpha = 1.0;
+
+            if (_vizUpdateAccum >= VIZ_UPDATE_INTERVAL)
+            {
+                _vizUpdateAccum = 0;
+                if(_analyzer != null) {
+                    _analyzerLevels = _analyzer.getLevels(_analyzerLevels);
+                    for(i in 0...vizBarsGroup.members.length) {
+                        var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
+                        _vizTargetHeights[i] = Math.max(VIZ_MIN_H, level * VIZ_BAR_MAX_H);
+                    }
+                } else {
+                    for(i in 0...vizBarsGroup.members.length) {
+                        _vizTargetHeights[i] = VIZ_MIN_H;
+                    }
                 }
-            } else {
-                for(i in 0...vizBarsGroup.members.length) {
-                    var vbar = vizBarsGroup.members[i];
-                    if(vbar == null) continue;
-                    vbar.setGraphicSize(vizBarW - 1, 2);
-                    vbar.updateHitbox();
-                    vbar.y = FlxG.height - 2;
-                    vbar.alpha = 1.0;
-                }
+            }
+
+            var lerpFactor:Float = 1 - Math.exp(-elapsed * VIZ_SMOOTH_SPEED);
+            for(i in 0...vizBarsGroup.members.length) {
+                var vbar = vizBarsGroup.members[i];
+                if(vbar == null) continue;
+
+                var curH:Float = _vizCurrentHeights[i];
+                var targetH:Float = _vizTargetHeights[i];
+                curH = FlxMath.lerp(targetH, curH, 1 - lerpFactor);
+                _vizCurrentHeights[i] = curH;
+
+                vbar.scale.y = curH / VIZ_BAR_MAX_H;
+                vbar.x = i * vizBarW;
+                vbar.y = FlxG.height - curH;
+                vbar.color = _curAccentColor;
+                vbar.alpha = 1.0;
             }
         }
         #end

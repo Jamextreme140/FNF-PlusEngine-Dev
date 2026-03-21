@@ -46,6 +46,7 @@ import funkin.graphics.VideoSprite;
 import funkin.play.components.JudCounter;
 import funkin.play.notes.Note.EventNote;
 import funkin.play.stage.*;
+import funkin.mobile.WavyTimebar;
 import lenin.PreloadedChartNote;
 import lenin.HeavyChartManager;
 import lenin.NoteSpawner;
@@ -421,6 +422,15 @@ class PlayState extends MusicBeatState
 	// Break Timer Feature variables
 	var breakTimerText:FlxText = null;
 	var lastBreakTimerValue:Float = -1;
+	var breakTimerUpdateAccum:Float = 0;
+	var breakTimerNextNoteTime:Float = -1;
+
+	#if android
+	var nativeTimebarUpdateAccum:Float = 0;
+	var lastNativeTimebarProgress:Float = -1;
+	static inline var NATIVE_TIMEBAR_UPDATE_INTERVAL:Float = 1 / 20; // 20 FPS updates are enough for smooth UI
+	static inline var NATIVE_TIMEBAR_MIN_DELTA:Float = 0.003;
+	#end
 	
 	#if windows
 	// Window border color tween system (Slushi Engine method)
@@ -963,6 +973,16 @@ class PlayState extends MusicBeatState
 		timeBar.visible = showTime;
 		uiGroup.add(timeBar);
 		uiGroup.add(timeTxt);
+
+		#if android
+		var showNativeTimebar:Bool = showTime && !ClientPrefs.data.hideHud && !isNotITG;
+		WavyTimebar.initialize();
+		WavyTimebar.setLayout(0.58, timeTxt.y + (timeTxt.height / 4));
+		WavyTimebar.setProgress(0);
+		WavyTimebar.setAlpha(showNativeTimebar ? 1 : 0);
+		if (showNativeTimebar) WavyTimebar.show();
+		else WavyTimebar.hide();
+		#end
 
 		// Lyric text - centered on screen, above everything on HUD
 		lyricText = new FlxText(0, FlxG.height * 0.75, FlxG.width, "", 32);
@@ -2397,8 +2417,162 @@ class PlayState extends MusicBeatState
 		var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
 		var ghostNotesCaught:Int = 0;
 		var daBpm:Float = Conductor.bpm;
+		var noteDedupMap:Map<String, Note> = [];
+		var useV2FastPath:Bool = songData.format != null && songData.format.startsWith('psych_v2') && Reflect.hasField(songData, 'notesV2');
+		var notesV2:Array<Dynamic> = useV2FastPath ? cast Reflect.field(songData, 'notesV2') : null;
+		var eventsV2:Array<Dynamic> = useV2FastPath && Reflect.hasField(songData, 'eventsV2') ? cast Reflect.field(songData, 'eventsV2') : null;
+		var bpmChangesV2:Array<Dynamic> = useV2FastPath && Reflect.hasField(songData, 'bpmChangesV2') ? cast Reflect.field(songData, 'bpmChangesV2') : null;
+
+		if (bpmChangesV2 != null)
+			bpmChangesV2.sort(function(a, b) return Std.int(a.time - b.time));
+
+		var getV2BpmAtTime = function(timeMs:Float):Float
+		{
+			if (bpmChangesV2 == null || bpmChangesV2.length == 0)
+				return songData.bpm;
+
+			var bpm:Float = songData.bpm;
+			for (change in bpmChangesV2)
+			{
+				if (change == null) continue;
+				if (change.time != null && change.time <= timeMs + 1)
+				{
+					if (change.bpm != null)
+						bpm = change.bpm;
+				}
+				else break;
+			}
+			return bpm;
+		};
 	
-		for (section in sectionsData)
+		if (useV2FastPath && notesV2 != null)
+		{
+			notesV2.sort(function(a, b) return Std.int(a.t - b.t));
+			for (songNote in notesV2)
+			{
+				if (songNote == null) continue;
+
+				var spawnTime:Float = songNote.t;
+				var rawData:Int = songNote.d;
+				var noteColumn:Int = Std.int(rawData % totalColumns);
+				var holdLength:Float = songNote.l != null ? songNote.l : 0.0;
+				var noteType:String = songNote.type != null ? Std.string(songNote.type) : '';
+				if (Math.isNaN(holdLength))
+					holdLength = 0.0;
+
+				var gottaHitNote:Bool = (rawData < totalColumns);
+				var dedupKey:String = noteColumn + ':' + (gottaHitNote ? '1' : '0') + ':' + noteType + ':' + Std.int(spawnTime);
+				var evilNote:Note = noteDedupMap.get(dedupKey);
+				if (evilNote != null && Math.abs(spawnTime - evilNote.strumTime) < flixel.math.FlxMath.EPSILON)
+				{
+					if (evilNote.tail.length > 0)
+						for (tail in evilNote.tail)
+						{
+							tail.destroy();
+							unspawnNotes.remove(tail);
+						}
+
+					evilNote.destroy();
+					unspawnNotes.remove(evilNote);
+					noteDedupMap.remove(dedupKey);
+					ghostNotesCaught++;
+				}
+
+				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+				swagNote.gfNote = false;
+				swagNote.animSuffix = '';
+				swagNote.mustPress = playOpponent ? !gottaHitNote : gottaHitNote;
+				swagNote.isOpponentMode = playOpponent;
+				swagNote.sustainLength = holdLength;
+				swagNote.noteType = noteType;
+				swagNote.scrollFactor.set();
+
+				#if mobile
+				if (ClientPrefs.data.mobileReceptorAlign && MobileData.mode == 4 && !swagNote.mustPress)
+				{
+					swagNote.visible = false;
+				}
+				#end
+
+				unspawnNotes.push(swagNote);
+				noteDedupMap.set(dedupKey, swagNote);
+
+				var noteBpm:Float = getV2BpmAtTime(spawnTime);
+				var curStepCrochet:Float = 60 / noteBpm * 1000 / 4.0;
+				final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
+				if(roundSus > 0)
+				{
+					for (susNote in 0...roundSus)
+					{
+						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+
+						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+						sustainNote.animSuffix = swagNote.animSuffix;
+						sustainNote.mustPress = swagNote.mustPress;
+						sustainNote.gfNote = swagNote.gfNote;
+						sustainNote.noteType = swagNote.noteType;
+						sustainNote.isOpponentMode = swagNote.isOpponentMode;
+						sustainNote.scrollFactor.set();
+						sustainNote.parent = swagNote;
+
+						#if mobile
+						if (ClientPrefs.data.mobileReceptorAlign && MobileData.mode == 4 && !sustainNote.mustPress)
+						{
+							sustainNote.visible = false;
+						}
+						#end
+
+						unspawnNotes.push(sustainNote);
+						swagNote.tail.push(sustainNote);
+
+						sustainNote.correctionOffset = swagNote.height / 2;
+						if(!PlayState.isPixelStage)
+						{
+							if(oldNote.isSustainNote)
+							{
+								oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
+								oldNote.scale.y /= playbackRate;
+								oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+							}
+
+							if(ClientPrefs.data.downScroll)
+								sustainNote.correctionOffset = 0;
+						}
+						else if(oldNote.isSustainNote)
+						{
+							oldNote.scale.y /= playbackRate;
+							oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+						}
+
+						if (sustainNote.mustPress) sustainNote.x += FlxG.width / 2;
+						else if(ClientPrefs.data.middleScroll)
+						{
+							sustainNote.x += 310;
+							if(noteColumn > 1)
+								sustainNote.x += FlxG.width / 2 + 25;
+						}
+					}
+				}
+
+				if (swagNote.mustPress)
+				{
+					swagNote.x += FlxG.width / 2;
+				}
+				else if(ClientPrefs.data.middleScroll)
+				{
+					swagNote.x += 310;
+					if(noteColumn > 1)
+					{
+						swagNote.x += FlxG.width / 2 + 25;
+					}
+				}
+				if(!noteTypes.contains(swagNote.noteType))
+					noteTypes.push(swagNote.noteType);
+
+				oldNote = swagNote;
+			}
+		}
+		else for (section in sectionsData)
 		{
 			if (section.changeBPM != null && section.changeBPM && section.bpm != null && daBpm != section.bpm)
 				daBpm = section.bpm;
@@ -2416,21 +2590,21 @@ class PlayState extends MusicBeatState
 				var gottaHitNote:Bool = (songNotes[1] < totalColumns);
 
 				if (i != 0) {
-					// CLEAR ANY POSSIBLE GHOST NOTES
-					for (evilNote in unspawnNotes) {
-						var matches: Bool = (noteColumn == evilNote.noteData && gottaHitNote == evilNote.mustPress && evilNote.noteType == noteType);
-						if (matches && Math.abs(spawnTime - evilNote.strumTime) < flixel.math.FlxMath.EPSILON) {
-							if (evilNote.tail.length > 0)
-								for (tail in evilNote.tail)
-								{
-									tail.destroy();
-									unspawnNotes.remove(tail);
-								}
-							evilNote.destroy();
-							unspawnNotes.remove(evilNote);
-							ghostNotesCaught++;
-							//continue;
-						}
+					var dedupKey:String = noteColumn + ':' + (gottaHitNote ? '1' : '0') + ':' + noteType + ':' + Std.int(spawnTime);
+					var evilNote:Note = noteDedupMap.get(dedupKey);
+					if (evilNote != null && Math.abs(spawnTime - evilNote.strumTime) < flixel.math.FlxMath.EPSILON)
+					{
+						if (evilNote.tail.length > 0)
+							for (tail in evilNote.tail)
+							{
+								tail.destroy();
+								unspawnNotes.remove(tail);
+							}
+
+						evilNote.destroy();
+						unspawnNotes.remove(evilNote);
+						noteDedupMap.remove(dedupKey);
+						ghostNotesCaught++;
 					}
 				}
 
@@ -2457,6 +2631,7 @@ class PlayState extends MusicBeatState
 				#end
 				
 				unspawnNotes.push(swagNote);
+				noteDedupMap.set(noteColumn + ':' + (gottaHitNote ? '1' : '0') + ':' + noteType + ':' + Std.int(spawnTime), swagNote);
 
 				var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
 				final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
@@ -2534,9 +2709,34 @@ class PlayState extends MusicBeatState
 			}
 		}
 		trace('["${SONG.song.toUpperCase()}" CHART INFO]: Ghost Notes Cleared: $ghostNotesCaught');
-		for (event in songData.events) //Event Notes
-			for (i in 0...event[1].length)
-				makeEvent(event, i);
+		if (useV2FastPath && eventsV2 != null)
+		{
+			for (event in eventsV2)
+			{
+				if (event == null || event.name == null || event.name == 'Camera Focus')
+					continue;
+
+				var value1:String = '';
+				var value2:String = '';
+				if (event.v != null)
+				{
+					if (Reflect.hasField(event.v, 'val1'))
+						value1 = Std.string(Reflect.field(event.v, 'val1'));
+					else
+						value1 = Std.string(event.v);
+
+					if (Reflect.hasField(event.v, 'val2'))
+						value2 = Std.string(Reflect.field(event.v, 'val2'));
+				}
+				makeEventDirect(event.t, Std.string(event.name), value1, value2);
+			}
+		}
+		else
+		{
+			for (event in songData.events) //Event Notes
+				for (i in 0...event[1].length)
+					makeEvent(event, i);
+		}
 
 		unspawnNotes.sort(sortByTime);
 		
@@ -2624,6 +2824,19 @@ class PlayState extends MusicBeatState
 			event: event[1][i][0],
 			value1: event[1][i][1],
 			value2: event[1][i][2]
+		};
+		eventNotes.push(subEvent);
+		eventPushed(subEvent);
+		callOnScripts('onEventPushed', [subEvent.event, subEvent.value1 != null ? subEvent.value1 : '', subEvent.value2 != null ? subEvent.value2 : '', subEvent.strumTime]);
+	}
+
+	function makeEventDirect(strumTime:Float, eventName:String, value1:String, value2:String)
+	{
+		var subEvent:EventNote = {
+			strumTime: strumTime + ClientPrefs.data.noteOffset,
+			event: eventName,
+			value1: value1,
+			value2: value2
 		};
 		eventNotes.push(subEvent);
 		eventPushed(subEvent);
@@ -3018,6 +3231,16 @@ class PlayState extends MusicBeatState
 			var curTime:Float = Math.max(0, Conductor.songPosition - ClientPrefs.data.noteOffset);
 			songPercent = (curTime / songLength);
 
+			#if android
+			nativeTimebarUpdateAccum += elapsed;
+			if (nativeTimebarUpdateAccum >= NATIVE_TIMEBAR_UPDATE_INTERVAL && Math.abs(songPercent - lastNativeTimebarProgress) >= NATIVE_TIMEBAR_MIN_DELTA)
+			{
+				WavyTimebar.setProgress(songPercent);
+				lastNativeTimebarProgress = songPercent;
+				nativeTimebarUpdateAccum = 0;
+			}
+			#end
+
 			var songCalc:Float = (songLength - curTime);
 			if(ClientPrefs.data.timeBarType == 'Time Elapsed') songCalc = curTime;
 
@@ -3068,14 +3291,15 @@ class PlayState extends MusicBeatState
 
 		// TPS/NPS System Update
 		{
+			var nowMs:Float = Date.now().getTime();
 			var i = notesHitArray.length - 1;
 			while (i >= 0)
 			{
 				var time:Date = notesHitArray[i];
-				if (time != null && time.getTime() + 1000 < Date.now().getTime())
-					notesHitArray.remove(time);
+				if (time != null && time.getTime() + 1000 < nowMs)
+					notesHitArray.splice(i, 1);
 				else
-					i = -1; // break the loop
+					break;
 				i--;
 			}
 			nps = notesHitArray.length;
@@ -3155,7 +3379,11 @@ class PlayState extends MusicBeatState
 						while(i < notes.length)
 						{
 							var daNote:Note = notes.members[i];
-							if(daNote == null) continue;
+							if(daNote == null)
+							{
+								i++;
+								continue;
+							}
 
 							// Track rendering cost (JS Engine optimization)
 							amountOfRenderedNotes += daNote.noteDensity;
@@ -3194,7 +3422,7 @@ class PlayState extends MusicBeatState
 								daNote.active = daNote.visible = false;
 								invalidateNote(daNote);
 							}
-							if(daNote.exists) i++;
+							i++;
 						}
 					}
 					else
@@ -3216,36 +3444,40 @@ class PlayState extends MusicBeatState
 			// Break Timer Feature - Show timer when next notes are approaching
 			if (ClientPrefs.data.breakTimer && breakTimerText != null && playerStrums != null && playerStrums.length > 0)
 			{
-				var nextNoteTime:Float = -1;
 				var currentTime:Float = Conductor.songPosition;
-				
-				// Find next player note
-				for (note in notes)
+
+				breakTimerUpdateAccum += elapsed;
+				if (breakTimerUpdateAccum >= 0.12)
 				{
-					if (note != null && note.mustPress && !note.isSustainNote && !note.wasGoodHit && note.strumTime > currentTime)
+					breakTimerUpdateAccum = 0;
+					breakTimerNextNoteTime = -1;
+
+					for (note in notes)
 					{
-						if (nextNoteTime < 0 || note.strumTime < nextNoteTime)
-							nextNoteTime = note.strumTime;
-					}
-				}
-				
-				// Also check unspawned notes
-				if (unspawnNotes != null && unspawnNotes.length > 0)
-				{
-					for (note in unspawnNotes)
-					{
-						if (note != null && note.mustPress && !note.isSustainNote && note.strumTime > currentTime)
+						if (note != null && note.mustPress && !note.isSustainNote && !note.wasGoodHit && note.strumTime > currentTime)
 						{
-							if (nextNoteTime < 0 || note.strumTime < nextNoteTime)
-								nextNoteTime = note.strumTime;
-							break; // unspawnNotes is sorted, so we can break early
+							if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
+								breakTimerNextNoteTime = note.strumTime;
+						}
+					}
+
+					if (unspawnNotes != null && unspawnNotes.length > 0)
+					{
+						for (note in unspawnNotes)
+						{
+							if (note != null && note.mustPress && !note.isSustainNote && note.strumTime > currentTime)
+							{
+								if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
+									breakTimerNextNoteTime = note.strumTime;
+								break;
+							}
 						}
 					}
 				}
 				
 				// Display timer if next note is within 3 seconds
-				var timeUntilNext:Float = (nextNoteTime - currentTime) / 1000;
-				if (nextNoteTime > 0 && timeUntilNext >= 0 && timeUntilNext <= 3.0)
+				var timeUntilNext:Float = (breakTimerNextNoteTime - currentTime) / 1000;
+				if (breakTimerNextNoteTime > 0 && timeUntilNext >= 0 && timeUntilNext <= 3.0)
 				{
 					breakTimerText.visible = true;
 					
@@ -4267,6 +4499,10 @@ class PlayState extends MusicBeatState
 
 		timeBar.visible = false;
 		timeTxt.visible = false;
+		#if android
+		WavyTimebar.hide();
+		WavyTimebar.setAlpha(0);
+		#end
 		canPause = false;
 		endingSong = true;
 		camZooming = false;
@@ -4292,7 +4528,6 @@ class PlayState extends MusicBeatState
 			playbackRate = 1;
 
 		if (!chartingMode && !cpuControlled && !isStoryMode) {
-				// INICIAR FREAKYMENU ANTES DE IR A RESULTSSTATE
 				FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7, true);
 				
 				restoreWindowState();
@@ -5622,6 +5857,10 @@ class PlayState extends MusicBeatState
 	}
 
 	override function destroy() {
+		#if android
+		WavyTimebar.destroy();
+		#end
+
 		// Limpieza agresiva de memoria antes de destruir (Android)
 		#if android
 		funkin.util.MemoryManager.aggressiveCleanup();
