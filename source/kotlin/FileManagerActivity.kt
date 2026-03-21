@@ -49,6 +49,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -228,7 +230,7 @@ class FileManagerActivity : AppCompatActivity() {
                             )
                             DropdownMenuItem(
                                 text = { androidx.compose.material3.Text(lang.newFile) },
-                                leadingIcon = { Icon(Icons.Default.NoteAdd, contentDescription = null) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.NoteAdd, contentDescription = null) },
                                 onClick = { showMenu = false; promptCreate(false) }
                             )
                         }
@@ -384,7 +386,7 @@ class FileManagerActivity : AppCompatActivity() {
             ext in videoExtensions -> Icons.Default.Movie
             ext in audioExtensions -> Icons.Default.MusicNote
             ext in textExtensions -> Icons.Default.Description
-            else -> Icons.Default.InsertDriveFile
+            else -> Icons.AutoMirrored.Filled.InsertDriveFile
         }
     }
 

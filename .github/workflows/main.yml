@@ -384,14 +384,14 @@ jobs:
       - name: Setup Android SDK
         uses: amyu/setup-android@v5.5
         with:
-          sdk-version: 35
-          build-tools-version: 35.0.0
+          sdk-version: 36
+          build-tools-version: 36.0.0
           ndk-version: 27.3.13750724
           generate-job-summary: false
       
       - name: Install SDK components
         run: |
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;35.0.0" "ndk;27.3.13750724" "cmdline-tools;latest"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "cmdline-tools;latest"
       
       - name: Install Haxelib
         run: |

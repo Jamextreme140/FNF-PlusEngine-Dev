@@ -117,9 +117,9 @@ tenang — kemajuan tidak menunggu.
 Anda memerlukan:
 
 - Android Build Tools / Android Command Line Tools
-- Android SDK 35
+- Android SDK 36
 - Android NDK r27d
-- Java JDK 17
+- Java JDK 21
 
 # Fitur-fitur setelah 1.0.4
 

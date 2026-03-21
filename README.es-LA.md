@@ -117,9 +117,9 @@ relájate — el progreso no espera.
 Necesitas tener:
 
 - Android Build Tools / Android Command Line Tools
-- Android SDK 35
+- Android SDK 36
 - Android NDK r27d
-- Java JDK 17
+- Java JDK 21
 
 # Características después de 1.0.4
 
