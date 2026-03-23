@@ -5992,6 +5992,10 @@ class PlayState extends MusicBeatState
 	public function spawnNoteSplash(x:Float = 0, y:Float = 0, ?data:Int = 0, ?note:Note, ?strum:StrumNote) {
 		// No mostrar splashes en niveles de StepMania NotITG
 		if(curStage == 'notitg') return;
+
+		// If splash alpha is effectively zero (either global or per-note), don't create the splash
+		var effectiveAlpha:Float = (note != null) ? note.noteSplashData.a : ClientPrefs.data.splashAlpha;
+		if (effectiveAlpha <= 0) return;
 		
 		var splash:NoteSplash = grpNoteSplashes.recycle(NoteSplash);
 		splash.babyArrow = strum;

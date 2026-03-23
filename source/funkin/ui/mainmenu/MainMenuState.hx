@@ -21,7 +21,7 @@ class MainMenuState extends MusicBeatState
 	public static var fnfVersion:String = '0.2.8';
 	public static var plusEngineBaseVersion:String = '1.2.7'; // Stable semantic version
 	#if DEV_BUILD
-	public static var devUpdate:String = 'Build 450'; // Build xxx or Beta x
+	public static var devUpdate:String = 'Build 0'; // Build xxx or Beta x
 	public static var plusEngineVersion:String = plusEngineBaseVersion + ' (' + devUpdate + ')';
 	#else
 	public static var plusEngineVersion:String = plusEngineBaseVersion;

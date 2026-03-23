@@ -1,7 +1,6 @@
-- SScript is dead; many checks have been added to HScript for mods in both 0.7.3 and 1.0.4
-- Fixed a bug that prevented the Alphabet from loading on mobile
-- Fixed a crash on mobile when starting the game due to incorrect assets (uninstalling and reinstalling is required)
-- Fixed a bug in the Character Editor that caused a crash when importing a Texture Atlas
-- Re-added controls in freeplay mode to allow normal navigation; previously, the list could not be moved
-- Some hardcoded events have been removed
-- Improved Hibox Arrows on mobile
+- New user interface for FreeplayState .
+- Fixed storage errors on Android that caused unexpected game crashes and prevented files from being copied to their correct folders.
+- Created a native file manager for Android users, allowing them to access game files without connecting their device to a PC.
+- Added a new native dropdown menu for Android users, replacing the PsychUIDropdownMenu logic, which was somewhat difficult to manage on Android.
+- Added several older options and more.
+- Please report any bugs. Until next time.

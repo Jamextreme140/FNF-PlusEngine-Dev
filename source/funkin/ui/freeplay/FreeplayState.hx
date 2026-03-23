@@ -687,7 +687,7 @@ class FreeplayState extends MusicBeatState {
         updateDynamicData();
         
         #if mobile
-        addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
+        addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
         addTouchPadCamera();
         touchScroll = new funkin.mobile.backend.TouchScroll(true);
         difficultyScroll = new funkin.mobile.backend.TouchScroll(false);
@@ -870,6 +870,15 @@ class FreeplayState extends MusicBeatState {
                     {
                         diffViewOffset += -diffScrollDelta / 120;
                         diffViewOffset = FlxMath.bound(diffViewOffset, 0, Difficulty.list.length - 1);
+                    }
+
+                    // If the difficulty scroll detected a short tap, forward it to the
+                    // generic pointer handler so single taps can select a pill.
+                    if (difficultyScroll.wasTapped()) {
+                        var tapPos = difficultyScroll.getTapPosition();
+                        if (tapPos != null) {
+                            handleFreeplayPointerPress(tapPos.x, tapPos.y);
+                        }
                     }
 
                     if (difficultyScroll.didReleaseScroll() && Difficulty.list.length > 0)
@@ -2449,7 +2458,7 @@ class FreeplayState extends MusicBeatState {
         
         #if mobile
         removeTouchPad();
-        addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
+        addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
         addTouchPadCamera();
         if(touchPad != null) {
             touchPad.visible = true;
