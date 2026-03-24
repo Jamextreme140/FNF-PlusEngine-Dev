@@ -53,6 +53,12 @@ class LegacySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		option = new Option('Auto Convert Charts to V2',
+			"If checked, automatically converts psych_v1 charts to psych_v2 format\nwhen loading them (persists to disk).\nDisabled by default - PlayState handles both formats natively.",
+			'autoConvertChartsToV2',
+			BOOL);
+		addOption(option);
+
 		super();
 	}
 }

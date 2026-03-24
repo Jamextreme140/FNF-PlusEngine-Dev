@@ -718,8 +718,9 @@ class Song
 
 		// Auto-migrate charts that are not yet in psych_v2 format.
 		// Only runs for mod files (writable paths on disk), never for embedded assets.
+		// Controlled by ClientPrefs.data.autoConvertChartsToV2 option (disabled by default).
 		#if (MODS_ALLOWED && sys)
-		if (song != null && _lastPath != null && sys.FileSystem.exists(_lastPath)
+		if (ClientPrefs.data.autoConvertChartsToV2 && song != null && _lastPath != null && sys.FileSystem.exists(_lastPath)
 			&& (song.format == null || !song.format.startsWith('psych_v2')))
 		{
 			try
@@ -735,7 +736,7 @@ class Song
 		return song;
 	}
 
-	public static function parseJSON(rawData:String, ?nameForError:String = null, ?convertTo:String = 'psych_v1'):SwagSong
+	public static function parseJSON(rawData:String, ?nameForError:String = null, ?convertTo:String = 'psych_v1', ?forEditor:Bool = false):SwagSong
 	{
 		var songJson:SwagSong = cast Json.parse(rawData);
 		if(Reflect.hasField(songJson, 'song'))
@@ -757,8 +758,18 @@ class Song
 					{
 						if (fmt == 'psych_v2')
 						{
-							trace('loading v2 chart $nameForError, using native runtime v2 path...');
-							songJson = prepareRuntimeFromV2(songJson);
+							// For chart editor, use downgradeFromV2 to properly distribute notes into sections
+							// For runtime (PlayState), use prepareRuntimeFromV2 to keep flat note arrays
+							if (forEditor)
+							{
+								trace('loading v2 chart $nameForError for editor, converting to sectioned format...');
+								songJson = downgradeFromV2(songJson);
+							}
+							else
+							{
+								trace('loading v2 chart $nameForError, using native runtime v2 path...');
+								songJson = prepareRuntimeFromV2(songJson);
+							}
 						}
 						else
 						{
