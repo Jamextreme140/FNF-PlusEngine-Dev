@@ -68,6 +68,26 @@ object NativeCrashHandler {
         launchCrashActivity(throwable)
     }
 
+    @JvmStatic
+    fun showCrashActivityFromContext(title: String, message: String, stackTrace: String) {
+        try {
+            val context = Extension.mainActivity?.applicationContext ?: return
+            val intent = Intent(context, NativeCrashActivity::class.java).apply {
+                putExtra(NativeCrashActivity.EXTRA_CRASH_TITLE, title)
+                putExtra(NativeCrashActivity.EXTRA_CRASH_MESSAGE, message)
+                putExtra(NativeCrashActivity.EXTRA_CRASH_TRACE, stackTrace)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+                )
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to show crash activity from context", e)
+        }
+    }
+
     private fun launchCrashActivity(throwable: Throwable) {
         val activity = Extension.mainActivity ?: return
         val stackTrace = throwable.toDetailedStackTrace()

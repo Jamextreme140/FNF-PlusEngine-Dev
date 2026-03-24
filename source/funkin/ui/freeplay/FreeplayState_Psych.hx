@@ -185,9 +185,13 @@ class FreeplayState_Psych extends MusicBeatState
 		add(bottomText);
 		
 		player = new PsychMusicPlayer(this);
+		
+		changeSelection();
+		updateTexts();
+		super.create();
 
 		#if mobile
-		addTouchPad('UP_DOWN', 'A_B_C_X_Y');
+		addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
 		addTouchPadCamera();
 		if(touchPad != null)
 		{
@@ -195,10 +199,6 @@ class FreeplayState_Psych extends MusicBeatState
 			touchPad.updateTrackedButtons();
 		}
 		#end
-		
-		changeSelection();
-		updateTexts();
-		super.create();
 	}
 
 	override function closeSubState()

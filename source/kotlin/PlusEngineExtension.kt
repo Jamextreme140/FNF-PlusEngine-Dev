@@ -158,6 +158,30 @@ class PlusEngineExtension : Extension() {
                 )
             }
         }
+
+        /**
+         * Show crash activity with full error details.
+         * Called from Haxe CrashHandler when a critical error occurs.
+         * @param errorTitle Short error title (e.g., "Null Reference Error")
+         * @param errorMessage Brief error message
+         * @param stackTrace Full stack trace
+         */
+        @JvmStatic
+        fun showCrashScreen(errorTitle: String, errorMessage: String, stackTrace: String) {
+            try {
+                val activity = Extension.mainActivity
+                if (activity == null || activity.isFinishing) {
+                    // Fallback: try to show via application context
+                    NativeCrashHandler.showCrashActivityFromContext(errorTitle, errorMessage, stackTrace)
+                } else {
+                    // Create mock exception for crash display
+                    val mockException = Exception("$errorTitle\n$errorMessage\n\n$stackTrace")
+                    NativeCrashHandler.showCrashActivity(mockException)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlusEngineExtension", "Failed to show crash screen", e)
+            }
+        }
         
         // ========== WavyTimebar Methods ==========
         

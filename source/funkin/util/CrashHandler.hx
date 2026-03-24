@@ -274,9 +274,14 @@ class CrashHandler
 		saveErrorMessage('$m\n\n$stackLabel\n\n$systemReport');
 		#end
 
-		// Mensaje con link de ayuda
+		// Show crash screen on Android, popup on other platforms
+		#if android
+		var fullStackTrace = '$stackLabel\n\n$systemReport\n\n========================\nFor help, visit: $HELP_LINK';
+		CoolUtil.showCrashScreen("Error!", m, fullStackTrace);
+		#else
 		var errorMsg = '$m\n\n$stackLabel\n\n$systemReport\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Error!");
+		#end
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
 
 		lime.system.System.exit(1);
@@ -314,9 +319,16 @@ class CrashHandler
 		saveErrorMessage(errorLog);
 		#end
 
-		// Message with help link
+		// Show crash screen on Android, popup on other platforms
+		#if android
+		var crashTitle = "Critical Error!";
+		var crashMessage = message != null ? Std.string(message) : "Unknown error";
+		var fullStackTrace = '$errorLog\n\n========================\nFor help, visit: $HELP_LINK';
+		CoolUtil.showCrashScreen(crashTitle, crashMessage, fullStackTrace);
+		#else
 		var errorMsg = '$errorLog\n\n========================\nNeed help? Visit:\n$HELP_LINK';
 		CoolUtil.showPopUp(errorMsg, "Critical Error!");
+		#end
 		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
         
 		lime.system.System.exit(1);

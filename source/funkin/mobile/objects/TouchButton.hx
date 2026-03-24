@@ -300,6 +300,10 @@ class TypedTouchButton<T:FlxSprite> extends FlxSprite implements IFlxInput
 
 	function checkInput(pointer:FlxPointer, input:IFlxInput, justPressedPosition:FlxPoint, camera:FlxCamera):Bool
 	{
+		// Early exit if camera is null
+		if (camera == null)
+			return false;
+
 		if (maxInputMovement != Math.POSITIVE_INFINITY
 			&& justPressedPosition.distanceTo(pointer.getScreenPosition(FlxPoint.weak())) > maxInputMovement
 			&& input == currentInput)
