@@ -29,7 +29,7 @@
 	<define name="ACHIEVEMENTS_ALLOWED" />
 	<define name="DISCORD_ALLOWED" if="desktop" />
 	<define name="TRANSLATIONS_ALLOWED" />
-	<define name="COPYSTATE_ALLOWED" if="MODS_ALLOWED mobile"/>
+	<!-- <define name="COPYSTATE_ALLOWED" if="MODS_ALLOWED mobile"/> --> <!-- Disabled: Assets are now read directly from APK -->
 	<define name="IRIS_DEBUG"/>
 	<define name="WINDOWS_FUNCTIONS_ALLOWED" if="desktop" />
 	<define name="GDI_ENABLED" if="windows" />
@@ -257,6 +257,8 @@
 	
 	<section if="android">
 		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
+		<!-- Custom provider_paths.xml for scoped storage content provider -->
+		<assets path="art/android/template" rename="." type="template" />
 		<include path="source/kotlin/include_android.xml" />
 	</section>
 

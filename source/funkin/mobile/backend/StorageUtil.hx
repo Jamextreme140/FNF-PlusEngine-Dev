@@ -27,7 +27,8 @@ class StorageUtil
 	}
 
 	public static function getSMDirectory():String
-		return #if android '/sdcard/.PlusEngine/sm/' #else './sm/' #end;
+		// Use scoped storage for StepMania files: Android/data/<package>/files/sm/
+		return #if android getStorageDirectory() + 'sm/' #else './sm/' #end;
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
@@ -69,9 +70,12 @@ class StorageUtil
 	}
 
 	#if android
-	// always force path due to haxe
+	/**
+	 * @deprecated Use getStorageDirectory() instead. Kept for compatibility.
+	 * Now points to scoped storage like getStorageDirectory().
+	 */
 	public static function getExternalStorageDirectory():String
-		return '/sdcard/.PlusEngine/';
+		return getStorageDirectory();
 
 	public static function requestPermissions():Void
 	{
@@ -81,17 +85,6 @@ class StorageUtil
 			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO']);
 		else
 			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE']);
-
-		// No need for MANAGE_EXTERNAL_STORAGE with scoped storage
-		// if (AndroidVersion.SDK_INT == AndroidVersionCode.TIRAMISU && !AndroidEnvironment.isExternalStorageManager())
-		// 	AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
-
-		if ((AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU
-			&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_MEDIA_IMAGES'))
-			|| (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU
-				&& !AndroidPermissions.getGrantedPermissions().contains('android.permission.READ_EXTERNAL_STORAGE')))
-			CoolUtil.showPopUp(Language.getPhrase('permissions_message', 'If you accepted the permissions you are all good!\nIf you didn\'t then expect a crash\nPress OK to see what happens'),
-				Language.getPhrase('mobile_notice', "Notice!"));
 
 		// Create main storage directory
 		try

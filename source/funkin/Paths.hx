@@ -18,6 +18,10 @@ import flash.media.Sound;
 
 import haxe.Json;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 
 #if MODS_ALLOWED
 import funkin.modding.Mods;
@@ -377,12 +381,19 @@ class Paths
 
 	inline static public function getTextFromFile(key:String, ?ignoreMods:Bool = false):String
 	{
-		var path:String = getPath(key, TEXT, !ignoreMods);
-		#if sys
-		return (FileSystem.exists(path)) ? File.getContent(path) : null;
-		#else
-		return (OpenFlAssets.exists(path, TEXT)) ? Assets.getText(path) : null;
+		// Get proper path (checks mods first if allowed, then returns APK path)
+		var path:String = getPath(key, TEXT, null, !ignoreMods);
+		
+		// Try loading from mods first (FileSystem), then from APK (OpenFlAssets)
+		#if MODS_ALLOWED
+		if (FileSystem.exists(path))
+			return File.getContent(path);
 		#end
+		
+		if (OpenFlAssets.exists(path, TEXT))
+			return Assets.getText(path);
+		
+		return null;
 	}
 
 	inline static public function font(key:String)
@@ -535,13 +546,21 @@ class Paths
 		//trace('precaching sound: $file');
 		if(!currentTrackedSounds.exists(file))
 		{
-			#if sys
+			var sound:Sound = null;
+			
+			// Try loading from mods first (FileSystem), then from APK (OpenFlAssets)
+			#if MODS_ALLOWED
 			if(FileSystem.exists(file))
-				currentTrackedSounds.set(file, Sound.fromFile(file));
-			#else
-			if(OpenFlAssets.exists(file, SOUND))
-				currentTrackedSounds.set(file, OpenFlAssets.getSound(file));
+				sound = Sound.fromFile(file);
+			else
 			#end
+			if(OpenFlAssets.exists(file, SOUND))
+				sound = OpenFlAssets.getSound(file);
+			
+			if(sound != null)
+			{
+				currentTrackedSounds.set(file, sound);
+			}
 			else if(beepOnNull)
 			{
 				trace('SOUND NOT FOUND: $key, PATH: $path');
@@ -554,8 +573,9 @@ class Paths
 	}
 
 	#if MODS_ALLOWED
+	// Use scoped storage for mods: Android/data/<package>/files/mods/
 	inline static public function mods(key:String = '')
-		return #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'mods/' + key;
+		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'mods/' + key;
 
 	inline static public function modsJson(key:String)
 		return modFolders('data/' + key + '.json');
@@ -691,7 +711,8 @@ class Paths
 			}
 			#end
 		}
-		return (#if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'mods/' + key);
+		// Use scoped storage for mods fallback path
+		return (#if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'mods/' + key);
 	}
 
 	#if linux

@@ -18,6 +18,11 @@ import openfl.utils.Assets;
 
 import haxe.Json;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 class FreeplayState_Psych extends MusicBeatState
 {
 	var songs:Array<PsychSongMetadata> = [];
@@ -488,11 +493,20 @@ class FreeplayState_Psych extends MusicBeatState
 		try
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
-			var character:Dynamic = Json.parse(File.getContent(path));
-			#else
-			var character:Dynamic = Json.parse(Assets.getText(path));
+			if(FileSystem.exists(path))
+				jsonContent = File.getContent(path);
 			#end
+			
+			if(jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if(jsonContent == null) return null;
+			
+			var character:Dynamic = Json.parse(jsonContent);
 			return character.vocals_file;
 		}
 		catch (e:Dynamic) {}

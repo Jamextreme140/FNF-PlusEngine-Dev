@@ -116,11 +116,13 @@ class Character extends FlxSprite
 		var characterPath:String = 'characters/$character.json';
 
 		var path:String = Paths.getPath(characterPath, TEXT);
+		
+		// Check if file exists (mods or APK)
+		var fileExists:Bool = false;
 		#if MODS_ALLOWED
-		if (!FileSystem.exists(path))
-		#else
-		if (!Assets.exists(path))
+		fileExists = FileSystem.exists(path);
 		#end
+		if (!fileExists && !Assets.exists(path))
 		{
 			path = Paths.getSharedPath('characters/' + DEFAULT_CHARACTER + '.json'); //If a character couldn't be found, change him to BF just to prevent a crash
 			missingCharacter = true;
@@ -130,11 +132,12 @@ class Character extends FlxSprite
 
 		try
 		{
-			#if MODS_ALLOWED
-			loadCharacterFile(Json.parse(File.getContent(path)));
-			#else
-			loadCharacterFile(Json.parse(Assets.getText(path)));
-			#end
+			// Try loading from mods first, then from APK
+			var jsonContent:String = Paths.getTextFromFile(characterPath);
+			if (jsonContent != null)
+				loadCharacterFile(Json.parse(jsonContent));
+			else
+				throw 'Character file not found: $path';
 		}
 		catch(e:Dynamic)
 		{

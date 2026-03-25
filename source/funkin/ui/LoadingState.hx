@@ -4,6 +4,11 @@ import lime.app.Future;
 import sys.thread.FixedThreadPool;
 import haxe.Json;
 import lime.utils.Assets;
+
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 import openfl.display.BitmapData;
 import openfl.utils.AssetType;
 import openfl.utils.Assets as OpenFlAssets;
@@ -547,13 +552,17 @@ class LoadingState extends MusicBeatState
 				var path:String = Paths.json('$folder/preload');
 				var json:Dynamic = null;
 
+				// Try loading from mods first, then from APK
 				#if MODS_ALLOWED
 				var moddyFile:String = Paths.modsJson('$folder/preload');
-				if (FileSystem.exists(moddyFile)) json = Json.parse(File.getContent(moddyFile));
-				else json = Json.parse(File.getContent(path));
-				#else
-				json = Json.parse(Assets.getText(path));
+				if (FileSystem.exists(moddyFile))
+					json = Json.parse(File.getContent(moddyFile));
+				else if (FileSystem.exists(path))
+					json = Json.parse(File.getContent(path));
 				#end
+				
+				if (json == null && Assets.exists(path))
+					json = Json.parse(Assets.getText(path));
 
 				if(json != null)
 				{
@@ -787,11 +796,24 @@ class LoadingState extends MusicBeatState
 		try
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
-			var character:Dynamic = Json.parse(File.getContent(path));
-			#else
-			var character:Dynamic = Json.parse(Assets.getText(path));
+			if(FileSystem.exists(path))
+				jsonContent = File.getContent(path);
 			#end
+			
+			if(jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if(jsonContent == null)
+			{
+				trace('Character file not found: $path');
+				return;
+			}
+			
+			var character:Dynamic = Json.parse(jsonContent);
 
 			var isAnimateAtlas:Bool = false;
 			var img:String = character.image;

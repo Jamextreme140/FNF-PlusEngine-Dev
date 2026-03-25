@@ -411,7 +411,7 @@ class FileManagerActivity : AppCompatActivity() {
     private fun resolveInitialPath(): File {
         val startLoc = intent.getStringExtra(EXTRA_START_LOCATION)
         return when (startLoc) {
-            "mods" -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods").also { it.mkdirs() }
+            "mods" -> File(getExternalFilesDir(null), "mods").also { it.mkdirs() }
             "assets" -> File(getExternalFilesDir(null), "assets").also { it.mkdirs() }
             "saves" -> File(getExternalFilesDir(null), "saves").also { it.mkdirs() }
             else -> intent.getStringExtra(EXTRA_INITIAL_PATH)?.let { File(it) } ?: getExternalFilesDir(null)!!
@@ -420,7 +420,7 @@ class FileManagerActivity : AppCompatActivity() {
 
     private fun navigateTo(location: String) {
         val target = when(location) {
-            "mods" -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods")
+            "mods" -> File(getExternalFilesDir(null), "mods")
             "assets" -> File(getExternalFilesDir(null), "assets")
             "saves" -> File(getExternalFilesDir(null), "saves")
             else -> getExternalFilesDir(null)!!

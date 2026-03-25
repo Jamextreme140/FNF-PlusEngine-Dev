@@ -28,13 +28,6 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	var option:Option;
 
-	#if android
-	// JNI method handles for native file manager integration (lazy initialization)
-	private static var openFileManager_jni:Dynamic = null;
-	private static var openModsFolder_jni:Dynamic = null;
-	private static var openSavesFolder_jni:Dynamic = null;
-	#end
-
 	public function new()
 	{
 		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
@@ -104,10 +97,10 @@ class MobileSettingsSubState extends BaseOptionsMenu
 
 		#if android
 		// File Manager options (BUTTON type shows checkboxes but only triggers onChange, doesn't save values)
-		option = new Option('Open File Manager',
-			'Browse and edit game files using a native Android file manager.\nPress ACCEPT to open.',
+		option = new Option('Open Data Folder',
+			'Opens the Android system file explorer to browse game data folder.\nLocation: Android/data/com.leninasto.plusengine/files/',
 			'', BUTTON, []);
-		option.onChange = openFileManager;
+		option.onChange = openDataFolder;
 		addOption(option);
 		#end
 
@@ -126,49 +119,32 @@ class MobileSettingsSubState extends BaseOptionsMenu
 
 	#if android
 	/**
-	 * Open native Android File Manager to browse game files
+	 * Open system file explorer to browse game data folder
+	 * Opens Android/data/com.leninasto.plusengine/files/
+	 * Uses native Kotlin implementation via JNI for optimal performance
 	 */
-	function openFileManager():Void
+	function openDataFolder():Void
 	{
 		try
 		{
-			// Initialize JNI handle if needed (lazy initialization)
-			if (openFileManager_jni == null) {
-				openFileManager_jni = lime.system.JNI.createStaticMethod(
-					'com/leninasto/plusengine/PlusEngineExtension',
-					'openFileManager',
-					'(Ljava/lang/String;)V'
-				);
-			}
-			
-			// Call Kotlin extension via JNI
-			var scopedPath = StorageUtil.getStorageDirectory();
-			openFileManager_jni(scopedPath);
+			funkin.external.android.DataFolderUtil.openDataFolder();
 		}
 		catch (e:Dynamic)
 		{
-			trace('[MobileSettings] Error opening file manager: ' + e);
-			CoolUtil.showPopUp('Could not open file manager.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
+			trace('[MobileSettings] Error opening data folder: ' + e);
+			CoolUtil.showPopUp('Could not open data folder.\nError: ' + e, Language.getPhrase('mobile_error', 'Error!'));
 		}
 	}
 
 	/**
-	 * Open file manager directly to mods folder
+	 * Open system file explorer directly to mods folder
+	 * Opens Android/data/com.leninasto.plusengine/files/mods/
 	 */
 	function openModsFolder():Void
 	{
 		try
 		{
-			// Initialize JNI handle if needed (lazy initialization)
-			if (openModsFolder_jni == null) {
-				openModsFolder_jni = lime.system.JNI.createStaticMethod(
-					'com/leninasto/plusengine/PlusEngineExtension',
-					'openModsFolder',
-					'()V'
-				);
-			}
-			
-			openModsFolder_jni();
+			funkin.external.android.DataFolderUtil.openModsFolder();
 		}
 		catch (e:Dynamic)
 		{
@@ -178,22 +154,14 @@ class MobileSettingsSubState extends BaseOptionsMenu
 	}
 
 	/**
-	 * Open file manager directly to saves folder
+	 * Open system file explorer directly to saves folder
+	 * Opens Android/data/com.leninasto.plusengine/files/saves/
 	 */
 	function openSavesFolder():Void
 	{
 		try
 		{
-			// Initialize JNI handle if needed (lazy initialization)
-			if (openSavesFolder_jni == null) {
-				openSavesFolder_jni = lime.system.JNI.createStaticMethod(
-					'com/leninasto/plusengine/PlusEngineExtension',
-					'openSavesFolder',
-					'()V'
-				);
-			}
-			
-			openSavesFolder_jni();
+			funkin.external.android.DataFolderUtil.openSavesFolder();
 		}
 		catch (e:Dynamic)
 		{

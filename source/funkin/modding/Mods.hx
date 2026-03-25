@@ -154,8 +154,9 @@ class Mods
 	}
 
 	public static var updatedOnState:Bool = false;
+	// Use scoped storage for mods list: Android/data/<package>/files/modsList.txt
 	inline static function getModsListPath():String
-		return #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
+		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
 
 	inline static function getFallbackModsListPath():String
 		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';

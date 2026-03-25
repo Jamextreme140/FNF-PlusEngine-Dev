@@ -68,7 +68,7 @@ class FunkinLua {
 		
 		// Configure Lua package.path for 0.7.3 mods compatibility on Android
 		#if (android && MODS_ALLOWED)
-		var modsPath:String = StorageUtil.getExternalStorageDirectory() + 'mods/';
+		var modsPath:String = StorageUtil.getStorageDirectory() + 'mods/';
 		var packagePathConfig:String = 'package.path = package.path .. ";' + modsPath + '?.lua;' + modsPath + '?/init.lua"';
 		LuaL.dostring(lua, packagePathConfig);
 		#end

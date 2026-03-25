@@ -25,9 +25,10 @@ import openfl.events.KeyboardEvent;
 #if (linux || mac)
 import lime.graphics.Image;
 #end
-#if COPYSTATE_ALLOWED
-import funkin.mobile.backend.CopyState;
-#end
+// CopyState removed - assets are read directly from APK
+// #if COPYSTATE_ALLOWED
+// import funkin.mobile.backend.CopyState;
+// #end
 import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
 import funkin.input.Cursor;
@@ -89,10 +90,8 @@ class Main extends Sprite
 		#if android
 		ClientPrefs.loadStorageTypeEarly();
 		StorageUtil.requestPermissions();
-		trace('[Main] Current storage type: ' + ClientPrefs.data.storageType);
-		trace('[Main] Storage directory: ' + StorageUtil.getStorageDirectory());
 		#end
-		Sys.setCwd(StorageUtil.getStorageDirectory());
+		// iOS doesn't need working directory change either
 		#end
 		funkin.util.CrashHandler.init();
 		
@@ -209,49 +208,8 @@ class Main extends Sprite
 		#end
 		
 		// Determine initial state. InitialState will load mods and redirect accordingly.
+		// Assets are read directly from APK, no need for CopyState
 		var initialState:Class<FlxState> = InitialState;
-		#if COPYSTATE_ALLOWED
-		// For Android < 11 with EXTERNAL storage, we need to check if permissions were granted
-		// before we can properly check existing files
-		#if android
-		var needsPermissions:Bool = false;
-		var grantedPerms = AndroidPermissions.getGrantedPermissions();
-		
-		if (ClientPrefs.data.storageType == "EXTERNAL") {
-			// Check permissions based on Android version
-			if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU) {
-				// Android 12 and below use legacy storage permissions
-				needsPermissions = !grantedPerms.contains('android.permission.WRITE_EXTERNAL_STORAGE');
-			} else {
-				// Android 13+ use granular media permissions
-				// For file operations, we need at least one media permission
-				needsPermissions = !grantedPerms.contains('android.permission.READ_MEDIA_IMAGES') &&
-								   !grantedPerms.contains('android.permission.READ_MEDIA_VIDEO') &&
-								   !grantedPerms.contains('android.permission.READ_MEDIA_AUDIO');
-				trace('[Main] Android 13+ detected, checking media permissions: ' + !needsPermissions);
-			}
-		}
-		
-		// If we need permissions and don't have them yet, always go to CopyState
-		// CopyState will handle the file checking after permissions are granted
-		if (needsPermissions || !CopyState.checkExistingFiles()) {
-			initialState = CopyState;
-			if (needsPermissions) {
-				trace('[Main] Permissions not granted yet for EXTERNAL storage (SDK: ' + AndroidVersion.SDK_INT + '), going to CopyState');
-			}
-		} else {
-			trace('[Main] All files exist, skipping CopyState');
-		}
-		#else
-		if (!CopyState.checkExistingFiles()) {
-			initialState = CopyState;
-		} else {
-			trace('[Main] All files exist, skipping CopyState');
-		}
-		#end
-		#else
-		// Preloader removed: always start at InitialState
-		#end
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
