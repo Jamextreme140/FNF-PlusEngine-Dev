@@ -465,8 +465,8 @@ class IdID
         "description_storage_type" => "Pilih tempat untuk menyimpan data game.\nLihat deskripsi detail saat mengubah opsi.\n\nMengubah ini memerlukan restart game!",
         "setting_show_debug_buttons" => "Tampilkan Tombol Debug",
         "description_show_debug_buttons" => "Jika dicentang, menampilkan tombol T (Trace) dan D (Debug) di pojok kanan atas.\nT mengaktifkan/menonaktifkan tampilan trace, D mengganti tingkat debug FPS.",
-        "setting_open_file_manager" => "Buka Pengelola Berkas",
-        "description_open_file_manager" => "Telusuri dan edit berkas game menggunakan pengelola berkas bawaan Android.\nTekan ACCEPT untuk membuka.",
+        "setting_open_data_folder" => "Buka Folder Data",
+        "description_open_data_folder" => "Membuka penjelajah file sistem Android untuk menelusuri folder data game.\nLokasi: Android/data/com.leninasto.plusengine/files/",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
