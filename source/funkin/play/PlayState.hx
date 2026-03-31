@@ -1671,12 +1671,22 @@ class PlayState extends MusicBeatState
 		var foundFile:Bool = false;
 		var fileName:String = Paths.video(name);
 
-		#if sys
+		#if android
 		if (FileSystem.exists(fileName))
+			foundFile = true;
+		else if (OpenFlAssets.exists(fileName))
+		{
+			// File is inside the APK, get the extracted path
+			fileName = OpenFlAssets.getPath(fileName);
+			foundFile = true;
+		}
+		#elseif sys
+		if (FileSystem.exists(fileName))
+			foundFile = true;
 		#else
 		if (OpenFlAssets.exists(fileName))
+			foundFile = true;
 		#end
-		foundFile = true;
 
 		if (foundFile)
 		{

@@ -475,3 +475,81 @@ jobs:
         with:
           name: iOSBuild
           path: export/release/ios/build/Release-iphoneos/*.ipa
+
+  # ╔═══════════════════════════════════════════════════════════════════╗
+  # ║                     🚀 PRE-RELEASE PUBLISH                        ║
+  # ╚═══════════════════════════════════════════════════════════════════╝
+  # Runs after all build jobs. If at least one succeeded, deletes the
+  # previous dev pre-release and creates a new one with all built artifacts.
+  # The description includes changes since the last stable tag.
+  Publish-PreRelease:
+    if: |
+      always() &&
+      github.event_name == 'push' &&
+      (
+        needs.Windows-x86.result == 'success' ||
+        needs.Windows-x64.result == 'success' ||
+        needs.Mac-Intel.result == 'success' ||
+        needs.Mac-ARM.result == 'success' ||
+        needs.Linux-x64.result == 'success' ||
+        needs.Android.result == 'success' ||
+        needs.iOS.result == 'success'
+      )
+    needs: [targets, Windows-x86, Windows-x64, Mac-Intel, Mac-ARM, Linux-x64, Android, iOS]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate release notes
+        run: |
+          # Find last stable tag (ignore dev-build, pre, alpha, beta, rc, nightly tags)
+          LAST_TAG=$(git tag --list --sort=-version:refname | grep -vE '^(dev-build|nightly)$' | grep -vEi 'pre|alpha|beta|rc' | head -1 || true)
+
+          if [ -z "$LAST_TAG" ]; then
+            FROM=$(git rev-list --max-parents=0 HEAD)
+            TAG_DISPLAY="the beginning"
+          else
+            FROM="$LAST_TAG"
+            TAG_DISPLAY="\`$LAST_TAG\`"
+          fi
+
+          {
+            echo "## Changes since $TAG_DISPLAY"
+            echo ""
+            git log "${FROM}..HEAD" --pretty=format:"- **%s** (\`%h\`) — %an" --no-merges
+            echo ""
+            echo ""
+            echo "---"
+            echo "> Built from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`"
+          } > release_notes.md
+
+          cat release_notes.md
+
+      - name: Delete previous dev pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete dev-build --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Publish dev pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          mapfile -d '' FILES < <(find artifacts -type f -print0)
+          gh release create dev-build \
+            --prerelease \
+            --title "Dev Build — ${BUILD_DATE}" \
+            --notes-file release_notes.md \
+            --target "${{ github.sha }}" \
+            "${FILES[@]}"
