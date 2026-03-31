@@ -96,10 +96,20 @@ class FunkinLua {
 		// If neither PlayState nor a state exists, this is likely a global script
 		// Don't add to any array, it will be managed separately
 
-		var myFolder:Array<String> = this.scriptName.split('/');
 		#if MODS_ALLOWED
-		if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1]))) //is inside mods folder
-			this.modFolder = myFolder[1];
+		var modsBasePath:String = Paths.mods();
+		var normalizedScriptName:String = this.scriptName.replace('\\', '/');
+		if(normalizedScriptName.startsWith(modsBasePath)) {
+			var relative:String = normalizedScriptName.substr(modsBasePath.length);
+			var modName:String = relative.split('/')[0];
+			if(Mods.currentModDirectory == modName || Mods.getGlobalMods().contains(modName))
+				this.modFolder = modName;
+		} else {
+			// Fallback for relative paths (e.g. 'mods/ModName/...')
+			var myFolder:Array<String> = normalizedScriptName.split('/');
+			if(myFolder[0] + '/' == 'mods/' && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
+				this.modFolder = myFolder[1];
+		}
 		#end
 
 		// Lua shit

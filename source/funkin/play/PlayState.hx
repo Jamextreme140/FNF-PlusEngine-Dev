@@ -5948,6 +5948,7 @@ class PlayState extends MusicBeatState
 	public function spawnHoldSplashOnNote(note:Note) {
 		// No mostrar hold splashes en niveles de StepMania NotITG
 		if(curStage == 'notitg') return;
+		if(ClientPrefs.data.hideSustainSplash) return; // Early exit: option disabled
 		
 		if (note != null) {
 			var strum:StrumNote = (note.mustPress ? playerStrums : opponentStrums).members[note.noteData];

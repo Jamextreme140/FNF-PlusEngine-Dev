@@ -62,7 +62,6 @@ class Main extends Sprite
 	public static var watermarkSprite:Sprite = null;
 	public static var watermark:Bitmap = null;
 
-	// Window focus management
 	public static var focused:Bool = true;
 	var oldVol:Float = 1.0;
 	var newVol:Float = 0.2;

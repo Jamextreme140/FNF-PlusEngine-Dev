@@ -225,7 +225,13 @@ class Note extends FlxSprite
 	}
 
 	private function set_noteType(value:String):String {
-		noteSplashData.texture = PlayState.SONG != null ? PlayState.SONG.splashSkin : 'noteSplashes/noteSplashes';
+		// Normalize SONG.splashSkin to a full atlas path so noteSplashData.texture is always valid.
+		// SONG.splashSkin may be a legacy short name (e.g. "noteSplashes") without folder.
+		var rawSkin:String = (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
+			? PlayState.SONG.splashSkin : null;
+		if (rawSkin != null && !rawSkin.contains('/'))
+			rawSkin = 'noteSplashes/$rawSkin';
+		noteSplashData.texture = rawSkin; // null = let spawnSplashNote use defaultNoteSplash + options postfix
 		defaultRGB();
 
 		if(noteData > -1 && noteType != value) {

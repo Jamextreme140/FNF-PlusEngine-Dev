@@ -473,7 +473,7 @@ class PhillyStreets extends BaseStage
 		{
 			switch(noteType)
 			{
-				case 'weekend-1-kickcan':
+				case 'weekend-1-lightcan' | 'weekend-1-kickcan' | 'weekend-1-kneecan':
 					createCan();
 				case 'weekend-1-cockgun':
 					precacheCasing();

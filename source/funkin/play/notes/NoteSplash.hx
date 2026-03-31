@@ -66,7 +66,12 @@ class NoteSplash extends FlxSprite
 		if(splash == null)
 		{
 			splash = defaultNoteSplash + getSplashSkinPostfix();
-			if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0) splash = PlayState.SONG.splashSkin;
+			// SONG.splashSkin may be a legacy short name without folder - normalize it.
+			if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
+			{
+				var songSkin:String = PlayState.SONG.splashSkin;
+				splash = songSkin.contains('/') ? songSkin : 'noteSplashes/$songSkin';
+			}
 		}
 
 		texture = splash;
@@ -197,11 +202,19 @@ class NoteSplash extends FlxSprite
 
 		if (!inEditor)
 		{
+			// Priority: per-note texture > SONG.splashSkin > options skin (postfix).
+			// Both note.noteSplashData.texture and SONG.splashSkin are already normalized
+			// to full paths (e.g. "noteSplashes/myName") by Note.set_noteType.
 			var loadedTexture:String = defaultNoteSplash + getSplashSkinPostfix();
-			if (note != null && note.noteSplashData.texture != null) loadedTexture = note.noteSplashData.texture;
-			else if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0) loadedTexture = PlayState.SONG.splashSkin;
+			if (note != null && note.noteSplashData.texture != null)
+				loadedTexture = note.noteSplashData.texture;
+			else if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
+			{
+				var songSkin:String = PlayState.SONG.splashSkin;
+				loadedTexture = songSkin.contains('/') ? songSkin : 'noteSplashes/$songSkin';
+			}
 
-			if (texture != loadedTexture) loadSplash(loadedTexture);
+		if (texture != loadedTexture) loadSplash(loadedTexture);
 		}
 
 		setPosition(x, y);
@@ -290,7 +303,7 @@ class NoteSplash extends FlxSprite
 		// Clear any previous callback before setting new one
 		if (animation.finishCallback != null)
 			animation.finishCallback = null;
-			
+
 		animation.finishCallback = function(name:String) {
 			kill();
 			spawned = false;
@@ -378,12 +391,14 @@ class NoteSplash extends FlxSprite
 
 	override public function revive():Void
 	{
-		// Reset state when recycled from pool
-		super.revive();
-		
+		// Reset state when recycled from pool.
+		// Clear texture so spawnSplashNote always re-evaluates the correct path,
+		// picking up any skin change the user made in options.
+		texture = null;
 		spawned = false;
 		aliveTime = 0;
 		alpha = 1;
+		super.revive();
 	}
 
 	public static function getSplashSkinPostfix()

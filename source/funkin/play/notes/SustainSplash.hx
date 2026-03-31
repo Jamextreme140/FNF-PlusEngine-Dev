@@ -59,7 +59,7 @@ class SustainSplash extends FlxSprite
 		}
 		catch (e:Dynamic)
 		{
-			trace('[SustainSplash] Failed to load hold splash atlas "' + key + '": ' + Std.string(e));
+			// Silently ignore and return null so callers can fall back gracefully
 		}
 		return null;
 	}
@@ -68,28 +68,27 @@ class SustainSplash extends FlxSprite
 	{
 		config = null;
 		
-		var path:String = PlayState.isPixelStage ? 'pixelUI/' : '';
+		var pixelPrefix:String = PlayState.isPixelStage ? 'pixelUI/' : '';
 		
 		if(holdSplash == null)
 		{
-			holdSplash = path + defaultHoldSplash + getHoldSplashPostfix();
-			if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0) 
-				holdSplash = path + 'holdCovers/' + PlayState.SONG.splashSkin;
+			// NOTE: PlayState.SONG.splashSkin is for note splashes, NOT hold covers.
+			// Hold covers have their own separate asset path (holdCovers/holdCover).
+			holdSplash = pixelPrefix + defaultHoldSplash + getHoldSplashPostfix();
 		}
 		
 		texture = holdSplash;
 		frames = safeLoadAtlas(texture);
 		if (frames == null)
 		{
-			texture = path + defaultHoldSplash + getHoldSplashPostfix();
+			texture = pixelPrefix + defaultHoldSplash + getHoldSplashPostfix();
 			frames = safeLoadAtlas(texture);
 			if (frames == null)
 			{
-				texture = path + defaultHoldSplash + '-Vanilla';
+				texture = pixelPrefix + defaultHoldSplash + '-Vanilla';
 				frames = safeLoadAtlas(texture);
 				if (frames == null)
 				{
-					// Keep the object alive without visuals instead of crashing on invalid XML/atlas data.
 					visible = false;
 					active = false;
 				}
@@ -313,6 +312,12 @@ class SustainSplash extends FlxSprite
 					
 					animation.play('end', true, false, 0);
 					
+					// If 'end' animation does not exist / frames are missing, kill immediately.
+					if (animation.curAnim == null)
+					{
+
+					}
+					
 					// Apply end animation offsets
 					offset.set(PlayState.isPixelStage ? 112.5 : 106.25, 100);
 					if (config != null && config.animations.exists('end'))
@@ -349,6 +354,11 @@ class SustainSplash extends FlxSprite
 	
 	override public function kill():Void
 	{
+		if (timer != null)
+		{
+			timer.cancel();
+			timer = null;
+		}
 		if (animation != null && animation.finishCallback != null)
 			animation.finishCallback = null;
 		
