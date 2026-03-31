@@ -13,8 +13,6 @@ class IdID
         ["jiwa yang", "bersedih"],
         ["sial sialnya", "ku bertemu dengan cinta semu"],
         ["kisah tanpa", "dirimu"],
-        ["berbukalah dengan", "yang manis"],
-        ["liburan ke", "luar kota saat lebaran"],
     ];
     
     public static var translations:Map<String, String> = [
@@ -410,8 +408,6 @@ class IdID
         "description_render_arrow_paths" => "Jika dicentang: Menampilkan garis lintasan panah.\nPERINGATAN: Dapat mempengaruhi kinerja secara signifikan.",
         "setting_styled_arrow_paths" => "Jalur Panah Berdesain",
         "description_styled_arrow_paths" => "Menerapkan warna, transparansi, dan skala pada jalur panah.\nMembutuhkan opsi \"Render Arrow Paths\" untuk diaktifkan.",
-        "setting_arrow_path_boundary" => "Batas Jalur Panah",
-        "description_arrow_path_boundary" => "Jarak dalam piksel di luar tepi layar untuk merender jalur.\nLebih rendah = Kinerja lebih baik | Lebih tinggi = Lebih sedikit pop-in visual",
         "setting_hold_end_scale" => "Skala Akhir Hold",
         "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran default",
         "setting_prevent_scaled_hold_ends" => "Mencegah Ujung Pegangan yang Terkelupas",
