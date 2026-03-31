@@ -12,26 +12,37 @@ final helperVector = new Vector3();
 @:noDebug
 #end
 final class ArrowRenderer extends BaseRenderer<FlxSprite> {
-	inline private function getGraphicVertices(planeWidth:Float, planeHeight:Float, flipX:Bool, flipY:Bool) {
+	// Pre-allocated members to avoid per-call heap allocations
+	final _planeVerts:NativeVector<Float> = new NativeVector<Float>(8);
+	final _projZ:NativeVector<Float> = new NativeVector<Float>(4);
+
+	// Arrow quad indices are always [0,1,2, 1,3,2] — share one instance across all DrawCommands
+	static final _sharedArrowIdx:openfl.Vector<Int> = {
+		var v = new openfl.Vector<Int>(6, true);
+		v[0] = 0; v[1] = 1; v[2] = 2;
+		v[3] = 1; v[4] = 3; v[5] = 2;
+		v;
+	};
+
+	inline private function getGraphicVertices(planeWidth:Float, planeHeight:Float, flipX:Bool, flipY:Bool):NativeVector<Float> {
 		var x1 = flipX ? planeWidth : -planeWidth;
 		var x2 = flipX ? -planeWidth : planeWidth;
 		var y1 = flipY ? planeHeight : -planeHeight;
 		var y2 = flipY ? -planeHeight : planeHeight;
 
-		return [
-			// top left
-			x1,
-			y1,
-			// top right
-			x2,
-			y1,
-			// bottom left
-			x1,
-			y2,
-			// bottom right
-			x2,
-			y2
-		];
+		// top left
+		_planeVerts[0] = x1;
+		_planeVerts[1] = y1;
+		// top right
+		_planeVerts[2] = x2;
+		_planeVerts[3] = y1;
+		// bottom left
+		_planeVerts[4] = x1;
+		_planeVerts[5] = y2;
+		// bottom right
+		_planeVerts[6] = x2;
+		_planeVerts[7] = y2;
+		return _planeVerts;
 	}
 
 	var __lastOrient:Float = 0;
@@ -103,7 +114,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		arrow._z = (depth - 1) * 1000;
 
 		var planeVertices = getGraphicVertices(planeWidth, planeHeight, arrow.flipX, arrow.flipY);
-		var projectionZ:haxe.ds.Vector<Float> = new haxe.ds.Vector(Math.ceil(planeVertices.length / 2));
+		// reuse pre-allocated 4-element buffer instead of allocating per call
+		final projectionZ = _projZ;
 
 		var vertPointer = 0;
 		@:privateAccess do {
@@ -144,7 +156,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		} while (vertPointer < planeVertices.length);
 
 		// @formatter:off
-		var vertices = new NativeVector<Float>(8);
+		// build directly as openfl.Vector to avoid conversion at render time
+		var vertices = new openfl.Vector<Float>(8, true);
 		// top left
 		vertices[0] = planeVertices[0];
 		vertices[1] = planeVertices[1];
@@ -160,7 +173,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		vertices[7] = planeVertices[7];
 
 		final uvRectangle = arrow.frame.uv;
-		var uvData = new NativeVector<Float>(12);
+		// build UVs as openfl.Vector to avoid conversion at render time
+		var uvData = new openfl.Vector<Float>(12, true);
 		var k = 0;
 
 		#if (flixel == "6.1.0")
@@ -216,18 +230,6 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		uvData[k++] = 1 / projectionZ[3];
 		#end
 
-		var indices = new NativeVector<Int>(6);
-
-		// triangle 1
-		indices[0] = 0;
-		indices[1] = 1;
-		indices[2] = 2;
-
-		// triangle 2
-		indices[3] = 1;
-		indices[4] = 3;
-		indices[5] = 2;
-		
 		// @formatter:on
 		final absGlow = output.visuals.glow * 255;
 		final negGlow = 1 - output.visuals.glow;
@@ -248,8 +250,8 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 			shader: arrow.shader,
 
 			vertices: vertices,
+			indices: _sharedArrowIdx,
 			uvs: uvData,
-			indices: indices,
 			color: color,
 			isColored: color.hasRGBMultipliers() || color.alphaMultiplier != 1,
 			hasColorOffsets: color.hasRGBAOffsets()

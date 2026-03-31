@@ -72,6 +72,8 @@ import funkin.mobile.backend.MobileData;
 
 #if LUA_ALLOWED
 import funkin.modding.modchart.Manager;
+import funkin.modding.modchart.Config as ModchartConfig;
+import funkin.modding.modchart.backend.standalone.Adapter;
 #end
 
 #if HSCRIPT_ALLOWED
@@ -508,6 +510,10 @@ class PlayState extends MusicBeatState
 
 	//Version shit
 	var versionText:FlxText;
+
+	// Modchart debug overlay (toggle with F3)
+	var modchartDebugTxt:FlxText;
+	var _modchartDebugVisible:Bool = false;
 
 	// Lua shit
 	public static var instance:PlayState;
@@ -966,6 +972,16 @@ class PlayState extends MusicBeatState
 		versionText.borderSize = 1;
 		versionText.visible = ClientPrefs.data.versionTextOnGameplay;
 		versionText.cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
+
+		modchartDebugTxt = new FlxText(4, 4, 0, "", 12);
+		modchartDebugTxt.setFormat(Paths.font("phantom.ttf"), 12, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		modchartDebugTxt.scrollFactor.set();
+		modchartDebugTxt.borderSize = 1;
+		modchartDebugTxt.visible = false;
+		modchartDebugTxt.cameras = [camHUD];
+		modchartDebugTxt.updateHitbox();
+		modchartDebugTxt.screenCenter();
+		add(modchartDebugTxt);
 
 		Conductor.songPosition = -Conductor.crochet * 5 + Conductor.offset;
 		var showTime:Bool = (ClientPrefs.data.timeBarType != 'Disabled');
@@ -3238,6 +3254,29 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 		updateAdaptivePerformance(elapsed);
+
+		// Modchart debug overlay toggle (F3)
+		if (FlxG.keys.justPressed.F3) {
+			_modchartDebugVisible = !_modchartDebugVisible;
+			modchartDebugTxt.visible = _modchartDebugVisible;
+		}
+		if (_modchartDebugVisible && Manager.instance != null) {
+			final s = Manager.instance.rendererStats;
+			final subs = Adapter.instance.getHoldSubdivisions(null);
+			final optim = ModchartConfig.OPTIMIZE_HOLDS;
+			final estGetPath = s.dbgHoldCmds * subs * (optim ? 1 : 2);
+			modchartDebugTxt.text =
+				'[MODCHART DEBUG] F3 to hide\n' +
+				'FPS: ${Math.round(1.0 / elapsed)}\n' +
+				'Emit ms: ${Std.string(Math.round(s.dbgEmitMs * 100) / 100)}\n' +
+				'DrawCmds total: ${s.dbgDrawCmds}\n' +
+				'  Hold cmds: ${s.dbgHoldCmds}\n' +
+				'  Active holds: ${s.dbgActiveHolds}\n' +
+				'Vertices total: ${s.dbgVertices}\n' +
+				'holdSubdivisions: $subs\n' +
+				'OPTIMIZE_HOLDS: $optim\n' +
+				'Est. getPath/frame: $estGetPath';
+		}
 
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)

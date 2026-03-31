@@ -77,6 +77,9 @@ final class View3D {
 	 */
 	public var useCamera:Bool = Config.CAMERA3D_ENABLED;
 
+	/** Pre-allocated default screen-center origin to avoid allocation per transformVector() call. */
+	private var __defaultOrigin:Vector3 = new Vector3();
+
 	private var __forward:Vector3 = new Vector3();
 	private var __right:Vector3 = new Vector3();
 	private var __up:Vector3 = new Vector3();
@@ -151,25 +154,49 @@ final class View3D {
 
 	/**
 	 * Transforms a 3D vector into 2D screen space using perspective projection.
+	 * Mutates `vector` in-place (no allocation) for the common useCamera=false path.
 	 *
-	 * @param vector The 3D vector to project.
+	 * @param vector The 3D vector to project. Modified in-place for useCamera=false.
 	 * @param origin Optional origin point for transformation (defaults to screen center).
-	 * @return The projected 2D vector.
+	 * @return The projected vector (same object as `vector` when useCamera=false).
 	 */
 	public inline function transformVector(vector:Vector3, ?origin:Null<Vector3>):Vector3 {
 		if (origin == null) {
-			origin = new Vector3(FlxG.width * 0.5, FlxG.height * 0.5);
+			// Reuse pre-allocated default origin to avoid a heap allocation per call
+			__defaultOrigin.x = FlxG.width * 0.5;
+			__defaultOrigin.y = FlxG.height * 0.5;
+			__defaultOrigin.z = 0;
+			origin = __defaultOrigin;
 		}
 
-		var world = useCamera ? applyViewTransform(vector) : vector;
-		var translation = world - origin;
+		var world:Vector3;
+		if (useCamera) {
+			world = applyViewTransform(vector); // allocates, but camera mode is rarely used
+		} else {
+			world = vector;
+		}
 
-		final projectedZ = __depthScale * Math.min(translation.z - 1, 0) + __depthOffset;
+		// Compute perspective projection in-place (no `translation = world - origin` alloc)
+		var tx = world.x - origin.x;
+		var ty = world.y - origin.y;
+		var tz = world.z - origin.z;
+
+		final projectedZ = __depthScale * Math.min(tz - 1, 0) + __depthOffset;
+
+		// Guard against degenerate projection (point at or behind the near plane).
+		// Sets world.z to a large sentinel (1e9) so callers (e.g. PathRenderer)
+		// can detect and skip clipped segments instead of getting infinity positions.
+		if (projectedZ < 0.01) {
+			world.z = 1e9;
+			return world;
+		}
 
 		final projectedFov = (__tanHalfFov / projectedZ);
 
-		translation.setTo(translation.x * projectedFov, translation.y * projectedFov, projectedZ);
-		
-		return translation += origin;
+		world.x = tx * projectedFov + origin.x;
+		world.y = ty * projectedFov + origin.y;
+		world.z = projectedZ + origin.z;
+
+		return world;
 	}
 }

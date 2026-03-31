@@ -65,6 +65,9 @@ final class ModifierGroup {
 
 	@:noCompletion private var __modifierRegistrery:StringMap<Class<Modifier>> = new StringMap();
 
+	/** Pre-allocated args struct to avoid per-call heap allocation in getPath(). */
+	@:noCompletion private var __cachedArgs:ModifierParameters;
+
 	@:noCompletion private var __sortedModifiers:Vector<Modifier> = new Vector<Modifier>(32);
 	@:noCompletion private var __modifierCount:Int = 0;
 	@:noCompletion private var __sortedIDs:Vector<String> = new Vector<String>(32);
@@ -80,6 +83,9 @@ final class ModifierGroup {
 
 	public function new(playfield:PlayField) {
 		this.playfield = playfield;
+
+		// Pre-allocate reusable args struct to avoid 1 heap alloc per getPath() call
+		__cachedArgs = {songTime: 0, hitTime: 0, distance: 0, curBeat: 0};
 
 		__loadModifiers();
 	}
@@ -114,15 +120,15 @@ final class ModifierGroup {
 		final songPos = Adapter.instance.getSongPosition();
 		final beat = Adapter.instance.getCurrentBeat();
 
-		final args:ModifierParameters = {
-			songTime: songPos,
-			curBeat: beat,
-			hitTime: hitTime,
-			distance: distance,
-			lane: data.lane,
-			player: data.player,
-			isTapArrow: data.isTapArrow
-		}
+		// Reuse pre-allocated args to avoid per-call heap allocation
+		final args = __cachedArgs;
+		args.songTime = songPos;
+		args.curBeat = beat;
+		args.hitTime = hitTime;
+		args.distance = distance;
+		args.lane = data.lane;
+		args.player = data.player;
+		args.isTapArrow = data.isTapArrow;
 
 		// sorta optimizations
 		final mods = __sortedModifiers;
@@ -167,10 +173,9 @@ final class ModifierGroup {
 		__addModifier(lowerName, newModifier);
 	}
 
+	// Note: __hashKey in PercentArray is now case-insensitive, so no toLowerCase() needed.
 	public inline function setPercent(name:String, value:Float, player:Int = -1) {
-		final key = name.toLowerCase();
-
-		final possiblePercs = percents.get(key);
+		final possiblePercs = percents.get(name);
 		final generate = possiblePercs == null;
 		final percs = generate ? __getPercentTemplate() : possiblePercs;
 
@@ -182,11 +187,11 @@ final class ModifierGroup {
 
 		// if the percent list already was generated, we dont need to set it again
 		if (generate)
-			percents.set(key, percs);
+			percents.set(name, percs);
 	}
 
 	public inline function getPercent(name:String, player:Int):Float {
-		final percs = percents.get(name.toLowerCase());
+		final percs = percents.get(name);
 
 		if (percs != null)
 			return percs[player];

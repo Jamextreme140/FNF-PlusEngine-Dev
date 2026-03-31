@@ -7,22 +7,27 @@ class Skew extends Modifier {
 	var xID = 0;
 	var yID = 0;
 
+	// Per-lane IDs to avoid Std.string(lane) allocations in hot path
+	var xLaneIDs:Array<Int>;
+	var yLaneIDs:Array<Int>;
+
 	public function new(pf) {
 		super(pf);
 
 		xID = findID('skewX');
 		yID = findID('skewY');
+
+		final maxKeys = 16;
+		xLaneIDs = [for (i in 0...maxKeys) findID('skewX' + i)];
+		yLaneIDs = [for (i in 0...maxKeys) findID('skewY' + i)];
 	}
 
 	override public function visuals(data:VisualParameters, params:ModifierParameters):VisualParameters {
-		final receptorName = Std.string(params.lane);
+		final lane = params.lane;
 		final player = params.player;
 
-		final x = getUnsafe(xID, player) + getPercent('skewX' + receptorName, player);
-		final y = getUnsafe(yID, player) + getPercent('skewY' + receptorName, player);
-
-		data.skewX += x;
-		data.skewY += y;
+		data.skewX += getUnsafe(xID, player) + getUnsafe(xLaneIDs[lane], player);
+		data.skewY += getUnsafe(yID, player) + getUnsafe(yLaneIDs[lane], player);
 
 		return data;
 	}

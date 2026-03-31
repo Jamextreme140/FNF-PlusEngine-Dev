@@ -17,10 +17,10 @@ class DrawCommand {
 	var shader:FlxShader;
 	var cameras:Array<FlxCamera>;
 
-	// rendering
-	var vertices:NativeVector<Float>;
-	var uvs:NativeVector<Float>;
-	var indices:NativeVector<Int>;
+	// rendering — use openfl.Vector directly to avoid conversion at render time
+	var vertices:openfl.Vector<Float>;
+	var uvs:openfl.Vector<Float>;
+	var indices:openfl.Vector<Int>;
 
 	var isColored:Bool;
 	var hasColorOffsets:Bool;

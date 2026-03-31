@@ -37,6 +37,10 @@ final class Manager extends FlxBasic {
 
 	private var renderer:CtxRenderer;
 
+	/** Exposes renderer stats for debug overlays. */
+	public var rendererStats(get, never):CtxRenderer;
+	inline function get_rendererStats() return renderer;
+
 	public function new() {
 		super();
 

@@ -50,18 +50,6 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
-		// Arrow Path Boundary option
-		var option:Option = new Option('Arrow Path Boundary',
-			'Distance in pixels beyond screen edges to render paths.\nLower = Better performance | Higher = Less visual pop-in',
-			'arrowPathBoundary',
-			INT);
-		option.scrollSpeed = 10;
-		option.minValue = 0;
-		option.maxValue = 1000;
-		option.changeValue = 50;
-		option.decimals = 0;
-		addOption(option);
-
 		// ========== HOLD NOTE SETTINGS ==========
 		
 		// Optimize Holds option

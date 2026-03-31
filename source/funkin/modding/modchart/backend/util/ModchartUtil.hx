@@ -8,6 +8,7 @@ import flixel.math.FlxAngle;
 import flixel.math.FlxMath;
 import flixel.math.FlxRect;
 import haxe.ds.Vector;
+import openfl.Vector as OFLVector;
 import funkin.modding.modchart.engine.events.Event;
 import funkin.modding.modchart.engine.events.types.AddEvent;
 import funkin.modding.modchart.engine.events.types.EaseEvent;
@@ -141,10 +142,10 @@ using StringTools;
 		}
 	}
 
-	inline static public function getHoldUVT(arrow:FlxSprite, subs:Int):Vector<Float> {
+	inline static public function getHoldUVT(arrow:FlxSprite, subs:Int):OFLVector<Float> {
 		var frameAngle = -ModchartUtil.getFrameAngle(arrow);
 
-		var uv = new Vector<Float>(12 * subs);
+		var uv = new OFLVector<Float>(12 * subs, true);
 
 		var frameUV = arrow.frame.uv;
 

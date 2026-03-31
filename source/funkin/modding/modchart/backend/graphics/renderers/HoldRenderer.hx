@@ -21,6 +21,9 @@ private final class HoldSegment {
 
 final __matrix:Matrix = new Matrix();
 
+/** Reusable unit-up vector for OPTIMIZE_HOLDS path — avoids allocating `new Vector3(0,1,0)` per segment. */
+final __holdUnitUp:Vector3 = new Vector3(0, 1, 0);
+
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
 @:noDebug
@@ -28,7 +31,31 @@ final __matrix:Matrix = new Matrix();
 final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	private var __lastHoldSubs:Int = -1;
 
-	var _indices:NativeVector<Int>;
+	/** Debug: total getPath() calls in the last frame across all holds. */
+	public var dbgGetPathCalls:Int = 0;
+
+	var _indices:openfl.Vector<Int>;
+
+	// UVT cache: avoids re-computing identical UV data every frame for the same hold tile
+	var _uvtCacheKeys:Array<Dynamic> = [];
+	var _uvtCacheVals:Array<openfl.Vector<Float>> = [];
+	var _uvtCacheSubs:Int = -1;
+
+	inline private function _getCachedUVT(item:FlxSprite, subs:Int):openfl.Vector<Float> {
+		if (subs != _uvtCacheSubs) {
+			// Subdivision count changed (settings) — invalidate entire cache
+			_uvtCacheKeys = [];
+			_uvtCacheVals = [];
+			_uvtCacheSubs = subs;
+		}
+		final frame = item.frame;
+		final idx = _uvtCacheKeys.indexOf(frame);
+		if (idx >= 0) return _uvtCacheVals[idx];
+		final uvt:openfl.Vector<Float> = ModchartUtil.getHoldUVT(item, subs);
+		_uvtCacheKeys.push(frame);
+		_uvtCacheVals.push(uvt);
+		return uvt;
+	}
 
 	public function new(parent:PlayField) {
 		super(parent);
@@ -85,7 +112,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		var unit:Vector3;
 
 		if (Config.OPTIMIZE_HOLDS) {
-			unit = new Vector3(0, 1, 0);
+			unit = __holdUnitUp; // reuse static up-vector, no allocation
 		} else {
 			var next = parent.modifiers.getPath(basePos.clone(), params, 1, false, true);
 			next.pos.z = 0;
@@ -158,7 +185,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 	@:noCompletion
 	inline private function updateIndices(subdivisionCount:Int) {
-		_indices = new NativeVector<Int>(subdivisionCount * 6);
+		_indices = new openfl.Vector<Int>(subdivisionCount * 6, true);
 
 		for (subdivision in 0...subdivisionCount) {
 			var vertexPosition = subdivision * 4;
@@ -172,7 +199,6 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			_indices[indexCount + 5] = vertexPosition + 3;
 		}
 	}
-
 	var __lastLong:Float = 0;
 	var __lastC2:Float = 0;
 	var __lastDizzy:Float = 0;
@@ -184,6 +210,11 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	// YOU MOTHERFUCKER
 	var __lastPlayer:Int = -1;
 
+	/** Pre-allocated ArrowData buffer reused by getArrowParams() to avoid per-segment heap allocation. */
+	final _holdArrowBuf:ArrowData = {hitTime: 0, distance: 0, lane: 0, player: 0, hitten: false, isTapArrow: false};
+	/** Pre-allocated ArrowData buffer for parentData (rotate path) to avoid per-hold heap allocation. */
+	final _parentDataBuf:ArrowData = {hitTime: 0, distance: 0, lane: 0, player: 0, hitten: false, isTapArrow: false};
+
 	override public function prepare(item:FlxSprite):Null<DrawCommand> {
 		if (item.alpha <= 0) {
 			return null;
@@ -194,7 +225,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 		final HOLD_SUBDIVISIONS = Adapter.instance.getHoldSubdivisions(item);
 
-		updateIndices(HOLD_SUBDIVISIONS);
+		// Only reallocate indices when subdivision count changes (global setting)
+		if (HOLD_SUBDIVISIONS != __lastHoldSubs)
+			updateIndices(HOLD_SUBDIVISIONS);
 
 		final player = Adapter.instance.getPlayerFromArrow(item);
 		final lane = Adapter.instance.getLaneFromArrow(item);
@@ -203,7 +236,8 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		basePos.x += Adapter.instance.getDefaultReceptorX(lane, player);
 		basePos.y += Adapter.instance.getDefaultReceptorY(lane, player);
 
-		var vertices = new NativeVector(8 * HOLD_SUBDIVISIONS);
+		// build directly as openfl.Vector to avoid conversion at render time
+		var vertices = new openfl.Vector<Float>(8 * HOLD_SUBDIVISIONS, true);
 		var transfTotal = new NativeVector<ColorTransform>(HOLD_SUBDIVISIONS);
 		var tID = 0;
 
@@ -224,15 +258,14 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		__rotateZ = canUseLast ? __lastRZ : (__lastRZ = parent.getPercent('holdRotateZ', player));
 
 		var parentTime = Adapter.instance.getHoldParentTime(item);
-		var parentData:ArrowData = {
-			hitTime: parentTime,
-			// this fixed the clipping gaps
-			distance: Math.max(0, parentTime - Adapter.instance.getSongPosition()),
-			lane: lane,
-			player: player,
-			hitten: Adapter.instance.arrowHit(item),
-			isTapArrow: true
-		};
+		_parentDataBuf.hitTime = parentTime;
+		// this fixed the clipping gaps
+		_parentDataBuf.distance = Math.max(0, parentTime - Adapter.instance.getSongPosition());
+		_parentDataBuf.lane = lane;
+		_parentDataBuf.player = player;
+		_parentDataBuf.hitten = Adapter.instance.arrowHit(item);
+		_parentDataBuf.isTapArrow = true;
+		final parentData = _parentDataBuf;
 		if (__rotateX != 0 || __rotateY != 0 || __rotateZ != 0) {
 			__parentOutput = parent.modifiers.getPath(basePos.clone(), parentData);
 			__parentOutput.pos.z = (__parentOutput.pos.z - 1) * 1000;
@@ -322,7 +355,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			shader: item.shader,
 
 			vertices: vertices,
-			uvs: ModchartUtil.getHoldUVT(item, HOLD_SUBDIVISIONS),
+			uvs: _getCachedUVT(item, HOLD_SUBDIVISIONS),
 			indices: _indices,
 			colors: transfTotal,
 			isColored: hasC,
@@ -342,16 +375,15 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		final hitTime = Adapter.instance.getTimeFromArrow(arrow);
 
 		var pos = (hitTime - Adapter.instance.getSongPosition()) + posOff;
-
 		pos += timeC2;
 
-		return {
-			hitTime: hitTime + posOff + timeC2,
-			distance: pos,
-			lane: lane,
-			player: player,
-			hitten: Adapter.instance.arrowHit(arrow),
-			isTapArrow: true
-		};
+		// Reuse _holdArrowBuf to avoid a heap allocation per segment.
+		_holdArrowBuf.hitTime = hitTime + posOff + timeC2;
+		_holdArrowBuf.distance = pos;
+		_holdArrowBuf.lane = lane;
+		_holdArrowBuf.player = player;
+		_holdArrowBuf.hitten = Adapter.instance.arrowHit(arrow);
+		_holdArrowBuf.isTapArrow = true;
+		return _holdArrowBuf;
 	}
 }
