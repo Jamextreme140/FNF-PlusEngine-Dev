@@ -25,20 +25,11 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
 
 </div>
 
-## Colaboradores
+### Colaboradores Psych - Plus Engine en general:
 
-<p align="center">
-  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
-  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
-</p>
-
-## Agradecimiento Especial
-
-<p align="center">
-  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
-  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
-</p>
+<a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine" />
+</a>
 
 ¡Las contribuciones son bienvenidas! Si tienes ideas, mejoras o correcciones, siéntete libre de hacer un fork del repositorio y abrir un pull request.
 

@@ -25,20 +25,11 @@ Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan
 
 </div>
 
-## Kontributor
+### Kontributor Psych - Plus Engine secara umum:
 
-<p align="center">
-  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
-  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
-</p>
-
-## Ucapan Terima Kasih Khusus
-
-<p align="center">
-  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
-  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
-</p>
+<a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine" />
+</a>
 
 Kontribusi sangat diharapkan! Jika Anda memiliki ide, perbaikan, atau pembaruan, silakan fork repositori ini dan buka pull request.
 

@@ -25,20 +25,13 @@ Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcod
 
 </div>
 
-## Contributors
+### Contributors Psych - Plus Engine in general:
 
-<p align="center">
-  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
-  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
-</p>
+<a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine" />
+</a>
 
-## Special Thanks
-
-<p align="center">
-  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
-  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
-</p>
+Made with [contrib.rocks](https://contrib.rocks).
 
 Contributions are welcome! If you have ideas, improvements, or fixes, feel free to fork the repo and open a pull request.
 

@@ -256,8 +256,7 @@
 	<icon path="art/icons/iconOG.png" unless="android || ios"/>
 	
 	<section if="android">
-		<!-- Custom provider_paths.xml for scoped storage content provider -->
-		<assets path="art/android/template" rename="." type="template" />
+		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
 		<include path="source/kotlin/include_android.xml" />
 	</section>
 
