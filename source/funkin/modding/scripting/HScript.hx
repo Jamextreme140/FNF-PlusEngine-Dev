@@ -350,6 +350,7 @@ class HScript extends Iris
 		set('FlxTypedGroup', flixel.group.FlxTypedGroup);
 		set('FlxGroup', flixel.group.FlxGroup);
 		set('FlxPoint', CustomFlxPoint);
+		set('FlxKey', flixel.input.keyboard.FlxKey.fromStringMap);
 		set('Capabilities', openfl.system.Capabilities);
 		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		set('Lib', openfl.Lib);
@@ -976,6 +977,9 @@ class CustomFlxMath {
 	
 	public static inline function inBounds(value:Float, min:Float, max:Float):Bool
 		return flixel.math.FlxMath.inBounds(value, min, max);
+
+	public static inline function fastSin(angle:Float):Float
+		return flixel.math.FlxMath.fastSin(angle);
 }
 
 class CustomFlxColor {

@@ -30,6 +30,11 @@ import haxe.Json;
 import funkin.vis.dsp.SpectralAnalyzer;
 #end
 
+#if (target.threaded && sys)
+import sys.thread.Mutex;
+import funkin.util.ThreadUtil;
+#end
+
 class FreeplayState extends MusicBeatState {
     // Instance reference
     public static var instance:FreeplayState;
@@ -78,6 +83,15 @@ class FreeplayState extends MusicBeatState {
     public static var vocals:FlxSound = null;
     public static var opponentVocals:FlxSound = null;
     public static var instSound:FlxSound = null;
+
+    // Async inst loading — avoids main-thread stutter when switching songs
+    #if (target.threaded && sys)
+    var _pendingInstSound:openfl.media.Sound = null;
+    var _pendingInstToken:Int = 0;
+    var _pendingInstIndex:Int = -1;
+    var _pendingInstBpm:Float = 102;
+    var _instLoadMutex:Mutex = new Mutex();
+    #end
     
     // Touch support
     #if mobile
@@ -793,9 +807,50 @@ class FreeplayState extends MusicBeatState {
      */
     override function update(elapsed:Float) {
         super.update(elapsed);
-        
+
+        #if (target.threaded && sys)
+        // Dispatch a pending inst sound loaded by the background thread.
+        // playMusic() and all OpenAL calls must happen on the main thread.
+        _instLoadMutex.acquire();
+        var pendingSound:openfl.media.Sound = _pendingInstSound;
+        var pendingToken:Int = _pendingInstToken;
+        var pendingIndex:Int = _pendingInstIndex;
+        var pendingBpm:Float = _pendingInstBpm;
+        if(pendingSound != null) _pendingInstSound = null;
+        _instLoadMutex.release();
+
+        if(pendingSound != null && pendingToken == previewLoadToken && pendingIndex == curSelected) {
+            try {
+                // Register in Paths cache so it gets cleaned up correctly later
+                var cacheKey:String = Paths.getPath(
+                    Language.getFileTranslation('${Paths.formatToSongPath(songs[pendingIndex].songName)}/Inst') + '.${Paths.SOUND_EXT}',
+                    openfl.utils.AssetType.SOUND, 'songs', true
+                );
+                if(!Paths.currentTrackedSounds.exists(cacheKey))
+                    Paths.currentTrackedSounds.set(cacheKey, pendingSound);
+                Paths.localTrackedAssets.push(cacheKey);
+
+                FlxG.sound.playMusic(pendingSound, 0, true);
+                FlxG.sound.music.fadeIn(1.0, 0, 0.7);
+                instSound = FlxG.sound.music;
+                instPlaying = pendingIndex;
+
+                Conductor.bpm = pendingBpm;
+
+                #if funkin.vis
+                _analyzer = null;
+                _analyzerLevels = null;
+                _needsAnalyzerInit = true;
+                #end
+            } catch(e:Dynamic) {
+                trace('[FreePlay] Error playing async-loaded inst: $e');
+                FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
+            }
+        }
+        #end
+
         updateTexts(elapsed);
-        
+
         if(WeekData.weeksList.length < 1)
             return;
 
@@ -2000,6 +2055,53 @@ class FreeplayState extends MusicBeatState {
 
             _prevInstSongName = songName;
 
+            #if (target.threaded && sys)
+            // Resolve the file path on the main thread (safe, read-only) to avoid
+            // touching shared Paths data from inside the worker thread.
+            var filePath:String = Paths.getPath(
+                Language.getFileTranslation('${songName}/Inst') + '.${Paths.SOUND_EXT}',
+                SOUND, 'songs', true
+            );
+            var capturedBpm:Float = currentBPM;
+            var capturedToken:Int = requestToken;
+            var capturedIndex:Int = requestedIndex;
+
+            // Cancel any stale pending result so update() ignores it.
+            _instLoadMutex.acquire();
+            _pendingInstSound = null;
+            _instLoadMutex.release();
+
+            ThreadUtil.execAsync(function() {
+                var loadedSound:openfl.media.Sound = null;
+                try {
+                    // Sound.fromFile() is the slow, blocking part (disk read + OGG decode).
+                    // It is safe to call from a non-main thread on native C++ targets because
+                    // OpenAL buffer upload only happens on the first play() call.
+                    #if MODS_ALLOWED
+                    if(sys.FileSystem.exists(filePath))
+                        loadedSound = openfl.media.Sound.fromFile(filePath);
+                    else
+                    #end
+                    if(openfl.utils.Assets.exists(filePath, openfl.utils.AssetType.SOUND))
+                        loadedSound = openfl.utils.Assets.getSound(filePath);
+                } catch(e:Dynamic) {
+                    trace('[FreePlay] Thread error loading inst "$songName": $e');
+                }
+
+                // Hand off to the main thread via mutex-protected fields.
+                // update() will pick this up and call playMusic() safely.
+                _instLoadMutex.acquire();
+                if(capturedToken == previewLoadToken) {
+                    _pendingInstSound = loadedSound;
+                    _pendingInstToken = capturedToken;
+                    _pendingInstIndex = capturedIndex;
+                    _pendingInstBpm  = capturedBpm;
+                }
+                _instLoadMutex.release();
+            });
+
+            #else
+            // Fallback for single-threaded targets (web, etc.): load synchronously.
             try {
                 FlxG.sound.playMusic(Paths.inst(songName), 0, true);
                 FlxG.sound.music.fadeIn(1.0, 0, 0.7);
@@ -2017,6 +2119,7 @@ class FreeplayState extends MusicBeatState {
                 trace('Error loading inst for $songName: $e');
                 FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
             }
+            #end
         });
     }
     

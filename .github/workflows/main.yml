@@ -546,7 +546,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
-          mapfile -d '' FILES < <(find artifacts -type f -print0)
+          # Prefix each file with its artifact folder name to avoid name collisions
+          # (e.g. artifacts/Android/readme.txt -> artifacts/Android_readme.txt)
+          find artifacts -mindepth 2 -type f | while IFS= read -r file; do
+            dir=$(basename "$(dirname "$file")")
+            name=$(basename "$file")
+            mv "$file" "artifacts/${dir}_${name}"
+          done
+          mapfile -d '' FILES < <(find artifacts -maxdepth 1 -type f -print0)
           gh release create dev-build \
             --prerelease \
             --title "Dev Build — ${BUILD_DATE}" \
