@@ -557,14 +557,12 @@ jobs:
         run: gh release delete dev-build --yes --cleanup-tag 2>/dev/null || true
 
       - name: Publish dev pre-release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: dev-build
-          name: "Dev Build — ${{ env.BUILD_DATE }}"
-          prerelease: true
-          target_commitish: ${{ github.sha }}
-          body_path: release_notes.md
-          files: artifacts/PlusEngine-*.zip
-          make_latest: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create dev-build \
+            --prerelease \
+            --title "Dev Build — ${{ env.BUILD_DATE }}" \
+            --notes-file release_notes.md \
+            --target "${{ github.sha }}" \
+            artifacts/PlusEngine-*.zip
