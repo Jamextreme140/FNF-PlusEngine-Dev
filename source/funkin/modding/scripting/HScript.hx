@@ -163,6 +163,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("states.FreeplayState", funkin.ui.freeplay.FreeplayState);
 		Iris.proxyImports.set("states.TitleState", funkin.ui.title.TitleState);
 		Iris.proxyImports.set("states.LoadingState", funkin.ui.LoadingState);
+		Iris.proxyImports.set("states.CustomState", funkin.modding.CustomState);
 		Iris.proxyImports.set("states.CreditsState", funkin.ui.credits.CreditsState);
 		Iris.proxyImports.set("states.ModsMenuState", funkin.modding.ModsMenuState);
 		
@@ -367,7 +368,7 @@ class HScript extends Iris
 		#if DISCORD_ALLOWED
 		set('Discord', funkin.api.discord.DiscordClient);
 		#end
-		set('ModState', funkin.modding.ModState);
+		set('CustomState', funkin.modding.CustomState);
 		set('PlayState', PlayState);
 		set('TitleState', funkin.ui.title.TitleState);
 		set('MainMenuState', funkin.ui.mainmenu.MainMenuState);
@@ -436,7 +437,8 @@ class HScript extends Iris
 			StoryMenuState: funkin.ui.story.StoryMenuState,
 			FreeplayState: funkin.ui.freeplay.FreeplayState,
 			TitleState: funkin.ui.title.TitleState,
-			LoadingState: funkin.ui.LoadingState
+			LoadingState: funkin.ui.LoadingState,
+			CustomState: funkin.modding.CustomState
 		};
 		set('states', statesCompat);
 		

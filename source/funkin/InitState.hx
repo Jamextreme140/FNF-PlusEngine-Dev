@@ -1,7 +1,7 @@
 package funkin;
 
 #if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-import funkin.modding.ModState;
+import funkin.modding.CustomState;
 #end
 import funkin.modding.Mods;
 import funkin.save.Highscore;
@@ -41,11 +41,11 @@ class InitialState extends MusicBeatState
 		
 		// Check if top mod has custom state scripts
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-		if (ModState.hasScript('FlashingState')) {
-			MusicBeatState.switchState(new ModState('FlashingState'));
+		if (CustomState.hasScript('FlashingState')) {
+			MusicBeatState.switchState(new CustomState('FlashingState'));
 			return;
-		} else if (ModState.hasScript('TitleState')) {
-			MusicBeatState.switchState(new ModState('TitleState'));
+		} else if (CustomState.hasScript('TitleState')) {
+			MusicBeatState.switchState(new CustomState('TitleState'));
 			return;
 		}
 		#end

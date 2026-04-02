@@ -75,21 +75,21 @@ class FunkinLua {
 
 		this.scriptName = scriptName.trim();
 		
-		// Support both PlayState and ModState
+		// Support both PlayState and CustomState
 		var game:PlayState = PlayState.instance;
 		if(game != null) 
 		{
 			game.luaArray.push(this);
 		}
-		else if(FlxG.state != null) // Only try ModState if FlxG.state exists
+		else if(FlxG.state != null) // Only try CustomState if FlxG.state exists
 		{
-			// Try ModState if PlayState is not available
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			// Try CustomState if PlayState is not available
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
-				var ms:funkin.modding.ModState = cast modState;
+				var cs:funkin.modding.CustomState = cast curState;
 				#if LUA_ALLOWED
-				ms.luaArray.push(this);
+				cs.luaArray.push(this);
 				#end
 			}
 		}
@@ -361,12 +361,11 @@ class FunkinLua {
 			return MusicBeatState.getVariables().get(varName);
 		});
 		
-		// ModState Variable Functions
+		// CustomState Variable Functions
 		Lua_helper.add_callback(lua, "setSharedVar", function(varName:String, value:Dynamic) {
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
-				var ms:funkin.modding.ModState = cast modState;
 				#if HSCRIPT_ALLOWED
 				MusicBeatState.globalVariables.set(varName, value);
 				#end
@@ -379,8 +378,8 @@ class FunkinLua {
 			return value;
 		});
 		Lua_helper.add_callback(lua, "getSharedVar", function(varName:String, ?defaultValue:Dynamic = null) {
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
 				#if HSCRIPT_ALLOWED
 				if(MusicBeatState.globalVariables.exists(varName))

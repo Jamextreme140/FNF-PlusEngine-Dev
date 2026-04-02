@@ -281,6 +281,10 @@ class Paths
 	inline static public function hx(key:String, ?folder:String)
 		return getPath('scripts/states/$key/$key.hx', TEXT, folder, true);
 
+	// Flat single-file path for CustomState (scripts/states/{name}.hx)
+	inline static public function customState(key:String, ?folder:String)
+		return getPath('scripts/states/$key.hx', TEXT, folder, true);
+
 	inline static public function globalScript()
 		return getPath('scripts/GlobalScript.hx', TEXT, null, true);
 

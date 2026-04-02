@@ -2,7 +2,7 @@ package funkin.modding;
 
 import funkin.data.story.level.WeekData;
 import funkin.modding.Mods;
-import funkin.modding.ModState;
+import funkin.modding.CustomState;
 import funkin.ui.mainmenu.MainMenuState;
 import funkin.ui.freeplay.FreeplayState;
 import funkin.ui.title.TitleState;
@@ -335,7 +335,7 @@ class ModsMenuState extends MusicBeatState
 
 			#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
 			// Check if the top mod has state scripts (TitleState, FlashingState, etc.)
-			var hasModStates:Bool = ModState.hasScript('TitleState') || ModState.hasScript('FlashingState');
+			var hasModStates:Bool = CustomState.hasScript('TitleState') || CustomState.hasScript('FlashingState');
 			#else
 			var hasModStates:Bool = false;
 			#end
