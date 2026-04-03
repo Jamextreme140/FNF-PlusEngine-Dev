@@ -20,26 +20,30 @@ var isMobile:Bool = false;
 // Spectral visualizer state
 var vizEnabled:Bool = false;
 var vizBars = null;
-var vizBarCount:Int = 160;
+var vizBarCount:Int = 120;
 var vizBarMaxH:Int = 240;
 var vizBarFill:Float = 0.62;
 var vizMinH:Float = 2;
 var vizSmoothSpeed:Float = 18;
-var vizUpdateInterval:Float = 1 / 60;
+var vizUpdateInterval:Float = 1 / 45;
 var vizUpdateAccum:Float = 0;
 var vizTargetHeights:Array<Float> = [];
 var vizCurrentHeights:Array<Float> = [];
 var vizAnalyzer = null;
 var vizAnalyzerLevels = null;
 var vizNeedsInit:Bool = false;
+// Cached constants — computed once in create(), never change
+var _vizBarW:Int = 0;
+var _vizOffsetX:Float = 0.0;
+var _vizInvMaxH:Float = 0.0;
 
 function create() {
     isMobile = (__isMobile == true);
     vizEnabled = Type.resolveClass('funkin.vis.dsp.SpectralAnalyzer') != null;
 
     if (isMobile) {
-        vizBarCount = 96;
-        vizUpdateInterval = 1 / 45;
+        vizBarCount = 72;
+        vizUpdateInterval = 1 / 30;
     }
 
     Mods.pushGlobalMods();
@@ -57,15 +61,16 @@ function create() {
     // Spectral visualizer bars (behind all UI)
     if (vizEnabled) {
         vizBars = new FlxTypedGroup();
-        var vizBarW:Int = Std.int(FlxG.width / vizBarCount);
-        var vizDrawW:Int = Std.int(Math.max(1, vizBarW * vizBarFill));
-        var vizOffsetX:Float = (vizBarW - vizDrawW) * 0.5;
+        _vizBarW = Std.int(FlxG.width / vizBarCount);
+        var vizDrawW:Int = Std.int(Math.max(1, _vizBarW * vizBarFill));
+        _vizOffsetX = (_vizBarW - vizDrawW) * 0.5;
+        _vizInvMaxH = 1.0 / vizBarMaxH;
         for (i in 0...vizBarCount) {
             var vbar = new FlxSprite();
             vbar.makeGraphic(vizDrawW, vizBarMaxH, FlxColor.WHITE);
-            vbar.x = i * vizBarW + vizOffsetX;
+            vbar.x = i * _vizBarW + _vizOffsetX; // set once, never changes
             vbar.y = FlxG.height - 2;
-            vbar.scale.y = 2 / vizBarMaxH;
+            vbar.scale.y = 2 * _vizInvMaxH;
             vbar.alpha = 0.0;
             vbar.scrollFactor.set();
             vizBars.add(vbar);
@@ -207,12 +212,12 @@ function update(elapsed:Float) {
                     Reflect.setProperty(vizAnalyzer, 'maxDb', -15);
                     Reflect.setProperty(vizAnalyzer, 'fftN', isMobile ? 256 : 512);
                     vizNeedsInit = false;
+                    // Reveal all bars now that the analyzer is ready — only done once
+                    for (vbar in vizBars.members) vbar.alpha = 1.0;
                 }
             } catch(e:Dynamic) { vizNeedsInit = false; }
         }
 
-        var vizBarW:Int = Std.int(FlxG.width / vizBarCount);
-        var vizOffsetX:Float = (vizBarW - Std.int(Math.max(1, vizBarW * vizBarFill))) * 0.5;
         vizUpdateAccum += elapsed;
         if (vizUpdateAccum >= vizUpdateInterval) {
             vizUpdateAccum = 0;
@@ -226,16 +231,19 @@ function update(elapsed:Float) {
                 for (i in 0...vizBars.members.length) vizTargetHeights[i] = vizMinH;
             }
         }
-        var lerpFactor:Float = 1 - Math.exp(-elapsed * vizSmoothSpeed);
-        for (i in 0...vizBars.members.length) {
+
+        // Inlined lerp + eliminated vbar.x and vbar.alpha from the hot loop
+        var invLerp:Float = Math.exp(-elapsed * vizSmoothSpeed);
+        var barsLen:Int = vizBars.members.length;
+        for (i in 0...barsLen) {
             var vbar = vizBars.members[i];
             if (vbar == null) continue;
-            var curH:Float = FlxMath.lerp(vizTargetHeights[i], vizCurrentHeights[i], 1 - lerpFactor);
+            var curH:Float = vizTargetHeights[i] + (vizCurrentHeights[i] - vizTargetHeights[i]) * invLerp;
             vizCurrentHeights[i] = curH;
-            vbar.scale.y = curH / vizBarMaxH;
-            vbar.x = i * vizBarW + vizOffsetX;
+            vbar.scale.y = curH * _vizInvMaxH;
             vbar.y = FlxG.height - curH;
-            vbar.alpha = 1.0;
+            // vbar.x is fixed since create() — no need to touch it here
+            // vbar.alpha is set to 1.0 once when the analyzer initializes
         }
     }
 

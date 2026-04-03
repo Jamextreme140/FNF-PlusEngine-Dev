@@ -264,7 +264,7 @@ class BaseMusicBeatState extends FlxState
 
 	public static function resetState():Void
 	{
-		if (FlxTransitionableState.skipNextTransIn) FlxG.resetState();
+		if (FlxTransitionableState.skipNextTransIn) FlxG.switchState(_makeCurrentStateReset());
 		else startTransition();
 		FlxTransitionableState.skipNextTransIn = false;
 	}
@@ -273,9 +273,25 @@ class BaseMusicBeatState extends FlxState
 	{
 		if (nextState == null) nextState = FlxG.state;
 		FlxG.state.openSubState(new CustomFadeTransition(0.7, false));
-		if (nextState == FlxG.state)
-			CustomFadeTransition.finishCallback = function() FlxG.resetState();
-		else
+		if (nextState == FlxG.state) {
+			var resetFn = _makeCurrentStateReset();
+			CustomFadeTransition.finishCallback = function() FlxG.switchState(resetFn);
+		} else {
 			CustomFadeTransition.finishCallback = function() FlxG.switchState(nextState);
+		}
+	}
+
+	/** Builds a factory lambda that recreates the current state correctly.
+	 *  Avoids `FlxG.resetState()` breaking on states with constructor args (e.g. ScriptableState). */
+	static function _makeCurrentStateReset():()->flixel.FlxState {
+		#if (HSCRIPT_ALLOWED && sys)
+		var cs = FlxG.state;
+		if (cs is funkin.modding.ScriptableState) {
+			var name:String = (cast cs : funkin.modding.ScriptableState).stateName;
+			return () -> new funkin.modding.ScriptableState(name);
+		}
+		#end
+		var cls = Type.getClass(FlxG.state);
+		return () -> Type.createInstance(cls, []);
 	}
 }

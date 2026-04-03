@@ -378,6 +378,42 @@ class HScript extends Iris
 		#else
 		set('__isMobile', false);
 		#end
+		// Platform detection flags — replaces compile-time #if flags for scripts
+		#if windows
+		set('__isWindows', true);
+		#else
+		set('__isWindows', false);
+		#end
+		#if linux
+		set('__isLinux', true);
+		#else
+		set('__isLinux', false);
+		#end
+		#if mac
+		set('__isMac', true);
+		#else
+		set('__isMac', false);
+		#end
+		#if android
+		set('__isAndroid', true);
+		#else
+		set('__isAndroid', false);
+		#end
+		#if ios
+		set('__isIOS', true);
+		#else
+		set('__isIOS', false);
+		#end
+		#if html5
+		set('__isHTML5', true);
+		#else
+		set('__isHTML5', false);
+		#end
+		#if desktop
+		set('__isDesktop', true);
+		#else
+		set('__isDesktop', false);
+		#end
 		set('Alphabet', funkin.ui.Alphabet);
 		set('AlphaCharacter', funkin.ui.AlphaCharacter);
 		set('Countdown', funkin.play.stage.BaseStage.Countdown);

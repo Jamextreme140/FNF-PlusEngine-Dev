@@ -12,10 +12,8 @@ var exiting:Bool = false;
 
 // Mobile touch scroll handler (null on non-mobile builds)
 var touchScroll = null;
-var isMobile:Bool = false;
 
 function create() {
-    isMobile = Type.resolveClass('funkin.mobile.backend.TouchScroll') != null;
 
     options = [];
     if (!ClientPrefs.data.colorQuantization) options.push('Note Colors');
@@ -56,7 +54,7 @@ function create() {
     selectorRight = new Alphabet(0, 0, '<', true);
     add(selectorRight);
 
-    if (isMobile) {
+    if (__isMobile) {
         touchScroll = new TouchScroll(true);
         TouchUtil.setScrollHandler(touchScroll);
 
@@ -93,7 +91,7 @@ function create() {
 
 function openSelectedSubstate(label:String) {
     persistentUpdate = false;
-    if (isMobile && touchScroll != null) touchScroll.reset();
+    if (__isMobile && touchScroll != null) touchScroll.reset();
     switch (label) {
         case 'Note Colors':
             openSubState(new NotesColorSubState());
@@ -129,7 +127,7 @@ function closeSubState() {
     ClientPrefs.saveSettings();
     controls.isInSubstate = false;
     persistentUpdate = true;
-    if (isMobile && touchScroll != null) touchScroll.reset();
+    if (__isMobile && touchScroll != null) touchScroll.reset();
     removeTouchPad();
     addTouchPad('NONE', 'B_C');
     changeSelection(0);
@@ -159,7 +157,7 @@ function update(elapsed:Float) {
         if (controls.UI_DOWN_P) changeSelection(1);
 
         // Mobile touch scroll and tap
-        if (isMobile && touchScroll != null) {
+        if (__isMobile && touchScroll != null) {
             var scrollDelta:Float = touchScroll.update();
             if (Math.abs(scrollDelta) > 0.5) {
                 lerpSelected += -scrollDelta / 150;
@@ -191,7 +189,7 @@ function update(elapsed:Float) {
         }
 
         // Mobile controls layout button (C / CTRL)
-        if (isMobile && (
+        if (__isMobile && (
             (touchPad != null && touchPad.buttonC != null && touchPad.buttonC.justPressed) ||
             (FlxG.keys.justPressed.CONTROL && controls.mobileC)
         )) {
@@ -216,7 +214,7 @@ function update(elapsed:Float) {
 }
 
 function destroy() {
-    if (isMobile && touchScroll != null) {
+    if (__isMobile && touchScroll != null) {
         touchScroll.destroy();
         touchScroll = null;
         TouchUtil.clearScrollHandler();

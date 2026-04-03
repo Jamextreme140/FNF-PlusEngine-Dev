@@ -216,13 +216,30 @@ class MusicBeatState extends BaseMusicBeatState
 		// If scripts stopped the transition, they handle it themselves
 		if(globalResult == LuaUtils.Function_Stop || stateResult == LuaUtils.Function_Stop) {
 			// Script is handling the transition, just reset without custom transition
-			FlxG.resetState();
+			FlxG.switchState(_makeCurrentStateReset());
 			return;
 		}
 		
-		if(FlxTransitionableState.skipNextTransIn) FlxG.resetState();
+		if(FlxTransitionableState.skipNextTransIn) FlxG.switchState(_makeCurrentStateReset());
 		else startTransition();
 		FlxTransitionableState.skipNextTransIn = false;
+	}
+
+	/**
+	 * Returns a lambda that creates a fresh instance of the current state.
+	 * Handles ScriptableState properly (FlxG.resetState breaks it because
+	 * ScriptableState requires a constructor argument).
+	 */
+	static function _makeCurrentStateReset():()->flixel.FlxState {
+		#if (HSCRIPT_ALLOWED && sys)
+		var cs = FlxG.state;
+		if (cs is funkin.modding.ScriptableState) {
+			var name:String = (cast cs : funkin.modding.ScriptableState).stateName;
+			return () -> new funkin.modding.ScriptableState(name);
+		}
+		#end
+		var cls = Type.getClass(FlxG.state);
+		return () -> Type.createInstance(cls, []);
 	}
 
 	// Custom made Trans in
@@ -239,17 +256,19 @@ class MusicBeatState extends BaseMusicBeatState
 		// If scripts stopped it, they're handling the transition themselves
 		if(globalResult == LuaUtils.Function_Stop || stateResult == LuaUtils.Function_Stop) {
 			if(isReset)
-				FlxG.resetState();
+				FlxG.switchState(_makeCurrentStateReset());
 			else
 				FlxG.switchState(nextState);
 			return;
 		}
 		
 		FlxG.state.openSubState(new CustomFadeTransition(0.7, false));
-		if(nextState == FlxG.state)
-			CustomFadeTransition.finishCallback = function() FlxG.resetState();
-		else
+		if(nextState == FlxG.state) {
+			var resetFn = _makeCurrentStateReset();
+			CustomFadeTransition.finishCallback = function() FlxG.switchState(resetFn);
+		} else {
 			CustomFadeTransition.finishCallback = function() FlxG.switchState(nextState);
+		}
 	}
 
 	public static function getState():MusicBeatState {
