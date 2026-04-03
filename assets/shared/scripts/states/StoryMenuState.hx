@@ -22,6 +22,8 @@ var loadedWeeks:Array<Dynamic> = [];
 var movedBack:Bool = false;
 var selectedWeek:Bool = false;
 var stopSpamming:Bool = false;
+var isMobile:Bool = false;
+var touchScroll = null;
 
 function weekIsLocked(name:String):Bool {
     var leWeek = WeekData.weeksLoaded.get(name);
@@ -30,6 +32,7 @@ function weekIsLocked(name:String):Bool {
 }
 
 function create() {
+    isMobile = (__isMobile == true);
     // Memory clearing is handled by ScriptableState before super.create().
     persistentUpdate = persistentDraw = true;
     PlayState.isStoryMode = true;
@@ -152,6 +155,11 @@ function create() {
     changeDifficulty();
 
     addTouchPad('NONE', 'B_X_Y');
+
+    if (isMobile) {
+        touchScroll = new TouchScroll(true);
+        TouchUtil.setScrollHandler(touchScroll);
+    }
 }
 
 function closeSubState() {
@@ -159,11 +167,13 @@ function closeSubState() {
     changeWeek();
     removeTouchPad();
     addTouchPad('NONE', 'B_X_Y');
+    if (isMobile && touchScroll != null)
+        touchScroll.reset();
 }
 
 function update(elapsed:Float) {
     if (WeekData.weeksList.length < 1) {
-        if (controls.BACK) {
+        if (controls.BACK || (touchPad != null && touchPad.buttonB != null && touchPad.buttonB.justPressed)) {
             FlxG.sound.play(Paths.sound('cancelMenu'));
             movedBack = true;
             MusicBeatState.switchState(new MainMenuState());
@@ -179,27 +189,93 @@ function update(elapsed:Float) {
 
     if (!movedBack && !selectedWeek) {
         var changeDiff:Bool = false;
-        if (controls.UI_UP_P) { changeWeek(-1); FlxG.sound.play(Paths.sound('scrollMenu')); changeDiff = true; }
-        if (controls.UI_DOWN_P) { changeWeek(1); FlxG.sound.play(Paths.sound('scrollMenu')); changeDiff = true; }
 
-        if (controls.UI_RIGHT) rightArrow.animation.play('press')
-        else rightArrow.animation.play('idle');
-        if (controls.UI_LEFT) leftArrow.animation.play('press')
-        else leftArrow.animation.play('idle');
+        if (controls.UI_UP_P || (touchPad != null && touchPad.buttonUp != null && touchPad.buttonUp.justPressed)) {
+            changeWeek(-1);
+            FlxG.sound.play(Paths.sound('scrollMenu'));
+            changeDiff = true;
+        }
+        if (controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown != null && touchPad.buttonDown.justPressed)) {
+            changeWeek(1);
+            FlxG.sound.play(Paths.sound('scrollMenu'));
+            changeDiff = true;
+        }
 
-        if (controls.UI_RIGHT_P) changeDifficulty(1);
-        else if (controls.UI_LEFT_P) changeDifficulty(-1);
-        else if (changeDiff) changeDifficulty();
+        // Mouse wheel scrolling
+        if (FlxG.mouse.wheel != 0) {
+            FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+            changeWeek(-FlxG.mouse.wheel);
+            changeDiff = true;
+        }
 
-        if (FlxG.keys.justPressed.CONTROL)
-        {
+        // Touch scroll handling
+        if (isMobile && touchScroll != null) {
+            var delta:Float = touchScroll.update();
+            if (Math.abs(delta) > 0.5) {
+                var lerpWeekFloat:Float = curWeek + (-delta / 150.0);
+                lerpWeekFloat = FlxMath.bound(lerpWeekFloat, 0, loadedWeeks.length - 1);
+                var newWeek:Int = Math.round(lerpWeekFloat);
+                if (newWeek != curWeek) {
+                    changeWeek(newWeek - curWeek);
+                    changeDiff = true;
+                }
+            }
+            if (touchScroll.wasTapped()) {
+                var tapPos = touchScroll.getTapPosition();
+                if (tapPos != null) {
+                    if (leftArrow.overlapsPoint(tapPos))
+                        changeDifficulty(-1);
+                    else if (rightArrow.overlapsPoint(tapPos))
+                        changeDifficulty(1);
+                    else {
+                        for (i in 0...grpWeekText.members.length) {
+                            var item = grpWeekText.members[i];
+                            if (item != null && item.visible && item.overlapsPoint(tapPos)) {
+                                if (i == curWeek) selectWeek();
+                                else { changeWeek(i - curWeek); changeDiff = true; }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Difficulty arrow animations
+        if (controls.UI_RIGHT || (touchPad != null && touchPad.buttonRight != null && touchPad.buttonRight.pressed))
+            rightArrow.animation.play('press');
+        else
+            rightArrow.animation.play('idle');
+
+        if (controls.UI_LEFT || (touchPad != null && touchPad.buttonLeft != null && touchPad.buttonLeft.pressed))
+            leftArrow.animation.play('press');
+        else
+            leftArrow.animation.play('idle');
+
+        if (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight != null && touchPad.buttonRight.justPressed))
+            changeDifficulty(1);
+        else if (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft != null && touchPad.buttonLeft.justPressed))
+            changeDifficulty(-1);
+        else if (changeDiff)
+            changeDifficulty();
+
+        // Gameplay changers substate (CTRL / X button)
+        if (FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonX != null && touchPad.buttonX.justPressed)) {
             persistentUpdate = false;
             openSubState(new GameplayChangersSubstate());
             removeTouchPad();
         }
-        else if (controls.ACCEPT) selectWeek();
+        // Reset score substate (RESET / Y button)
+        else if (controls.RESET || (touchPad != null && touchPad.buttonY != null && touchPad.buttonY.justPressed)) {
+            persistentUpdate = false;
+            openSubState(new ResetScoreSubState('', curDifficulty, '', curWeek));
+            removeTouchPad();
+        }
+        else if (controls.ACCEPT || (touchPad != null && touchPad.buttonA != null && touchPad.buttonA.justPressed))
+            selectWeek();
 
-        if (controls.BACK && !movedBack && !selectedWeek) {
+        if ((controls.BACK || (touchPad != null && touchPad.buttonB != null && touchPad.buttonB.justPressed))
+                && !movedBack && !selectedWeek) {
             FlxG.sound.play(Paths.sound('cancelMenu'));
             movedBack = true;
             MusicBeatState.switchState(new MainMenuState());
@@ -362,3 +438,12 @@ function beatHit(curBeat:Int) {
         if (ch.character != '') ch.dance();
     }
 }
+
+function destroy() {
+    if (isMobile && touchScroll != null) {
+        touchScroll.destroy();
+        touchScroll = null;
+    }
+    if (isMobile) TouchUtil.clearScrollHandler();
+}
+

@@ -24,7 +24,7 @@ import funkin.mobile.input.MobileInputID;
 import funkin.mobile.backend.MobileData;
 import funkin.mobile.input.MobileInputManager;
 import funkin.mobile.backend.TouchUtil;
-import flixel.system.scaleModes.MobileScaleMode;
+import funkin.mobile.backend.MobileScaleMode;
 
 // Android
 #if android

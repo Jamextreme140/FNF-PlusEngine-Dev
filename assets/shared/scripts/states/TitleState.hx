@@ -40,8 +40,10 @@ var skippedIntro:Bool  = false;
 var newTitle:Bool      = false;
 var titleTimer:Float   = 0;
 var sickBeats:Int      = 0;
+var isMobile:Bool      = false;
 
 function create() {
+    isMobile = (__isMobile == true);
     // Memory clearing is handled by ScriptableState before super.create(),
     // so transition assets are never accidentally destroyed here.
     if (!TitleState.initialized)
@@ -78,6 +80,10 @@ function create() {
 }
 
 function getIntroTextShit():Array<Array<String>> {
+    try {
+        var localized = Language.getLocalizedIntroTexts();
+        if (localized != null && localized.length > 0) return localized;
+    } catch(e:Dynamic) {}
     var firstArray:Array<String> = Mods.mergeAllTextsNamed('data/introText.txt');
     var swagGoodArray:Array<Array<String>> = [];
     for (i in firstArray)
@@ -128,14 +134,20 @@ function startIntro() {
     loadJsonData();
     Conductor.bpm = musicBPM;
 
-    logoBl = new FlxSprite(logoPosition.x, logoPosition.y);
+    logoBl = new FlxSprite(
+        logoPosition.x,
+        logoPosition.y + (isMobile ? MobileScaleMode.getVerticalOffset() : 0)
+    );
     logoBl.frames = Paths.getSparrowAtlas('logoBumpin');
     logoBl.antialiasing = ClientPrefs.data.antialiasing;
     logoBl.animation.addByPrefix('bump', 'logo bumpin', 24, false);
     logoBl.animation.play('bump');
     logoBl.updateHitbox();
 
-    gfDance = new FlxSprite(gfPosition.x, gfPosition.y);
+    gfDance = new FlxSprite(
+        gfPosition.x,
+        gfPosition.y + (isMobile ? MobileScaleMode.getVerticalOffset() : 0)
+    );
     gfDance.antialiasing = ClientPrefs.data.antialiasing;
     if (ClientPrefs.data.shaders) {
         swagShader = new ColorSwap();
@@ -152,8 +164,11 @@ function startIntro() {
         gfDance.animation.play('idle');
     }
 
-    titleText = new FlxSprite(enterPosition.x, enterPosition.y);
-    titleText.frames = Paths.getSparrowAtlas('titleEnter');
+    titleText = new FlxSprite(
+        enterPosition.x,
+        enterPosition.y + (isMobile ? MobileScaleMode.getVerticalOffset() : 0)
+    );
+    titleText.frames = Paths.getSparrowAtlas(isMobile ? 'mobile/titleEnter' : 'titleEnter');
     var animFrames = [];
     titleText.animation.findByPrefix(animFrames, 'ENTER IDLE');
     titleText.animation.findByPrefix(animFrames, 'ENTER FREEZE');
@@ -176,11 +191,16 @@ function startIntro() {
     credTextShit.screenCenter();
     credTextShit.visible = false;
 
-    ngSpr = new FlxSprite(0, FlxG.height * 0.52).loadGraphic(Paths.image('newgrounds_logo'));
+    ngSpr = new FlxSprite(0,
+        isMobile ? (MobileScaleMode.BASE_GAME_HEIGHT * 0.52 + MobileScaleMode.getVerticalOffset()) : (FlxG.height * 0.52)
+    ).loadGraphic(Paths.image('newgrounds_logo'));
     ngSpr.visible = false;
     ngSpr.setGraphicSize(Std.int(ngSpr.width * 0.8));
     ngSpr.updateHitbox();
-    ngSpr.screenCenter(X);
+    if (isMobile)
+        ngSpr.x = (MobileScaleMode.BASE_GAME_WIDTH - ngSpr.width) * 0.5;
+    else
+        ngSpr.screenCenter(X);
     ngSpr.antialiasing = ClientPrefs.data.antialiasing;
 
     add(gfDance);
@@ -250,6 +270,7 @@ function update(elapsed:Float) {
         Conductor.songPosition = FlxG.sound.music.time;
 
     var pressedEnter:Bool = FlxG.keys.justPressed.ENTER || controls.ACCEPT;
+    if (isMobile && TouchUtil.justPressed) pressedEnter = true;
     var gamepad = FlxG.gamepads.lastActive;
     if (gamepad != null && gamepad.justPressed.START) pressedEnter = true;
 

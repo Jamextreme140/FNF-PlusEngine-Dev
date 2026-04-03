@@ -368,6 +368,16 @@ class HScript extends Iris
 		#if windows
 		set('WindowTweens', funkin.modding.scripting.psychlua.WindowTweens);
 		#end
+		set('TouchScroll', funkin.mobile.backend.TouchScroll);
+		set('TouchUtil', funkin.mobile.backend.TouchUtil);
+		set('MobileControlSelectSubState', funkin.mobile.substates.MobileControlSelectSubState);
+		set('MobileSettingsSubState', funkin.mobile.options.MobileSettingsSubState);
+		set('MobileScaleMode', funkin.mobile.backend.MobileScaleMode);
+		#if mobile
+		set('__isMobile', true);
+		#else
+		set('__isMobile', false);
+		#end
 		set('Alphabet', funkin.ui.Alphabet);
 		set('AlphaCharacter', funkin.ui.AlphaCharacter);
 		set('Countdown', funkin.play.stage.BaseStage.Countdown);
@@ -388,6 +398,7 @@ class HScript extends Iris
 		set('LoadingState', funkin.ui.LoadingState);
 		set('CreditsState', funkin.ui.credits.CreditsState);
 		set('AchievementsMenuState', funkin.ui.AchievementsMenuState);
+		set('MasterEditorMenu', funkin.ui.debug.MasterEditorMenu);
 		set('FlashingState', funkin.ui.FlashingState);
 		set('OptionsState', funkin.ui.options.OptionsState);
 		set('ResultsState', funkin.play.ResultsState);
@@ -397,6 +408,7 @@ class HScript extends Iris
 		set('FlxTransitionableState', flixel.addons.transition.FlxTransitionableState);
 		set('MusicBeatState', MusicBeatState);
 		set('GameplayChangersSubstate', funkin.ui.options.GameplayChangersSubstate);
+		set('ResetScoreSubState', funkin.play.substates.ResetScoreSubState);
 		set('CoolUtil', funkin.util.CoolUtil);
 		set('Cursor', funkin.input.Cursor);
 		set('ColorblindFilter', funkin.graphics.shaders.ColorblindFilter);
@@ -410,6 +422,12 @@ class HScript extends Iris
 		set('GameplaySettingsSubState', funkin.ui.options.GameplaySettingsSubState);
 		set('LegacySettingsSubState', funkin.ui.options.LegacySettingsSubState);
 		set('NoteOffsetState', funkin.ui.options.NoteOffsetState);
+		#if MODCHARTS_NOTITG_ALLOWED
+		set('ModchartSettingsSubState', funkin.ui.options.ModchartSettingsSubState);
+		#end
+		#if TRANSLATIONS_ALLOWED
+		set('LanguageSubState', funkin.ui.options.LanguageSubState);
+		#end
 		set('Mods', funkin.modding.Mods);
 		set('ModsMenuState', funkin.modding.ModsMenuState);
 		set('FlxObject', flixel.FlxObject);
@@ -1415,7 +1433,12 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return null; // Maps devuelven null si no existe la key
 		}
 		
-		// Intentar acceso directo primero (más rápido y funciona con fields privados como _cache)
+		// Try getProperty first so overridden getters (e.g. FlxSpriteGroup.get_width) are invoked,
+		// then fall back to field for private/backing fields not exposed via getter.
+		try {
+			var value = Reflect.getProperty(o, field);
+			if (value != null) return value;
+		} catch(e:Dynamic) {}
 		try {
 			var value = Reflect.field(o, field);
 			if (value != null) return value;
@@ -1440,12 +1463,12 @@ class CustomInterp extends crowplexus.hscript.Interp
 			if (instanceFields != null && instanceFields.contains(field)) {
 				// El field/método existe en la clase
 				try {
-					// Intentar field directo primero
-					var value = Reflect.field(o, field);
+					// Try getProperty first to properly invoke overridden getters
+					var value = Reflect.getProperty(o, field);
 					if (value != null) return value;
 					
-					// Si es null, intentar getProperty (para getters)
-					return Reflect.getProperty(o, field);
+					// Fall back to field for backing/private fields
+					return Reflect.field(o, field);
 				} catch(e:Dynamic) {
 					// Si falla, buscar en variables globales como fallback
 					if(MusicBeatState.getVariables().exists(field))
