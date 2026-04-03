@@ -434,6 +434,8 @@ class PlayState extends MusicBeatState
 	var lastBreakTimerValue:Float = -1;
 	var breakTimerUpdateAccum:Float = 0;
 	var breakTimerNextNoteTime:Float = -1;
+	var breakTimerLastNoteTime:Float = -1; // Time of the last note that already passed
+	static inline var BREAK_TIMER_MIN_GAP:Float = 2000; // Minimum gap in ms between notes to show the timer
 
 	#if android
 	var nativeTimebarUpdateAccum:Float = 0;
@@ -1992,10 +1994,27 @@ class PlayState extends MusicBeatState
 						FlxG.sound.play(Paths.sound('introGo' + introSoundsSuffix), 0.6);
 						tick = GO;
 					case 4:
-						// Countdown finished - now close pause and continue game
 						if (pauseSubState != null)
 						{
+							// Legacy path: substate is still open, close it to trigger closeSubState resume
 							pauseSubState.close();
+						}
+						else
+						{
+							// Direct path: called from closeSubState, resume game here
+							if (FlxG.sound.music != null && !startingSong && canResync)
+								resyncVocals();
+							#if VIDEOS_ALLOWED
+							if (videoCutscene != null) videoCutscene.resume();
+							#end
+							#if (LUA_ALLOWED && VIDEOS_ALLOWED)
+							LuaVideo.resumeAll();
+							#end
+							paused = false;
+							resumingWithCountdown = false;
+							callOnScripts('onResume');
+							resetRPC(startTimer != null && startTimer.finished);
+							runSongSyncThread();
 						}
 						callOnScripts('onResumeCountdownFinished');
 						return;
@@ -2010,10 +2029,23 @@ class PlayState extends MusicBeatState
 		}
 		else
 		{
-			// Script stopped the countdown - close pause immediately
+			// Script stopped the countdown - resume immediately
 			if (pauseSubState != null)
 			{
 				pauseSubState.close();
+			}
+			else
+			{
+				if (FlxG.sound.music != null && !startingSong && canResync)
+					resyncVocals();
+				#if VIDEOS_ALLOWED
+				if (videoCutscene != null) videoCutscene.resume();
+				#end
+				paused = false;
+				resumingWithCountdown = false;
+				callOnScripts('onResume');
+				resetRPC(startTimer != null && startTimer.finished);
+				runSongSyncThread();
 			}
 		}
 	}
@@ -3082,21 +3114,30 @@ class PlayState extends MusicBeatState
 		super.closeSubState();
 		
 		#if VIDEOS_ALLOWED
-		if (videoCutscene != null) videoCutscene.resume();
+		// Don't resume video yet if the pause countdown is about to play
+		if (videoCutscene != null && !resumingWithCountdown) videoCutscene.resume();
 		#end
 		stagesFunc(function(stage:BaseStage) stage.closeSubState());
 		if (paused)
 		{
+			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = true);
+			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = true);
+
+			if (resumingWithCountdown)
+			{
+				// Countdown runs directly on the game screen - resume is handled at countdown end
+				resumeWithCountdown();
+				return;
+			}
+
 			if (FlxG.sound.music != null && !startingSong && canResync)
 			{
 				resyncVocals();
 			}
-			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = true);
-			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = true);
 
 			paused = false;
 			
-			// Reanudar todos los videos de Lua
+			// Resume all Lua videos
 			#if (LUA_ALLOWED && VIDEOS_ALLOWED)
 			LuaVideo.resumeAll();
 			#end
@@ -3190,6 +3231,7 @@ class PlayState extends MusicBeatState
 
 	// ← NUEVAS FUNCIONES DE OPTIMIZACIÓN
 	public var paused:Bool = false;
+	public var resumingWithCountdown:Bool = false; // True while the pause countdown is playing before resuming
 	public var canReset:Bool = true;
 	var startedCountdown:Bool = false;
 	var canPause:Bool = true;
@@ -3303,7 +3345,7 @@ class PlayState extends MusicBeatState
 			botplayTxt.alpha = 1 - Math.sin((Math.PI * botplaySine) / 180);
 		}
 
-		if (controls.PAUSE #if android || FlxG.android.justReleased.BACK #end && startedCountdown && canPause)
+		if (!paused && controls.PAUSE #if android || FlxG.android.justReleased.BACK #end && startedCountdown && canPause)
 		{
 			var ret:Dynamic = callOnScripts('onPause', null, true);
 			if(ret != LuaUtils.Function_Stop) {
@@ -3634,13 +3676,24 @@ class PlayState extends MusicBeatState
 				{
 					breakTimerUpdateAccum = 0;
 					breakTimerNextNoteTime = -1;
+					var scanLastNote:Float = -1;
 
 					for (note in notes)
 					{
-						if (note != null && note.mustPress && !note.isSustainNote && !note.wasGoodHit && note.strumTime > currentTime)
+						if (note != null && note.mustPress && !note.isSustainNote)
 						{
-							if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
-								breakTimerNextNoteTime = note.strumTime;
+							if (!note.wasGoodHit && note.strumTime > currentTime)
+							{
+								// Upcoming note
+								if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
+									breakTimerNextNoteTime = note.strumTime;
+							}
+							else if (note.strumTime <= currentTime)
+							{
+								// Already-passed note - track the most recent one
+								if (note.strumTime > scanLastNote)
+									scanLastNote = note.strumTime;
+							}
 						}
 					}
 
@@ -3656,36 +3709,51 @@ class PlayState extends MusicBeatState
 							}
 						}
 					}
+
+					// Update last note time if we found a more recent one
+					if (scanLastNote > breakTimerLastNoteTime)
+						breakTimerLastNoteTime = scanLastNote;
 				}
-				
-				// Display timer if next note is within 3 seconds
+
+				// Determine the gap start: use the last known note time (or current time if none)
+				var gapStart:Float = (breakTimerLastNoteTime > 0) ? breakTimerLastNoteTime : currentTime;
+				var totalGap:Float = (breakTimerNextNoteTime > 0) ? (breakTimerNextNoteTime - gapStart) : -1;
+
+				// Only show the timer when there is a real break (gap >= threshold)
 				var timeUntilNext:Float = (breakTimerNextNoteTime - currentTime) / 1000;
-				if (breakTimerNextNoteTime > 0 && timeUntilNext >= 0 && timeUntilNext <= 3.0)
+				if (breakTimerNextNoteTime > 0 && totalGap >= BREAK_TIMER_MIN_GAP && timeUntilNext >= 0 && timeUntilNext <= 5.0)
 				{
-					breakTimerText.visible = true;
-					
-					// Show countdown from 3 to 0
+					// Show countdown from 5 down to 1 (skip 0 - note is basically on top of us)
 					var displayValue:Int = Math.floor(timeUntilNext);
-					breakTimerText.text = Std.string(displayValue);
-					
-					// Position timer at player lane (center of player strums)
-					var centerX:Float = 0;
-					for (strum in playerStrums)
+					if (displayValue >= 1)
 					{
-						if (strum != null)
-							centerX += strum.x + strum.width / 2;
+						breakTimerText.visible = true;
+						breakTimerText.text = Std.string(displayValue);
+						
+						// Position timer at player lane (center of player strums)
+						var centerX:Float = 0;
+						for (strum in playerStrums)
+						{
+							if (strum != null)
+								centerX += strum.x + strum.width / 2;
+						}
+						centerX /= playerStrums.length;
+						
+						breakTimerText.x = centerX - breakTimerText.width / 2;
+						breakTimerText.y = (ClientPrefs.data.downScroll ? FlxG.height - 200 : 120);
+						
+						// Animate on value change
+						if (lastBreakTimerValue != displayValue)
+						{
+							breakTimerText.scale.set(1.5, 1.5);
+							FlxTween.tween(breakTimerText.scale, {x: 1, y: 1}, 0.2, {ease: FlxEase.circOut});
+							lastBreakTimerValue = displayValue;
+						}
 					}
-					centerX /= playerStrums.length;
-					
-					breakTimerText.x = centerX - breakTimerText.width / 2;
-					breakTimerText.y = (ClientPrefs.data.downScroll ? FlxG.height - 200 : 120);
-					
-					// Animate on value change
-					if (lastBreakTimerValue != displayValue)
+					else
 					{
-						breakTimerText.scale.set(1.5, 1.5);
-						FlxTween.tween(breakTimerText.scale, {x: 1, y: 1}, 0.2, {ease: FlxEase.circOut});
-						lastBreakTimerValue = displayValue;
+						breakTimerText.visible = false;
+						lastBreakTimerValue = -1;
 					}
 				}
 				else

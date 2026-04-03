@@ -326,9 +326,11 @@ class HScript extends Iris
 		set('StringMap', haxe.ds.StringMap);
 		set('ObjectMap', haxe.ds.ObjectMap);
 		set('FlxSave', flixel.util.FlxSave);
+		set('FlxSpriteUtil', flixel.util.FlxSpriteUtil);
 		#if sys
 		set('File', File);
 		set('FileSystem', FileSystem);
+		set('Sys', Sys);
 		#end
 		set('FlxG', CustomFlxG);
 		set('FlxMath', CustomFlxMath);
@@ -362,6 +364,7 @@ class HScript extends Iris
 		set('FlxGroup', flixel.group.FlxGroup);
 		set('FlxPoint', CustomFlxPoint);
 		set('FlxKey', flixel.input.keyboard.FlxKey.fromStringMap);
+		set('FlxGamepadInputID', CustomFlxGamepadInputID);
 		set('Capabilities', openfl.system.Capabilities);
 		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		set('Lib', openfl.Lib);
@@ -373,6 +376,7 @@ class HScript extends Iris
 		set('MobileControlSelectSubState', funkin.mobile.substates.MobileControlSelectSubState);
 		set('MobileSettingsSubState', funkin.mobile.options.MobileSettingsSubState);
 		set('MobileScaleMode', funkin.mobile.backend.MobileScaleMode);
+		set('StorageUtil', funkin.mobile.backend.StorageUtil);
 		#if mobile
 		set('__isMobile', true);
 		#else
@@ -466,6 +470,9 @@ class HScript extends Iris
 		#end
 		set('Mods', funkin.modding.Mods);
 		set('ModsMenuState', funkin.modding.ModsMenuState);
+		set('ModItem', funkin.modding.ModsMenuState.ModItem);
+		set('MenuButton', funkin.modding.ModsMenuState.MenuButton);
+		set('ModSettingsSubState', funkin.ui.options.ModSettingsSubState);
 		set('FlxObject', flixel.FlxObject);
 		set('TEXT',   cast openfl.utils.AssetType.TEXT);
 		set('IMAGE',  cast openfl.utils.AssetType.IMAGE);
@@ -1177,6 +1184,49 @@ class CustomFlxAxes {
 	public static var X(default, null):flixel.util.FlxAxes = flixel.util.FlxAxes.X;
 	public static var Y(default, null):flixel.util.FlxAxes = flixel.util.FlxAxes.Y;
 	public static var XY(default, null):flixel.util.FlxAxes = flixel.util.FlxAxes.XY;
+}
+
+class CustomFlxGamepadInputID {
+	public static var ANY(default, null):Int            = flixel.input.gamepad.FlxGamepadInputID.ANY;
+	public static var NONE(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.NONE;
+	public static var A(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.A;
+	public static var B(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.B;
+	public static var X(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.X;
+	public static var Y(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.Y;
+	public static var LEFT_SHOULDER(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_SHOULDER;
+	public static var RIGHT_SHOULDER(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_SHOULDER;
+	public static var BACK(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.BACK;
+	public static var START(default, null):Int          = flixel.input.gamepad.FlxGamepadInputID.START;
+	public static var LEFT_STICK_CLICK(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_CLICK;
+	public static var RIGHT_STICK_CLICK(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_CLICK;
+	public static var GUIDE(default, null):Int          = flixel.input.gamepad.FlxGamepadInputID.GUIDE;
+	public static var DPAD_UP(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.DPAD_UP;
+	public static var DPAD_DOWN(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.DPAD_DOWN;
+	public static var DPAD_LEFT(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.DPAD_LEFT;
+	public static var DPAD_RIGHT(default, null):Int     = flixel.input.gamepad.FlxGamepadInputID.DPAD_RIGHT;
+	public static var LEFT_TRIGGER_BUTTON(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_TRIGGER_BUTTON;
+	public static var RIGHT_TRIGGER_BUTTON(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_TRIGGER_BUTTON;
+	public static var LEFT_TRIGGER(default, null):Int   = flixel.input.gamepad.FlxGamepadInputID.LEFT_TRIGGER;
+	public static var RIGHT_TRIGGER(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_TRIGGER;
+	public static var LEFT_ANALOG_STICK(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_ANALOG_STICK;
+	public static var RIGHT_ANALOG_STICK(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_ANALOG_STICK;
+	public static var DPAD(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.DPAD;
+	public static var TILT_PITCH(default, null):Int     = flixel.input.gamepad.FlxGamepadInputID.TILT_PITCH;
+	public static var TILT_ROLL(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.TILT_ROLL;
+	public static var POINTER_X(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.POINTER_X;
+	public static var POINTER_Y(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.POINTER_Y;
+	public static var EXTRA_0(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_0;
+	public static var EXTRA_1(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_1;
+	public static var EXTRA_2(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_2;
+	public static var EXTRA_3(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_3;
+	public static var LEFT_STICK_DIGITAL_UP(default, null):Int    = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_UP;
+	public static var LEFT_STICK_DIGITAL_RIGHT(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_RIGHT;
+	public static var LEFT_STICK_DIGITAL_DOWN(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_DOWN;
+	public static var LEFT_STICK_DIGITAL_LEFT(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_LEFT;
+	public static var RIGHT_STICK_DIGITAL_UP(default, null):Int    = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_UP;
+	public static var RIGHT_STICK_DIGITAL_RIGHT(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_RIGHT;
+	public static var RIGHT_STICK_DIGITAL_DOWN(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_DOWN;
+	public static var RIGHT_STICK_DIGITAL_LEFT(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_LEFT;
 }
 
 class CustomFlxTextAlign {

@@ -353,8 +353,9 @@ class PauseSubState extends MusicBeatSubstate
 					Paths.clearUnusedMemory();
 					if (ClientPrefs.data.pauseCountdown && PlayState.instance != null)
 					{
-						// Start countdown before resuming - keep pause active until countdown ends
-						PlayState.instance.resumeWithCountdown(this);
+						// Close immediately - countdown plays directly on the game screen
+						PlayState.instance.resumingWithCountdown = true;
+						close();
 					}
 					else
 					{

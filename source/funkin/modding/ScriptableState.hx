@@ -262,7 +262,6 @@ class ScriptableState extends MusicBeatState
 		}
 		#end
 
-		trace('[ScriptableState:$stateName] openSubState → ${Type.getClassName(Type.getClass(subState))}');
 		// Sync any script-side field changes (e.g. persistentUpdate = false) before
 		// opening the substate, so Flixel sees the correct value on the very next frame.
 		_syncScriptFields();

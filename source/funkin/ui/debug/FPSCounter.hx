@@ -659,19 +659,27 @@ class FPSCounter extends Sprite
 		#end
 	}
 
-	// Función para obtener el estado actual
+	// Returns the current state name
 	private function getCurrentState():String {
 		if (FlxG.state == null) return "null";
 		
 		var stateName = Type.getClassName(Type.getClass(FlxG.state));
 		
-		// Simplificar el nombre (quitar packages)
+		// Strip package prefix
 		if (stateName.indexOf('.') > -1) {
 			var parts = stateName.split('.');
 			stateName = parts[parts.length - 1];
 		}
+
+		// Show the script name when running inside a ScriptableState
+		#if (HSCRIPT_ALLOWED && sys)
+		if (FlxG.state is funkin.modding.ScriptableState) {
+			var sName:String = (cast FlxG.state : funkin.modding.ScriptableState).stateName;
+			if (sName != null) stateName = 'ScriptableState($sName)';
+		}
+		#end
 		
-		// Verificar si hay un substate activo
+		// Check for active substate
 		if (FlxG.state.subState != null) {
 			var subStateName = Type.getClassName(Type.getClass(FlxG.state.subState));
 			if (subStateName.indexOf('.') > -1) {
