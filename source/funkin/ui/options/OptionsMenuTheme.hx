@@ -14,7 +14,17 @@ typedef OptionsAccentPalette = {
 
 class OptionsMenuTheme
 {
-	public static var ACCENT_CHOICES(default, null):Array<String> = ['Purple', 'Teal', 'Rose', 'Amber', 'Indigo', 'Green', 'Red'];
+	public static var ACCENT_CHOICES(default, null):Array<String> = ['Purple', 'Teal', 'Rose', 'Amber', 'Indigo', 'Green', 'Red', 'Black'];
+
+	public static inline function isDark():Bool
+	{
+		return ClientPrefs.data.menuDarkTheme;
+	}
+
+	public static function signature():String
+	{
+		return normalizeAccent(ClientPrefs.data.menuAccentColor) + ':' + (isDark() ? 'dark' : 'light');
+	}
 
 	public static function normalizeAccent(value:String):String
 	{
@@ -39,6 +49,15 @@ class OptionsMenuTheme
 	{
 		switch (normalizeAccent(value))
 		{
+			case 'Black':
+				return {
+					name: 'Black',
+					accent: 0xFF9098A6,
+					strong: 0xFF17191D,
+					muted: 0xFF606775,
+					pale: 0xFFD6D9E0,
+					mist: 0xFFF1F3F6
+				};
 			case 'Teal':
 				return {
 					name: 'Teal',
@@ -109,5 +128,105 @@ class OptionsMenuTheme
 	{
 		var palette = current();
 		MD3Theme.setAccent(palette.accent);
+	}
+
+	public static inline function backdropColor():Int
+	{
+		return isDark() ? 0xD0090A0C : 0xD2141020;
+	}
+
+	public static inline function menuBackgroundAlpha():Float
+	{
+		return isDark() ? 0.08 : 0.14;
+	}
+
+	public static inline function panelSurfaceColor():Int
+	{
+		return isDark() ? 0xFF111317 : 0xFFF8F4FC;
+	}
+
+	public static inline function panelHeaderColor():Int
+	{
+		return isDark() ? 0xFF181B20 : 0xFFFFFBFF;
+	}
+
+	public static inline function panelOutlineColor():Int
+	{
+		return isDark() ? 0xFF2A2E36 : 0x24FFFFFF;
+	}
+
+	public static inline function neutralOutlineColor():Int
+	{
+		return isDark() ? 0xFF30343C : 0xFFDCCEEB;
+	}
+
+	public static inline function titleColor():Int
+	{
+		return isDark() ? 0xFFF5F7FA : current().strong;
+	}
+
+	public static inline function bodyTextColor():Int
+	{
+		return isDark() ? 0xFFC4CBD6 : current().muted;
+	}
+
+	public static inline function footerTextColor():Int
+	{
+		return isDark() ? 0xFF9BA1AD : 0xFF6D5F82;
+	}
+
+	public static inline function cardFill(selected:Bool):Int
+	{
+		return isDark() ? (selected ? 0xFF1A1E24 : 0xFF121419) : (selected ? current().mist : 0xFFFCF8FF);
+	}
+
+	public static inline function cardStroke(selected:Bool):Int
+	{
+		return selected ? current().accent : neutralOutlineColor();
+	}
+
+	public static inline function cardAccent(selected:Bool):Int
+	{
+		return isDark() ? (selected ? current().accent : 0xFF434852) : (selected ? current().accent : current().pale);
+	}
+
+	public static inline function cardTitleColor(selected:Bool):Int
+	{
+		return isDark() ? (selected ? 0xFFF5F7FA : 0xFFE6EAF0) : (selected ? current().strong : 0xFF402D61);
+	}
+
+	public static inline function cardDescriptionColor(selected:Bool):Int
+	{
+		return isDark() ? (selected ? 0xFFC4CBD6 : 0xFF99A1AE) : (selected ? current().muted : 0xFF7B6D93);
+	}
+
+	public static inline function cardValueColor(selected:Bool):Int
+	{
+		return isDark() ? (selected ? current().accent : 0xFFB7BEC9) : (selected ? current().accent : 0xFF7B6D93);
+	}
+
+	public static inline function previewSurfaceColor():Int
+	{
+		return isDark() ? 0xFF171A1F : 0xFFF9F4FC;
+	}
+
+	public static inline function previewTitleColor():Int
+	{
+		return isDark() ? 0xFFF5F7FA : 0xFF2C1E48;
+	}
+
+	public static inline function previewHintColor(focused:Bool = false):Int
+	{
+		return focused ? titleColor() : (isDark() ? 0xFF9BA1AD : 0xFF76678B);
+	}
+
+	public static inline function optionTitleColor(selected:Bool):Int
+	{
+		return isDark() ? (selected ? titleColor() : 0xFFE6EAF0) : (selected ? current().strong : 0xFF45335E);
+	}
+
+	public static inline function optionDescriptionColor(selected:Bool):Int
+	{
+		return isDark() ? (selected ? bodyTextColor() : 0xFF99A1AE) : (selected ? current().muted : 0xFF7E6F95);
 	}
 }

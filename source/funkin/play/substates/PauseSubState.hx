@@ -205,6 +205,21 @@ class PauseSubState extends MusicBeatSubstate
 	{
 		OptionsMenuTheme.syncAccent();
 		var palette = OptionsMenuTheme.current();
+		var blackTheme = OptionsMenuTheme.isDark();
+		var backdropColor = blackTheme ? 0xFF070809 : 0xFF120C19;
+		var panelSurfaceColor = blackTheme ? 0xFF101216 : 0xFFF9F5FC;
+		var panelHeaderColor = blackTheme ? 0xFF171A1F : 0xFFFFFBFF;
+		var panelOutlineColor = blackTheme ? 0xFF2A2E36 : 0x24FFFFFF;
+		var metaColor = blackTheme ? 0xFF9BA1AD : 0xFF6D5F82;
+		var summarySurfaceColor = blackTheme ? 0xFF171A1F : 0xFFFFFBFF;
+		var summaryOutlineColor = blackTheme ? 0xFF30343C : 0xFFDCCEEB;
+		var timeSurfaceColor = blackTheme ? 0xFF111317 : 0xFFFCF8FF;
+		var statsColor = blackTheme ? 0xFFE8EBF0 : 0xFF2C1E48;
+		var timeSummaryColor = blackTheme ? 0xFFC7CDD7 : 0xFF4D34A8;
+		var sliderHintColor = blackTheme ? 0xFF9BA1AD : 0xFF7B6D93;
+		var titleColor = blackTheme ? 0xFFF5F7FA : palette.strong;
+		var bodyColor = blackTheme ? 0xFFC4CBD6 : palette.muted;
+		var dateTimeColor = blackTheme ? 0xFF9BA1AD : palette.muted;
 
 		panelWidth = Math.min(960, FlxG.width - 36);
 		panelHeight = FlxG.height - 28;
@@ -223,7 +238,7 @@ class PauseSubState extends MusicBeatSubstate
 		summaryCardHeight = 160;
 		dataCardHeight = Math.min(338, panelHeight - 250);
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF120C19);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, backdropColor);
 		backdrop.alpha = 0;
 		pinSprite(backdrop);
 		add(backdrop);
@@ -231,7 +246,7 @@ class PauseSubState extends MusicBeatSubstate
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = 0.09;
+		menuBG.alpha = blackTheme ? 0.05 : 0.09;
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		pinSprite(menuBG);
@@ -243,35 +258,35 @@ class PauseSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		panelSurface = new FlxSprite();
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF9F5FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, panelSurfaceColor);
 		pinSprite(panelSurface);
 		add(panelSurface);
 
 		panelHeader = new FlxSprite();
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 118, 34, 0, 0, 34, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 118, 34, 0, 0, 34, panelHeaderColor);
 		pinSprite(panelHeader);
 		add(panelHeader);
 
 		panelOutline = new FlxSprite();
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, panelOutlineColor);
 		pinSprite(panelOutline);
 		add(panelOutline);
 
 		titleText = new FlxText(0, 0, panelWidth - 220, Language.getPhrase('pause_title', 'Pause'), 32);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 32, palette.strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 32, titleColor, LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(titleText);
 		add(titleText);
 
 		subtitleText = new FlxText(0, 0, panelWidth - 220,
 			Language.getPhrase('pause_subtitle', 'Same pause, new drawer. Less alphabet soup, more actual UI.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, bodyColor, LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(subtitleText);
 		add(subtitleText);
 
 		headerMetaText = new FlxText(0, 0, panelWidth - 260, '', 14);
-		headerMetaText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, LEFT);
+		headerMetaText.setFormat(Paths.font('inter.otf'), 14, metaColor, LEFT);
 		headerMetaText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(headerMetaText);
 		add(headerMetaText);
@@ -284,21 +299,21 @@ class PauseSubState extends MusicBeatSubstate
 		add(resumeButton);
 
 		statusText = new FlxText(0, 0, leftColumnWidth, Language.getPhrase('pause_status_ready', 'Paused'), 14);
-		statusText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, LEFT);
+		statusText.setFormat(Paths.font('inter.otf'), 14, metaColor, LEFT);
 		statusText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(statusText);
 		add(statusText);
 
 		hintText = new FlxText(0, 0, 330,
 			Language.getPhrase('pause_hint_controls', 'UP/DOWN select. LEFT/RIGHT adjusts time. ENTER activates. ESC resumes.'), 13);
-		hintText.setFormat(Paths.font('inter.otf'), 13, palette.muted, RIGHT);
+		hintText.setFormat(Paths.font('inter.otf'), 13, bodyColor, RIGHT);
 		hintText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(hintText);
 		add(hintText);
 
 		footerText = new FlxText(0, 0, panelWidth - 48,
 			Language.getPhrase('pause_footer', 'The drawer slides in from the left. Because if we are pausing, we may as well do it with style.'), 13);
-		footerText.setFormat(Paths.font('inter.otf'), 13, 0xFF6D5F82, CENTER);
+		footerText.setFormat(Paths.font('inter.otf'), 13, metaColor, CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(footerText);
 		add(footerText);
@@ -308,39 +323,39 @@ class PauseSubState extends MusicBeatSubstate
 		add(cardLayer);
 
 		summarySurface = new FlxSprite();
-		MD3ShapeTools.fillRoundRect(summarySurface, Std.int(summaryWidth), Std.int(summaryCardHeight), 28, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRect(summarySurface, Std.int(summaryWidth), Std.int(summaryCardHeight), 28, summarySurfaceColor);
 		pinSprite(summarySurface);
 		add(summarySurface);
 
 		summaryOutline = new FlxSprite();
-		MD3ShapeTools.strokeRoundRect(summaryOutline, Std.int(summaryWidth), Std.int(summaryCardHeight), 28, 2, 0xFFDCCEEB);
+		MD3ShapeTools.strokeRoundRect(summaryOutline, Std.int(summaryWidth), Std.int(summaryCardHeight), 28, 2, summaryOutlineColor);
 		pinSprite(summaryOutline);
 		add(summaryOutline);
 
 		timeSurface = new FlxSprite();
-		MD3ShapeTools.fillRoundRect(timeSurface, Std.int(summaryWidth), Std.int(dataCardHeight), 28, 0xFFFCF8FF);
+		MD3ShapeTools.fillRoundRect(timeSurface, Std.int(summaryWidth), Std.int(dataCardHeight), 28, timeSurfaceColor);
 		pinSprite(timeSurface);
 		add(timeSurface);
 
 		timeOutline = new FlxSprite();
-		MD3ShapeTools.strokeRoundRect(timeOutline, Std.int(summaryWidth), Std.int(dataCardHeight), 28, 2, 0xFFDCCEEB);
+		MD3ShapeTools.strokeRoundRect(timeOutline, Std.int(summaryWidth), Std.int(dataCardHeight), 28, 2, summaryOutlineColor);
 		pinSprite(timeOutline);
 		add(timeOutline);
 
 		summaryTitleText = new FlxText(0, 0, summaryWidth - 40, Language.getPhrase('pause_current_run', 'Current run'), 24);
-		summaryTitleText.setFormat(Paths.font('inter-bold.otf'), 24, palette.strong, LEFT);
+		summaryTitleText.setFormat(Paths.font('inter-bold.otf'), 24, titleColor, LEFT);
 		summaryTitleText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(summaryTitleText);
 		add(summaryTitleText);
 
 		dateTimeText = new FlxText(0, 0, summaryWidth - 40, '', 14);
-		dateTimeText.setFormat(Paths.font('inter.otf'), 14, palette.muted, LEFT);
+		dateTimeText.setFormat(Paths.font('inter.otf'), 14, dateTimeColor, LEFT);
 		dateTimeText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(dateTimeText);
 		add(dateTimeText);
 
 		timeSummaryText = new FlxText(0, 0, summaryWidth - 40, '', 18);
-		timeSummaryText.setFormat(Paths.font('inter.otf'), 18, 0xFF4D34A8, LEFT);
+		timeSummaryText.setFormat(Paths.font('inter.otf'), 18, timeSummaryColor, LEFT);
 		timeSummaryText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(timeSummaryText);
 		add(timeSummaryText);
@@ -354,13 +369,13 @@ class PauseSubState extends MusicBeatSubstate
 		add(timeSlider);
 
 		sliderHintText = new FlxText(0, 0, summaryWidth - 40, '', 15);
-		sliderHintText.setFormat(Paths.font('inter.otf'), 15, 0xFF7B6D93, LEFT);
+		sliderHintText.setFormat(Paths.font('inter.otf'), 15, sliderHintColor, LEFT);
 		sliderHintText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(sliderHintText);
 		add(sliderHintText);
 
 		statsSummaryText = new FlxText(0, 0, summaryWidth - 40, '', 17);
-		statsSummaryText.setFormat(Paths.font('inter.otf'), 17, 0xFF2C1E48, LEFT);
+		statsSummaryText.setFormat(Paths.font('inter.otf'), 17, statsColor, LEFT);
 		statsSummaryText.antialiasing = ClientPrefs.data.antialiasing;
 		pinText(statsSummaryText);
 		add(statsSummaryText);
@@ -1068,17 +1083,18 @@ class PauseSubState extends MusicBeatSubstate
 
 private class PauseActionCard extends FlxSpriteGroup
 {
+	static inline var CONTENT_OFFSET_Y:Float = 6;
 	static inline var BAR_X:Float = 16;
-	static inline var BAR_WIDTH:Int = 4;
-	static inline var BAR_PADDING:Float = 18;
+	static inline var BAR_Y:Float = 16 + CONTENT_OFFSET_Y;
+	static inline var BAR_WIDTH:Int = 6;
 	static inline var TITLE_X:Float = 30;
-	static inline var TITLE_Y:Float = 16;
+	static inline var TITLE_Y:Float = 12 + CONTENT_OFFSET_Y;
 	static inline var DESCRIPTION_X:Float = 30;
-	static inline var DESCRIPTION_Y:Float = 44;
-	static inline var VALUE_WIDTH:Float = 92;
-	static inline var VALUE_Y:Float = 17;
-	static inline var SIDE_PADDING:Float = 22;
-	static inline var VALUE_GAP:Float = 14;
+	static inline var DESCRIPTION_Y:Float = 36 + CONTENT_OFFSET_Y;
+	static inline var VALUE_WIDTH:Float = 126;
+	static inline var VALUE_Y:Float = 16 + CONTENT_OFFSET_Y;
+	static inline var SIDE_PADDING:Float = 24;
+	static inline var VALUE_GAP:Float = 18;
 
 	public var item(default, null):String;
 	public var cardWidth(default, null):Float;
@@ -1107,16 +1123,16 @@ private class PauseActionCard extends FlxSpriteGroup
 		outline.antialiasing = ClientPrefs.data.antialiasing;
 		add(outline);
 
-		accentBar = new FlxSprite(BAR_X, BAR_PADDING);
+		accentBar = new FlxSprite(BAR_X, BAR_Y);
 		accentBar.antialiasing = ClientPrefs.data.antialiasing;
 		add(accentBar);
 
-		titleText = new FlxText(TITLE_X, TITLE_Y, width - (SIDE_PADDING * 2 + VALUE_WIDTH + VALUE_GAP), '', 17);
+		titleText = new FlxText(TITLE_X, TITLE_Y, width - 60, '', 17);
 		titleText.setFormat(Paths.font('inter-bold.otf'), 18, 0xFF2C1E48, LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
-		descriptionText = new FlxText(DESCRIPTION_X, DESCRIPTION_Y, width - (SIDE_PADDING * 2 + VALUE_WIDTH + VALUE_GAP), '', 12);
+		descriptionText = new FlxText(DESCRIPTION_X, DESCRIPTION_Y, width - 60, '', 12);
 		descriptionText.setFormat(Paths.font('inter.otf'), 12, 0xFF76678B, LEFT);
 		descriptionText.antialiasing = ClientPrefs.data.antialiasing;
 		add(descriptionText);
@@ -1145,31 +1161,37 @@ private class PauseActionCard extends FlxSpriteGroup
 
 	public function refresh(title:String, description:String, value:String):Void
 	{
+		var hasValue = value != null && value.length > 0;
+		var textWidth = hasValue ? cardWidth - (TITLE_X + SIDE_PADDING + VALUE_WIDTH + VALUE_GAP) : cardWidth - 60;
 		titleText.text = title;
+		titleText.fieldWidth = textWidth;
 		descriptionText.text = description;
+		descriptionText.fieldWidth = textWidth;
 		valueText.text = value;
-		cardHeight = Math.max(82, DESCRIPTION_Y + descriptionText.height + 16);
+		valueText.visible = hasValue;
+		cardHeight = Math.max(86, DESCRIPTION_Y + descriptionText.height + 18);
 		valueText.x = cardWidth - VALUE_WIDTH - SIDE_PADDING;
-		valueText.y = VALUE_Y;
+		valueText.y = Math.max(VALUE_Y, (cardHeight - valueText.height) * 0.5 - 1);
 		redraw();
 	}
 
 	function redraw():Void
 	{
 		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFFCF8FF;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		var accent = selected ? palette.accent : palette.pale;
-		var accentHeight = Std.int(Math.max(18, cardHeight - BAR_PADDING * 2));
+		var blackTheme = palette.name == 'Black';
+		var fill = blackTheme ? (selected ? 0xFF181B20 : 0xFF101216) : (selected ? palette.mist : 0xFFFCF8FF);
+		var stroke = blackTheme ? (selected ? palette.accent : 0xFF30343C) : (selected ? palette.accent : 0xFFDCCEEB);
+		var accent = blackTheme ? (selected ? palette.accent : 0xFF434852) : (selected ? palette.accent : palette.pale);
+		var accentHeight = Std.int(Math.max(18, cardHeight - 32));
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
 		accentBar.x = BAR_X;
-		accentBar.y = Math.floor((cardHeight - accentHeight) * 0.5);
+		accentBar.y = BAR_Y;
 		MD3ShapeTools.fillRoundRect(accentBar, BAR_WIDTH, accentHeight, 4, accent);
 		accentBar.alpha = selected ? 1.0 : 0.72;
-		titleText.color = selected ? palette.strong : 0xFF402D61;
-		descriptionText.color = selected ? palette.muted : 0xFF7B6D93;
-		valueText.color = selected ? palette.accent : 0xFF7B6D93;
+		titleText.color = blackTheme ? (selected ? 0xFFF5F7FA : 0xFFE6EAF0) : (selected ? palette.strong : 0xFF402D61);
+		descriptionText.color = blackTheme ? (selected ? 0xFFC4CBD6 : 0xFF99A1AE) : (selected ? palette.muted : 0xFF7B6D93);
+		valueText.color = blackTheme ? (selected ? palette.accent : 0xFFB7BEC9) : (selected ? palette.accent : 0xFF7B6D93);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void
@@ -1178,6 +1200,8 @@ private class PauseActionCard extends FlxSpriteGroup
 		redraw();
 		alpha = value ? 1.0 : 0.92;
 		scale.set(1, 1);
+		updateHitbox();
+		offset.set(0, 0);
 	}
 
 	public function applyVerticalClip(yMin:Float, yMax:Float):Void

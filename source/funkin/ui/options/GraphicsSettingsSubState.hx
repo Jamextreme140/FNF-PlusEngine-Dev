@@ -88,13 +88,13 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		columnWidth = panelWidth - 56;
 		Cursor.hide();
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xD2141020);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(backdrop);
 
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = 0.14;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		add(menuBG);
@@ -104,41 +104,41 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		panelSurface = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		panelOutline = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.panelOutlineColor());
 		add(panelOutline);
 
 		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 260, Language.getPhrase('graphics_menu', 'Graphics Settings'), 31);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 31, palette.strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 31, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		subtitleText = new FlxText(panelX + 34, panelY + 58, panelWidth - 320,
-			phrase('graphics_menu_subtitle', 'Rendering, framerate, fullscreen and accessibility controls now live in actual cards instead of a vertical wall of text.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+			Language.getPhrase('graphics_menu_subtitle', 'Rendering, framerate, fullscreen and accessibility controls now live in actual cards instead of a vertical wall of text.'), 15);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
-		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, phrase('close', 'Close'), TEXT, 110, closeAndSave);
+		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, Language.getPhrase('close', 'Close'), TEXT, 110, closeAndSave);
 		closeButton.allowMouseInput = false;
 		add(closeButton);
 
 		statusText = new FlxText(panelX + panelWidth - 330, panelY + 66, 290,
 			Language.getPhrase('graphics_menu_status', '{1} • {2}x{3}', [Main.platform, FlxG.width, FlxG.height]), 14);
-		statusText.setFormat(Paths.font('inter.otf'), 14, palette.muted, RIGHT);
+		statusText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.bodyTextColor(), RIGHT);
 		statusText.antialiasing = ClientPrefs.data.antialiasing;
 		add(statusText);
 
 		footerText = new FlxText(panelX + 28, panelY + panelHeight - 34, panelWidth - 56,
-			phrase('graphics_menu_footer', 'ARROWS move. LEFT/RIGHT adjust. ENTER toggles or opens. R resets the selected option. ESC returns.'), 14);
-		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, CENTER);
+			Language.getPhrase('graphics_menu_footer', 'ARROWS move. LEFT/RIGHT adjust. ENTER toggles or opens. R resets the selected option. ESC returns.'), 14);
+		footerText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.footerTextColor(), CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -358,11 +358,6 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		return Language.getPhrase('setting_' + key, fallback);
 	}
 
-	function phrase(key:String, fallback:String):String
-	{
-		return Language.getPhrase(key, fallback);
-	}
-
 	function phraseDescription(key:String, fallback:String):String
 	{
 		return Language.getPhrase('description_' + key, fallback);
@@ -370,7 +365,7 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 
 	function boolLabel(value:Bool):String
 	{
-		return value ? phrase('enabled', 'Enabled') : phrase('disabled', 'Disabled');
+		return value ? Language.getPhrase('enabled', 'Enabled') : Language.getPhrase('disabled', 'Disabled');
 	}
 
 	function saveSetting(message:String, playSound:Bool = true):Void
@@ -458,7 +453,7 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 				activeDropdown = null;
 			}, card.getOptionLabel);
 		overlayLayer.add(activeDropdown);
-		announce(card.titleText.text + phrase('graphics_menu_opened_suffix', ' menu opened'), false);
+		announce(card.titleText.text + Language.getPhrase('graphics_menu_opened_suffix', ' menu opened'), false);
 	}
 
 	function closeActiveDropdown():Void
@@ -589,15 +584,14 @@ private class GraphicsSettingsCard extends FlxSpriteGroup
 
 	function redraw():Void
 	{
-		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFFCF8FF;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		var accent = selected ? palette.accent : palette.pale;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
+		var accent = OptionsMenuTheme.cardAccent(selected);
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
 		MD3ShapeTools.fillRoundRect(accentBar, 6, Std.int(Math.max(18, cardHeight - 32)), 4, accent);
-		titleText.color = selected ? palette.strong : 0xFF402D61;
-		descriptionText.color = selected ? palette.muted : 0xFF7B6D93;
+		titleText.color = OptionsMenuTheme.cardTitleColor(selected);
+		descriptionText.color = OptionsMenuTheme.cardDescriptionColor(selected);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void
@@ -924,12 +918,12 @@ private class GraphicsDropdownMenu extends FlxSpriteGroup
 
 		background = new FlxSprite();
 		background.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, OptionsMenuTheme.panelSurfaceColor());
 		add(background);
 
 		outline = new FlxSprite();
 		outline.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, 0xFFD9C9F1);
+		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, OptionsMenuTheme.neutralOutlineColor());
 		add(outline);
 
 		for (index in 0...items.length)
@@ -957,12 +951,13 @@ private class GraphicsDropdownMenu extends FlxSpriteGroup
 
 	function refreshVisuals():Void
 	{
+		var darkTheme = OptionsMenuTheme.isDark();
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
 			var isHovered = index == hoverIndex;
-			var fill = isActive ? 0xFFE9DEFF : (isHovered ? 0xFFF3EBFF : 0x00000000);
-			var textColor = isActive ? 0xFF2E1A4F : 0xFF4A3967;
+			var fill = isActive ? (darkTheme ? 0xFF1F242B : 0xFFE9DEFF) : (isHovered ? (darkTheme ? 0xFF171B21 : 0xFFF3EBFF) : 0x00000000);
+			var textColor = isActive ? OptionsMenuTheme.titleColor() : OptionsMenuTheme.optionDescriptionColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;
 		}

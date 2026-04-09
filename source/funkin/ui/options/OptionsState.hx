@@ -33,6 +33,7 @@ class OptionsState extends MusicBeatState
 	var cardWidth:Float = 0;
 	var cardHeight:Float = 0;
 	var cardSpacing:Float = 0;
+	var lastThemeSignature:String = '';
 
 	private static var curSelected:Int = 0;
 	var lerpSelected:Float = 0;
@@ -127,10 +128,22 @@ class OptionsState extends MusicBeatState
 
 	function redrawCard(card:FlxSprite, selected:Bool):Void
 	{
-		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFF9F4FC;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		MD3ShapeTools.fillAndStrokeRoundRect(card, Std.int(cardWidth), Std.int(cardHeight), 24, 2, fill, stroke);
+		MD3ShapeTools.fillAndStrokeRoundRect(card, Std.int(cardWidth), Std.int(cardHeight), 24, 2,
+			OptionsMenuTheme.cardFill(selected), OptionsMenuTheme.cardStroke(selected));
+	}
+
+	function refreshThemeChrome():Void
+	{
+		lastThemeSignature = OptionsMenuTheme.signature();
+		backdrop.makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
+		menuBG.color = OptionsMenuTheme.current().pale;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 32, OptionsMenuTheme.panelSurfaceColor());
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 112, 32, 32, 0, 0, OptionsMenuTheme.panelHeaderColor());
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 32, 2, OptionsMenuTheme.panelOutlineColor());
+		titleText.color = OptionsMenuTheme.titleColor();
+		subtitleText.color = OptionsMenuTheme.bodyTextColor();
+		footerText.color = OptionsMenuTheme.footerTextColor();
 	}
 
 	function refreshOptionLayout(elapsed:Float, instant:Bool = false):Void
@@ -175,13 +188,13 @@ class OptionsState extends MusicBeatState
 			title.fieldWidth = cardWidth - 56;
 			title.x = card.x + (cardWidth - title.fieldWidth) * 0.5;
 			title.y = card.y + 14;
-			title.color = selected ? OptionsMenuTheme.current().strong : 0xFF45335E;
+			title.color = OptionsMenuTheme.optionTitleColor(selected);
 			title.alpha = card.alpha;
 
 			description.fieldWidth = cardWidth - 70;
 			description.x = card.x + (cardWidth - description.fieldWidth) * 0.5;
 			description.y = title.y + 31;
-			description.color = selected ? OptionsMenuTheme.current().muted : 0xFF7E6F95;
+			description.color = OptionsMenuTheme.optionDescriptionColor(selected);
 			description.alpha = selected ? 1.0 : 0.85;
 
 			applyVerticalClip(card, clipTop, clipBottom);
@@ -234,13 +247,13 @@ class OptionsState extends MusicBeatState
 		cardSpacing = 88;
 		cardsAnchorY = panelY + 138;
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xD2141020);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(backdrop);
 
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = OptionsMenuTheme.current().pale;
-		menuBG.alpha = 0.15;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		add(menuBG);
@@ -250,25 +263,25 @@ class OptionsState extends MusicBeatState
 		add(panelShadow);
 
 		panelSurface = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 32, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 32, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 112, 32, 32, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 112, 32, 32, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		panelOutline = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 32, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 32, 2, OptionsMenuTheme.panelOutlineColor());
 		add(panelOutline);
 
 		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 68, Language.getPhrase('options_menu', 'Options'), 32);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 32, OptionsMenuTheme.current().strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 32, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		subtitleText = new FlxText(panelX + 34, panelY + 58, panelWidth - 68,
 			Language.getPhrase('options_menu_subtitle', 'Select a settings category. Each card opens a focused submenu instead of throwing the whole house at you.'), 16);
-		subtitleText.setFormat(Paths.font('inter.otf'), 16, OptionsMenuTheme.current().muted, LEFT);
+		subtitleText.setFormat(Paths.font('inter.otf'), 16, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
@@ -277,7 +290,7 @@ class OptionsState extends MusicBeatState
 			footerMessage += ' ' + Language.getPhrase('mobile_controls_tip', 'Press {1} to Go Mobile Controls Menu', [(FlxG.onMobile ? 'C' : 'CTRL or C')]);
 
 		footerText = new FlxText(panelX + 34, panelY + panelHeight - 42, panelWidth - 68, footerMessage, 15);
-		footerText.setFormat(Paths.font('inter.otf'), 15, 0xFF6F6386, CENTER);
+		footerText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.footerTextColor(), CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -316,6 +329,7 @@ class OptionsState extends MusicBeatState
 		#end
 
 		refreshOptionLayout(0, true);
+		refreshThemeChrome();
 		addTouchPad('UP_DOWN', 'A_B_C');
 
 		super.create();
@@ -343,6 +357,9 @@ class OptionsState extends MusicBeatState
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+
+		if (lastThemeSignature != OptionsMenuTheme.signature())
+			refreshThemeChrome();
 
 		lerpSelected = FlxMath.lerp(curSelected, lerpSelected, Math.exp(-elapsed * 9.6));
 		refreshOptionLayout(elapsed);

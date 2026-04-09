@@ -153,13 +153,13 @@ class LanguageSubState extends MusicBeatSubstate
 		cardWidth = panelWidth - 56;
 		Cursor.hide();
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xD2141020);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(backdrop);
 
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = 0.14;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		add(menuBG);
@@ -169,40 +169,40 @@ class LanguageSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		panelSurface = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		panelOutline = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.panelOutlineColor());
 		add(panelOutline);
 
-		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 260, phrase('language_menu', 'Language'), 31);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 31, palette.strong, LEFT);
+		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 260, Language.getPhrase('language_menu', 'Language'), 31);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 31, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		subtitleText = new FlxText(panelX + 34, panelY + 58, panelWidth - 320,
-			phrase('language_menu_subtitle', 'Choose the language used by menus, settings and everything else that loves appearing on screen.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+			Language.getPhrase('language_menu_subtitle', 'Choose the language used by menus, settings and everything else that loves appearing on screen.'), 15);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
-		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, phrase('close', 'Close'), TEXT, 110, closeOrReload);
+		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, Language.getPhrase('close', 'Close'), TEXT, 110, closeOrReload);
 		closeButton.allowMouseInput = false;
 		add(closeButton);
 
-		statusText = new FlxText(panelX + panelWidth - 360, panelY + 66, 320, phrase('language_menu_status', 'Pick one and press ENTER to apply'), 14);
-		statusText.setFormat(Paths.font('inter.otf'), 14, palette.muted, RIGHT);
+		statusText = new FlxText(panelX + panelWidth - 360, panelY + 66, 320, Language.getPhrase('language_menu_status', 'Pick one and press ENTER to apply'), 14);
+		statusText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.bodyTextColor(), RIGHT);
 		statusText.antialiasing = ClientPrefs.data.antialiasing;
 		add(statusText);
 
 		footerText = new FlxText(panelX + 28, panelY + panelHeight - 34, panelWidth - 56,
-			phrase('language_menu_footer', 'ARROWS move. ENTER applies the selected language. ESC returns and reloads if needed.'), 14);
-		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, CENTER);
+			Language.getPhrase('language_menu_footer', 'ARROWS move. ENTER applies the selected language. ESC returns and reloads if needed.'), 14);
+		footerText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.footerTextColor(), CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -232,11 +232,6 @@ class LanguageSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phrase(key:String, fallback:String):String
-	{
-		return Language.getPhrase(key, fallback);
 	}
 
 	function getMinScroll():Float
@@ -295,7 +290,7 @@ class LanguageSubState extends MusicBeatSubstate
 		ClientPrefs.saveSettings();
 		Language.reloadPhrases();
 		changedLanguage = true;
-		statusText.text = phrase('language_applied', 'Applied') + ': ' + cards[selectedCard].titleText.text;
+		statusText.text = Language.getPhrase('language_applied', 'Applied') + ': ' + cards[selectedCard].titleText.text;
 	}
 
 	function closeOrReload():Void
@@ -419,15 +414,15 @@ private class LanguageCard extends FlxSpriteGroup
 	function redraw():Void
 	{
 		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFFCF8FF;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		var accent = selected ? palette.accent : palette.pale;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
+		var accent = OptionsMenuTheme.cardAccent(selected);
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
 		MD3ShapeTools.fillRoundRect(accentBar, 6, Std.int(Math.max(18, cardHeight - 32)), 4, accent);
-		titleText.color = selected ? palette.strong : 0xFF402D61;
+		titleText.color = OptionsMenuTheme.cardTitleColor(selected);
 		codeText.color = palette.accent;
-		sampleText.color = selected ? palette.muted : 0xFF7B6D93;
+		sampleText.color = OptionsMenuTheme.cardDescriptionColor(selected);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void

@@ -89,13 +89,13 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		cardWidth = panelWidth - 56;
 		Cursor.hide();
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xD2141020);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(backdrop);
 
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = 0.14;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		add(menuBG);
@@ -105,40 +105,40 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		panelSurface = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 108, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		panelOutline = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.panelOutlineColor());
 		add(panelOutline);
 
-		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 260, phrase('mobile_menu', 'Mobile Settings'), 31);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 31, palette.strong, LEFT);
+		titleText = new FlxText(panelX + 34, panelY + 18, panelWidth - 260, Language.getPhrase('mobile_menu', 'Mobile Settings'), 31);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 31, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		subtitleText = new FlxText(panelX + 34, panelY + 58, panelWidth - 320,
-			phrase('mobile_menu_subtitle', 'Touch controls, hitboxes, wide-screen behaviour and a few Android niceties without the old options wall.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+			Language.getPhrase('mobile_menu_subtitle', 'Touch controls, hitboxes, wide-screen behaviour and a few Android niceties without the old options wall.'), 15);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
-		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, phrase('close', 'Close'), TEXT, 110, closeAndSave);
+		closeButton = new MaterialButton(panelX + panelWidth - 150, panelY + 28, Language.getPhrase('close', 'Close'), TEXT, 110, closeAndSave);
 		closeButton.allowMouseInput = false;
 		add(closeButton);
 
-		statusText = new FlxText(panelX + panelWidth - 360, panelY + 66, 320, phrase('mobile_menu_status', 'Touch-friendly tuning area'), 14);
-		statusText.setFormat(Paths.font('inter.otf'), 14, palette.muted, RIGHT);
+		statusText = new FlxText(panelX + panelWidth - 360, panelY + 66, 320, Language.getPhrase('mobile_menu_status', 'Touch-friendly tuning area'), 14);
+		statusText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.bodyTextColor(), RIGHT);
 		statusText.antialiasing = ClientPrefs.data.antialiasing;
 		add(statusText);
 
 		footerText = new FlxText(panelX + 28, panelY + panelHeight - 34, panelWidth - 56,
-			phrase('mobile_menu_footer', 'ARROWS move. LEFT/RIGHT adjust. ENTER toggles or opens. R resets the selected option. ESC returns.'), 14);
-		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, CENTER);
+			Language.getPhrase('mobile_menu_footer', 'ARROWS move. LEFT/RIGHT adjust. ENTER toggles or opens. R resets the selected option. ESC returns.'), 14);
+		footerText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.footerTextColor(), CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -158,7 +158,7 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		var tierName = funkin.mobile.AndroidOptimizer.getTierName();
 		var gpuName = funkin.util.Native.detectGPU();
 		var tierInfo = 'Detected: ' + tierName + ' | GPU: ' + gpuName + '\nQuality settings were auto-configured. You can still override graphics manually.\nStorage is scoped to Android/data.';
-		cardY = addCard(new MobileInfoCard('deviceInfo', phrase('mobile_device_info', 'Device Performance Info'), tierInfo, cardWidth), cardX, cardY);
+		cardY = addCard(new MobileInfoCard('deviceInfo', Language.getPhrase('mobile_device_info', 'Device Performance Info'), tierInfo, cardWidth), cardX, cardY);
 		#end
 
 		cardY = addCard(new MobileChoiceCard('extraButtons', phraseSetting('extra_controls', 'Extra Controls'), phraseDescription('extra_controls', 'Choose how many extra mobile buttons you want available for mod mechanics.'), cardWidth, exControlTypes, ClientPrefs.data.extraButtons, ClientPrefs.defaultData.extraButtons, openChoiceMenu, function(value:String) {
@@ -212,9 +212,9 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		}), cardX, cardY);
 
 		#if android
-		cardY = addCard(new MobileButtonCard('openDataFolder', phrase('mobile_open_data_folder', 'Open Data Folder'), phrase('mobile_open_data_folder_desc', 'Opens Android/data/com.leninasto.plusengine/files/ in the system file explorer.'), cardWidth, phrase('open', 'Open'), function() {
+		cardY = addCard(new MobileButtonCard('openDataFolder', Language.getPhrase('mobile_open_data_folder', 'Open Data Folder'), Language.getPhrase('mobile_open_data_folder_desc', 'Opens Android/data/com.leninasto.plusengine/files/ in the system file explorer.'), cardWidth, Language.getPhrase('open', 'Open'), function() {
 			openDataFolder();
-			announce(phrase('mobile_opening_data_folder', 'Opening data folder...'), false);
+			announce(Language.getPhrase('mobile_opening_data_folder', 'Opening data folder...'), false);
 		}), cardX, cardY);
 		#end
 
@@ -231,24 +231,19 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		return y + card.cardHeight + 10;
 	}
 
-	function phrase(key:String, fallback:String):String
-	{
-		return Language.getPhrase(key, fallback);
-	}
-
 	function phraseSetting(key:String, fallback:String):String
 	{
-		return phrase('setting_' + key, fallback);
+		return Language.getPhrase('setting_' + key, fallback);
 	}
 
 	function phraseDescription(key:String, fallback:String):String
 	{
-		return phrase('description_' + key, fallback);
+		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String
 	{
-		return value ? phrase('enabled', 'Enabled') : phrase('disabled', 'Disabled');
+		return value ? Language.getPhrase('enabled', 'Enabled') : Language.getPhrase('disabled', 'Disabled');
 	}
 
 	function percentLabel(value:Float):String
@@ -313,7 +308,7 @@ class MobileSettingsSubState extends MusicBeatSubstate
 			activeDropdown = null;
 		}, card.getOptionLabel);
 		overlayLayer.add(activeDropdown);
-		announce(card.titleText.text + phrase('mobile_menu_opened_suffix', ' menu opened'), false);
+		announce(card.titleText.text + Language.getPhrase('mobile_menu_opened_suffix', ' menu opened'), false);
 	}
 
 	function closeActiveDropdown():Void
@@ -465,15 +460,14 @@ private class MobileSettingsCard extends FlxSpriteGroup
 
 	function redraw():Void
 	{
-		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFFCF8FF;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		var accent = selected ? palette.accent : palette.pale;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
+		var accent = OptionsMenuTheme.cardAccent(selected);
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
 		MD3ShapeTools.fillRoundRect(accentBar, 6, Std.int(Math.max(18, cardHeight - 32)), 4, accent);
-		titleText.color = selected ? palette.strong : 0xFF402D61;
-		descriptionText.color = selected ? palette.muted : 0xFF7B6D93;
+		titleText.color = OptionsMenuTheme.cardTitleColor(selected);
+		descriptionText.color = OptionsMenuTheme.cardDescriptionColor(selected);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void
@@ -781,12 +775,12 @@ private class MobileSettingsDropdownMenu extends FlxSpriteGroup
 		var menuHeight = getTotalHeight(items.length);
 		background = new FlxSprite();
 		background.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, OptionsMenuTheme.panelSurfaceColor());
 		add(background);
 
 		outline = new FlxSprite();
 		outline.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, 0xFFD9C9F1);
+		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, OptionsMenuTheme.neutralOutlineColor());
 		add(outline);
 
 		for (index in 0...items.length)
@@ -814,13 +808,14 @@ private class MobileSettingsDropdownMenu extends FlxSpriteGroup
 
 	function refreshVisuals():Void
 	{
+		var darkTheme = OptionsMenuTheme.isDark();
 		var palette = OptionsMenuTheme.current();
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
 			var isHovered = index == hoverIndex;
-			var fill = isActive ? palette.mist : (isHovered ? palette.pale : 0x00000000);
-			var textColor = isActive ? palette.strong : 0xFF4A3967;
+			var fill = isActive ? (darkTheme ? 0xFF1F242B : palette.mist) : (isHovered ? (darkTheme ? 0xFF171B21 : palette.pale) : 0x00000000);
+			var textColor = isActive ? OptionsMenuTheme.titleColor() : OptionsMenuTheme.optionDescriptionColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;
 		}
