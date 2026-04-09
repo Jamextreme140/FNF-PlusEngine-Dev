@@ -338,8 +338,8 @@ class LanguageSubState extends MusicBeatSubstate
 			'ja-JP' => 'これは日本語での例文テキストです',
 			'nl-NL' => 'Dit is een voorbeeldtekst in de Nederlandse taal Nederland',
 			'zh-CN' => '这是中文（简体）语言的示例文本',
-			'zh-HK' => '這是中文（香港）語言的示例文本',
-			'id-ID' => 'Ini adalah teks contoh dalam bahasa Indonesia Nusantara'
+			'zh-HK' => '這是中文（香港）語言的示例文本'
+			// 'id-ID' => 'Ini adalah teks contoh dalam bahasa Indonesia Nusantara' - Sorry i was tried translating Indonesian - sirthegamercoder
 		];
 		return exampleTexts.exists(langCode) ? exampleTexts.get(langCode) : 'This is an example text in the selected language';
 	}
