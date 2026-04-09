@@ -30,6 +30,9 @@ import sys.FileSystem;
 
 class MusicBeatState extends BaseMusicBeatState
 {
+	public static inline function stateScriptOverridesEnabled():Bool
+		return ClientPrefs.data.useScriptableCustomStates;
+
 	// Global scripts system
 	#if LUA_ALLOWED
 	public static var globalLuaScript:FunkinLua = null;
@@ -118,7 +121,7 @@ class MusicBeatState extends BaseMusicBeatState
 		// and when running inside them as sub-instances.
 		#if (HSCRIPT_ALLOWED && sys)
 		var isScriptDriven:Bool = (this is funkin.modding.ScriptableState) || (this is funkin.modding.CustomState);
-		if (!isScriptDriven)
+		if (!isScriptDriven && stateScriptOverridesEnabled())
 			_loadCompanionScript();
 		#end
 
@@ -437,6 +440,7 @@ class MusicBeatState extends BaseMusicBeatState
 	{
 		if (args == null) args = [];
 		var ret:Dynamic = LuaUtils.Function_Continue;
+		if (!MusicBeatState.stateScriptOverridesEnabled()) return ret;
 
 		#if LUA_ALLOWED
 		if (companionLuaScript != null)

@@ -33,6 +33,7 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	public var step:Float      = 1;
 	public var decimals:Int    = 0;
 	public var enabled:Bool    = true;
+	public var allowMouseInput:Bool = true;
 
 	/** Called with the new value only when the user presses − or +. */
 	public var onChange:Float->Void = null;
@@ -227,6 +228,16 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	{
 		super.update(elapsed);
 		if (!enabled) return;
+		if (!allowMouseInput)
+		{
+			hoverDecr = false;
+			hoverIncr = false;
+			holdDecr = false;
+			holdIncr = false;
+			decrState.alpha = 0;
+			incrState.alpha = 0;
+			return;
+		}
 
 		var area = buttonArea();
 		var h = controlHeight();

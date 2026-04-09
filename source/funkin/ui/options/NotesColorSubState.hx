@@ -5,8 +5,10 @@ import flixel.addons.display.FlxGridOverlay;
 import flixel.addons.display.shapes.FlxShapeCircle;
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepadInputID;
+import flixel.math.FlxRect;
 import lime.system.Clipboard;
 import flixel.util.FlxGradient;
+import funkin.ui.components.md3.MD3ShapeTools;
 import funkin.play.notes.StrumNote;
 import funkin.play.notes.Note;
 
@@ -49,6 +51,20 @@ class NotesColorSubState extends MusicBeatSubstate
 	
 	// NotITG warning message
 	var notITGWarningText:FlxText;
+	var grid:FlxBackdrop;
+
+	var panelX:Float = 0;
+	var panelY:Float = 0;
+	var panelWidth:Float = 0;
+	var panelHeight:Float = 0;
+	var previewX:Float = 0;
+	var previewY:Float = 0;
+	var previewWidth:Float = 0;
+	var previewHeight:Float = 0;
+	var editorX:Float = 0;
+	var editorY:Float = 0;
+	var editorWidth:Float = 0;
+	var editorHeight:Float = 0;
 
 	public function new() {
 		super();
@@ -58,26 +74,105 @@ class NotesColorSubState extends MusicBeatSubstate
 		#end
 		
 		onPixel = PlayState.isPixelStage;
+		panelWidth = FlxG.width - 8;
+		panelHeight = FlxG.height - 8;
+		panelX = (FlxG.width - panelWidth) * 0.5;
+		panelY = (FlxG.height - panelHeight) * 0.5;
+		previewWidth = Math.min(712, panelWidth * 0.59);
+		previewHeight = panelHeight - 140;
+		previewX = panelX + 18;
+		previewY = panelY + 108;
+		editorX = previewX + previewWidth + 18;
+		editorY = previewY;
+		editorWidth = panelX + panelWidth - 18 - editorX;
+		editorHeight = previewHeight;
+
+		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xC0141020);
+		add(overlay);
+
+		OptionsMenuTheme.syncAccent();
+		var palette = OptionsMenuTheme.current();
+
 		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.color = 0xFFEA71FD;
+		bg.color = palette.pale;
+		bg.alpha = 0.16;
 		bg.screenCenter();
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 
-		var grid:FlxBackdrop = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
+		grid = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
 		grid.velocity.set(40, 40);
 		grid.alpha = 0;
+		grid.color = 0xFFAB8AE6;
+		grid.clipRect = new FlxRect(panelX, panelY, panelWidth, panelHeight);
 		FlxTween.tween(grid, {alpha: 1}, 0.5, {ease: FlxEase.quadOut});
 		add(grid);
 
-		modeBG = new FlxSprite(215, 85).makeGraphic(315, 115, FlxColor.BLACK);
+		var panelShadow:FlxSprite = new FlxSprite(panelX + 10, panelY + 12);
+		MD3ShapeTools.fillRoundRect(panelShadow, Std.int(panelWidth), Std.int(panelHeight), 34, 0x2A000000);
+		add(panelShadow);
+
+		var panelSurface:FlxSprite = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xF3F9F5FC);
+		add(panelSurface);
+
+		var panelHeader:FlxSprite = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 104, 34, 34, 0, 0, 0xFFFFFBFF);
+		add(panelHeader);
+
+		var panelOutline:FlxSprite = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x22FFFFFF);
+		add(panelOutline);
+
+		var previewSurface:FlxSprite = new FlxSprite(previewX, previewY);
+		MD3ShapeTools.fillAndStrokeRoundRect(previewSurface, Std.int(previewWidth), Std.int(previewHeight), 28, 2, 0xFFF3EDF9, 0xFFE1D6EF);
+		add(previewSurface);
+
+		var editorSurface:FlxSprite = new FlxSprite(editorX, editorY);
+		MD3ShapeTools.fillAndStrokeRoundRect(editorSurface, Std.int(editorWidth), Std.int(editorHeight), 28, 2, 0xFFFCF8FF, 0xFFE6DCF1);
+		add(editorSurface);
+
+		var titleText:FlxText = new FlxText(panelX + 34, panelY + 18, panelWidth - 68, Language.getPhrase('note_colors_menu', 'Note Colors'), 30);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 30, palette.strong, LEFT);
+		titleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(titleText);
+
+		var subtitleText:FlxText = new FlxText(panelX + 34, panelY + 56, panelWidth - 68,
+			Language.getPhrase('note_colors_menu_subtitle', 'Tune arrow palettes without leaving the editor. Preview on the left, precise color control on the right.'), 15);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(subtitleText);
+
+		var previewLabel:FlxText = new FlxText(previewX + 22, previewY + 18, previewWidth - 132, Language.getPhrase('note_colors_preview_label', 'Preview Lane'), 20);
+		previewLabel.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2A1D3E, LEFT);
+		previewLabel.antialiasing = ClientPrefs.data.antialiasing;
+		add(previewLabel);
+
+		var previewHint:FlxText = new FlxText(previewX + 22, previewY + 68, previewWidth - 44,
+			Language.getPhrase('note_colors_preview_hint', 'Choose the RGB channel above, then pick the note lane below.'), 14);
+		previewHint.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		previewHint.antialiasing = ClientPrefs.data.antialiasing;
+		add(previewHint);
+
+		var editorLabel:FlxText = new FlxText(editorX + 22, editorY + 18, editorWidth - 44, Language.getPhrase('note_colors_editor_label', 'Color Mixer'), 20);
+		editorLabel.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2A1D3E, LEFT);
+		editorLabel.antialiasing = ClientPrefs.data.antialiasing;
+		add(editorLabel);
+
+		var editorHint:FlxText = new FlxText(editorX + 22, editorY + 46, editorWidth - 44,
+			Language.getPhrase('note_colors_editor_hint', 'Copy, paste, drag the wheel or type the hex value. Tiny chaos, but organized chaos.'), 14);
+		editorHint.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		editorHint.antialiasing = ClientPrefs.data.antialiasing;
+		add(editorHint);
+
+		modeBG = new FlxSprite(previewX + (previewWidth - 372) * 0.5, previewY + 116);
+		MD3ShapeTools.fillRoundRect(modeBG, 372, 108, 26, 0x227A63DA);
 		modeBG.visible = false;
-		modeBG.alpha = 0.4;
 		add(modeBG);
 
-		notesBG = new FlxSprite(140, 190).makeGraphic(480, 125, FlxColor.BLACK);
+		notesBG = new FlxSprite(previewX + 30, previewY + 246);
+		MD3ShapeTools.fillRoundRect(notesBG, Std.int(previewWidth - 60), 118, 26, 0x1F7A63DA);
 		notesBG.visible = false;
-		notesBG.alpha = 0.4;
 		add(notesBG);
 
 		modeNotes = new FlxTypedGroup<FlxSprite>();
@@ -86,42 +181,44 @@ class NotesColorSubState extends MusicBeatSubstate
 		myNotes = new FlxTypedGroup<StrumNote>();
 		add(myNotes);
 
-		var bg:FlxSprite = new FlxSprite(720).makeGraphic(FlxG.width - 720, FlxG.height, FlxColor.BLACK);
-		bg.alpha = 0.25;
-		add(bg);
-		var bg:FlxSprite = new FlxSprite(750, 160).makeGraphic(FlxG.width - 780, 540, FlxColor.BLACK);
-		bg.alpha = 0.25;
-		add(bg);
-		
-		var text:Alphabet = new Alphabet((controls.mobileC) ? 44 : 50, 86, (controls.mobileC) ? 'PRESS' : 'CTRL', false);
-		text.alignment = CENTERED;
-		text.setScale(0.4);
-		add(text);
+		var toggleText:FlxText = new FlxText(previewX + 22, previewY + 44, previewWidth - 132,
+			(controls.mobileC)
+				? Language.getPhrase('note_colors_toggle_mobile', 'Tap the note icon to switch between standard and pixel previews.')
+				: Language.getPhrase('note_colors_toggle_desktop', 'Press CTRL or click the note icon to switch between standard and pixel previews.'), 14);
+		toggleText.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		toggleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(toggleText);
 
-		copyButton = new FlxSprite(760, 50).loadGraphic(Paths.image('noteColorMenu/copy'));
+		copyButton = new FlxSprite(panelX + panelWidth - 196, panelY + 22).loadGraphic(Paths.image('noteColorMenu/copy'));
 		copyButton.alpha = 0.6;
 		add(copyButton);
 
-		pasteButton = new FlxSprite(1180, 50).loadGraphic(Paths.image('noteColorMenu/paste'));
+		pasteButton = new FlxSprite(panelX + panelWidth - 98, panelY + 22).loadGraphic(Paths.image('noteColorMenu/paste'));
 		pasteButton.alpha = 0.6;
 		add(pasteButton);
 
-		colorGradient = FlxGradient.createGradientFlxSprite(60, 360, [FlxColor.WHITE, FlxColor.BLACK]);
-		colorGradient.setPosition(780, 200);
+		var wheelSize:Int = Std.int(Math.min(264, editorWidth - 110));
+		var wheelX:Float = editorX + 142;
+		var wheelY:Float = editorY + 176;
+
+		colorGradient = FlxGradient.createGradientFlxSprite(48, wheelSize, [FlxColor.WHITE, FlxColor.BLACK]);
+		colorGradient.setPosition(editorX + 64, wheelY);
 		add(colorGradient);
 
-		colorGradientSelector = new FlxSprite(770, 200).makeGraphic(80, 10, FlxColor.WHITE);
+		colorGradientSelector = new FlxSprite(colorGradient.x - 10, wheelY).makeGraphic(68, 8, FlxColor.WHITE);
 		colorGradientSelector.offset.y = 5;
+		colorGradientSelector.alpha = 0.88;
 		add(colorGradientSelector);
 
-		colorPalette = new FlxSprite(820, 580).loadGraphic(Paths.image('noteColorMenu/palette', false));
+		colorPalette = new FlxSprite(editorX + 64, wheelY + wheelSize + 16).loadGraphic(Paths.image('noteColorMenu/palette', false));
 		colorPalette.scale.set(20, 20);
 		colorPalette.updateHitbox();
 		colorPalette.antialiasing = false;
+		colorPalette.y = editorY + editorHeight - colorPalette.height - 20;
 		add(colorPalette);
 		
-		colorWheel = new FlxSprite(860, 200).loadGraphic(Paths.image('noteColorMenu/colorWheel'));
-		colorWheel.setGraphicSize(360, 360);
+		colorWheel = new FlxSprite(wheelX, wheelY).loadGraphic(Paths.image('noteColorMenu/colorWheel'));
+		colorWheel.setGraphicSize(wheelSize, wheelSize);
 		colorWheel.updateHitbox();
 		add(colorWheel);
 
@@ -130,8 +227,8 @@ class NotesColorSubState extends MusicBeatSubstate
 		colorWheelSelector.alpha = 0.6;
 		add(colorWheelSelector);
 
-		var txtX = 980;
-		var txtY = 90;
+		var txtX = editorX + (editorWidth * 0.5) - 28;
+		var txtY = editorY + 132;
 		alphabetR = makeColorAlphabet(txtX - 100, txtY);
 		add(alphabetR);
 		alphabetG = makeColorAlphabet(txtX, txtY);
@@ -140,13 +237,13 @@ class NotesColorSubState extends MusicBeatSubstate
 		add(alphabetB);
 		alphabetHex = makeColorAlphabet(txtX, txtY - 55);
 		add(alphabetHex);
-		hexTypeLine = new FlxSprite(0, 20).makeGraphic(5, 62, FlxColor.WHITE);
+		hexTypeLine = new FlxSprite(0, 20).makeGraphic(4, 56, FlxColor.WHITE);
 		hexTypeLine.visible = false;
 		add(hexTypeLine);
 		
-		// NotITG warning text - MUST be created BEFORE spawnNotes() is called
-		notITGWarningText = new FlxText(0, 5, FlxG.width, '', 26);
-		notITGWarningText.setFormat(Paths.font("phantom.ttf"), 26, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		// Must be created before spawnNotes() because the preview refresh touches it.
+		notITGWarningText = new FlxText(previewX + 24, previewY + previewHeight - 54, previewWidth - 48, '', 19);
+		notITGWarningText.setFormat(Paths.font('inter-bold.otf'), 19, 0xFFD63B58, CENTER, FlxTextBorderStyle.OUTLINE, 0xFFFDF7FF);
 		notITGWarningText.borderSize = 3;
 		notITGWarningText.visible = false;
 		notITGWarningText.scrollFactor.set();
@@ -156,24 +253,24 @@ class NotesColorSubState extends MusicBeatSubstate
 		updateNotes(true);
 		FlxG.sound.play(Paths.sound('scrollMenu'), 0.6);
 
-		var tipX = 20;
-		var tipY = 660;
+		var tipX = panelX + 26;
+		var tipY = panelY + panelHeight - 56;
 		var reset:String;
 
 		if (controls.mobileC) {
 			reset = "C";
-			tipY = 0;
+			tipY = panelY + panelHeight - 80;
 		} else
 			reset = "RESET";
 
-		var tip:FlxText = new FlxText(tipX, tipY, 0, Language.getPhrase('note_colors_tip', 'Press {1} to Reset the selected Note Part.', [reset]), 16);
-		tip.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		tip.borderSize = 2;
+		var tip:FlxText = new FlxText(tipX, tipY, panelWidth - 52, Language.getPhrase('note_colors_tip', 'Press {1} to Reset the selected Note Part.', [reset]), 16);
+		tip.setFormat(Paths.font('inter.otf'), 15, 0xFF5E506F, LEFT);
+		tip.antialiasing = ClientPrefs.data.antialiasing;
 		add(tip);
 
-		tipTxt = new FlxText(tipX, tipY + 24, 0, '', 16);
-		tipTxt.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		tipTxt.borderSize = 2;
+		tipTxt = new FlxText(tipX, tipY + 24, panelWidth - 52, '', 16);
+		tipTxt.setFormat(Paths.font('inter.otf'), 15, 0xFF5E506F, LEFT);
+		tipTxt.antialiasing = ClientPrefs.data.antialiasing;
 		add(tipTxt);
 		updateTip();
 
@@ -204,7 +301,6 @@ class NotesColorSubState extends MusicBeatSubstate
 		if (!controls.mobileC)
 			tipTxt.text = Language.getPhrase('note_colors_hold_tip', 'Hold {1} + Press RESET key to fully reset the selected Note.', [key]);
 	}
-
 	var _storedColor:FlxColor;
 	var changingNote:Bool = false;
 	var holdingOnObj:FlxSprite;
@@ -387,13 +483,13 @@ class NotesColorSubState extends MusicBeatSubstate
 					_storedColor = getShaderColor();
 					updateColors();
 				}
-				else //errored
+				else // Invalid clipboard color.
 					FlxG.sound.play(Paths.sound('cancelMenu'), 0.6);
 			}
 			hexTypeNum = -1;
 		}
 
-		// Click
+		bigNote.setGraphicSize(228);
 		if(generalPressed)
 		{
 			hexTypeNum = -1;
@@ -447,8 +543,7 @@ class NotesColorSubState extends MusicBeatSubstate
 				updateNotes(true);
 				FlxG.sound.play(Paths.sound('scrollMenu'), 0.6);
 			}
-			else if(pointerY() >= hexTypeLine.y && pointerY() < hexTypeLine.y + hexTypeLine.height &&
-					Math.abs(pointerX() - 1000) <= 84)
+			else if(pointerOverlapsHexValue())
 			{
 				hexTypeNum = 0;
 				for (letter in alphabetHex.letters)
@@ -595,9 +690,22 @@ class NotesColorSubState extends MusicBeatSubstate
 	{
 		var text:Alphabet = new Alphabet(x, y, '', true);
 		text.alignment = CENTERED;
-		text.setScale(0.6);
+		text.setScale(0.44);
 		add(text);
 		return text;
+	}
+
+	function pointerOverlapsHexValue():Bool
+	{
+		if (alphabetHex == null || alphabetHex.letters == null || alphabetHex.letters.length == 0) return false;
+
+		var first = alphabetHex.letters[0];
+		var last = alphabetHex.letters[alphabetHex.letters.length - 1];
+		var minX:Float = first.x - first.offset.x - 8;
+		var maxX:Float = last.x - last.offset.x + last.width + 8;
+		var minY:Float = first.y - first.offset.y - 6;
+		var maxY:Float = minY + Math.max(first.height, hexTypeLine.height) + 12;
+		return pointerX() >= minX && pointerX() <= maxX && pointerY() >= minY && pointerY() <= maxY;
 	}
 
 	// notes sprites functions
@@ -609,6 +717,13 @@ class NotesColorSubState extends MusicBeatSubstate
 	{
 		dataArray = !onPixel ? ClientPrefs.data.arrowRGB : ClientPrefs.data.arrowRGBPixel;
 		if (onPixel) PlayState.stageUI = "pixel";
+
+		var modeBaseX:Float = modeBG.x + 34;
+		var modeBaseY:Float = modeBG.y - 10;
+		var modeSpacing:Float = 116;
+		var strumBaseX:Float = notesBG.x + 85;
+		var strumSpacing:Float = (notesBG.width - 164) / dataArray.length;
+		var previewCenterX:Float = previewX + previewWidth * 0.5;
 
 		// clear groups
 		modeNotes.forEachAlive(function(note:FlxSprite) {
@@ -635,9 +750,9 @@ class NotesColorSubState extends MusicBeatSubstate
 
 		// respawn stuff
 		var res:Int = onPixel ? 160 : 17;
-		skinNote = new FlxSprite(48, 24).loadGraphic(Paths.image('noteColorMenu/' + (onPixel ? 'note' : 'notePixel')), true, res, res);
+		skinNote = new FlxSprite(previewX + previewWidth - 84, previewY + 18).loadGraphic(Paths.image('noteColorMenu/' + (onPixel ? 'note' : 'notePixel')), true, res, res);
 		skinNote.antialiasing = ClientPrefs.data.antialiasing;
-		skinNote.setGraphicSize(68);
+		skinNote.setGraphicSize(62);
 		skinNote.updateHitbox();
 		skinNote.animation.add('anim', [0], 24, true);
 		skinNote.animation.play('anim', true);
@@ -647,9 +762,9 @@ class NotesColorSubState extends MusicBeatSubstate
 		var res:Int = !onPixel ? 160 : 17;
 		for (i in 0...3)
 		{
-			var newNote:FlxSprite = new FlxSprite(230 + (100 * i), 100).loadGraphic(Paths.image('noteColorMenu/' + (!onPixel ? 'note' : 'notePixel')), true, res, res);
+			var newNote:FlxSprite = new FlxSprite(modeBaseX + (modeSpacing * i), modeBaseY).loadGraphic(Paths.image('noteColorMenu/' + (!onPixel ? 'note' : 'notePixel')), true, res, res);
 			newNote.antialiasing = ClientPrefs.data.antialiasing;
-			newNote.setGraphicSize(85);
+			newNote.setGraphicSize(76);
 			newNote.updateHitbox();
 			newNote.animation.add('anim', [i], 24, true);
 			newNote.animation.play('anim', true);
@@ -662,9 +777,9 @@ class NotesColorSubState extends MusicBeatSubstate
 		for (i in 0...dataArray.length)
 		{
 			Note.initializeGlobalRGBShader(i);
-			var newNote:StrumNote = new StrumNote(150 + (480 / dataArray.length * i), 200, i, 0);
+			var newNote:StrumNote = new StrumNote(strumBaseX + (strumSpacing * i), notesBG.y - 50, i, 0);
 			newNote.useRGBShader = true;
-			newNote.setGraphicSize(102);
+			newNote.setGraphicSize(90);
 			newNote.updateHitbox();
 			newNote.ID = i;
 			// Re-check NotITG skin to apply proper settings
@@ -673,8 +788,8 @@ class NotesColorSubState extends MusicBeatSubstate
 		}
 
 		bigNote = new Note(0, 0, false, true);
-		bigNote.setPosition(250, 325);
-		bigNote.setGraphicSize(250);
+		bigNote.setPosition(previewCenterX - 88, previewY + 328);
+		bigNote.setGraphicSize(176);
 		bigNote.updateHitbox();
 		bigNote.rgbShader.parent = Note.globalRgbShaders[curSelectedNote];
 		bigNote.shader = Note.globalRgbShaders[curSelectedNote].shader;
@@ -707,7 +822,7 @@ class NotesColorSubState extends MusicBeatSubstate
 	
 	function updateNotITGWarning()
 	{
-		// Verificar que el texto de advertencia exista
+		// Ensure the warning text exists before updating it.
 		if(notITGWarningText == null) return;
 		
 		// Check if the current note skin is NotITG
@@ -729,7 +844,7 @@ class NotesColorSubState extends MusicBeatSubstate
 		{
 			notITGWarningText.text = Language.getPhrase("note_colors_notitg", "RGB SHADERS DISABLED - NotITG skin preserves original colors");
 			notITGWarningText.visible = true;
-			// Hacer que el texto parpadee
+			// Make the warning pulse so it remains visible without taking over the screen.
 			FlxTween.cancelTweensOf(notITGWarningText);
 			FlxTween.tween(notITGWarningText, {alpha: 0}, 0.5, {
 				type: PINGPONG,
@@ -782,7 +897,7 @@ class NotesColorSubState extends MusicBeatSubstate
 
 	override function destroy()
 	{
-		// Cancelar el tween del texto de advertencia
+		// Cancel the warning tween to avoid leaving a dangling animation behind.
 		if(notITGWarningText != null)
 			FlxTween.cancelTweensOf(notITGWarningText);
 		

@@ -18,6 +18,7 @@ class MaterialButton extends FlxSpriteGroup
 {
 	public var label(default, set):String = "";
 	public var enabled:Bool = true;
+	public var allowMouseInput:Bool = true;
 	public var onClick:Void->Void = null;
 
 	public var buttonType:ButtonType = FILLED;
@@ -163,6 +164,13 @@ class MaterialButton extends FlxSpriteGroup
 		super.update(elapsed);
 
 		if (!enabled) return;
+		if (!allowMouseInput)
+		{
+			isHovered = false;
+			isPressed = false;
+			stateLayer.alpha = 0;
+			return;
+		}
 
 		#if FLX_MOUSE
 		var mousePos = FlxG.mouse.getScreenPosition();

@@ -3,7 +3,9 @@ package funkin.ui.options;
 import funkin.input.InputFormatter;
 import flixel.addons.display.FlxBackdrop;
 import flixel.addons.display.FlxGridOverlay;
+import flixel.math.FlxRect;
 import funkin.play.AttachedSprite;
+import funkin.ui.components.md3.MD3ShapeTools;
 
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepad;
@@ -51,17 +53,36 @@ class ControlsSubState extends MusicBeatSubstate
 	static var defaultKey:String = 'Reset to Default Keys';
 
 	var bg:FlxSprite;
+	var grid:FlxBackdrop;
 	var grpDisplay:FlxTypedGroup<Alphabet>;
 	var grpBlacks:FlxTypedGroup<AttachedSprite>;
 	var grpOptions:FlxTypedGroup<Alphabet>;
 	var grpBinds:FlxTypedGroup<Alphabet>;
 	var selectSpr:AttachedSprite;
+	var visibleRowCards:FlxTypedGroup<FlxSprite>;
+	var visibleOptionTexts:FlxTypedGroup<FlxText>;
+	var visibleBindCards:FlxTypedGroup<FlxSprite>;
+	var visibleBindTexts:FlxTypedGroup<FlxText>;
+	var visibleHeaderTexts:FlxTypedGroup<FlxText>;
+	var headerRefs:Array<Alphabet> = [];
+	var optionRefs:Array<Alphabet> = [];
+	var bindRefs:Array<Alphabet> = [];
 
 	var gamepadColor:FlxColor = 0xfffd7194;
 	var keyboardColor:FlxColor = 0xff7192fd;
 	var onKeyboardMode:Bool = true;
 	
 	var controllerSpr:FlxSprite;
+	var panelHeader:FlxSprite;
+	var panelX:Float = 0;
+	var panelY:Float = 0;
+	var panelWidth:Float = 0;
+	var panelHeight:Float = 0;
+	var listX:Float = 0;
+	var listY:Float = 0;
+	var listWidth:Float = 0;
+	var listHeight:Float = 0;
+	var listVisualOffsetY:Float = 54;
 	
 	public function new()
 	{
@@ -77,17 +98,71 @@ class ControlsSubState extends MusicBeatSubstate
 		options.push([true]);
 		options.push([true, defaultKey]);
 
+		panelWidth = Math.min(1120, FlxG.width - 48);
+		panelHeight = Math.min(640, FlxG.height - 44);
+		panelX = (FlxG.width - panelWidth) * 0.5;
+		panelY = (FlxG.height - panelHeight) * 0.5;
+		listX = panelX + 28;
+		listY = panelY + 132;
+		listWidth = panelWidth - 56;
+		listHeight = panelHeight - 196;
+
+		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xC0141020);
+		add(overlay);
+
+		OptionsMenuTheme.syncAccent();
+		var palette = OptionsMenuTheme.current();
+
 		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.color = keyboardColor;
+		bg.alpha = 0.16;
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		bg.screenCenter();
 		add(bg);
 
-		var grid:FlxBackdrop = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
+		grid = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
 		grid.velocity.set(40, 40);
 		grid.alpha = 0;
+		grid.color = 0xFF8D9FFF;
 		FlxTween.tween(grid, {alpha: 1}, 0.5, {ease: FlxEase.quadOut});
 		add(grid);
+
+		var panelShadow:FlxSprite = new FlxSprite(panelX + 10, panelY + 12);
+		MD3ShapeTools.fillRoundRect(panelShadow, Std.int(panelWidth), Std.int(panelHeight), 34, 0x2A000000);
+		add(panelShadow);
+
+		var panelSurface:FlxSprite = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF9F5FC);
+		add(panelSurface);
+
+		panelHeader = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, 0xFFFFFBFF);
+		add(panelHeader);
+
+		var panelOutline:FlxSprite = new FlxSprite(panelX, panelY);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x22FFFFFF);
+		add(panelOutline);
+
+		var listSurface:FlxSprite = new FlxSprite(listX, listY);
+		MD3ShapeTools.fillAndStrokeRoundRect(listSurface, Std.int(listWidth), Std.int(panelHeight - 164), 28, 2, 0xFFF8F3FB, 0xFFE5DCEF);
+		add(listSurface);
+
+		var titleText:FlxText = new FlxText(panelX + 34, panelY + 18, panelWidth - 68, Language.getPhrase('controls_menu', 'Controls'), 30);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 30, palette.strong, LEFT);
+		titleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(titleText);
+
+		var subtitleText:FlxText = new FlxText(panelX + 34, panelY + 58, panelWidth - 68,
+			Language.getPhrase('controls_menu_subtitle', 'Rebind keyboard and gamepad inputs without digging through the whole engine basement.'), 15);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(subtitleText);
+
+		var footerText:FlxText = new FlxText(panelX + 34, panelY + panelHeight - 40, panelWidth - 68,
+			Language.getPhrase('controls_menu_footer', 'ENTER rebinds. LEFT / RIGHT swaps primary and alternate. CTRL or shoulder buttons switch keyboard/gamepad.'), 14);
+		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF5E506F, LEFT);
+		footerText.antialiasing = ClientPrefs.data.antialiasing;
+		add(footerText);
 
 		grpDisplay = new FlxTypedGroup<Alphabet>();
 		add(grpDisplay);
@@ -96,23 +171,34 @@ class ControlsSubState extends MusicBeatSubstate
 		grpBlacks = new FlxTypedGroup<AttachedSprite>();
 		add(grpBlacks);
 		selectSpr = new AttachedSprite();
-		selectSpr.makeGraphic(250, 78, FlxColor.WHITE);
+		selectSpr.makeGraphic(214, 72, FlxColor.WHITE);
 		selectSpr.copyAlpha = false;
 		selectSpr.alpha = 0.75;
 		add(selectSpr);
 		grpBinds = new FlxTypedGroup<Alphabet>();
 		add(grpBinds);
+		visibleRowCards = new FlxTypedGroup<FlxSprite>();
+		add(visibleRowCards);
+		visibleOptionTexts = new FlxTypedGroup<FlxText>();
+		add(visibleOptionTexts);
+		visibleBindCards = new FlxTypedGroup<FlxSprite>();
+		add(visibleBindCards);
+		visibleBindTexts = new FlxTypedGroup<FlxText>();
+		add(visibleBindTexts);
+		visibleHeaderTexts = new FlxTypedGroup<FlxText>();
+		add(visibleHeaderTexts);
 
-		controllerSpr = new FlxSprite(50, 40).loadGraphic(Paths.image('controllertype'), true, 82, 60);
+		controllerSpr = new FlxSprite(panelX + panelWidth - 128, panelY + 24).loadGraphic(Paths.image('controllertype'), true, 82, 60);
 		controllerSpr.antialiasing = ClientPrefs.data.antialiasing;
 		controllerSpr.animation.add('keyboard', [0], 1, false);
 		controllerSpr.animation.add('gamepad', [1], 1, false);
+		controllerSpr.animation.play('keyboard');
 		add(controllerSpr);
 
-		var text:Alphabet = new Alphabet(60, 90, 'CTRL', false);
-		text.alignment = CENTERED;
-		text.setScale(0.4);
-		add(text);
+		var modeHint:FlxText = new FlxText(panelX + panelWidth - 360, panelY + 44, 220, Language.getPhrase('controls_menu_mode_hint', 'CTRL toggles input mode'), 14);
+		modeHint.setFormat(Paths.font('inter.otf'), 14, palette.muted, RIGHT);
+		modeHint.antialiasing = ClientPrefs.data.antialiasing;
+		add(modeHint);
 
 		createTexts();
 		
@@ -124,14 +210,27 @@ class ControlsSubState extends MusicBeatSubstate
 	{
 		curOptions = [];
 		curOptionsValid = [];
+		headerRefs = [];
+		optionRefs = [];
+		bindRefs = [];
 		grpDisplay.forEachAlive(function(text:Alphabet) text.destroy());
 		grpBlacks.forEachAlive(function(black:AttachedSprite) black.destroy());
 		grpOptions.forEachAlive(function(text:Alphabet) text.destroy());
 		grpBinds.forEachAlive(function(text:Alphabet) text.destroy());
+		visibleRowCards.forEachAlive(function(card:FlxSprite) card.destroy());
+		visibleOptionTexts.forEachAlive(function(text:FlxText) text.destroy());
+		visibleBindCards.forEachAlive(function(card:FlxSprite) card.destroy());
+		visibleBindTexts.forEachAlive(function(text:FlxText) text.destroy());
+		visibleHeaderTexts.forEachAlive(function(text:FlxText) text.destroy());
 		grpDisplay.clear();
 		grpBlacks.clear();
 		grpOptions.clear();
 		grpBinds.clear();
+		visibleRowCards.clear();
+		visibleOptionTexts.clear();
+		visibleBindCards.clear();
+		visibleBindTexts.clear();
+		visibleHeaderTexts.clear();
 
 		var myID:Int = 0;
 		for (i => option in options)
@@ -147,7 +246,7 @@ class ControlsSubState extends MusicBeatSubstate
 					var str:String = option[1];
 					var keyStr:String = option[2];
 					if(isDefaultKey) str = Language.getPhrase(str);
-					var text:Alphabet = new Alphabet(475, 300, !isDisplayKey ? Language.getPhrase('key_$keyStr', str) : Language.getPhrase('keygroup_$str', str), !isDisplayKey);
+					var text:Alphabet = new Alphabet(listX + 332, listY + 56, !isDisplayKey ? Language.getPhrase('key_$keyStr', str) : Language.getPhrase('keygroup_$str', str), !isDisplayKey);
 					text.isMenuItem = true;
 					text.changeX = false;
 					text.distancePerItem.y = 60;
@@ -159,10 +258,28 @@ class ControlsSubState extends MusicBeatSubstate
 					{
 						text.alignment = RIGHT;
 						grpOptions.add(text);
+						text.visible = false;
 						curOptions.push(i);
 						curOptionsValid.push(myID);
+
+						var rowCard = new FlxSprite();
+						visibleRowCards.add(rowCard);
+						var labelText = new FlxText(listX + 24, listY, 440, '', 20);
+						labelText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2D2140, LEFT);
+						labelText.antialiasing = ClientPrefs.data.antialiasing;
+						visibleOptionTexts.add(labelText);
+						optionRefs.push(text);
 					}
-					else grpDisplay.add(text);
+					else
+					{
+						grpDisplay.add(text);
+						text.visible = false;
+						var headerText = new FlxText(listX + 28, listY, listWidth - 56, text.text, 20);
+						headerText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF5D4B78, LEFT);
+						headerText.antialiasing = ClientPrefs.data.antialiasing;
+						visibleHeaderTexts.add(headerText);
+						headerRefs.push(text);
+					}
 
 					if(isCentered) addCenteredText(text, option, myID);
 					else addKeyText(text, option, myID);
@@ -174,14 +291,16 @@ class ControlsSubState extends MusicBeatSubstate
 			}
 		}
 		updateText();
+		syncVisibleRows(0, true);
 	}
 
 	function addCenteredText(text:Alphabet, option:Array<Dynamic>, id:Int)
 	{
 		text.alignment = LEFT;
-		text.screenCenter(X);
-		text.y -= 55;
-		text.startPosition.y -= 55;
+		text.x = listX + 28;
+		text.startPosition.x = text.x;
+		text.y -= 72;
+		text.startPosition.y -= 72;
 	}
 	function addKeyText(text:Alphabet, option:Array<Dynamic>, id:Int)
 	{
@@ -201,7 +320,7 @@ class ControlsSubState extends MusicBeatSubstate
 			else
 				key = InputFormatter.getGamepadName((gmpds[n] != null) ? gmpds[n] : NONE);
 
-			var attach:Alphabet = new Alphabet(560 + n * 300, 248, key, false);
+			var attach:Alphabet = new Alphabet(panelX + panelWidth - 444 + n * 212, listY + 4, key, false);
 			attach.isMenuItem = true;
 			attach.changeX = false;
 			attach.distancePerItem.y = 60;
@@ -210,6 +329,7 @@ class ControlsSubState extends MusicBeatSubstate
 			attach.snapToPosition();
 			attach.y += FlxG.height * 2;
 			grpBinds.add(attach);
+			attach.visible = false;
 
 			playstationCheck(attach);
 			attach.scaleX = Math.min(1, 230 / attach.width);
@@ -217,12 +337,21 @@ class ControlsSubState extends MusicBeatSubstate
 
 			// spawn black bars at the right of the key name
 			var black:AttachedSprite = new AttachedSprite();
-			black.makeGraphic(250, 78, FlxColor.BLACK);
+			black.makeGraphic(214, 72, FlxColor.BLACK);
 			black.alphaMult = 0.4;
 			black.sprTracker = text;
-			black.yAdd = -6;
-			black.xAdd = 75 + n * 300;
+			black.yAdd = -3;
+			black.xAdd = 122 + n * 212;
+			black.visible = false;
 			grpBlacks.add(black);
+
+			var bindCard = new FlxSprite();
+			visibleBindCards.add(bindCard);
+			var bindText = new FlxText(panelX + panelWidth - 444 + n * 212, listY, 184, key, 17);
+			bindText.setFormat(Paths.font('inter.otf'), 17, 0xFF33254A, CENTER);
+			bindText.antialiasing = ClientPrefs.data.antialiasing;
+			visibleBindTexts.add(bindText);
+			bindRefs.push(attach);
 		}
 	}
 
@@ -250,7 +379,7 @@ class ControlsSubState extends MusicBeatSubstate
 	function updateBind(num:Int, text:String)
 	{
 		var bind:Alphabet = grpBinds.members[num];
-		var attach:Alphabet = new Alphabet(350 + (num % 2) * 300, 248, text, false);
+		var attach:Alphabet = new Alphabet(panelX + panelWidth - 444 + (num % 2) * 212, listY + 4, text, false);
 		attach.isMenuItem = true;
 		attach.changeX = false;
 		attach.distancePerItem.y = 60;
@@ -267,13 +396,140 @@ class ControlsSubState extends MusicBeatSubstate
 		grpBinds.remove(bind);
 		grpBinds.insert(num, attach);
 		bind.destroy();
+		bindRefs[num] = attach;
+		syncVisibleRows(0, true);
+	}
+
+	function drawListCard(card:FlxSprite, selected:Bool):Void
+	{
+		var fill = selected ? 0xFFE8DEFF : 0xFFF8F2FB;
+		var stroke = selected ? 0xFF7A63DA : 0xFFE3D9EF;
+		MD3ShapeTools.fillAndStrokeRoundRect(card, 454, 56, 18, 2, fill, stroke);
+	}
+
+	function drawBindCard(card:FlxSprite, selected:Bool):Void
+	{
+		var fill = selected ? 0xFFDCD1FF : 0xFFF1EAF8;
+		var stroke = selected ? 0xFF6A53D2 : 0xFFD6CAE6;
+		MD3ShapeTools.fillAndStrokeRoundRect(card, 188, 56, 16, 2, fill, stroke);
+	}
+
+	function applyVerticalClip(spr:FlxSprite, yMin:Float, yMax:Float):Void
+	{
+		if (spr == null) return;
+		var height:Float = spr.frameHeight;
+		if (height <= 0)
+		{
+			spr.visible = false;
+			return;
+		}
+
+		var topCut:Float = Math.max(0, yMin - spr.y);
+		var bottomCut:Float = Math.max(0, (spr.y + height) - yMax);
+		var visibleHeight:Float = height - topCut - bottomCut;
+		if (visibleHeight <= 0)
+		{
+			spr.visible = false;
+			spr.clipRect = null;
+		}
+		else
+		{
+			spr.visible = true;
+			spr.clipRect = new FlxRect(0, topCut, spr.frameWidth, visibleHeight);
+		}
+	}
+
+	function syncVisibleRows(elapsed:Float = 0, instant:Bool = false):Void
+	{
+		var clipTop = listY + 14;
+		var clipBottom = listY + listHeight - 14;
+		var topRowY = listY + 18;
+		var rowSpacing = 78;
+		var follow = instant ? 1.0 : (1 - Math.exp(-elapsed * 14.0));
+
+		for (index in 0...headerRefs.length)
+		{
+			var ref = headerRefs[index];
+			var field = visibleHeaderTexts.members[index];
+			if (ref == null || field == null) continue;
+			var targetY = topRowY + (ref.targetY + 3) * rowSpacing + 10;
+			field.text = ref.text;
+			field.x = listX + 28;
+			if (instant || field.y == 0)
+				field.y = targetY;
+			else
+				field.y += (targetY - field.y) * follow;
+			field.alpha += (0.92 - field.alpha) * follow;
+			applyVerticalClip(field, clipTop, clipBottom);
+		}
+
+		for (index in 0...optionRefs.length)
+		{
+			var ref = optionRefs[index];
+			var card = visibleRowCards.members[index];
+			var field = visibleOptionTexts.members[index];
+			if (ref == null || card == null || field == null) continue;
+
+			var selected = ref.ID == curOptionsValid[curSelected];
+			var targetCardY = topRowY + (ref.targetY + 3) * rowSpacing;
+			var targetAlpha = ref.alpha;
+			card.x = listX + 18;
+			if (instant || card.y == 0)
+				card.y = targetCardY;
+			else
+				card.y += (targetCardY - card.y) * follow;
+			drawListCard(card, selected);
+			card.alpha += (targetAlpha - card.alpha) * follow;
+
+			field.text = ref.text;
+			field.x = card.x + 18;
+			field.y = card.y + 15;
+			field.alpha += (targetAlpha - field.alpha) * follow;
+			field.color = selected ? 0xFF24173C : 0xFF4C3B66;
+
+			applyVerticalClip(card, clipTop, clipBottom);
+			applyVerticalClip(field, clipTop, clipBottom);
+		}
+
+		for (index in 0...bindRefs.length)
+		{
+			var ref = bindRefs[index];
+			var card = visibleBindCards.members[index];
+			var field = visibleBindTexts.members[index];
+			if (ref == null || card == null || field == null) continue;
+			var parentRef = optionRefs[Math.floor(index / 2)];
+			if (parentRef == null) continue;
+
+			var selected = ref.ID == curSelected && (index % 2) == (curAlt ? 1 : 0);
+			var targetCardY = topRowY + (parentRef.targetY + 3) * rowSpacing + 3;
+			var targetAlpha = parentRef.alpha;
+			card.x = panelX + panelWidth - 444 + (index % 2) * 212;
+			if (instant || card.y == 0)
+				card.y = targetCardY;
+			else
+				card.y += (targetCardY - card.y) * follow;
+			drawBindCard(card, selected);
+			card.alpha += (targetAlpha - card.alpha) * follow;
+
+			field.text = ref.text;
+			field.x = card.x + 12;
+			field.y = card.y + 18;
+			field.fieldWidth = 164;
+			field.alignment = CENTER;
+			field.alpha += (targetAlpha - field.alpha) * follow;
+			field.color = selected ? 0xFF27184A : 0xFF4D3C69;
+
+			applyVerticalClip(card, clipTop, clipBottom);
+			applyVerticalClip(field, clipTop, clipBottom);
+		}
 	}
 
 	var binding:Bool = false;
 	var holdingEsc:Float = 0;
 	var bindingBlack:FlxSprite;
-	var bindingText:Alphabet;
-	var bindingText2:Alphabet;
+	var bindingPanel:FlxSprite;
+	var bindingText:FlxText;
+	var bindingText2:FlxText;
 
 	var timeForMoving:Float = 0.1;
 	override function update(elapsed:Float)
@@ -282,6 +538,7 @@ class ControlsSubState extends MusicBeatSubstate
 		{
 			timeForMoving = Math.max(0, timeForMoving - elapsed);
 			super.update(elapsed);
+			syncVisibleRows(elapsed);
 			return;
 		}
 
@@ -312,15 +569,23 @@ class ControlsSubState extends MusicBeatSubstate
 					FlxTween.tween(bindingBlack, {alpha: 0.6}, 0.35, {ease: FlxEase.linear});
 					add(bindingBlack);
 
-					bindingText = new Alphabet(FlxG.width / 2, 160, Language.getPhrase('controls_rebinding', 'Rebinding {1}', [options[curOptions[curSelected]][3]]), false);
-					bindingText.alignment = CENTERED;
+					bindingPanel = new FlxSprite((FlxG.width - 620) * 0.5, (FlxG.height - 220) * 0.5);
+					MD3ShapeTools.fillAndStrokeRoundRect(bindingPanel, 620, 220, 28, 2, 0xFFF8F2FB, 0xFFE0D4EE);
+					add(bindingPanel);
+
+					bindingText = new FlxText(bindingPanel.x + 28, bindingPanel.y + 34, 564,
+						Language.getPhrase('controls_rebinding', 'Rebinding {1}', [options[curOptions[curSelected]][3]]), 28);
+					bindingText.setFormat(Paths.font('inter-bold.otf'), 28, 0xFF281B41, CENTER);
+					bindingText.antialiasing = ClientPrefs.data.antialiasing;
 					add(bindingText);
 
 					final escape:String = (controls.mobileC) ? "B" : "ESC";
 					final backspace:String = (controls.mobileC) ? "C" : "Backspace";
 					
-					bindingText2 = new Alphabet(FlxG.width / 2, 340, Language.getPhrase('controls_rebinding2', 'Hold {1} to Cancel\nHold {2} to Delete', [escape, backspace]), true);
-					bindingText2.alignment = CENTERED;
+					bindingText2 = new FlxText(bindingPanel.x + 36, bindingPanel.y + 104, 548,
+						Language.getPhrase('controls_rebinding2', 'Hold {1} to Cancel\nHold {2} to Delete', [escape, backspace]), 20);
+					bindingText2.setFormat(Paths.font('inter.otf'), 20, 0xFF5C4B77, CENTER);
+					bindingText2.antialiasing = ClientPrefs.data.antialiasing;
 					add(bindingText2);
 
 					binding = true;
@@ -465,6 +730,7 @@ class ControlsSubState extends MusicBeatSubstate
 			}
 		}
 		super.update(elapsed);
+		syncVisibleRows(elapsed);
 	}
 
 	function closeBinding()
@@ -472,6 +738,9 @@ class ControlsSubState extends MusicBeatSubstate
 		binding = false;
 		bindingBlack.destroy();
 		remove(bindingBlack);
+
+		bindingPanel.destroy();
+		remove(bindingPanel);
 
 		bindingText.destroy();
 		remove(bindingText);
@@ -514,6 +783,7 @@ class ControlsSubState extends MusicBeatSubstate
 	{
 		FlxTween.cancelTweensOf(bg);
 		FlxTween.color(bg, 0.5, bg.color, onKeyboardMode ? gamepadColor : keyboardColor, {ease: FlxEase.linear});
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, 0xFFFFFBFF);
 		onKeyboardMode = !onKeyboardMode;
 
 		curSelected = 0;
@@ -530,6 +800,6 @@ class ControlsSubState extends MusicBeatSubstate
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
 		selectSpr.sprTracker = grpBlacks.members[Math.floor(curSelected * 2) + (curAlt ? 1 : 0)];
-		selectSpr.visible = (selectSpr.sprTracker != null);
+		selectSpr.visible = false;
 	}
 }

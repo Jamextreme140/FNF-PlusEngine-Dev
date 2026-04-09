@@ -8,6 +8,7 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
 import flixel.math.FlxMath;
+import flixel.math.FlxRect;
 import openfl.display.Shape;
 
 /**
@@ -22,6 +23,7 @@ class MaterialSlider extends FlxSpriteGroup
 	public var min:Float = 0.0;
 	public var max:Float = 1.0;
 	public var enabled:Bool = true;
+	public var allowMouseInput:Bool = true;
 	public var onChange:Float->Void = null;
 	
 	// Visual components
@@ -132,13 +134,14 @@ class MaterialSlider extends FlxSpriteGroup
 	function redrawActiveTrack(width:Int, height:Int, pressed:Bool):Void
 	{
 		var drawWidth = Std.int(Math.max(height, width));
-		var drawHeight = Std.int(Math.max(1, height));
+		var stroke = Math.max(2, height);
+		var amplitude = Math.max(2.0, height * (pressed ? 0.75 : 0.55));
+		var verticalPadding = Std.int(Math.ceil(amplitude + stroke * 0.5 + 1));
+		var drawHeight = Std.int(Math.max(1, height + verticalPadding * 2));
 		trackActive.makeGraphic(drawWidth, drawHeight, FlxColor.TRANSPARENT, true);
 
-		var stroke = drawHeight;
 		var centerY = drawHeight * 0.5;
-		var amplitude = Math.max(0.75, drawHeight * (pressed ? 0.26 : 0.18));
-		var wavelength = Math.max(MD3Metrics.size(34), drawHeight * (pressed ? 4.8 : 5.8));
+		var wavelength = Math.max(MD3Metrics.size(34), height * (pressed ? 7.0 : 8.5));
 		var startX = stroke * 0.5;
 		var endX = Math.max(startX, drawWidth - stroke * 0.5);
 
@@ -207,13 +210,29 @@ class MaterialSlider extends FlxSpriteGroup
 
 		trackInactive.x = x;
 		trackInactive.y = y + trackY(trackInactiveHeight());
+		updateInactiveTrackClip();
 		redrawActiveTrack(Std.int(Math.max(currentTrackHeight, displayCenterX)), currentTrackHeight, pressed);
 		trackActive.x = x;
-		trackActive.y = y + trackY(currentTrackHeight);
+		trackActive.y = y + thumbCenterY() - trackActive.height * 0.5;
 
 		redrawThumb(currentThumbSize);
 		thumb.x = x + displayCenterX - thumb.width * 0.5;
 		thumb.y = y + thumbCenterY() - thumb.height * 0.5;
+	}
+
+	function updateInactiveTrackClip():Void
+	{
+		var clipStart = FlxMath.bound(displayCenterX, 0, sliderWidth);
+		var visibleWidth = sliderWidth - clipStart;
+		if (visibleWidth <= 0.5)
+		{
+			trackInactive.visible = false;
+			trackInactive.clipRect = null;
+			return;
+		}
+
+		trackInactive.visible = true;
+		trackInactive.clipRect = new FlxRect(clipStart, 0, visibleWidth, trackInactive.frameHeight);
 	}
 
 	function updateLabelPosition():Void
@@ -265,6 +284,17 @@ class MaterialSlider extends FlxSpriteGroup
 		if (wavePhase > TAU) wavePhase -= TAU;
 
 		if (!enabled) return;
+		if (!allowMouseInput)
+		{
+			if (isDragging)
+			{
+				isDragging = false;
+				hideValueLabel();
+				layoutComponents(false);
+			}
+			redrawActiveTrack(Std.int(Math.max(currentTrackVisualHeight, displayCenterX)), currentTrackVisualHeight, false);
+			return;
+		}
 
 		#if FLX_MOUSE
 		var mousePos = FlxG.mouse.getScreenPosition();

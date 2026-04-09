@@ -65,7 +65,7 @@ class MusicBeatSubstate extends BaseMusicBeatSubstate
 		super.create();
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys)
 		// Skip companion for CustomSubstate (Lua-driven substates handle their own scripts)
-		if (!(this is funkin.modding.scripting.psychlua.CustomSubstate))
+		if (!(this is funkin.modding.scripting.psychlua.CustomSubstate) && MusicBeatState.stateScriptOverridesEnabled())
 			_loadCompanionScript();
 		callOnCompanionScript('onCreate', []);
 		#end
@@ -254,6 +254,7 @@ class MusicBeatSubstate extends BaseMusicBeatSubstate
 	{
 		if (args == null) args = [];
 		var ret:Dynamic = LuaUtils.Function_Continue;
+		if (!MusicBeatState.stateScriptOverridesEnabled()) return ret;
 
 		#if LUA_ALLOWED
 		if (companionLuaScript != null)

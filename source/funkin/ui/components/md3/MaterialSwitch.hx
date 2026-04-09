@@ -18,6 +18,7 @@ class MaterialSwitch extends FlxSpriteGroup
 
 	public var checked(default, set):Bool = false;
 	public var enabled:Bool = true;
+	public var allowMouseInput:Bool = true;
 	public var onChange:Bool->Void = null;
 
 	// Visual components
@@ -245,7 +246,7 @@ class MaterialSwitch extends FlxSpriteGroup
 		updateIconPosition();
 
 		#if FLX_MOUSE
-		if (enabled && FlxG.mouse.justPressed)
+		if (enabled && allowMouseInput && FlxG.mouse.justPressed)
 		{
 			var mousePos = FlxG.mouse.getScreenPosition();
 			var hitPadY = Std.int(Math.max(0, (hitHeight() - trackHeight()) / 2));
