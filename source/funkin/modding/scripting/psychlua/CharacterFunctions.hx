@@ -3,6 +3,7 @@ package funkin.modding.scripting.psychlua;
 import funkin.play.character.Character;
 import flixel.FlxBasic;
 import flixel.FlxSprite;
+import flixel.group.FlxSpriteGroup;
 
 /**
  * Character Functions for Lua Scripts
@@ -10,6 +11,81 @@ import flixel.FlxSprite;
  */
 class CharacterFunctions
 {
+	static var attachedCharacterGroups:Map<String, String> = [];
+
+	static function getNamedGroup(game:PlayState, groupName:String):FlxSpriteGroup
+	{
+		if (game == null || groupName == null)
+			return null;
+
+		return switch (groupName.toLowerCase())
+		{
+			case 'boyfriend' | 'bf' | 'player': game.boyfriendGroup;
+			case 'dad' | 'opponent': game.dadGroup;
+			case 'gf' | 'girlfriend': game.gfGroup;
+			default: null;
+		};
+	}
+
+	static function getCharacterParentGroup(game:PlayState, char:Character):FlxSpriteGroup
+	{
+		if (game == null || char == null)
+			return null;
+
+		if (game.boyfriendGroup != null && game.boyfriendGroup.members != null && game.boyfriendGroup.members.indexOf(char) != -1)
+			return game.boyfriendGroup;
+		if (game.dadGroup != null && game.dadGroup.members != null && game.dadGroup.members.indexOf(char) != -1)
+			return game.dadGroup;
+		if (game.gfGroup != null && game.gfGroup.members != null && game.gfGroup.members.indexOf(char) != -1)
+			return game.gfGroup;
+
+		return null;
+	}
+
+	static function detachCharacter(game:PlayState, char:Character):Void
+	{
+		if (game == null || char == null)
+			return;
+
+		if (game.boyfriendGroup != null)
+			game.boyfriendGroup.remove(char, true);
+		if (game.dadGroup != null)
+			game.dadGroup.remove(char, true);
+		if (game.gfGroup != null)
+			game.gfGroup.remove(char, true);
+		if (game.members != null && game.members.indexOf(char) != -1)
+			game.remove(char, true);
+	}
+
+	public static function bopAttachedCharacters(beat:Int):Void
+	{
+		var game = PlayState.instance;
+		if (game == null || attachedCharacterGroups == null || attachedCharacterGroups.keys() == null)
+			return;
+
+		var variables = MusicBeatState.getVariables();
+		var staleTags:Array<String> = [];
+		for (tag in attachedCharacterGroups.keys())
+		{
+			var char:Character = variables.get(tag);
+			if (char == null || !Std.isOfType(char, Character))
+			{
+				staleTags.push(tag);
+				continue;
+			}
+
+			if (char == game.boyfriend || char == game.dad || char == game.gf)
+				continue;
+
+			var animName:String = char.getAnimationName();
+			if (beat % char.danceEveryNumBeats == 0 && !animName.startsWith('sing') && !char.stunned && !char.specialAnim)
+				char.dance();
+		}
+
+		for (tag in staleTags)
+			attachedCharacterGroups.remove(tag);
+	}
+
 	public static function implement(funk:FunkinLua)
 	{
 		var lua = funk.lua;
@@ -51,6 +127,22 @@ class CharacterFunctions
 				return false;
 			}
 
+			var targetGroup:FlxSpriteGroup = null;
+			if(insertBefore != null)
+				targetGroup = getNamedGroup(game, insertBefore);
+
+			if (targetGroup != null)
+			{
+				detachCharacter(game, char);
+				targetGroup.add(char);
+				char.scrollFactor.set(targetGroup.scrollFactor.x, targetGroup.scrollFactor.y);
+				attachedCharacterGroups.set(tag, insertBefore.toLowerCase());
+				char.dance();
+				return true;
+			}
+
+			attachedCharacterGroups.remove(tag);
+
 			// Determine insertion point
 			var insertIndex:Int = -1;
 			
@@ -80,6 +172,7 @@ class CharacterFunctions
 			}
 
 			// Insert character
+			detachCharacter(game, char);
 			if(insertIndex >= 0) {
 				game.insert(insertIndex, char);
 			} else {
@@ -97,9 +190,10 @@ class CharacterFunctions
 				return false;
 			}
 
-			if(game != null && game.members.contains(char)) {
-				game.remove(char);
-			}
+			if(game != null)
+				detachCharacter(game, char);
+
+			attachedCharacterGroups.remove(tag);
 
 			if(destroy) {
 				char.kill();
@@ -141,7 +235,11 @@ class CharacterFunctions
 				return false;
 			}
 
-			char.setPosition(x, y);
+			var parentGroup = getCharacterParentGroup(game, char);
+			if (parentGroup != null)
+				char.setPosition(x - parentGroup.x, y - parentGroup.y);
+			else
+				char.setPosition(x, y);
 			return true;
 		});
 
@@ -172,8 +270,16 @@ class CharacterFunctions
 
 			if(targetGroup != null) {
 				var mult:Float = char.isPlayer ? -1 : 1;
-				char.x = targetGroup.x + (char.positionArray[0] * mult);
-				char.y = targetGroup.y + char.positionArray[1];
+				if (getCharacterParentGroup(game, char) == targetGroup)
+				{
+					char.x = char.positionArray[0] * mult;
+					char.y = char.positionArray[1];
+				}
+				else
+				{
+					char.x = targetGroup.x + (char.positionArray[0] * mult);
+					char.y = targetGroup.y + char.positionArray[1];
+				}
 				return true;
 			}
 
@@ -232,12 +338,20 @@ class CharacterFunctions
 
 		Lua_helper.add_callback(lua, "getCharacterX", function(tag:String):Float {
 			var char:Character = MusicBeatState.getVariables().get(tag);
-			return (char != null && Std.isOfType(char, Character)) ? char.x : 0;
+			if (char == null || !Std.isOfType(char, Character))
+				return 0;
+
+			var parentGroup = getCharacterParentGroup(game, char);
+			return parentGroup != null ? parentGroup.x + char.x : char.x;
 		});
 
 		Lua_helper.add_callback(lua, "getCharacterY", function(tag:String):Float {
 			var char:Character = MusicBeatState.getVariables().get(tag);
-			return (char != null && Std.isOfType(char, Character)) ? char.y : 0;
+			if (char == null || !Std.isOfType(char, Character))
+				return 0;
+
+			var parentGroup = getCharacterParentGroup(game, char);
+			return parentGroup != null ? parentGroup.y + char.y : char.y;
 		});
 
 		// Character state properties

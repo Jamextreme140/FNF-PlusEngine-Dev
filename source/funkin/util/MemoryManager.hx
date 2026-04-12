@@ -39,6 +39,18 @@ class MemoryManager
      * Last time automatic cleanup was run
      */
     private static var lastAutoCleanup:Float = 0;
+
+    private static var cleanupCooldown:Float = 0;
+    private static var pendingCleanupLevel:Int = 0;
+    private static var pendingCleanupAge:Float = 0;
+
+    static inline var QUICK_CLEANUP_LEVEL:Int = 1;
+    static inline var AGGRESSIVE_CLEANUP_LEVEL:Int = 2;
+    static inline var ULTRA_CLEANUP_LEVEL:Int = 3;
+    static inline var DEFERRED_CLEANUP_MIN_DELAY:Float = 0.75;
+    static inline var QUICK_CLEANUP_COOLDOWN:Float = 8;
+    static inline var AGGRESSIVE_CLEANUP_COOLDOWN:Float = 15;
+    static inline var ULTRA_CLEANUP_COOLDOWN:Float = 25;
     
     /**
      * Interval between automatic cleanups (in seconds)
@@ -111,6 +123,16 @@ class MemoryManager
      */
     public static function update(elapsed:Float):Void
     {
+        if (cleanupCooldown > 0)
+            cleanupCooldown = Math.max(0, cleanupCooldown - elapsed);
+
+        if (pendingCleanupLevel > 0)
+        {
+            pendingCleanupAge += elapsed;
+            if (pendingCleanupAge >= DEFERRED_CLEANUP_MIN_DELAY && cleanupCooldown <= 0 && !isGameplayCritical())
+                runPendingCleanup();
+        }
+
         if (!aggressiveMode) return;
         
         lastAutoCleanup += elapsed;
@@ -125,6 +147,75 @@ class MemoryManager
                 trace('[MemoryManager] Auto-cleanup triggered (${Math.round(currentMem)}MB > ${autoCleanupThreshold}MB)');
                 quickCleanup();
             }
+        }
+    }
+
+    private static function isGameplayCritical():Bool
+    {
+        if (PlayState.instance == null || FlxG.state == null)
+            return false;
+
+        if (FlxG.state != cast PlayState.instance)
+            return false;
+
+        return !PlayState.instance.paused
+            && !PlayState.instance.endingSong
+            && !PlayState.instance.startingSong
+            && !PlayState.instance.inCutscene
+            && !PlayState.instance.isDead;
+    }
+
+    private static function queueCleanup(level:Int):Void
+    {
+        if (level > pendingCleanupLevel)
+            pendingCleanupLevel = level;
+
+        pendingCleanupAge = 0;
+    }
+
+    private static function getCleanupCooldown(level:Int):Float
+    {
+        return switch (level)
+        {
+            case 1: QUICK_CLEANUP_COOLDOWN;
+            case 2: AGGRESSIVE_CLEANUP_COOLDOWN;
+            case 3: ULTRA_CLEANUP_COOLDOWN;
+            default: QUICK_CLEANUP_COOLDOWN;
+        };
+    }
+
+    private static function shouldDelayCleanup(level:Int):Bool
+    {
+        if (isGameplayCritical() || cleanupCooldown > 0)
+        {
+            queueCleanup(level);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function finishCleanup(level:Int):Void
+    {
+        cleanupCooldown = getCleanupCooldown(level);
+        pendingCleanupLevel = 0;
+        pendingCleanupAge = 0;
+    }
+
+    private static function runPendingCleanup():Void
+    {
+        var level:Int = pendingCleanupLevel;
+        pendingCleanupLevel = 0;
+        pendingCleanupAge = 0;
+
+        switch (level)
+        {
+            case 1:
+                performQuickCleanup();
+            case 2:
+                performAggressiveCleanup();
+            case 3:
+                performUltraCleanup();
         }
     }
 
@@ -283,6 +374,14 @@ class MemoryManager
      */
     public static function quickCleanup():Void
     {
+        if (shouldDelayCleanup(QUICK_CLEANUP_LEVEL))
+            return;
+
+        performQuickCleanup();
+    }
+
+    private static function performQuickCleanup():Void
+    {
         trace('[MemoryManager] Running quick cleanup...');
         
         // Clear Paths unused memory
@@ -298,6 +397,7 @@ class MemoryManager
         cpp.NativeGc.run(false);
         #end
         
+		finishCleanup(QUICK_CLEANUP_LEVEL);
         trace('[MemoryManager] Quick cleanup complete');
     }
 
@@ -306,8 +406,18 @@ class MemoryManager
      * Combines all cleanup functions and forces garbage collection
      * Use sparingly as it's expensive
      */
-    public static function aggressiveCleanup():Void
+        public static function aggressiveCleanup(force:Bool = false):Void
     {
+		if (!force && shouldDelayCleanup(AGGRESSIVE_CLEANUP_LEVEL))
+			return;
+
+		performAggressiveCleanup();
+	}
+
+	private static function performAggressiveCleanup():Void
+	{
+		trace('[MemoryManager] Running aggressive cleanup...');
+
         // Clear Paths caches
         Paths.clearUnusedMemory();
         Paths.clearStoredMemory();
@@ -339,7 +449,9 @@ class MemoryManager
             cpp.NativeGc.run(true);
             #end
         }
-        
+
+		finishCleanup(AGGRESSIVE_CLEANUP_LEVEL);
+		trace('[MemoryManager] Aggressive cleanup complete');
     }
     
     /**
@@ -347,10 +459,18 @@ class MemoryManager
      * Clears almost everything possible
      * WARNING: May cause visual glitches temporarily
      */
-    public static function ultraCleanup():Void
+        public static function ultraCleanup(force:Bool = false):Void
     {
+		if (!force && shouldDelayCleanup(ULTRA_CLEANUP_LEVEL))
+			return;
+
+		performUltraCleanup();
+	}
+
+	private static function performUltraCleanup():Void
+	{
         // Run aggressive cleanup first
-        aggressiveCleanup();
+		performAggressiveCleanup();
         
         // Clear FlxG bitmap cache (careful!)
         @:privateAccess
@@ -378,7 +498,8 @@ class MemoryManager
             cpp.NativeGc.compact();
             #end
         }
-        
+
+		finishCleanup(ULTRA_CLEANUP_LEVEL);
     }
     
     /**

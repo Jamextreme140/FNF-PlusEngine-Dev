@@ -51,6 +51,9 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 	var scrollTarget:Float = 0;
 	var contentHeight:Float = 0;
 	var cardBaseY:Array<Float> = [];
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	var daHitSound:FlxSound = new FlxSound();
 
@@ -75,6 +78,11 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		changeSelection(lastSelected, true);
 		refreshCardPositions(true);
 		onChangeAutoPause();
+
+		#if mobile
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 	}
 
 	function buildChrome():Void
@@ -444,6 +452,21 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		refreshCardPositions();
 		super.update(elapsed);
 
+		#if mobile
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			if (activeDropdown == null && Math.abs(scrollDelta) > 0.5)
+			{
+				scrollTarget += scrollDelta / 5;
+				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
+			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
+		}
+		#end
+
 		if (controls.BACK)
 		{
 			if (activeDropdown != null)
@@ -469,6 +492,65 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		if (controls.UI_RIGHT_P) cards[selectedCard].handleRight();
 		if (controls.ACCEPT) cards[selectedCard].handleAccept();
 		if (controls.RESET) cards[selectedCard].resetToDefault();
+	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+
+		if (activeDropdown != null)
+		{
+			if (activeDropdown.containsPoint(tapPos.x, tapPos.y))
+			{
+				var itemIndex = activeDropdown.getItemIndexAt(tapPos.x, tapPos.y);
+				if (itemIndex != -1)
+					activeDropdown.selectIndex(itemIndex);
+			}
+			else
+				closeActiveDropdown();
+			return;
+		}
+
+		if (isPointInsideRect(tapPos.x, tapPos.y, closeButton.x, closeButton.y, closeButton.width, closeButton.height))
+		{
+			closeAndSave();
+			return;
+		}
+
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (card != null && card.containsPoint(tapPos.x, tapPos.y))
+			{
+				if (index != selectedCard)
+					changeSelection(index, true);
+				else
+					card.handleTouch(tapPos.x, tapPos.y);
+				return;
+			}
+		}
+	}
+
+	inline function isPointInsideRect(x:Float, y:Float, rectX:Float, rectY:Float, rectW:Float, rectH:Float):Bool
+	{
+		return x >= rectX && x <= rectX + rectW && y >= rectY && y <= rectY + rectH;
+	}
+	#end
+
+	override function destroy():Void
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+
+		super.destroy();
 	}
 
 	function onChangeHitsound():Void
@@ -621,6 +703,12 @@ private class GameplaySettingsCard extends FlxSpriteGroup
 	public function handleRight():Void {}
 	public function handleAccept():Void {}
 	public function resetToDefault():Void {}
+	public function handleTouch(screenX:Float, screenY:Float):Bool return false;
+
+	public function containsPoint(px:Float, py:Float):Bool
+	{
+		return px >= x && px <= x + cardWidth && py >= y && py <= y + cardHeight;
+	}
 
 	public function applyVerticalClip(yMin:Float, yMax:Float):Void
 	{
@@ -688,6 +776,11 @@ private class GameplaySwitchCard extends GameplaySettingsCard
 	override public function handleLeft():Void setValue(false);
 	override public function handleRight():Void setValue(true);
 	override public function handleAccept():Void setValue(!currentValue);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void setValue(defaultValue);
 }
 
@@ -777,6 +870,11 @@ private class GameplayChoiceCard extends GameplaySettingsCard
 	override public function handleLeft():Void cycle(-1);
 	override public function handleRight():Void cycle(1);
 	override public function handleAccept():Void if (requestDropdown != null) requestDropdown(this);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void setValueLabel(defaultValue);
 }
 
@@ -839,6 +937,32 @@ private class GameplaySliderCard extends GameplaySettingsCard
 	override public function handleLeft():Void setValue(currentValue - stepValue);
 	override public function handleRight():Void setValue(currentValue + stepValue);
 	override public function handleAccept():Void setValue(currentValue + stepValue > maxValue ? minValue : currentValue + stepValue);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		var sliderX = x + slider.x;
+		var sliderY = y + slider.y - 8;
+		if (screenX >= sliderX && screenX <= sliderX + slider.sliderWidth && screenY >= sliderY && screenY <= sliderY + 44)
+		{
+			var normalized = FlxMath.bound((screenX - sliderX) / slider.sliderWidth, 0, 1);
+			setValue(minValue + normalized * (maxValue - minValue));
+			return true;
+		}
+
+		var stepperX = x + stepper.x;
+		var stepperY = y + stepper.y;
+		if (screenX >= stepperX && screenX <= stepperX + stepper.stepperWidth && screenY >= stepperY && screenY <= stepperY + 44)
+		{
+			var localX = screenX - stepperX;
+			if (localX <= 42)
+				setValue(currentValue - stepValue);
+			else if (localX >= stepper.stepperWidth - 42)
+				setValue(currentValue + stepValue);
+			return true;
+		}
+
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void setValue(defaultValue);
 }
 
@@ -926,6 +1050,40 @@ private class GameplayDropdownMenu extends FlxSpriteGroup
 	{
 		if (onSelect != null) onSelect(items[selectedIndex]);
 		closeMenu();
+	}
+
+	public function containsPoint(screenX:Float, screenY:Float):Bool
+	{
+		return screenX >= x && screenX <= x + background.width && screenY >= y && screenY <= y + background.height;
+	}
+
+	public function getItemIndexAt(screenX:Float, screenY:Float):Int
+	{
+		if (!containsPoint(screenX, screenY))
+			return -1;
+
+		var localY = screenY - y - VERTICAL_PADDING;
+		if (localY < 0)
+			return -1;
+
+		var index = Std.int(localY / ITEM_HEIGHT);
+		return index >= 0 && index < items.length ? index : -1;
+	}
+
+	public function selectIndex(index:Int):Void
+	{
+		if (items.length == 0)
+			return;
+
+		var clampedIndex = index;
+		if (clampedIndex < 0)
+			clampedIndex = 0;
+		else if (clampedIndex >= items.length)
+			clampedIndex = items.length - 1;
+
+		selectedIndex = clampedIndex;
+		refreshVisuals();
+		confirmSelection();
 	}
 
 	public function closeMenu():Void

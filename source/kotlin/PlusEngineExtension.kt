@@ -30,9 +30,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
+import android.view.KeyEvent
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import org.haxe.extension.Extension
+import org.libsdl.app.SDLActivity
 import com.leninasto.plusengine.WavyTimebarManager
 import java.io.File
 
@@ -41,6 +43,12 @@ import java.io.File
  * Provides native Android functionality accessible from Haxe
  */
 class PlusEngineExtension : Extension() {
+
+    private fun dispatchBackToEngine() {
+        android.util.Log.i("PlusEngine", "dispatchBackToEngine() -> forwarding KEYCODE_BACK to SDL")
+        SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_BACK)
+        SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_BACK)
+    }
     
     /**
      * Called when the extension is created
@@ -55,10 +63,12 @@ class PlusEngineExtension : Extension() {
         // GameActivity.onBackPressed() calls extension.onBackPressed() first;
         // returning false here stops super.onBackPressed() (which calls finish()).
         // On Android 13+ (API 33), predictive back uses OnBackInvokedDispatcher instead of
-        // onBackPressed(); we register via reflection to avoid a hard compileSdkVersion requirement.
+        // onBackPressed(); we register a no-op callback so the engine can keep handling BACK
+        // through Lime/SDL without Android finishing or backgrounding the activity.
         val activity = Extension.mainActivity
         if (activity != null && Build.VERSION.SDK_INT >= 33) {
             try {
+                android.util.Log.i("PlusEngine", "Registering predictive back callback for API ${Build.VERSION.SDK_INT}")
                 val dispatcher = activity.javaClass
                     .getMethod("getOnBackInvokedDispatcher")
                     .invoke(activity)
@@ -66,7 +76,11 @@ class PlusEngineExtension : Extension() {
                 val proxy = java.lang.reflect.Proxy.newProxyInstance(
                     callbackClass.classLoader,
                     arrayOf(callbackClass)
-                ) { _, _, _ -> activity.moveTaskToBack(true); null }
+                ) { _, _, _ ->
+                    android.util.Log.i("PlusEngine", "Predictive back callback invoked")
+                    dispatchBackToEngine()
+                    null
+                }
                 val dispatcherClass = Class.forName("android.window.OnBackInvokedDispatcher")
                 dispatcherClass.getMethod("registerOnBackInvokedCallback", Int::class.java, callbackClass)
                     .invoke(dispatcher, 0 /* PRIORITY_DEFAULT */, proxy)
@@ -78,9 +92,10 @@ class PlusEngineExtension : Extension() {
 
     // Called by GameActivity.onBackPressed() for API < 33 (hardware back / gesture nav bar).
     // Returning false consumes the event, preventing super.onBackPressed() / finish().
+    // Forward the action straight to SDL/Lime so HaxeFlixel can read FlxG.android.BACK.
     override fun onBackPressed(): Boolean {
-        val activity = Extension.mainActivity
-        activity?.moveTaskToBack(true)
+        android.util.Log.i("PlusEngine", "onBackPressed() intercepted by extension")
+        dispatchBackToEngine()
         return false
     }
     

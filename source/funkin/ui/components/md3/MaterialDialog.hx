@@ -220,6 +220,46 @@ class MaterialDialog extends FlxSpriteGroup
 		}
 	}
 
+	public function handlePointerTap(screenX:Float, screenY:Float):Bool
+	{
+		if (!isOpen) return false;
+
+		if (isPointInsideButton(confirmButton, screenX, screenY))
+		{
+			if (confirmButton.onClick != null) confirmButton.onClick();
+			return true;
+		}
+
+		if (isPointInsideButton(dismissButton, screenX, screenY))
+		{
+			if (dismissButton.onClick != null) dismissButton.onClick();
+			return true;
+		}
+
+		if (!containsPoint(screenX, screenY))
+		{
+			close();
+			if (onDismiss != null) onDismiss();
+			return true;
+		}
+
+		return false;
+	}
+
+	public function containsPoint(screenX:Float, screenY:Float):Bool
+	{
+		return screenX >= panel.x && screenX <= panel.x + panelWidth && screenY >= panel.y && screenY <= panel.y + panelHeight;
+	}
+
+	inline function isPointInsideButton(button:MaterialButton, screenX:Float, screenY:Float):Bool
+	{
+		if (button == null) return false;
+
+		var buttonWidthScaled:Float = buttonWidth * button.scale.x;
+		var buttonHeightScaled:Float = buttonHeight * button.scale.y;
+		return screenX >= button.x && screenX <= button.x + buttonWidthScaled && screenY >= button.y && screenY <= button.y + buttonHeightScaled;
+	}
+
 	function refreshActionFocus():Void
 	{
 		if (confirmButton == null || dismissButton == null) return;

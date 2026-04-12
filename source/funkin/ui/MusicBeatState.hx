@@ -154,6 +154,7 @@ class MusicBeatState extends BaseMusicBeatState
 		}
 
 		if(FlxG.save.data != null) FlxG.save.data.fullscreen = funkin.util.WindowMode.borderlessFullscreen;
+		funkin.util.MemoryManager.update(elapsed);
 		
 		// Screenshot support with F5
 		#if desktop

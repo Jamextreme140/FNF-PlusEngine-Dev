@@ -39,6 +39,10 @@ class Paths
 	 * Similar to Codename Engine's approach
 	 */
 	public static var tempFramesCache:Map<String, flixel.graphics.frames.FlxFramesCollection> = [];
+	static var animateAtlasExistenceCache:Map<String, Bool> = [];
+	static var animateAtlasAnimationCache:Map<String, String> = [];
+	static var animateAtlasSpriteJsonCache:Map<String, Array<String>> = [];
+	static var animateAtlasPageKeysCache:Map<String, Array<String>> = [];
 	
 	/**
 	 * Initialize Paths system
@@ -77,6 +81,86 @@ class Paths
 		
 		if (count > 0)
 			trace('[Paths] Cleared $count temporary frames from cache');
+	}
+
+	public static function hasAnimateAtlas(key:String):Bool
+	{
+		return cacheAnimateAtlasData(key);
+	}
+
+	public static function getAnimateAtlasPageKeys(key:String):Array<String>
+	{
+		if (!cacheAnimateAtlasData(key))
+			return [];
+
+		return animateAtlasPageKeysCache.get(key.trim()).copy();
+	}
+
+	static function getAnimateAtlasSpriteJsons(key:String):Array<String>
+	{
+		if (!cacheAnimateAtlasData(key))
+			return [];
+
+		return animateAtlasSpriteJsonCache.get(key.trim()).copy();
+	}
+
+	static function getAnimateAtlasAnimationJson(key:String):String
+	{
+		if (!cacheAnimateAtlasData(key))
+			return null;
+
+		return animateAtlasAnimationCache.get(key.trim());
+	}
+
+	static function cacheAnimateAtlasData(key:String):Bool
+	{
+		if (key == null)
+			return false;
+
+		key = key.trim();
+		if (key.length == 0)
+			return false;
+
+		if (animateAtlasExistenceCache.exists(key))
+			return animateAtlasExistenceCache.get(key);
+
+		var animationJson:String = getTextFromFile('images/$key/Animation.json');
+		if (animationJson == null)
+		{
+			animateAtlasExistenceCache.set(key, false);
+			return false;
+		}
+
+		var spriteJsons:Array<String> = [];
+		var pageKeys:Array<String> = [];
+		for (i in 0...32)
+		{
+			var suffix:String = i == 0 ? '' : Std.string(i);
+			var spriteJson:String = getTextFromFile('images/$key/spritemap$suffix.json');
+			if (spriteJson == null)
+			{
+				if (pageKeys.length > 0)
+					break;
+				continue;
+			}
+
+			var pageKey:String = '$key/spritemap$suffix';
+			if (!fileExists('images/$pageKey.png', IMAGE))
+				continue;
+
+			spriteJsons.push(spriteJson);
+			pageKeys.push(pageKey);
+		}
+
+		var exists:Bool = pageKeys.length > 0;
+		animateAtlasExistenceCache.set(key, exists);
+		if (!exists)
+			return false;
+
+		animateAtlasAnimationCache.set(key, animationJson);
+		animateAtlasSpriteJsonCache.set(key, spriteJsons);
+		animateAtlasPageKeysCache.set(key, pageKeys);
+		return true;
 	}
 
 	public static function excludeAsset(key:String) {
@@ -801,23 +885,17 @@ class Paths
 
 			if(!changedAtlasJson)
 			{
-				// Auto-detect all spritemap pages: spritemap.json, spritemap1.json, spritemap2.json, ...
-				for (i in 0...10)
+				var cachedSpritePages:Array<String> = getAnimateAtlasSpriteJsons(originalPath);
+				var cachedPageKeys:Array<String> = getAnimateAtlasPageKeys(originalPath);
+				if(cachedSpritePages.length > 0 && cachedPageKeys.length == cachedSpritePages.length)
 				{
-					var st:String = (i == 0) ? '' : '$i';
-					var pageJson:String = getTextFromFile('images/$originalPath/spritemap$st.json');
-					if(pageJson != null)
-					{
-						changedImage = true;
-						spritePages.push(pageJson);
-						spriteImgs.push(image('$originalPath/spritemap$st'));
-					}
-					else if(spritePages.length > 0)
-						break; // No more consecutive pages found
-				}
-
-				if(spritePages.length > 0)
+					changedImage = true;
 					changedAtlasJson = true;
+					for(pageJson in cachedSpritePages)
+						spritePages.push(pageJson);
+					for(pageKey in cachedPageKeys)
+						spriteImgs.push(image(pageKey));
+				}
 			}
 			else
 			{
@@ -844,8 +922,10 @@ class Paths
 
 			if(!changedAnimJson)
 			{
-				changedAnimJson = true;
-				animationJson = getTextFromFile('images/$originalPath/Animation.json');
+				animationJson = getAnimateAtlasAnimationJson(originalPath);
+				if(animationJson == null)
+					animationJson = getTextFromFile('images/$originalPath/Animation.json');
+				changedAnimJson = (animationJson != null);
 			}
 
 			// Route to multi-page loader when more than one spritemap page was found

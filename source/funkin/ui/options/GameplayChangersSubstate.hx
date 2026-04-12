@@ -79,9 +79,6 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		refreshCardPositions(true);
 		animateOpen();
 
-		addTouchPad('LEFT_FULL', 'A_B_C');
-		addTouchPadCamera();
-
 		#if mobile
 		touchScroll = new funkin.mobile.backend.TouchScroll(true);
 		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
@@ -458,13 +455,16 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 			var scrollDelta = touchScroll.update();
 			if (Math.abs(scrollDelta) > 0.5)
 			{
-				scrollTarget += -scrollDelta / 5;
+				scrollTarget += scrollDelta / 5;
 				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
 			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
 		}
 		#end
 
-		if (controls.BACK || (touchPad != null && touchPad.buttonB.justPressed))
+		if (controls.BACK)
 		{
 			if (activeDropdown != null)
 			{
@@ -479,16 +479,88 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		{
 			if (controls.UI_UP_P) activeDropdown.moveSelection(-1);
 			if (controls.UI_DOWN_P) activeDropdown.moveSelection(1);
-			if (controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) activeDropdown.confirmSelection();
+			if (controls.ACCEPT) activeDropdown.confirmSelection();
 			return;
 		}
 
-		if (controls.UI_UP_P || (touchPad != null && touchPad.buttonUp.justPressed)) moveSelection(-1);
-		if (controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown.justPressed)) moveSelection(1);
-		if (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft.justPressed)) cards[curSelected].handleLeft();
-		if (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight.justPressed)) cards[curSelected].handleRight();
-		if (controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) cards[curSelected].handleAccept();
-		if (controls.RESET || (touchPad != null && touchPad.buttonC.justPressed)) resetAllOptions();
+		if (controls.UI_UP_P) moveSelection(-1);
+		if (controls.UI_DOWN_P) moveSelection(1);
+		if (controls.UI_LEFT_P) cards[curSelected].handleLeft();
+		if (controls.UI_RIGHT_P) cards[curSelected].handleRight();
+		if (controls.ACCEPT) cards[curSelected].handleAccept();
+		if (controls.RESET) resetAllOptions();
+	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+
+		if (activeDropdown != null)
+		{
+			var dropdownIndex = activeDropdown.getTouchItemIndex(tapPos.x, tapPos.y);
+			if (dropdownIndex > -1)
+			{
+				activeDropdown.applyTouchSelection(dropdownIndex);
+				activeDropdown.confirmSelection();
+			}
+			else if (!activeDropdown.containsTouchPoint(tapPos.x, tapPos.y))
+			{
+				closeActiveDropdown();
+			}
+			return;
+		}
+
+		if (isPointOverButton(closeButton, tapPos.x, tapPos.y))
+		{
+			requestClose();
+			return;
+		}
+
+		if (isPointOverButton(resetButton, tapPos.x, tapPos.y))
+		{
+			resetAllOptions();
+			return;
+		}
+
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (card != null && isPointInsideRect(tapPos.x, tapPos.y, card.x, card.y, card.cardWidth, card.cardHeight))
+			{
+				if (index != curSelected)
+					changeSelection(index);
+				else
+					card.handleTouch(tapPos.x, tapPos.y);
+				return;
+			}
+		}
+	}
+
+	inline function isPointOverButton(button:MaterialButton, x:Float, y:Float):Bool
+	{
+		return button != null && isPointInsideRect(x, y, button.x, button.y, button.width, button.height);
+	}
+
+	inline function isPointInsideRect(x:Float, y:Float, rectX:Float, rectY:Float, rectW:Float, rectH:Float):Bool
+	{
+		return x >= rectX && x <= rectX + rectW && y >= rectY && y <= rectY + rectH;
+	}
+	#end
+
+	override function destroy():Void
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+
+		super.destroy();
 	}
 }
 
@@ -582,6 +654,7 @@ private class GameplayChangerCard extends FlxSpriteGroup
 	public function handleRight():Void {}
 	public function handleAccept():Void {}
 	public function resetToDefault():Void {}
+	public function handleTouch(screenX:Float, screenY:Float):Bool return false;
 
 	public function applyVerticalClip(yMin:Float, yMax:Float):Void
 	{
@@ -657,6 +730,11 @@ private class GameplayChangerSwitchCard extends GameplayChangerCard
 	override public function handleLeft():Void setValue(false);
 	override public function handleRight():Void setValue(true);
 	override public function handleAccept():Void setValue(!option.getValue());
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void
 	{
 		option.setValue(option.defaultValue);
@@ -754,6 +832,11 @@ private class GameplayChangerChoiceCard extends GameplayChangerCard
 	override public function handleLeft():Void cycle(-1);
 	override public function handleRight():Void cycle(1);
 	override public function handleAccept():Void if (requestDropdown != null) requestDropdown(this);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void
 	{
 		option.setValue(option.defaultValue);
@@ -824,6 +907,34 @@ private class GameplayChangerSliderCard extends GameplayChangerCard
 	override public function handleLeft():Void setValue(option.getValue() - option.changeValue);
 	override public function handleRight():Void setValue(option.getValue() + option.changeValue);
 	override public function handleAccept():Void setValue(option.getValue() + option.changeValue > option.maxValue ? option.minValue : option.getValue() + option.changeValue);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		var sliderX = x + slider.x;
+		var sliderY = y + slider.y - 8;
+		var sliderH = 44.0;
+		if (screenX >= sliderX && screenX <= sliderX + slider.sliderWidth && screenY >= sliderY && screenY <= sliderY + sliderH)
+		{
+			var normalized = FlxMath.bound((screenX - sliderX) / slider.sliderWidth, 0, 1);
+			setValue(option.minValue + normalized * (option.maxValue - option.minValue));
+			return true;
+		}
+
+		var stepperX = x + stepper.x;
+		var stepperY = y + stepper.y;
+		var stepperH = 44.0;
+		if (screenX >= stepperX && screenX <= stepperX + stepper.stepperWidth && screenY >= stepperY && screenY <= stepperY + stepperH)
+		{
+			var localX = screenX - stepperX;
+			if (localX <= 42)
+				setValue(option.getValue() - option.changeValue);
+			else if (localX >= stepper.stepperWidth - 42)
+				setValue(option.getValue() + option.changeValue);
+			return true;
+		}
+
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void
 	{
 		option.setValue(option.defaultValue);
@@ -912,10 +1023,34 @@ private class GameplayChangerDropdownMenu extends FlxSpriteGroup
 		FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 	}
 
+	public function applyTouchSelection(index:Int):Void
+	{
+		selectedIndex = index;
+		if (selectedIndex < 0)
+			selectedIndex = 0;
+		else if (selectedIndex > items.length - 1)
+			selectedIndex = items.length - 1;
+		refreshVisuals();
+	}
+
 	public function confirmSelection():Void
 	{
 		if (onSelect != null) onSelect(items[selectedIndex]);
 		closeMenu();
+	}
+
+	public function containsTouchPoint(screenX:Float, screenY:Float):Bool
+	{
+		return screenX >= x && screenX <= x + background.width && screenY >= y && screenY <= y + background.height;
+	}
+
+	public function getTouchItemIndex(screenX:Float, screenY:Float):Int
+	{
+		if (!containsTouchPoint(screenX, screenY)) return -1;
+		var localY = screenY - y - VERTICAL_PADDING;
+		if (localY < 0) return -1;
+		var row = Std.int(localY / ITEM_HEIGHT);
+		return row >= 0 && row < items.length ? row : -1;
 	}
 
 	public function closeMenu():Void

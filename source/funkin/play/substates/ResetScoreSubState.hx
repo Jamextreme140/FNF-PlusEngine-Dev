@@ -49,39 +49,38 @@ class ResetScoreSubState extends MusicBeatSubstate
 		add(dialog);
 		dialog.open();
 		dialog.focusConfirm();
-
-		addTouchPad('LEFT_RIGHT', 'A_B');
-		addTouchPadCamera();
 	}
 
 	override function update(elapsed:Float):Void
 	{
-		if (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft.justPressed))
+		#if mobile
+		for (touch in FlxG.touches.list)
+		{
+			if (touch != null && touch.justPressed && dialog.handlePointerTap(touch.screenX, touch.screenY))
+				return;
+		}
+		#end
+
+		if (controls.UI_LEFT_P)
 		{
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 			dialog.focusDismiss();
 		}
-		else if (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight.justPressed))
+		else if (controls.UI_RIGHT_P)
 		{
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 			dialog.focusConfirm();
 		}
-		else if (controls.BACK || (touchPad != null && touchPad.buttonB.justPressed))
+		else if (controls.BACK)
 		{
 			FlxG.sound.play(Paths.sound('cancelMenu'), 1);
 			ClientPrefs.saveSettings();
 			close();
 		}
-		else if (controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed))
+		else if (controls.ACCEPT)
 		{
 			FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
 			dialog.activateFocused();
-		}
-
-		if (touchPad == null)
-		{
-			addTouchPad('LEFT_RIGHT', 'A_B');
-			addTouchPadCamera();
 		}
 
 		super.update(elapsed);

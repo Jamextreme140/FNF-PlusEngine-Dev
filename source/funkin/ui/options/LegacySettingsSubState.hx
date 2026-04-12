@@ -44,6 +44,9 @@ class LegacySettingsSubState extends MusicBeatSubstate
 	var scrollOffset:Float = 0;
 	var scrollTarget:Float = 0;
 	var contentHeight:Float = 0;
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	public function new()
 	{
@@ -64,6 +67,11 @@ class LegacySettingsSubState extends MusicBeatSubstate
 		buildCards();
 		changeSelection(lastSelected, true);
 		refreshCardPositions(true);
+
+		#if mobile
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 	}
 
 	function buildChrome():Void
@@ -290,6 +298,21 @@ class LegacySettingsSubState extends MusicBeatSubstate
 		refreshCardPositions();
 		super.update(elapsed);
 
+		#if mobile
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				scrollTarget += scrollDelta / 5;
+				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
+			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
+		}
+		#end
+
 		if (controls.BACK)
 		{
 			closeAndSave();
@@ -302,6 +325,52 @@ class LegacySettingsSubState extends MusicBeatSubstate
 		if (controls.UI_RIGHT_P) cards[selectedCard].handleRight();
 		if (controls.ACCEPT) cards[selectedCard].handleAccept();
 		if (controls.RESET) cards[selectedCard].resetToDefault();
+	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+
+		if (isPointInsideRect(tapPos.x, tapPos.y, closeButton.x, closeButton.y, closeButton.width, closeButton.height))
+		{
+			closeAndSave();
+			return;
+		}
+
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (card != null && isPointInsideRect(tapPos.x, tapPos.y, card.x, card.y, card.cardWidth, card.cardHeight))
+			{
+				if (index != selectedCard)
+					changeSelection(index, true);
+				else
+					card.handleAccept();
+				return;
+			}
+		}
+	}
+
+	inline function isPointInsideRect(x:Float, y:Float, rectX:Float, rectY:Float, rectW:Float, rectH:Float):Bool
+	{
+		return x >= rectX && x <= rectX + rectW && y >= rectY && y <= rectY + rectH;
+	}
+	#end
+
+	override function destroy():Void
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+
+		super.destroy();
 	}
 }
 

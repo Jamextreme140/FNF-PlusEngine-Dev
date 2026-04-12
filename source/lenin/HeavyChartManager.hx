@@ -15,6 +15,13 @@ import lenin.slushithings.cpp.CPPInterface;
  */
 class HeavyChartManager
 {
+	static inline var LOW_END_NOTE_LIMIT:Int = 384;
+	static inline var MID_RANGE_NOTE_LIMIT:Int = 768;
+	static inline var HIGH_END_NOTE_LIMIT:Int = 1200;
+	static inline var LOW_END_NOTE_RENDER_LIMIT:Int = 128;
+	static inline var MID_RANGE_NOTE_RENDER_LIMIT:Int = 192;
+	static inline var HIGH_END_NOTE_RENDER_LIMIT:Int = 256;
+
 	/**
 	 * Determina si el heavy chart mode debe activarse
 	 */
@@ -59,6 +66,40 @@ class HeavyChartManager
 		#end
 	}
 
+	private static function getTierDynamicNoteLimit():Int
+	{
+		#if android
+		return switch (funkin.mobile.AndroidOptimizer.getCurrentTier())
+		{
+			case 0: LOW_END_NOTE_LIMIT;
+			case 1: MID_RANGE_NOTE_LIMIT;
+			default: HIGH_END_NOTE_LIMIT;
+		};
+		#else
+		var totalRAM:Int = SystemMemory.getTotalRAM();
+		if (totalRAM > 0 && totalRAM < 4096)
+			return MID_RANGE_NOTE_LIMIT;
+		return HIGH_END_NOTE_LIMIT;
+		#end
+	}
+
+	private static function getTierNoteRenderLimit():Int
+	{
+		#if android
+		return switch (funkin.mobile.AndroidOptimizer.getCurrentTier())
+		{
+			case 0: LOW_END_NOTE_RENDER_LIMIT;
+			case 1: MID_RANGE_NOTE_RENDER_LIMIT;
+			default: HIGH_END_NOTE_RENDER_LIMIT;
+		};
+		#else
+		var totalRAM:Int = SystemMemory.getTotalRAM();
+		if (totalRAM > 0 && totalRAM < 4096)
+			return MID_RANGE_NOTE_RENDER_LIMIT;
+		return HIGH_END_NOTE_RENDER_LIMIT;
+		#end
+	}
+
 	/**
 	 * Calcula el límite dinámico de notas basado en RAM disponible
 	 * Esto permite cachear más notas si el sistema tiene más RAM
@@ -68,26 +109,30 @@ class HeavyChartManager
 		if (!shouldUseHeavyCharts())
 			return 150; // Normal limit if heavy charts is disabled
 
-		// Get REAL system RAM total
 		var totalRAM:Int = getTotalMemory();
-		
-		// Calculate how much RAM can be used for note cache (50% of total)
-		// We need space for other processes and game assets
-		// Estimation: ~500 bytes per note (struct + overhead)
-		var ramForNoteCache:Int = Std.int(totalRAM * 0.5);
-		var bytesPerNote:Int = 500; // Approximate bytes per note
-		
-		// Calculate dynamic limit
-		var dynamicLimit:Int = Std.int(ramForNoteCache / bytesPerNote);
-		
-		// Minimum 200 notes, maximum 2000 notes (avoid extremes)
-		dynamicLimit = Std.int(Math.min(2000, Math.max(200, dynamicLimit)));
-		
+		var availableRAMMB:Int = SystemMemory.getAvailableRAM();
+		var currentHeapMB:Int = Std.int(getCurrentMemory() / (1024 * 1024));
+		var tierLimit:Int = getTierDynamicNoteLimit();
+		var dynamicLimit:Int = tierLimit;
+
+		if (availableRAMMB > 0)
+		{
+			if (availableRAMMB <= 768)
+				dynamicLimit = Std.int(tierLimit * 0.65);
+			else if (availableRAMMB <= 1536)
+				dynamicLimit = Std.int(tierLimit * 0.85);
+		}
+
+		if (currentHeapMB >= 768)
+			dynamicLimit = Std.int(dynamicLimit * 0.75);
+		else if (currentHeapMB >= 512)
+			dynamicLimit = Std.int(dynamicLimit * 0.85);
+
+		dynamicLimit = Std.int(Math.max(200, Math.min(tierLimit, dynamicLimit)));
+
 		var totalRAMMB:Int = Std.int(totalRAM / (1024 * 1024));
-		var cacheBudgetMB:Int = Std.int(ramForNoteCache / (1024 * 1024));
-		
-		trace('[HeavyChartManager] System RAM: ${totalRAMMB}MB | Cache Budget: ${cacheBudgetMB}MB | Dynamic Limit: ${dynamicLimit} notes');
-		
+		trace('[HeavyChartManager] System RAM: ${totalRAMMB}MB | Available RAM: ${availableRAMMB}MB | Heap: ${currentHeapMB}MB | Dynamic Limit: ${dynamicLimit} notes');
+
 		return dynamicLimit;
 	}
 
@@ -96,8 +141,10 @@ class HeavyChartManager
 	 */
 	public static function getNoteRenderLimit():Int
 	{
-		// Mayor límite para heavy charts
-		return shouldUseHeavyCharts() ? 300 : 150;
+		if (!shouldUseHeavyCharts())
+			return 150;
+
+		return getTierNoteRenderLimit();
 	}
 
 	/**

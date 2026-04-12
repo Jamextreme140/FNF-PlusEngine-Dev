@@ -49,6 +49,9 @@ class LanguageSubState extends MusicBeatSubstate
 	var scrollOffset:Float = 0;
 	var scrollTarget:Float = 0;
 	var contentHeight:Float = 0;
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	public function new()
 	{
@@ -80,6 +83,11 @@ class LanguageSubState extends MusicBeatSubstate
 
 		changeSelection(selectedCard, true);
 		refreshCardPositions(true);
+
+		#if mobile
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 	}
 
 	function loadLanguages():Void
@@ -313,6 +321,21 @@ class LanguageSubState extends MusicBeatSubstate
 		refreshCardPositions();
 		super.update(elapsed);
 
+		#if mobile
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				scrollTarget += scrollDelta / 5;
+				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
+			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
+		}
+		#end
+
 		var mult = FlxG.keys.pressed.SHIFT ? 4 : 1;
 		if (controls.BACK)
 		{
@@ -323,6 +346,52 @@ class LanguageSubState extends MusicBeatSubstate
 		if (controls.UI_UP_P) moveSelection(-1 * mult);
 		if (controls.UI_DOWN_P) moveSelection(1 * mult);
 		if (controls.ACCEPT) applySelectedLanguage();
+	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+
+		if (isPointInsideRect(tapPos.x, tapPos.y, closeButton.x, closeButton.y, closeButton.width, closeButton.height))
+		{
+			closeOrReload();
+			return;
+		}
+
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (card != null && isPointInsideRect(tapPos.x, tapPos.y, card.x, card.y, card.cardWidth, card.cardHeight))
+			{
+				if (index != selectedCard)
+					changeSelection(index, true);
+				else
+					applySelectedLanguage();
+				return;
+			}
+		}
+	}
+
+	inline function isPointInsideRect(x:Float, y:Float, rectX:Float, rectY:Float, rectW:Float, rectH:Float):Bool
+	{
+		return x >= rectX && x <= rectX + rectW && y >= rectY && y <= rectY + rectH;
+	}
+	#end
+
+	override function destroy():Void
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+
+		super.destroy();
 	}
 
 	function getExampleTextForLanguage(langCode:String):String

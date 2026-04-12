@@ -91,10 +91,17 @@ class Controls
 		var result:Bool = (FlxG.keys.anyJustPressed(keyboardBinds[key]) == true);
 		if(result) controllerMode = false;
 
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.justPressed.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
+
 		return result
 			|| _myGamepadJustPressed(gamepadBinds[key]) == true
 			|| mobileCJustPressed(mobileBinds[key]) == true
-			|| touchPadJustPressed(mobileBinds[key]) == true;
+			|| touchPadJustPressed(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public function pressed(key:String)
@@ -102,10 +109,17 @@ class Controls
 		var result:Bool = (FlxG.keys.anyPressed(keyboardBinds[key]) == true);
 		if(result) controllerMode = false;
 
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.pressed.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
+
 		return result
 			|| _myGamepadPressed(gamepadBinds[key]) == true
 			|| mobileCPressed(mobileBinds[key]) == true
-			|| touchPadPressed(mobileBinds[key]) == true;
+			|| touchPadPressed(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public function justReleased(key:String)
@@ -113,10 +127,17 @@ class Controls
 		var result:Bool = (FlxG.keys.anyJustReleased(keyboardBinds[key]) == true);
 		if(result) controllerMode = false;
 
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.justReleased.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
+
 		return result
 			|| _myGamepadJustReleased(gamepadBinds[key]) == true
 			|| mobileCJustReleased(mobileBinds[key]) == true
-			|| touchPadJustReleased(mobileBinds[key]) == true;
+			|| touchPadJustReleased(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public var controllerMode:Bool = false;

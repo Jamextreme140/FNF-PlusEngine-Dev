@@ -2,6 +2,8 @@ package funkin.ui;
 
 import flixel.FlxG;
 import openfl.Lib;
+import openfl.display.CapsStyle;
+import openfl.display.JointStyle;
 import openfl.display.Shape;
 import openfl.display.Sprite;
 import openfl.events.Event;
@@ -10,6 +12,7 @@ import openfl.geom.Rectangle;
 class GlobalLoadingOverlay
 {
 	static var display:GlobalLoadingOverlayDisplay;
+	static var initialized:Bool = false;
 
 	public static function pulse(?holdTime:Float = 0.32):Void
 	{
@@ -38,7 +41,41 @@ class GlobalLoadingOverlay
 	{
 		if (display == null)
 			display = new GlobalLoadingOverlayDisplay();
+
+		if (!initialized)
+		{
+			initialized = true;
+			FlxG.signals.preStateSwitch.add(onPreStateSwitch);
+			FlxG.signals.postStateSwitch.add(onPostStateSwitch);
+			FlxG.signals.gameResized.add(onGameResized);
+			FlxG.signals.focusGained.add(onFocusGained);
+		}
+
 		display.attach();
+	}
+
+	static function onPreStateSwitch():Void
+	{
+		if (display != null)
+			display.prepareForStateSwitch();
+	}
+
+	static function onPostStateSwitch():Void
+	{
+		if (display != null)
+			display.reattachAfterStateSwitch();
+	}
+
+	static function onGameResized(_:Int, _:Int):Void
+	{
+		if (display != null)
+			display.handleExternalResize();
+	}
+
+	static function onFocusGained():Void
+	{
+		if (display != null)
+			display.resetFrameClock();
 	}
 }
 
@@ -50,25 +87,19 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	static inline var TOP_MARGIN:Float = 12;
 	static inline var HIDDEN_OFFSET:Float = -84;
 	static inline var ICON_SIZE:Float = 34;
-	static inline var SPIN_SPEED:Float = 248.0;
-	static inline var SHAPE_MORPH_PORTION:Float = 0.36;
+	static inline var TRACK_ALPHA:Float = 0.22;
+	static inline var WAVE_ALPHA:Float = 1.0;
+	static inline var WAVE_SPEED:Float = 2.6;
+	static inline var SWEEP_SPEED:Float = 1.15;
 	static inline var TAU:Float = 6.283185307179586;
-
-	static var LOBES:Array<Int> = [0, 4, 6, 7, 3, 5, 8, 3];
-	static var AMPLITUDES:Array<Float> = [0.00, 0.16, 0.12, 0.10, 0.08, 0.12, 0.14, 0.09];
-	static var SECONDARY:Array<Float> = [0.00, 0.02, 0.03, 0.02, 0.01, 0.03, 0.04, 0.01];
-	static var SOFTNESS:Array<Float> = [1.00, 0.94, 0.96, 0.97, 0.98, 0.92, 0.90, 0.99];
-	static var PHASE_OFF:Array<Float> = [0.00, 0.78, 0.35, 0.18, 0.00, 0.64, 0.30, 0.00];
-	static var SCALE_X:Array<Float> = [1.00, 1.00, 1.18, 0.96, 1.00, 1.22, 0.92, 1.00];
-	static var SCALE_Y:Array<Float> = [1.00, 1.00, 0.78, 1.08, 1.00, 0.74, 1.14, 1.00];
-	static var TRIANGLE_MIX:Array<Float> = [0.00, 0.10, 0.00, 0.14, 0.78, 0.00, 0.22, 0.60];
 
 	var container:Sprite;
 	var shadow:Shape;
 	var panel:Shape;
 	var outline:Shape;
 	var iconHolder:Sprite;
-	var icon:Shape;
+	var iconTrack:Shape;
+	var iconWave:Shape;
 
 	var currentY:Float = HIDDEN_OFFSET;
 	var targetY:Float = HIDDEN_OFFSET;
@@ -76,7 +107,8 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	var targetAlpha:Float = 0;
 	var hideDeadline:Float = -1;
 	var persistent:Bool = false;
-	var spinTravel:Float = 0;
+	var wavePhase:Float = 0;
+	var sweepPhase:Float = 0;
 	var lastTime:Float = 0;
 
 	public function new()
@@ -104,12 +136,14 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		iconHolder.y = (PANEL_HEIGHT - ICON_SIZE) * 0.5;
 		container.addChild(iconHolder);
 
-		icon = new Shape();
-		icon.x = ICON_SIZE * 0.5;
-		icon.y = ICON_SIZE * 0.5;
-		iconHolder.addChild(icon);
+		iconTrack = new Shape();
+		iconHolder.addChild(iconTrack);
+
+		iconWave = new Shape();
+		iconHolder.addChild(iconWave);
 
 		redrawChrome();
+		redrawIndicatorTrack();
 		addEventListener(Event.ENTER_FRAME, onEnterFrame);
 	}
 
@@ -148,6 +182,31 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		}
 
 		resize();
+		resetFrameClock();
+	}
+
+	public function prepareForStateSwitch():Void
+	{
+		if (parent != null)
+			parent.setChildIndex(this, parent.numChildren - 1);
+		resetFrameClock();
+	}
+
+	public function reattachAfterStateSwitch():Void
+	{
+		attach();
+	}
+
+	public function handleExternalResize():Void
+	{
+		resize();
+		if (iconHolder != null)
+			iconHolder.scrollRect = new Rectangle(0, 0, ICON_SIZE, ICON_SIZE);
+	}
+
+	public function resetFrameClock():Void
+	{
+		lastTime = 0;
 	}
 
 	public function show(keepVisible:Bool, holdTime:Float):Void
@@ -187,9 +246,14 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 
 		var now = nowSeconds();
 		if (lastTime <= 0)
+		{
 			lastTime = now;
+			redrawIndicator();
+			return;
+		}
 		var elapsed = now - lastTime;
 		lastTime = now;
+		elapsed = Math.min(elapsed, 1 / 15);
 
 		resize();
 
@@ -202,7 +266,10 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		visible = currentAlpha > 0.01;
 		container.y = currentY;
 
-		spinTravel += elapsed * SPIN_SPEED;
+		wavePhase += elapsed * WAVE_SPEED * TAU;
+		sweepPhase += elapsed * SWEEP_SPEED;
+		if (wavePhase > TAU) wavePhase -= TAU;
+		if (sweepPhase > 1000) sweepPhase = 0;
 		redrawIndicator();
 	}
 
@@ -234,64 +301,56 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		outline.graphics.drawRoundRect(0.5, 0.5, PANEL_WIDTH - 1, PANEL_HEIGHT - 1, PANEL_RADIUS, PANEL_RADIUS);
 	}
 
+	function redrawIndicatorTrack():Void
+	{
+		if (iconTrack == null)
+			return;
+
+		var size:Float = ICON_SIZE;
+		var thickness:Float = Math.max(4.0, size * 0.12);
+		var center:Float = size * 0.5;
+		var radius:Float = (size - thickness) * 0.5 - 1;
+
+		iconTrack.graphics.clear();
+		iconTrack.graphics.lineStyle(thickness, 0xD9C2FF, TRACK_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
+		iconTrack.graphics.drawCircle(center, center, radius);
+	}
+
 	function redrawIndicator():Void
 	{
-		var turn:Int = Std.int(spinTravel / 360) % LOBES.length;
-		var previous:Int = ((turn - 1) + LOBES.length) % LOBES.length;
-		var turnT:Float = (spinTravel % 360) / 360;
-		var morphT:Float = turnT <= SHAPE_MORPH_PORTION ? smoothstep(turnT / SHAPE_MORPH_PORTION) : 1.0;
+		if (iconWave == null)
+			return;
 
-		var lobes:Float = lerp(LOBES[previous], LOBES[turn], morphT);
-		var amplitude:Float = lerp(AMPLITUDES[previous], AMPLITUDES[turn], morphT);
-		var secondary:Float = lerp(SECONDARY[previous], SECONDARY[turn], morphT);
-		var softness:Float = lerp(SOFTNESS[previous], SOFTNESS[turn], morphT);
-		var phaseOffset:Float = lerp(PHASE_OFF[previous], PHASE_OFF[turn], morphT);
-		var scaleX:Float = lerp(SCALE_X[previous], SCALE_X[turn], morphT);
-		var scaleY:Float = lerp(SCALE_Y[previous], SCALE_Y[turn], morphT);
-		var triangleMix:Float = lerp(TRIANGLE_MIX[previous], TRIANGLE_MIX[turn], morphT);
+		var size:Float = ICON_SIZE;
+		var thickness:Float = Math.max(4.0, size * 0.12);
+		var center:Float = size * 0.5;
+		var baseRadius:Float = (size - thickness) * 0.5 - 1;
+		var amplitude:Float = Math.max(1.0, thickness * 0.35);
+		var waveTurns:Float = 6.0;
+		var startAngle:Float = -Math.PI / 2 + sweepPhase * 2.4;
+		var pulse:Float = (Math.sin(sweepPhase * 1.9) + 1) * 0.5;
+		var sweep:Float = TAU * lerp(0.18, 0.34, pulse);
 
-		icon.rotation = spinTravel % 360;
-		icon.graphics.clear();
-		icon.graphics.beginFill(0xFFD9C2FF, 1);
+		iconWave.graphics.clear();
+		if (sweep <= 0.01)
+			return;
 
-		var baseRadius:Float = ICON_SIZE * 0.27;
-		var steps:Int = 96;
+		iconWave.graphics.lineStyle(thickness, 0xD9C2FF, WAVE_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
 
+		var steps:Int = Std.int(Math.max(36, Math.ceil((sweep * baseRadius) / 3.0)));
 		for (i in 0...steps + 1)
 		{
 			var t:Float = i / steps;
-			var angle:Float = t * TAU;
-			var primaryWave:Float = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes + phaseOffset);
-			var secondaryWave:Float = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes * 0.5 + phaseOffset * 1.7);
-			var normalizedPrimary:Float = primaryWave >= 0 ? Math.pow(primaryWave, softness) : -Math.pow(-primaryWave, softness);
-			var organicRadius:Float = baseRadius * (1.0 + normalizedPrimary * amplitude + secondaryWave * secondary);
-			var triangleRadius:Float = getTriangleRadius(angle, baseRadius * 1.08);
-			var radius:Float = organicRadius * (1.0 - triangleMix) + triangleRadius * triangleMix;
-			var px:Float = clamp(Math.cos(angle) * radius * scaleX, -ICON_SIZE * 0.5 + 1, ICON_SIZE * 0.5 - 1);
-			var py:Float = clamp(Math.sin(angle) * radius * scaleY, -ICON_SIZE * 0.5 + 1, ICON_SIZE * 0.5 - 1);
+			var angle:Float = startAngle + sweep * t;
+			var radius:Float = baseRadius + Math.sin(angle * waveTurns + wavePhase) * amplitude;
+			var px:Float = center + Math.cos(angle) * radius;
+			var py:Float = center + Math.sin(angle) * radius;
 
 			if (i == 0)
-				icon.graphics.moveTo(px, py);
+				iconWave.graphics.moveTo(px, py);
 			else
-				icon.graphics.lineTo(px, py);
+				iconWave.graphics.lineTo(px, py);
 		}
-
-		icon.graphics.endFill();
-	}
-
-	function getTriangleRadius(angle:Float, baseRadius:Float):Float
-	{
-		var sector:Float = TAU / 3;
-		var local:Float = angle % sector;
-		if (local < 0) local += sector;
-		local -= sector * 0.5;
-
-		var denom:Float = Math.cos(local);
-		if (Math.abs(denom) < 0.001)
-			denom = denom < 0 ? -0.001 : 0.001;
-
-		var triangleRadius:Float = (baseRadius * Math.cos(Math.PI / 3)) / denom;
-		return clamp(triangleRadius, baseRadius * 0.52, baseRadius * 1.18);
 	}
 
 	inline function approach(current:Float, target:Float, speed:Float):Float
@@ -302,17 +361,6 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	inline function lerp(a:Float, b:Float, t:Float):Float
 	{
 		return a + (b - a) * t;
-	}
-
-	inline function clamp(value:Float, min:Float, max:Float):Float
-	{
-		return value < min ? min : (value > max ? max : value);
-	}
-
-	inline function smoothstep(value:Float):Float
-	{
-		var clamped:Float = clamp(value, 0, 1);
-		return clamped * clamped * (3 - 2 * clamped);
 	}
 
 	inline function nowSeconds():Float

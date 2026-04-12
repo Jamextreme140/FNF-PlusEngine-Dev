@@ -311,7 +311,7 @@ class FPSCounter extends Sprite
 				displayText = '' + Std.string(currentFPS) + ' FPS';
 				displayText += '\nDelay: ' + formatFloat(frameTimeMs, 1) + ' ms';
 				displayText += '\nAvg: ' + formatFloat(avgFrameTimeMs, 1) + ' ms';
-				displayText += '\nGC Memory: ' + currentMemoryStr;
+				displayText += '\nGC Heap: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
 				if (funkin.util.MemoryUtil.supportsTaskMem())
 				{
@@ -362,7 +362,7 @@ class FPSCounter extends Sprite
 				displayText = '' + Std.string(currentFPS) + ' FPS';
 				displayText += '\nDelay: ' + formatFloat(frameTimeMs, 1) + ' ms';
 				displayText += '\nAvg: ' + formatFloat(avgFrameTimeMs, 1) + ' ms';
-				displayText += '\nGC Memory: ' + currentMemoryStr;
+				displayText += '\nGC Heap: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
 				
 				// Add Task Memory if supported on this platform

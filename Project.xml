@@ -193,6 +193,7 @@
 	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
 
 	<haxeflag name="-D" value="HXCPP_GC_BIG_BLOCKS" />
+	<haxeflag name="-D" value="analyzer-optimize" />
 	
 	<!--Used for crash handler-->
 	<section if="cpp">

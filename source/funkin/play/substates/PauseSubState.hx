@@ -117,9 +117,6 @@ class PauseSubState extends MusicBeatSubstate
 		refreshCardPositions(true);
 		animateOpen();
 
-		addTouchPad('LEFT_FULL', 'A_B');
-		addTouchPadCamera();
-
 		#if mobile
 		touchScroll = new funkin.mobile.backend.TouchScroll(true);
 		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
@@ -293,7 +290,11 @@ class PauseSubState extends MusicBeatSubstate
 		resumeButton = new MaterialButton(0, 0, Language.getPhrase('pause_Resume', 'Resume'), TEXT, 108, function() {
 			handleMenuAction('Resume');
 		});
+		#if mobile
+		resumeButton.allowMouseInput = false;
+		#else
 		resumeButton.allowMouseInput = true;
+		#end
 		pinGroup(resumeButton);
 		add(resumeButton);
 
@@ -666,7 +667,11 @@ class PauseSubState extends MusicBeatSubstate
 		syncingSlider = true;
 		timeSlider.max = songLength;
 		timeSlider.enabled = canSeek;
+		#if mobile
+		timeSlider.allowMouseInput = false;
+		#else
 		timeSlider.allowMouseInput = canSeek;
+		#end
 		timeSlider.value = previewTime;
 		syncingSlider = false;
 
@@ -931,21 +936,21 @@ class PauseSubState extends MusicBeatSubstate
 			return;
 		}
 
-		if (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft.justPressed))
+		if (controls.UI_LEFT_P)
 		{
 			curTime -= 1000;
 			holdTime = 0;
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 		}
-		if (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight.justPressed))
+		if (controls.UI_RIGHT_P)
 		{
 			curTime += 1000;
 			holdTime = 0;
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 		}
 
-		var leftHeld = controls.UI_LEFT || (touchPad != null && touchPad.buttonLeft.pressed);
-		var rightHeld = controls.UI_RIGHT || (touchPad != null && touchPad.buttonRight.pressed);
+		var leftHeld = controls.UI_LEFT;
+		var rightHeld = controls.UI_RIGHT;
 		if (leftHeld || rightHeld)
 		{
 			holdTime += elapsed;
@@ -1015,34 +1020,86 @@ class PauseSubState extends MusicBeatSubstate
 			var scrollDelta = touchScroll.update();
 			if (Math.abs(scrollDelta) > 0.5)
 			{
-				scrollTarget += -scrollDelta / 5;
+				scrollTarget += scrollDelta / 5;
 				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
 			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
 		}
 		#end
 
 		handleMouseCards();
 
-		if (controls.BACK || (touchPad != null && touchPad.buttonB.justPressed))
+		if (controls.BACK)
 		{
+			#if android
+			trace('[AndroidBack][PauseSubState] BACK requested close from pause menu.');
+			#end
 			requestClose();
 			return;
 		}
 
-		if (controls.UI_UP_P || (touchPad != null && touchPad.buttonUp.justPressed)) moveSelection(-1);
-		if (controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown.justPressed)) moveSelection(1);
+		if (controls.UI_UP_P) moveSelection(-1);
+		if (controls.UI_DOWN_P) moveSelection(1);
 
 		adjustSkipTime(elapsed);
 
-		if (controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed))
+		if (controls.ACCEPT)
 			handleMenuAction(currentItems[curSelected]);
-
-		if (touchPad == null)
-		{
-			addTouchPad('LEFT_FULL', 'A_B');
-			addTouchPadCamera();
-		}
 	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null)
+			return;
+
+		if (isPointOverButton(resumeButton, tapPos.x, tapPos.y))
+		{
+			handleMenuAction('Resume');
+			return;
+		}
+
+		if (canControlTimeSlider() && isPointOverSlider(timeSlider, tapPos.x, tapPos.y))
+		{
+			var normalized = FlxMath.bound((tapPos.x - timeSlider.x) / timeSlider.sliderWidth, 0, 1);
+			setPauseTargetTime(timeSlider.min + normalized * (timeSlider.max - timeSlider.min));
+			FlxG.sound.play(Paths.sound('scrollMenu'), 0.35);
+			return;
+		}
+
+		var point = FlxPoint.get(tapPos.x, tapPos.y);
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (!card.visible || !card.containsPoint(point))
+				continue;
+
+			if (index != curSelected)
+				changeSelection(index);
+			else
+				handleMenuAction(currentItems[curSelected]);
+
+			point.put();
+			return;
+		}
+		point.put();
+	}
+
+	inline function isPointOverButton(button:MaterialButton, screenX:Float, screenY:Float):Bool
+	{
+		var scaledWidth = button.buttonWidth * button.scale.x;
+		var scaledHeight = 44 * button.scale.y;
+		return screenX >= button.x && screenX <= button.x + scaledWidth && screenY >= button.y && screenY <= button.y + scaledHeight;
+	}
+
+	inline function isPointOverSlider(slider:MaterialSlider, screenX:Float, screenY:Float):Bool
+	{
+		return screenX >= slider.x && screenX <= slider.x + slider.sliderWidth && screenY >= slider.y - 10 && screenY <= slider.y + 34;
+	}
+	#end
 
 	public static function restartSong(noTrans:Bool = false):Void
 	{

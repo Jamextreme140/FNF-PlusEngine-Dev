@@ -46,6 +46,9 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 	var scrollOffset:Float = 0;
 	var scrollTarget:Float = 0;
 	var contentHeight:Float = 0;
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 	public function new()
 	{
@@ -66,6 +69,11 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 		buildCards();
 		changeSelection(lastSelected, true);
 		refreshCardPositions(true);
+
+		#if mobile
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 	}
 
 	function buildChrome():Void
@@ -287,6 +295,21 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 		refreshCardPositions();
 		super.update(elapsed);
 
+		#if mobile
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				scrollTarget += scrollDelta / 5;
+				scrollTarget = FlxMath.bound(scrollTarget, getMinScroll(), 0);
+			}
+
+			if (touchScroll.wasTapped())
+				handleTouchInput();
+		}
+		#end
+
 		if (controls.BACK)
 		{
 			closeAndSave();
@@ -299,6 +322,52 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 		if (controls.UI_RIGHT_P) cards[selectedCard].handleRight();
 		if (controls.ACCEPT) cards[selectedCard].handleAccept();
 		if (controls.RESET) cards[selectedCard].resetToDefault();
+	}
+
+	#if mobile
+	function handleTouchInput():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+
+		if (isPointInsideRect(tapPos.x, tapPos.y, closeButton.x, closeButton.y, closeButton.width, closeButton.height))
+		{
+			closeAndSave();
+			return;
+		}
+
+		for (index in 0...cards.length)
+		{
+			var card = cards[index];
+			if (card != null && isPointInsideRect(tapPos.x, tapPos.y, card.x, card.y, card.cardWidth, card.cardHeight))
+			{
+				if (index != selectedCard)
+					changeSelection(index, true);
+				else
+					card.handleTouch(tapPos.x, tapPos.y);
+				return;
+			}
+		}
+	}
+
+	inline function isPointInsideRect(x:Float, y:Float, rectX:Float, rectY:Float, rectW:Float, rectH:Float):Bool
+	{
+		return x >= rectX && x <= rectX + rectW && y >= rectY && y <= rectY + rectH;
+	}
+	#end
+
+	override function destroy():Void
+	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+
+		super.destroy();
 	}
 }
 
@@ -388,6 +457,7 @@ private class ModchartSettingsCard extends FlxSpriteGroup
 	public function handleRight():Void {}
 	public function handleAccept():Void {}
 	public function resetToDefault():Void {}
+	public function handleTouch(screenX:Float, screenY:Float):Bool return false;
 
 	public function applyVerticalClip(yMin:Float, yMax:Float):Void
 	{
@@ -457,6 +527,11 @@ private class ModchartSwitchCard extends ModchartSettingsCard
 	override public function handleLeft():Void setValue(false);
 	override public function handleRight():Void setValue(true);
 	override public function handleAccept():Void setValue(!currentValue);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void setValue(defaultValue);
 }
 
@@ -521,5 +596,31 @@ private class ModchartSliderCard extends ModchartSettingsCard
 	override public function handleLeft():Void setValue(currentValue - stepValue);
 	override public function handleRight():Void setValue(currentValue + stepValue);
 	override public function handleAccept():Void setValue(currentValue + stepValue > maxValue ? minValue : currentValue + stepValue);
+	override public function handleTouch(screenX:Float, screenY:Float):Bool
+	{
+		var sliderX = x + slider.x;
+		var sliderY = y + slider.y - 8;
+		if (screenX >= sliderX && screenX <= sliderX + slider.sliderWidth && screenY >= sliderY && screenY <= sliderY + 44)
+		{
+			var normalized = FlxMath.bound((screenX - sliderX) / slider.sliderWidth, 0, 1);
+			setValue(minValue + normalized * (maxValue - minValue));
+			return true;
+		}
+
+		var stepperX = x + stepper.x;
+		var stepperY = y + stepper.y;
+		if (screenX >= stepperX && screenX <= stepperX + stepper.stepperWidth && screenY >= stepperY && screenY <= stepperY + 44)
+		{
+			var localX = screenX - stepperX;
+			if (localX <= 42)
+				setValue(currentValue - stepValue);
+			else if (localX >= stepper.stepperWidth - 42)
+				setValue(currentValue + stepValue);
+			return true;
+		}
+
+		handleAccept();
+		return true;
+	}
 	override public function resetToDefault():Void setValue(defaultValue);
 }

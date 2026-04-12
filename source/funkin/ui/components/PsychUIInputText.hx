@@ -1,7 +1,9 @@
 package funkin.ui.components;
 
 import flixel.FlxObject;
+import flixel.FlxCamera;
 import flixel.input.keyboard.FlxKey;
+import flixel.math.FlxPoint;
 import flixel.util.FlxDestroyUtil;
 import flash.events.KeyboardEvent;
 import lime.system.Clipboard;
@@ -406,6 +408,39 @@ class PsychUIInputText extends FlxSpriteGroup
 		return (focusOn = v);
 	}
 
+	function hitTestScreenPoint(screenX:Float, screenY:Float, ?targetCamera:FlxCamera):Bool
+	{
+		syncLayout();
+		if(behindText == null || !behindText.exists) return false;
+
+		var activeCamera:FlxCamera = targetCamera != null ? targetCamera : camera;
+		if(activeCamera == null) activeCamera = FlxG.camera;
+		if(activeCamera == null) return false;
+
+		var topLeft:FlxPoint = behindText.getScreenPosition(activeCamera);
+		var hovered:Bool = screenX >= topLeft.x && screenX <= topLeft.x + _innerDrawWidth
+			&& screenY >= topLeft.y && screenY <= topLeft.y + _innerDrawHeight;
+		topLeft.put();
+		return hovered;
+	}
+
+	function isMouseOverField(?targetCamera:FlxCamera):Bool
+	{
+		var activeCamera:FlxCamera = targetCamera != null ? targetCamera : camera;
+		if(activeCamera == null) activeCamera = FlxG.camera;
+		if(activeCamera == null) return false;
+
+		var mousePos:FlxPoint = FlxG.mouse.getScreenPosition(activeCamera);
+		var hovered:Bool = hitTestScreenPoint(mousePos.x, mousePos.y, activeCamera);
+		mousePos.put();
+		return hovered;
+	}
+
+	public function overlapsScreenPoint(screenX:Float, screenY:Float, ?targetCamera:FlxCamera):Bool
+	{
+		return hitTestScreenPoint(screenX, screenY, targetCamera);
+	}
+
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
@@ -415,7 +450,8 @@ class PsychUIInputText extends FlxSpriteGroup
 
 		if(FlxG.mouse.justPressed)
 		{
-			if(FlxG.mouse.overlaps(behindText, camera))
+			var activeCamera:FlxCamera = camera != null ? camera : FlxG.camera;
+			if(isMouseOverField(activeCamera))
 			{
 				if(!FlxG.keys.pressed.SHIFT) selectIndex = -1;
 				else if(selectIndex == -1) selectIndex = caretIndex;
@@ -423,8 +459,10 @@ class PsychUIInputText extends FlxSpriteGroup
 				FlxG.stage.window.textInputEnabled = true;
 				caretIndex = 0;
 				var lastBound:Float = 0;
-				var textObjX:Float = textObj.getScreenPosition(camera).x;
-				var mousePosX:Float = FlxG.mouse.getScreenPosition(camera).x;
+				var textObjPos:FlxPoint = textObj.getScreenPosition(activeCamera);
+				var mousePos:FlxPoint = FlxG.mouse.getScreenPosition(activeCamera);
+				var textObjX:Float = textObjPos.x;
+				var mousePosX:Float = mousePos.x;
 				var txtX:Float = textObjX - textObj.textField.scrollH;
 
 				for (i => bound in _boundaries)
@@ -437,6 +475,8 @@ class PsychUIInputText extends FlxSpriteGroup
 					}
 					else break;
 				}
+				textObjPos.put();
+				mousePos.put();
 				updateCaret();
 			}
 			else if(focusOn == this)
@@ -638,15 +678,7 @@ class PsychUIInputText extends FlxSpriteGroup
 	function updateVisualState():Void
 	{
 		var focused:Bool = (focusOn == this);
-		var hovered:Bool = false;
-		if (camera != null && behindText != null && behindText.exists)
-		{
-			try
-			{
-				hovered = FlxG.mouse.overlaps(behindText, camera);
-			}
-			catch (e:Any) {}
-		}
+		var hovered:Bool = isMouseOverField();
 
 		if (focused != _lastFocused || hovered != _lastHovered)
 			applyTheme();
@@ -660,15 +692,7 @@ class PsychUIInputText extends FlxSpriteGroup
 		syncLayout();
 
 		var focused:Bool = (focusOn == this);
-		var hovered:Bool = false;
-		if (camera != null && behindText.exists)
-		{
-			try
-			{
-				hovered = FlxG.mouse.overlaps(behindText, camera);
-			}
-			catch (e:Any) {}
-		}
+		var hovered:Bool = isMouseOverField();
 
 		PsychUISkin.drawStyledRect(bg, _drawWidth, _drawHeight, PsychUISkin.inputOuterStyle(focused, hovered));
 		PsychUISkin.drawStyledRect(behindText, _innerDrawWidth, _innerDrawHeight, {

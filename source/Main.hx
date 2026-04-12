@@ -218,6 +218,9 @@ class Main extends Sprite
 		initializeMaterialVolumeTray();
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
+		#if android
+		funkin.mobile.AndroidOptimizer.applyRuntimeFramePacing();
+		#end
 		
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		fpsVar.visible = ClientPrefs.data.showFPS;

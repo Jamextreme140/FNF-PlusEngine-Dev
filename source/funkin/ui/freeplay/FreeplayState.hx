@@ -3,6 +3,7 @@ package funkin.ui.freeplay;
 import funkin.graphics.shaders.BlurEffect;
 import funkin.data.stage.StageData;
 import funkin.data.story.level.WeekData;
+import funkin.data.stepmania.SMFile;
 import funkin.save.Highscore;
 import funkin.data.song.Song;
 import funkin.data.song.Song.SwagSong;
@@ -10,6 +11,8 @@ import funkin.play.HealthIcon;
 import funkin.ui.options.GameplayChangersSubstate;
 import funkin.play.substates.ResetScoreSubState;
 import funkin.ui.components.PsychUIInputText;
+import funkin.ui.components.md3.MaterialChip;
+import funkin.ui.components.md3.MaterialChip.ChipType;
 import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
 import flixel.util.FlxDestroyUtil;
@@ -25,6 +28,7 @@ import funkin.mobile.backend.StorageUtil;
 #end
 
 import haxe.Json;
+import haxe.io.Path;
 
 #if funkin.vis
 import funkin.vis.dsp.SpectralAnalyzer;
@@ -97,6 +101,11 @@ class FreeplayState extends MusicBeatState {
     #if mobile
     var touchScroll:funkin.mobile.backend.TouchScroll;
     var difficultyScroll:funkin.mobile.backend.TouchScroll;
+    var gameplayChangersChip:MaterialChip;
+    var resetScoreChip:MaterialChip;
+    var gameplayChangersChipHitbox:FlxSprite;
+    var resetScoreChipHitbox:FlxSprite;
+    var playTouchTarget:FlxSprite;
     #end
     
     // Icon arrays for songs
@@ -260,6 +269,7 @@ class FreeplayState extends MusicBeatState {
 
         loadSongsFromWeeks();
         loadStepManiaFiles();
+        loadFavorites();
 
         Cursor.show();
 
@@ -377,6 +387,26 @@ class FreeplayState extends MusicBeatState {
         playText = new FlxText(115, 565, 0, 'Play');
         playText.setFormat(Paths.font('inter-bold.otf'), 22, FlxColor.PURPLE, 'left');
         add(playText);
+
+        #if mobile
+        playTouchTarget = new FlxSprite(playIcon.x - 30, playIcon.y - 12);
+        playTouchTarget.makeGraphic(
+            Std.int((playText.x + playText.width) - playTouchTarget.x + 30),
+            Std.int(Math.max(playIcon.height, playText.height) + 24),
+            FlxColor.WHITE
+        );
+        playTouchTarget.alpha = 0;
+        add(playTouchTarget);
+
+        gameplayChangersChip = new MaterialChip(340, 60, Language.getPhrase('gameplay_changers_menu', 'Gameplay Changers'), ASSIST, false, openGameplayChangersSubstate);
+        add(gameplayChangersChip);
+        gameplayChangersChipHitbox = createMobileActionHitbox(gameplayChangersChip, 14, 10);
+
+        resetScoreChip = new MaterialChip(gameplayChangersChip.x + Math.max(gameplayChangersChip.width, 172) + 12, 60,
+            Language.getPhrase('reset_score', 'Reset score'), ASSIST, false, openResetScoreSubstate);
+        add(resetScoreChip);
+        resetScoreChipHitbox = createMobileActionHitbox(resetScoreChip, 14, 10);
+        #end
 
         starIcon = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/icons/star'));
         starIcon.x = 299.8;
@@ -602,6 +632,9 @@ class FreeplayState extends MusicBeatState {
                 }
                 
                 var characterName = songs[i].songCharacter;
+                if (songs[i].isStepMania) {
+                    characterName = 'stepmania';
+                }
                 if (characterName == null || characterName == "") {
                     characterName = 'face';
                 }
@@ -654,11 +687,14 @@ class FreeplayState extends MusicBeatState {
         
         curDifficulty = Math.round(Math.max(0, Difficulty.defaultList.indexOf(lastDifficultyName)));
         
-        final space:String = (controls.mobileC) ? "X" : "SPACE";
-        final control:String = (controls.mobileC) ? "C" : "CTRL";
-        final reset:String = (controls.mobileC) ? "Y" : "RESET";
-        
+        #if mobile
+        var leText:String = Language.getPhrase("freeplay_tip_mobile", "Tap Play to start / Tap the Gameplay Changers or Reset Score chips / Tap a song card to select it.");
+        #else
+        final space:String = "SPACE";
+        final control:String = "CTRL";
+        final reset:String = "RESET";
         var leText:String = Language.getPhrase("freeplay_tip", "Press {1} to listen to the Song / Press {2} to open the Gameplay Changers Menu / Press {3} to Reset your Score and Accuracy.", [space, control, reset]);
+        #end
         bottomString = leText;
         var size:Int = 16;
         bottomText = new FlxText(0, FlxG.height - 24, FlxG.width, leText, size);
@@ -701,15 +737,9 @@ class FreeplayState extends MusicBeatState {
         updateDynamicData();
         
         #if mobile
-        addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
-        addTouchPadCamera();
         touchScroll = new funkin.mobile.backend.TouchScroll(true);
         difficultyScroll = new funkin.mobile.backend.TouchScroll(false);
         funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
-        if(touchPad != null) {
-            touchPad.visible = true;
-            touchPad.updateTrackedButtons();
-        }
         #end
     }
     
@@ -901,9 +931,7 @@ class FreeplayState extends MusicBeatState {
 
         updateDynamicData();
 
-        var shiftMult:Int = 1;
-        if((FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ.pressed))) 
-            shiftMult = 3;
+        var shiftMult:Int = FlxG.keys.pressed.SHIFT ? 3 : 1;
 
         // Disable navigation when typing in search
         var isTyping:Bool = (PsychUIInputText.focusOn == searchInput);
@@ -976,10 +1004,8 @@ class FreeplayState extends MusicBeatState {
                 }
             }
 
-            var touchPadNavigatingSongs:Bool = (touchPad != null && (touchPad.buttonUp.pressed || touchPad.buttonDown.pressed || touchPad.buttonUp.justPressed || touchPad.buttonDown.justPressed));
-            var touchPadNavigatingDiffs:Bool = (touchPad != null && (touchPad.buttonLeft.pressed || touchPad.buttonRight.pressed || touchPad.buttonLeft.justPressed || touchPad.buttonRight.justPressed));
-            var allowSongDigitalNav:Bool = !touchSongNavigationActive || touchPadNavigatingSongs;
-            var allowDiffDigitalNav:Bool = !touchDiffNavigationActive || touchPadNavigatingDiffs;
+            var allowSongDigitalNav:Bool = !touchSongNavigationActive;
+            var allowDiffDigitalNav:Bool = !touchDiffNavigationActive;
             var allowPointerClick:Bool = !touchSongNavigationActive && !touchDiffNavigationActive;
 
             if (touchScroll != null && touchScroll.wasTapped() && allowPointerClick)
@@ -1022,10 +1048,10 @@ class FreeplayState extends MusicBeatState {
                 true
                 #end
             ) {
-                var songUpPressed:Bool = controls.UI_UP_P || (touchPad != null && touchPad.buttonUp.justPressed);
-                var songDownPressed:Bool = controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown.justPressed);
-                var songUpHeld:Bool = controls.UI_UP || (touchPad != null && touchPad.buttonUp.pressed);
-                var songDownHeld:Bool = controls.UI_DOWN || (touchPad != null && touchPad.buttonDown.pressed);
+                var songUpPressed:Bool = controls.UI_UP_P;
+                var songDownPressed:Bool = controls.UI_DOWN_P;
+                var songUpHeld:Bool = controls.UI_UP;
+                var songDownHeld:Bool = controls.UI_DOWN;
 
                 if(songUpPressed) {
                     changeSelection(-shiftMult);
@@ -1052,7 +1078,7 @@ class FreeplayState extends MusicBeatState {
                 #else
                 true
                 #end
-            && (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft.justPressed))) {
+            && controls.UI_LEFT_P) {
                 changeDiff(-1);
                 FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
             }
@@ -1062,7 +1088,7 @@ class FreeplayState extends MusicBeatState {
                 #else
                 true
                 #end
-            && (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight.justPressed))) {
+            && controls.UI_RIGHT_P) {
                 changeDiff(1);
                 FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
             }
@@ -1085,20 +1111,18 @@ class FreeplayState extends MusicBeatState {
             }
         }
 
-        if ((controls.BACK || (touchPad != null && touchPad.buttonB.justPressed)) && !isTyping) {
+        if (controls.BACK && !isTyping) {
             persistentUpdate = false;
             FlxG.sound.play(Paths.sound('cancelMenu'));
             MusicBeatState.switchState(new funkin.ui.mainmenu.MainMenuState());
         }
 
         // Gameplay changers
-        if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !isTyping) {
-            persistentUpdate = false;
-            removeTouchPad();
-            openSubState(new GameplayChangersSubstate());
+        if(FlxG.keys.justPressed.CONTROL && !isTyping) {
+            openGameplayChangersSubstate();
         }
         
-        if((FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX.justPressed)) && !isTyping) {
+        if(FlxG.keys.justPressed.SPACE && !isTyping) {
             if(instPlaying != curSelected) {
                 playInstPreview();
             } else if (instPlaying == curSelected) {
@@ -1106,18 +1130,13 @@ class FreeplayState extends MusicBeatState {
             }
         }
         
-        if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && !isTyping) {
+        if (controls.ACCEPT && !isTyping) {
             playSong();
         }
         
         // Reset score
-        if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !isTyping) {
-            persistentUpdate = false;
-            removeTouchPad();
-            openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter, -1, function() {
-                refreshSelectedScoreData(true);
-            }));
-            FlxG.sound.play(Paths.sound('scrollMenu'));
+        if(controls.RESET && !isTyping) {
+            openResetScoreSubstate();
         }
     }
     
@@ -1610,10 +1629,15 @@ class FreeplayState extends MusicBeatState {
             previewTimer = null;
         }
         
-        previewTimer = new FlxTimer().start(0.5, function(tmr:FlxTimer) {
-            playInstPreview();
-            previewTimer = null;
-        });
+        if (songs[curSelected].isStepMania) {
+            if (instPlaying != -1 || instSound != null)
+                stopInstPreview();
+        } else {
+            previewTimer = new FlxTimer().start(0.5, function(tmr:FlxTimer) {
+                playInstPreview();
+                previewTimer = null;
+            });
+        }
         
         updateStarIcon();
     }
@@ -1668,22 +1692,34 @@ class FreeplayState extends MusicBeatState {
      */
     function playSong():Void {
         persistentUpdate = false;
-        if (!songs[curSelected].isStepMania)
-            Mods.currentModDirectory = songs[curSelected].folder;
+        var selectedSong = songs[curSelected];
+        if (!selectedSong.isStepMania)
+            Mods.currentModDirectory = selectedSong.folder;
         else
             Mods.currentModDirectory = '';
 
-        var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
+        var songLowercase:String = Paths.formatToSongPath(selectedSong.songName);
         var poop:String = Highscore.formatSong(songLowercase, curDifficulty);
+        PlayState.customAudioPath = null;
         
         try {
-            PlayState.SONG = Song.loadFromJson(poop, songLowercase);
+            if (selectedSong.isStepMania) {
+                var smChart:SwagSong = loadStepManiaChart(selectedSong, curDifficulty);
+                if (smChart == null)
+                    throw 'Unable to convert StepMania chart.';
+
+                PlayState.SONG = smChart;
+                PlayState.customAudioPath = Path.addTrailingSlash(selectedSong.smFolder);
+                trace('Loading StepMania song: ${selectedSong.smFilePath}');
+            } else {
+                PlayState.SONG = Song.loadFromJson(poop, songLowercase);
+                trace('Loading song: $poop');
+            }
             PlayState.isStoryMode = false;
             PlayState.storyDifficulty = curDifficulty;
             Cursor.hide();
-            
-            trace('Loading song: $poop');
         } catch(e:Dynamic) {
+            PlayState.customAudioPath = null;
             trace('ERROR LOADING SONG: $e');
             missingText.text = 'ERROR WHILE LOADING CHART:\n$e';
             missingText.screenCenter(Y);
@@ -1708,6 +1744,22 @@ class FreeplayState extends MusicBeatState {
         #end
         stopMusicPlay = true;
         destroyFreeplayVocals();
+    }
+
+    function loadStepManiaChart(song:SongMetadata, difficultyIndex:Int):SwagSong {
+        #if sys
+        if (song == null || song.smFilePath == null || song.smFilePath.length == 0)
+            return null;
+
+        var smFile:SMFile = SMFile.loadFile(song.smFilePath);
+        if (smFile == null || !smFile.isValid || smFile.difficulties == null || smFile.difficulties.length == 0)
+            return null;
+
+        var boundedDifficulty:Int = Std.int(FlxMath.bound(difficultyIndex, 0, smFile.difficulties.length - 1));
+        return smFile.convertToFNF(song.songName, boundedDifficulty);
+        #else
+        return null;
+        #end
     }
     
     /**
@@ -1898,22 +1950,21 @@ class FreeplayState extends MusicBeatState {
      */
     function loadChartMetadata():Void {
         if(songs.length == 0 || curSelected >= songs.length) return;
+        var selectedSong = songs[curSelected];
         
         // Set mod context for proper asset loading
         var previousMod:String = Mods.currentModDirectory;
-        if(songs[curSelected].folder != null && songs[curSelected].folder != '') {
-            Mods.currentModDirectory = songs[curSelected].folder;
+        if(!selectedSong.isStepMania && selectedSong.folder != null && selectedSong.folder != '') {
+            Mods.currentModDirectory = selectedSong.folder;
         }
         
-        var songName:String = Paths.formatToSongPath(songs[curSelected].songName);
+        var songName:String = Paths.formatToSongPath(selectedSong.songName);
         var chartPath:String = Highscore.formatSong(songName, curDifficulty);
         
         try {
-            var chart:SwagSong = Song.getChart(chartPath, songName);
-            if(chart == null) {
-                trace('Chart not found for $songName - $chartPath');
-                return;
-            }
+            var chart:SwagSong = selectedSong.isStepMania ? loadStepManiaChart(selectedSong, curDifficulty) : Song.getChart(chartPath, songName);
+            if(chart == null)
+                throw selectedSong.isStepMania ? 'Chart not found for ${selectedSong.smFilePath}' : 'Chart not found for $songName - $chartPath';
             
             var chartBPM:Float = chart.bpm;
             if(Math.isNaN(chartBPM) || chartBPM <= 0) chartBPM = 100;
@@ -2036,7 +2087,8 @@ class FreeplayState extends MusicBeatState {
             updateNoteDensityBars(sectionDensities);
             
         } catch(e:Dynamic) {
-            trace('Error loading chart metadata for $songName: $e');
+            var chartLabel:String = selectedSong.isStepMania ? selectedSong.smFilePath : songName;
+            trace('Error loading chart metadata for $chartLabel: $e');
             // Fallback to default/static values
             bpmText.text = '120 BPM';
             timerText.text = '0:00';
@@ -2528,13 +2580,13 @@ class FreeplayState extends MusicBeatState {
         trace('Scanning for StepMania files...');
         
         for (folder in sys.FileSystem.readDirectory(smDir)) {
-            var folderPath = smDir + folder;
+            var folderPath = Path.addTrailingSlash(smDir + folder);
             
             if (!sys.FileSystem.isDirectory(folderPath)) continue;
             
             var smFile:String = null;
             for (file in sys.FileSystem.readDirectory(folderPath)) {
-                if (file.endsWith('.sm')) {
+                if (file.toLowerCase().endsWith('.sm')) {
                     smFile = file;
                     break;
                 }
@@ -2545,11 +2597,36 @@ class FreeplayState extends MusicBeatState {
                 continue;
             }
             
-            var fullPath = folderPath + '/' + smFile;
+            var fullPath = folderPath + smFile;
             
             try {
-                // SM parsing would go here
-                trace('Found SM file: $fullPath');
+                var smData:SMFile = SMFile.loadFile(fullPath);
+                if (smData == null || !smData.isValid || smData.header == null) {
+                    trace('Skipping invalid SM file: $fullPath');
+                    continue;
+                }
+
+                var title:String = smData.header.TITLE;
+                if (title == null || title.length == 0)
+                    title = folder;
+
+                var smSong = new SongMetadata(title, -1, 'stepmania', FlxColor.fromRGB(88, 189, 255));
+                smSong.isStepMania = true;
+                smSong.folder = 'StepMania';
+                smSong.smFolder = folderPath;
+                smSong.smFilePath = fullPath;
+                smSong.smMusicFile = smData.header.MUSIC;
+
+                for (difficulty in smData.difficulties) {
+                    if (difficulty != null && difficulty.name != null && difficulty.name.length > 0 && !smSong.smDifficulties.contains(difficulty.name))
+                        smSong.smDifficulties.push(difficulty.name);
+                }
+
+                if (smSong.smDifficulties.length == 0)
+                    smSong.smDifficulties.push('Normal');
+
+                songs.push(smSong);
+                trace('Loaded StepMania song: ${smSong.songName}');
             } catch (e:Dynamic) {
                 trace('Error loading SM file $fullPath: $e');
             }
@@ -2580,13 +2657,8 @@ class FreeplayState extends MusicBeatState {
         super.closeSubState();
         
         #if mobile
-        removeTouchPad();
-        addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
-        addTouchPadCamera();
-        if(touchPad != null) {
-            touchPad.visible = true;
-            touchPad.updateTrackedButtons();
-        }
+        if (touchScroll != null) touchScroll.reset();
+        if (difficultyScroll != null) difficultyScroll.reset();
         #end
     }
     
@@ -2729,7 +2801,24 @@ class FreeplayState extends MusicBeatState {
     function handleFreeplayPointerPress(x:Float, y:Float):Void {
         var point = new FlxPoint(x, y);
 
-        if (playIcon != null && playIcon.overlapsPoint(point)) {
+        #if mobile
+        if (gameplayChangersChipHitbox != null && gameplayChangersChipHitbox.overlapsPoint(point)) {
+            openGameplayChangersSubstate();
+            return;
+        }
+
+        if (resetScoreChipHitbox != null && resetScoreChipHitbox.overlapsPoint(point)) {
+            openResetScoreSubstate();
+            return;
+        }
+        #end
+
+        var hitPlayTouchTarget:Bool = false;
+        #if mobile
+        hitPlayTouchTarget = playTouchTarget != null && playTouchTarget.overlapsPoint(point);
+        #end
+
+        if (hitPlayTouchTarget || (playIcon != null && playIcon.overlapsPoint(point))) {
             playSong();
             return;
         }
@@ -2807,6 +2896,42 @@ class FreeplayState extends MusicBeatState {
             }
         }
     }
+
+    #if mobile
+    function createMobileActionHitbox(target:MaterialChip, paddingX:Float, paddingY:Float):FlxSprite {
+        var hitboxWidth:Float = Math.max(target.width, 96) + (paddingX * 2);
+        var hitboxHeight:Float = Math.max(target.height, 32) + (paddingY * 2);
+        var hitbox = new FlxSprite(target.x - paddingX, target.y - paddingY);
+        hitbox.makeGraphic(Std.int(hitboxWidth), Std.int(hitboxHeight), FlxColor.WHITE);
+        hitbox.alpha = 0;
+        add(hitbox);
+        return hitbox;
+    }
+    #end
+
+    function openGameplayChangersSubstate():Void {
+        persistentUpdate = false;
+        #if mobile
+        if (touchScroll != null) touchScroll.stopScroll();
+        if (difficultyScroll != null) difficultyScroll.stopScroll();
+        #end
+        FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+        openSubState(new GameplayChangersSubstate());
+    }
+
+    function openResetScoreSubstate():Void {
+        if (songs.length < 1) return;
+
+        persistentUpdate = false;
+        #if mobile
+        if (touchScroll != null) touchScroll.stopScroll();
+        if (difficultyScroll != null) difficultyScroll.stopScroll();
+        #end
+        openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter, -1, function() {
+            refreshSelectedScoreData(true);
+        }));
+        FlxG.sound.play(Paths.sound('scrollMenu'));
+    }
 }
 
 // Song Metadata Class
@@ -2819,6 +2944,8 @@ class SongMetadata {
     public var lastDifficulty:String = null;
     public var isStepMania:Bool = false;
     public var smFolder:String = "";
+    public var smFilePath:String = "";
+    public var smMusicFile:String = "";
     public var smDifficulties:Array<String> = [];
     public var isFavorite:Bool = false;
 
