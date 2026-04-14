@@ -39,9 +39,9 @@ name: Build
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, optimized ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, optimized ]
   workflow_dispatch:
 
 env:
