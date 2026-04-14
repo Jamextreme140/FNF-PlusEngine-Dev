@@ -89,6 +89,8 @@ class ControlsSubState extends MusicBeatSubstate
 	var visibleBindCards:FlxTypedGroup<FlxSprite>;
 	var visibleBindTexts:FlxTypedGroup<FlxText>;
 	var visibleHeaderTexts:FlxTypedGroup<FlxText>;
+	var rowCardSelectedStates:Array<Null<Bool>> = [];
+	var bindCardSelectedStates:Array<Null<Bool>> = [];
 	var headerRefs:Array<ControlsHeaderRef> = [];
 	var optionRefs:Array<ControlsOptionRef> = [];
 	var bindRefs:Array<ControlsBindRef> = [];
@@ -138,7 +140,7 @@ class ControlsSubState extends MusicBeatSubstate
 		listWidth = panelWidth - 56;
 		listHeight = panelHeight - 196;
 
-		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xC0141020);
+		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(overlay);
 
 		OptionsMenuTheme.syncAccent();
@@ -154,7 +156,7 @@ class ControlsSubState extends MusicBeatSubstate
 		grid = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
 		grid.velocity.set(40, 40);
 		grid.alpha = 0;
-		grid.color = 0xFF8D9FFF;
+		grid.color = OptionsMenuTheme.gridAccentColor();
 		FlxTween.tween(grid, {alpha: 1}, 0.5, {ease: FlxEase.quadOut});
 		add(grid);
 
@@ -231,6 +233,8 @@ class ControlsSubState extends MusicBeatSubstate
 		headerRefs = [];
 		optionRefs = [];
 		bindRefs = [];
+		rowCardSelectedStates = [];
+		bindCardSelectedStates = [];
 		clearVisibleGroups();
 
 		var rowID:Int = 0;
@@ -276,6 +280,7 @@ class ControlsSubState extends MusicBeatSubstate
 
 					var rowCard = new FlxSprite();
 					visibleRowCards.add(rowCard);
+					rowCardSelectedStates.push(null);
 
 					var labelText = new FlxText(listX + 24, listY, 440, label, 20);
 					labelText.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.optionTitleColor(false), LEFT);
@@ -296,6 +301,7 @@ class ControlsSubState extends MusicBeatSubstate
 
 							var bindCard = new FlxSprite();
 							visibleBindCards.add(bindCard);
+							bindCardSelectedStates.push(null);
 
 							var bindText = new FlxText(panelX + panelWidth - 444 + slot * 212, listY, 184, '', 17);
 							bindText.setFormat(Paths.font('inter.otf'), 17, OptionsMenuTheme.optionDescriptionColor(false), CENTER);
@@ -401,6 +407,24 @@ class ControlsSubState extends MusicBeatSubstate
 		MD3ShapeTools.fillAndStrokeRoundRect(card, 188, 56, 16, 2, fill, stroke);
 	}
 
+	inline function refreshRowCardVisual(index:Int, card:FlxSprite, selected:Bool, ?force:Bool = false):Void
+	{
+		if (force || rowCardSelectedStates[index] == null || rowCardSelectedStates[index] != selected)
+		{
+			drawListCard(card, selected);
+			rowCardSelectedStates[index] = selected;
+		}
+	}
+
+	inline function refreshBindCardVisual(index:Int, card:FlxSprite, selected:Bool, ?force:Bool = false):Void
+	{
+		if (force || bindCardSelectedStates[index] == null || bindCardSelectedStates[index] != selected)
+		{
+			drawBindCard(card, selected);
+			bindCardSelectedStates[index] = selected;
+		}
+	}
+
 	function applyVerticalClip(spr:FlxSprite, yMin:Float, yMax:Float):Void
 	{
 		if (spr == null) return;
@@ -468,7 +492,7 @@ class ControlsSubState extends MusicBeatSubstate
 				card.y = targetCardY;
 			else
 				card.y += (targetCardY - card.y) * follow;
-			drawListCard(card, selected);
+			refreshRowCardVisual(index, card, selected, instant);
 			card.alpha += (ref.alpha - card.alpha) * follow;
 
 			field.text = ref.text;
@@ -498,7 +522,7 @@ class ControlsSubState extends MusicBeatSubstate
 				card.y = targetCardY;
 			else
 				card.y += (targetCardY - card.y) * follow;
-			drawBindCard(card, selected);
+			refreshBindCardVisual(index, card, selected, instant);
 			card.alpha += (ref.alpha - card.alpha) * follow;
 
 			field.text = ref.text;

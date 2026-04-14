@@ -177,6 +177,11 @@ class OptionsMenuTheme
 		return isDark() ? 0xFF30343C : 0xFFDCCEEB;
 	}
 
+	public static inline function panelShadowColor():Int
+	{
+		return isDark() ? 0x32000000 : 0x26000000;
+	}
+
 	public static inline function titleColor():Int
 	{
 		return isDark() ? 0xFFF5F7FA : current().strong;
@@ -244,6 +249,37 @@ class OptionsMenuTheme
 	public static inline function accentOverlay(alpha:Float):Int
 	{
 		return colorWithAlpha(current().accent, alpha);
+	}
+
+	public static inline function gridAccentColor():Int
+	{
+		return isDark()
+			? blendColor(current().accent, 0xFFE2E8F0, 0.30)
+			: blendColor(current().accent, 0xFFFFFFFF, 0.20);
+	}
+
+	public static inline function loadingOverlayPanelColor():Int
+	{
+		return blendColor(panelSurfaceColor(), current().accent, isDark() ? 0.10 : 0.05);
+	}
+
+	public static inline function loadingOverlayOutlineColor():Int
+	{
+		return isDark()
+			? blendColor(0xFFF1F5F9, current().accent, 0.18)
+			: blendColor(0xFF6B7280, current().accent, 0.28);
+	}
+
+	public static inline function loadingOverlayTrackColor():Int
+	{
+		return isDark()
+			? blendColor(0xFF586171, current().accent, 0.34)
+			: blendColor(current().pale, current().accent, 0.38);
+	}
+
+	public static inline function loadingOverlayWaveColor():Int
+	{
+		return current().accent;
 	}
 
 	public static inline function interactiveFill(active:Bool, hovered:Bool = false):Int

@@ -87,7 +87,7 @@ class NotesColorSubState extends MusicBeatSubstate
 		editorWidth = panelX + panelWidth - 18 - editorX;
 		editorHeight = previewHeight;
 
-		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xC0141020);
+		var overlay:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		add(overlay);
 
 		OptionsMenuTheme.syncAccent();
@@ -103,7 +103,7 @@ class NotesColorSubState extends MusicBeatSubstate
 		grid = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
 		grid.velocity.set(40, 40);
 		grid.alpha = 0;
-		grid.color = 0xFFAB8AE6;
+		grid.color = OptionsMenuTheme.gridAccentColor();
 		grid.clipRect = new FlxRect(panelX, panelY, panelWidth, panelHeight);
 		FlxTween.tween(grid, {alpha: 1}, 0.5, {ease: FlxEase.quadOut});
 		add(grid);

@@ -17,7 +17,6 @@
 	<template path="NativeUI.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeUI.kt" />
 	<template path="NativeCrashHandler.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeCrashHandler.kt" />
 	<template path="NativeCrashActivity.kt" rename="app/src/main/java/com/leninasto/plusengine/NativeCrashActivity.kt" />
-	<template path="WavyTimebarManager.kt" rename="app/src/main/java/com/leninasto/plusengine/WavyTimebarManager.kt" />
 	<template path="components/DropDown.kt" rename="app/src/main/java/com/leninasto/plusengine/components/DropDown.kt" />
 	<template path="languages/Language.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/Language.kt" />
 	<template path="languages/English.kt" rename="app/src/main/java/com/leninasto/plusengine/languages/English.kt" />

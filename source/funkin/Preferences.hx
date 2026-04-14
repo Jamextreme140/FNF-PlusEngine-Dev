@@ -75,9 +75,6 @@ import funkin.ui.title.TitleState;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
-	#if android
-	public var useNativeWavyTimebar:Bool = false;
-	#end
 	
 	// ========== Modchart Config Options ==========
 	// Camera & 3D Settings

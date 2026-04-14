@@ -72,6 +72,9 @@ class Main extends Sprite
 	var restoringFocusVolume:Bool = false;
 	var lastReportedVolume:Float = 1.0;
 	public static var focusMusicTween:FlxTween;
+	#if android
+	var startupOrientationFixAttempts:Int = 0;
+	#end
 
 	// You can pretty much ignore everything from here on - your code should go in your states.
 
@@ -207,6 +210,9 @@ class Main extends Sprite
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
 			FlxG.scaleMode = new MobileScaleMode();
+			#if android
+			ensureAndroidLandscapeOrientation(true);
+			#end
 		});
 		#end
 		
@@ -295,6 +301,10 @@ class Main extends Sprite
 		// shader coords fix
 		var resizeDebounceTimer:FlxTimer = null;
 		function handleGameResized():Void {
+			#if android
+			ensureAndroidLandscapeOrientation();
+			#end
+
 			// Reposition the FPS counter relative to FlxGame (accounts for letterboxing)
 			if(fpsVar != null) {
 				var marginX = 10;
@@ -343,6 +353,22 @@ class Main extends Sprite
 		setupGame();
 	}
 
+	#if android
+	function ensureAndroidLandscapeOrientation(force:Bool = false):Void
+	{
+		if (!force && startupOrientationFixAttempts >= 3)
+			return;
+
+		var currentOrientation = funkin.mobile.backend.PsychJNI.getCurrentOrientationAsString();
+		var isLandscape = currentOrientation.indexOf('Landscape') == 0;
+		if (!force && isLandscape)
+			return;
+
+		startupOrientationFixAttempts++;
+		funkin.mobile.backend.PsychJNI.setOrientation(game.width, game.height, false, 'LandscapeLeft LandscapeRight');
+	}
+	#end
+
 	function initializeMaterialVolumeTray():Void
 	{
 		if (FlxG.game == null || Lib.current == null || Lib.current.stage == null)
@@ -376,6 +402,17 @@ class Main extends Sprite
 
 		lastReportedVolume = volume;
 		materialVolumeTray.showVolume(volume);
+	}
+
+	function preserveSavedMasterVolume(targetVolume:Float, ?flush:Bool = false):Void
+	{
+		if (FlxG.save == null)
+			return;
+
+		FlxG.save.data.volume = targetVolume;
+		FlxG.save.data.mute = FlxG.sound.muted;
+		if (flush)
+			FlxG.save.flush();
 	}
 
 	static function resetSpriteCache(sprite:Sprite):Void {
@@ -446,7 +483,10 @@ class Main extends Sprite
 		}
 
 		if (focusMusicTween != null) focusMusicTween.cancel();
-		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: newVol}, 0.5);
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: newVol}, 0.5, {
+			onUpdate: function(_) preserveSavedMasterVolume(oldVol),
+			onComplete: function(_) preserveSavedMasterVolume(oldVol, true)
+		});
 	}
 
 	function onWindowFocusIn():Void
@@ -467,8 +507,10 @@ class Main extends Sprite
 		// Normal global volume when focused
 		if (focusMusicTween != null) focusMusicTween.cancel();
 		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5, {
+			onUpdate: function(_) preserveSavedMasterVolume(oldVol),
 			onComplete: function(_)
 			{
+				preserveSavedMasterVolume(oldVol, true);
 				restoringFocusVolume = false;
 			}
 		});

@@ -309,12 +309,12 @@ class OptionsState extends MusicBeatState
 			optionCards.add(card);
 
 			var title = new FlxText(0, 0, cardWidth - 56, Language.getPhrase('options_$option', option), 22);
-			title.setFormat(Paths.font('inter-bold.otf'), 22, 0xFF45335E, CENTER);
+			title.setFormat(Paths.font('inter-bold.otf'), 22, OptionsMenuTheme.optionTitleColor(false), CENTER);
 			title.antialiasing = ClientPrefs.data.antialiasing;
 			optionTitles.add(title);
 
 			var description = new FlxText(0, 0, cardWidth - 70, getCategoryDescription(option), 13);
-			description.setFormat(Paths.font('inter.otf'), 13, 0xFF7E6F95, CENTER);
+			description.setFormat(Paths.font('inter.otf'), 13, OptionsMenuTheme.optionDescriptionColor(false), CENTER);
 			description.antialiasing = ClientPrefs.data.antialiasing;
 			optionDescriptions.add(description);
 		}

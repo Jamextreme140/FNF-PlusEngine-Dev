@@ -457,7 +457,7 @@ private class LanguageCard extends FlxSpriteGroup
 		add(accentBar);
 
 		titleText = new FlxText(30, 12, width - 180, displayName, 20);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2C1E48, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.cardTitleColor(false), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
@@ -467,7 +467,7 @@ private class LanguageCard extends FlxSpriteGroup
 		add(codeText);
 
 		sampleText = new FlxText(30, 42, width - 60, sample, 12);
-		sampleText.setFormat(Paths.font('inter.otf'), 12, 0xFF76678B, LEFT);
+		sampleText.setFormat(Paths.font('inter.otf'), 12, OptionsMenuTheme.cardDescriptionColor(false), LEFT);
 		sampleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(sampleText);
 

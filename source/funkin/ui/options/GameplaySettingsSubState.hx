@@ -652,12 +652,12 @@ private class GameplaySettingsCard extends FlxSpriteGroup
 		add(accentBar);
 
 		titleText = new FlxText(30, 12, width - 60, title, 18);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 18, 0xFF2C1E48, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 18, OptionsMenuTheme.cardTitleColor(false), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		descriptionText = new FlxText(30, 36, width - 60, description, 12);
-		descriptionText.setFormat(Paths.font('inter.otf'), 12, 0xFF76678B, LEFT);
+		descriptionText.setFormat(Paths.font('inter.otf'), 12, OptionsMenuTheme.cardDescriptionColor(false), LEFT);
 		descriptionText.antialiasing = ClientPrefs.data.antialiasing;
 		add(descriptionText);
 
@@ -1013,7 +1013,7 @@ private class GameplayDropdownMenu extends FlxSpriteGroup
 			add(highlight);
 
 			var label = new FlxText(18, rowY + 10, width - 36, itemLabel != null ? itemLabel(items[index]) : items[index], 14);
-			label.setFormat(Paths.font('inter.otf'), 14, 0xFF3E2C5F, LEFT);
+			label.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.optionDescriptionColor(false), LEFT);
 			label.antialiasing = ClientPrefs.data.antialiasing;
 			rowLabels.push(label);
 			add(label);

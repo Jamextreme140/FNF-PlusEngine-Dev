@@ -8,6 +8,7 @@ import openfl.display.Shape;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.geom.Rectangle;
+import funkin.ui.options.OptionsMenuTheme;
 
 class GlobalLoadingOverlay
 {
@@ -110,6 +111,7 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	var wavePhase:Float = 0;
 	var sweepPhase:Float = 0;
 	var lastTime:Float = 0;
+	var lastThemeSignature:String = null;
 
 	public function new()
 	{
@@ -142,13 +144,14 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		iconWave = new Shape();
 		iconHolder.addChild(iconWave);
 
-		redrawChrome();
-		redrawIndicatorTrack();
+		refreshThemeIfNeeded(true);
 		addEventListener(Event.ENTER_FRAME, onEnterFrame);
 	}
 
 	public function attach():Void
 	{
+		refreshThemeIfNeeded();
+
 		if (Lib.current == null || Lib.current.stage == null)
 			return;
 
@@ -211,6 +214,7 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 
 	public function show(keepVisible:Bool, holdTime:Float):Void
 	{
+		refreshThemeIfNeeded();
 		attach();
 		persistent = keepVisible;
 		hideDeadline = keepVisible ? -1 : (nowSeconds() + holdTime);
@@ -243,6 +247,8 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	{
 		if (stage == null)
 			return;
+
+		refreshThemeIfNeeded();
 
 		var now = nowSeconds();
 		if (lastTime <= 0)
@@ -292,12 +298,12 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		shadow.graphics.endFill();
 
 		panel.graphics.clear();
-		panel.graphics.beginFill(0xFF171A22, 0.96);
+		panel.graphics.beginFill(OptionsMenuTheme.loadingOverlayPanelColor(), 0.96);
 		panel.graphics.drawRoundRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, PANEL_RADIUS);
 		panel.graphics.endFill();
 
 		outline.graphics.clear();
-		outline.graphics.lineStyle(1, 0xFFFFFF, 0.16);
+		outline.graphics.lineStyle(1, OptionsMenuTheme.loadingOverlayOutlineColor(), OptionsMenuTheme.isDark() ? 0.28 : 0.18);
 		outline.graphics.drawRoundRect(0.5, 0.5, PANEL_WIDTH - 1, PANEL_HEIGHT - 1, PANEL_RADIUS, PANEL_RADIUS);
 	}
 
@@ -312,7 +318,7 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		var radius:Float = (size - thickness) * 0.5 - 1;
 
 		iconTrack.graphics.clear();
-		iconTrack.graphics.lineStyle(thickness, 0xD9C2FF, TRACK_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
+		iconTrack.graphics.lineStyle(thickness, OptionsMenuTheme.loadingOverlayTrackColor(), TRACK_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
 		iconTrack.graphics.drawCircle(center, center, radius);
 	}
 
@@ -335,7 +341,7 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 		if (sweep <= 0.01)
 			return;
 
-		iconWave.graphics.lineStyle(thickness, 0xD9C2FF, WAVE_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
+		iconWave.graphics.lineStyle(thickness, OptionsMenuTheme.loadingOverlayWaveColor(), WAVE_ALPHA, false, null, CapsStyle.ROUND, JointStyle.ROUND);
 
 		var steps:Int = Std.int(Math.max(36, Math.ceil((sweep * baseRadius) / 3.0)));
 		for (i in 0...steps + 1)
@@ -366,5 +372,16 @@ private class GlobalLoadingOverlayDisplay extends Sprite
 	inline function nowSeconds():Float
 	{
 		return Lib.getTimer() / 1000;
+	}
+
+	function refreshThemeIfNeeded(?force:Bool = false):Void
+	{
+		var themeSignature = OptionsMenuTheme.signature();
+		if (!force && lastThemeSignature == themeSignature)
+			return;
+
+		lastThemeSignature = themeSignature;
+		redrawChrome();
+		redrawIndicatorTrack();
 	}
 }

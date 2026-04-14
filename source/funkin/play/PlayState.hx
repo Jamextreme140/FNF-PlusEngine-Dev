@@ -34,10 +34,6 @@ import funkin.play.character.Character;
 import funkin.play.scoring.Rating;
 import funkin.play.notes.*;
 
-#if !flash
-import openfl.filters.ShaderFilter;
-#end
-
 import funkin.graphics.shaders.ErrorHandledShader;
 import flixel.util.FlxGradient;
 import openfl.geom.Rectangle;
@@ -297,6 +293,8 @@ class PlayState extends MusicBeatState
 	public var timeProgressIndicator:MaterialWavyProgressIndicator;
 	var songPercent:Float = 0;
 	static inline var TIME_PROGRESS_SCALE_Y:Float = 1.45;
+	var timeBarGradientLeftColor:FlxColor = FlxColor.WHITE;
+	var timeBarGradientRightColor:FlxColor = FlxColor.BLACK;
 	var lastTimeBarLeftColor:FlxColor = FlxColor.TRANSPARENT;
 	var lastTimeBarRightColor:FlxColor = FlxColor.TRANSPARENT;
 	var lastTimeBarGradientMode:Bool = false;
@@ -357,11 +355,6 @@ class PlayState extends MusicBeatState
 	// Add Secondary Icon event variables
 	public var gfIconSide:String = ''; // Side where GF icon appears (Dad, BF)
 	public var gfIconSwapOnSing:Bool = false; // Whether to swap positions when GF sings
-
-	// 3D Curve Effect Shaders
-	public var curveEffectGame:funkin.graphics.shaders.CurveEffect;
-	public var curveEffectHUD:funkin.graphics.shaders.CurveEffect;
-	public var curveEffectOther:funkin.graphics.shaders.CurveEffect;
 
 	public var songScore:Int = 0;
 	public var songHits:Int = 0;
@@ -440,13 +433,17 @@ class PlayState extends MusicBeatState
 	var lastEndCountdown:Int = -1;
 	var lastJudName:String = "None";
 	
-	// Break Timer Feature variables
+	static inline var BREAK_TIMER_INDICATOR_SIZE:Float = 72;
+	static inline var BREAK_TIMER_TEXT_SIZE:Int = 40;
 	var breakTimerText:FlxText = null;
+	var breakTimerIndicator:MaterialWavyProgressIndicator = null;
+	var breakTimerNoteTimes:Array<Float> = [];
+	var breakTimerNoteIndex:Int = 0;
 	var lastBreakTimerValue:Float = -1;
 	var breakTimerUpdateAccum:Float = 0;
 	var breakTimerNextNoteTime:Float = -1;
 	var breakTimerLastNoteTime:Float = -1; // Time of the last note that already passed
-	static inline var BREAK_TIMER_MIN_GAP:Float = 2000; // Minimum gap in ms between notes to show the timer
+	static inline var BREAK_TIMER_MIN_GAP:Float = 3000; // Minimum gap in ms between notes to show the timer
 
 	#if android
 	var lowEndEventMode:Bool = false;
@@ -709,10 +706,8 @@ class PlayState extends MusicBeatState
 		cpuControlled = ClientPrefs.getGameplaySetting('botplay');
 		guitarHeroSustains = ClientPrefs.data.guitarHeroSustains;
 
-		if (ClientPrefs.data.shadedTimeBar) {
+		if (ClientPrefs.data.shadedTimeBar)
 			reloadGradientColors();
-			gradientTimebar();
-		}
 		
 		// Perfect Mode enables Instakill and disables Practice
 		if (perfectMode) {
@@ -732,11 +727,6 @@ class PlayState extends MusicBeatState
 		FlxG.cameras.add(camHUD, false);
 		FlxG.cameras.add(camOther, false);
 		FlxG.cameras.add(luaTpadCam, false);
-
-		// Initialize 3D Curve Effect Shaders
-		curveEffectGame = new funkin.graphics.shaders.CurveEffect();
-		curveEffectHUD = new funkin.graphics.shaders.CurveEffect();
-		curveEffectOther = new funkin.graphics.shaders.CurveEffect();
 
 		persistentUpdate = true;
 		persistentDraw = true;
@@ -996,9 +986,10 @@ class PlayState extends MusicBeatState
 		timeTxt = new FlxText(STRUM_X + (FlxG.width / 2) - 248, 19, 400, "", 32);
 		timeTxt.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		timeTxt.scrollFactor.set();
-		timeTxt.alpha = 1; // Alpha siempre visible
+		timeTxt.alpha = 1;
 		timeTxt.borderSize = 2;
-		timeTxt.visible = updateTime = showTime;
+		updateTime = showTime;
+		timeTxt.visible = false;
 		if(ClientPrefs.data.downScroll) timeTxt.y = FlxG.height - 48;
 		else timeTxt.y += 6;
 		if(ClientPrefs.data.timeBarType == 'Song Name') timeTxt.text = SONG.song;
@@ -1006,9 +997,9 @@ class PlayState extends MusicBeatState
 		timeBar = new Bar(0, timeTxt.y + (timeTxt.height / 4), 'timeBar', function() return songPercent, 0, 1);
 		timeBar.scrollFactor.set();
 		timeBar.screenCenter(X);
-		timeBar.alpha = 1; // Alpha siempre visible
-		timeBar.scale.x = 0; // Inicia con escala X en 0
-		timeBar.visible = showTime;
+		timeBar.alpha = 1;
+		timeBar.scale.x = 1;
+		timeBar.visible = false;
 		var useWavyTimeBar = isWavyTimeBarEnabled();
 		timeBar.bg.visible = !useWavyTimeBar;
 		timeBar.leftBar.visible = !useWavyTimeBar;
@@ -1017,7 +1008,7 @@ class PlayState extends MusicBeatState
 		timeProgressIndicator = new MaterialWavyProgressIndicator(0, 0, LINEAR, timeBar.barWidth);
 		timeProgressIndicator.scrollFactor.set();
 		timeProgressIndicator.alpha = timeBar.alpha;
-		timeProgressIndicator.visible = showTime && useWavyTimeBar;
+		timeProgressIndicator.visible = false;
 		timeProgressIndicator.scale.x = timeBar.scale.x;
 		timeProgressIndicator.setWaveColor(FlxColor.WHITE);
 		timeProgressIndicator.setTrackColor(0x99000000);
@@ -1131,16 +1122,24 @@ class PlayState extends MusicBeatState
 		scoreTxt.visible = !ClientPrefs.data.hideHud;
 		uiGroup.add(scoreTxt);
 		
-		// Break Timer Feature - Create timer display
+		// Break timer HUD.
 		if (ClientPrefs.data.breakTimer)
 		{
-			breakTimerText = new FlxText(0, 0, 0, "", 48);
-			breakTimerText.setFormat(Paths.font("phantom.ttf"), 48, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			breakTimerIndicator = new MaterialWavyProgressIndicator(0, 0, CIRCULAR, BREAK_TIMER_INDICATOR_SIZE);
+			breakTimerIndicator.cameras = [camHUD];
+			breakTimerIndicator.scrollFactor.set();
+			breakTimerIndicator.visible = false;
+			breakTimerIndicator.value = 0;
+			add(breakTimerIndicator);
+
+			breakTimerText = new FlxText(0, 0, 0, "", BREAK_TIMER_TEXT_SIZE);
+			breakTimerText.setFormat(Paths.font("phantom.ttf"), BREAK_TIMER_TEXT_SIZE, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			breakTimerText.cameras = [camHUD];
 			breakTimerText.scrollFactor.set();
 			breakTimerText.borderSize = 3;
 			breakTimerText.visible = false;
 			add(breakTimerText);
+			refreshTimeBarVisualStyle();
 		}
 	
 		// Detectar si es un chart de StepMania o si usa el stage notitg
@@ -1346,10 +1345,8 @@ class PlayState extends MusicBeatState
 		initModchart();
 		
 		// Initialize gradient time bar
-		if (ClientPrefs.data.shadedTimeBar) {
+		if (ClientPrefs.data.shadedTimeBar)
 			reloadGradientColors();
-			gradientTimebar();
-		}
 		
 		var splash:NoteSplash = new NoteSplash();
 		grpNoteSplashes.add(splash);
@@ -2409,7 +2406,10 @@ class PlayState extends MusicBeatState
 
 		// Song duration in a float, useful for the time left feature
 		songLength = FlxG.sound.music.length;
-		FlxTween.tween(timeBar.scale, {x: 1}, 0.5, {ease: FlxEase.circOut});
+		var showTime:Bool = (ClientPrefs.data.timeBarType != 'Disabled');
+		timeBar.visible = showTime;
+		timeTxt.visible = showTime;
+		syncTimeBarVisualState();
 		FlxTween.tween(versionText, {y: 5}, 0.5, {ease: FlxEase.circOut});
 		
 		new FlxTimer().start(5.0, function(tmr:FlxTimer)
@@ -2856,6 +2856,7 @@ class PlayState extends MusicBeatState
 		}
 
 		unspawnNotes.sort(sortByTime);
+		cacheBreakTimerNotes();
 		
 		// Heavy Charts Mode: Convert notes to lightweight structure
 		useHeavyCharts = HeavyChartManager.shouldUseHeavyCharts();
@@ -2885,6 +2886,52 @@ class PlayState extends MusicBeatState
 			if (!note.isSustainNote && note.mustPress)
 				totalNotes++;
 		}
+	}
+
+	function cacheBreakTimerNotes():Void
+	{
+		breakTimerNoteTimes = [];
+		breakTimerNoteIndex = 0;
+		breakTimerNextNoteTime = -1;
+		breakTimerLastNoteTime = -1;
+
+		if (unspawnNotes == null)
+			return;
+
+		for (note in unspawnNotes)
+		{
+			if (note != null && note.mustPress && !note.isSustainNote)
+				breakTimerNoteTimes.push(note.strumTime);
+		}
+
+		breakTimerNoteTimes.sort(function(a:Float, b:Float):Int {
+			return a < b ? -1 : (a > b ? 1 : 0);
+		});
+	}
+
+	function syncBreakTimerNotes(currentTime:Float):Void
+	{
+		if (breakTimerNoteTimes == null || breakTimerNoteTimes.length == 0)
+		{
+			breakTimerNoteIndex = 0;
+			breakTimerLastNoteTime = -1;
+			breakTimerNextNoteTime = -1;
+			return;
+		}
+
+		if (breakTimerLastNoteTime > currentTime)
+		{
+			breakTimerNoteIndex = 0;
+			breakTimerLastNoteTime = -1;
+		}
+
+		while (breakTimerNoteIndex < breakTimerNoteTimes.length && currentTime >= breakTimerNoteTimes[breakTimerNoteIndex])
+		{
+			breakTimerLastNoteTime = breakTimerNoteTimes[breakTimerNoteIndex];
+			breakTimerNoteIndex++;
+		}
+
+		breakTimerNextNoteTime = breakTimerNoteIndex < breakTimerNoteTimes.length ? breakTimerNoteTimes[breakTimerNoteIndex] : -1;
 	}
 
 	// called only once per different event (Used for precaching)
@@ -3661,8 +3708,8 @@ class PlayState extends MusicBeatState
 				checkEventNote();
 				#end
 			
-			// Break Timer Feature - Show timer when next notes are approaching
-			if (ClientPrefs.data.breakTimer && breakTimerText != null && playerStrums != null && playerStrums.length > 0)
+			// Show the break timer when the next note is still far away.
+			if (ClientPrefs.data.breakTimer && breakTimerText != null && breakTimerIndicator != null && playerStrums != null && playerStrums.length > 0)
 			{
 				var currentTime:Float = Conductor.songPosition;
 
@@ -3670,62 +3717,26 @@ class PlayState extends MusicBeatState
 				if (breakTimerUpdateAccum >= adaptiveBreakTimerInterval)
 				{
 					breakTimerUpdateAccum = 0;
-					breakTimerNextNoteTime = -1;
-					var scanLastNote:Float = -1;
-
-					for (note in notes)
-					{
-						if (note != null && note.mustPress && !note.isSustainNote)
-						{
-							if (!note.wasGoodHit && note.strumTime > currentTime)
-							{
-								// Upcoming note
-								if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
-									breakTimerNextNoteTime = note.strumTime;
-							}
-							else if (note.strumTime <= currentTime)
-							{
-								// Already-passed note - track the most recent one
-								if (note.strumTime > scanLastNote)
-									scanLastNote = note.strumTime;
-							}
-						}
-					}
-
-					if (unspawnNotes != null && unspawnNotes.length > 0)
-					{
-						for (note in unspawnNotes)
-						{
-							if (note != null && note.mustPress && !note.isSustainNote && note.strumTime > currentTime)
-							{
-								if (breakTimerNextNoteTime < 0 || note.strumTime < breakTimerNextNoteTime)
-									breakTimerNextNoteTime = note.strumTime;
-								break;
-							}
-						}
-					}
-
-					// Update last note time if we found a more recent one
-					if (scanLastNote > breakTimerLastNoteTime)
-						breakTimerLastNoteTime = scanLastNote;
+					syncBreakTimerNotes(currentTime);
 				}
 
-				// Determine the gap start: use the last known note time (or current time if none)
-				var gapStart:Float = (breakTimerLastNoteTime > 0) ? breakTimerLastNoteTime : currentTime;
-				var totalGap:Float = (breakTimerNextNoteTime > 0) ? (breakTimerNextNoteTime - gapStart) : -1;
+				var gapStart:Float = breakTimerLastNoteTime >= 0 ? breakTimerLastNoteTime : 0;
+				var totalGap:Float = breakTimerNextNoteTime > 0 ? (breakTimerNextNoteTime - gapStart) : -1;
 
-				// Only show the timer when there is a real break (gap >= threshold)
+				// Only show the timer when there is a real break.
 				var timeUntilNext:Float = (breakTimerNextNoteTime - currentTime) / 1000;
-				if (breakTimerNextNoteTime > 0 && totalGap >= BREAK_TIMER_MIN_GAP && timeUntilNext >= 0 && timeUntilNext <= 5.0)
+				if (!startingSong && breakTimerNextNoteTime > 0 && totalGap >= BREAK_TIMER_MIN_GAP && timeUntilNext > 0)
 				{
-					// Show countdown from 5 down to 1 (skip 0 - note is basically on top of us)
-					var displayValue:Int = Math.floor(timeUntilNext);
+					var displayValue:Int = Math.ceil(timeUntilNext);
 					if (displayValue >= 1)
 					{
 						breakTimerText.visible = true;
+						breakTimerIndicator.visible = true;
 						breakTimerText.text = Std.string(displayValue);
+						var countdownDuration = Math.max(0.001, totalGap / 1000);
+						breakTimerIndicator.value = FlxMath.bound(timeUntilNext / countdownDuration, 0, 1);
 						
-						// Position timer at player lane (center of player strums)
+						// Center the timer on the player lane.
 						var centerX:Float = 0;
 						for (strum in playerStrums)
 						{
@@ -3733,27 +3744,39 @@ class PlayState extends MusicBeatState
 								centerX += strum.x + strum.width / 2;
 						}
 						centerX /= playerStrums.length;
+						var indicatorY = (ClientPrefs.data.downScroll ? FlxG.height - 236 : 84);
+						var indicatorSize = breakTimerIndicator.getIndicatorHeight();
+						breakTimerIndicator.x = centerX - indicatorSize / 2;
+						breakTimerIndicator.y = indicatorY;
 						
 						breakTimerText.x = centerX - breakTimerText.width / 2;
-						breakTimerText.y = (ClientPrefs.data.downScroll ? FlxG.height - 200 : 120);
+						breakTimerText.y = indicatorY + Math.max(0, (indicatorSize - breakTimerText.height) * 0.5) - 3;
 						
-						// Animate on value change
+						// Animate when the displayed number changes.
 						if (lastBreakTimerValue != displayValue)
 						{
 							breakTimerText.scale.set(1.5, 1.5);
+							breakTimerIndicator.scale.set(1.1, 1.1);
 							FlxTween.tween(breakTimerText.scale, {x: 1, y: 1}, 0.2, {ease: FlxEase.circOut});
+							FlxTween.tween(breakTimerIndicator.scale, {x: 1, y: 1}, 0.2, {ease: FlxEase.circOut});
 							lastBreakTimerValue = displayValue;
 						}
 					}
 					else
 					{
 						breakTimerText.visible = false;
+						breakTimerIndicator.visible = false;
+						breakTimerIndicator.value = 0;
+						breakTimerIndicator.scale.set(1, 1);
 						lastBreakTimerValue = -1;
 					}
 				}
 				else
 				{
 					breakTimerText.visible = false;
+					breakTimerIndicator.visible = false;
+					breakTimerIndicator.value = 0;
+					breakTimerIndicator.scale.set(1, 1);
 					lastBreakTimerValue = -1;
 				}
 			}
@@ -3885,13 +3908,71 @@ class PlayState extends MusicBeatState
 		return (Std.int(FlxMath.bound(alpha, 0, 1) * 255) << 24) | (color & 0x00FFFFFF);
 	}
 
-	function refreshTimeBarVisualStyle():Void
+	inline function getTimeBarLeftColor():FlxColor
 	{
-		if (timeBar == null || timeBar.leftBar == null || timeBar.rightBar == null || timeProgressIndicator == null)
+		return ClientPrefs.data.shadedTimeBar ? timeBarGradientLeftColor : FlxColor.WHITE;
+	}
+
+	inline function getTimeBarRightColor():FlxColor
+	{
+		return ClientPrefs.data.shadedTimeBar ? timeBarGradientRightColor : FlxColor.BLACK;
+	}
+
+	function repaintSolidTimeBarSprite(sprite:FlxSprite, color:FlxColor):Void
+	{
+		if (sprite == null || timeBar == null || timeBar.bg == null)
 			return;
 
-		var leftColor = timeBar.leftBar.color;
-		var rightColor = timeBar.rightBar.color;
+		sprite.makeGraphic(Std.int(timeBar.bg.width), Std.int(timeBar.bg.height), FlxColor.WHITE, true);
+		sprite.antialiasing = ClientPrefs.data.antialiasing;
+		sprite.color = color;
+		sprite.alpha = 1;
+	}
+
+	function repaintGradientTimeBarSprite(sprite:FlxSprite, leftColor:FlxColor, rightColor:FlxColor):Void
+	{
+		if (sprite == null || timeBar == null || timeBar.bg == null)
+			return;
+
+		sprite.makeGraphic(Std.int(timeBar.bg.width), Std.int(timeBar.bg.height), FlxColor.WHITE, true);
+		sprite.antialiasing = ClientPrefs.data.antialiasing;
+		sprite.color = FlxColor.WHITE;
+		sprite.alpha = 1;
+		gradientObject(sprite, [leftColor, rightColor], 0);
+	}
+
+	function refreshBreakTimerVisualStyle():Void
+	{
+		if (breakTimerIndicator == null)
+			return;
+
+		breakTimerIndicator.resetThemeColors();
+		breakTimerIndicator.setTrackColor(FlxColor.TRANSPARENT);
+	}
+
+	function refreshTimeBarVisualStyle():Void
+	{
+		if (timeProgressIndicator == null)
+			return;
+
+		var leftColor = getTimeBarLeftColor();
+		var rightColor = getTimeBarRightColor();
+
+		if (timeBar != null && timeBar.leftBar != null && timeBar.rightBar != null)
+		{
+			if (ClientPrefs.data.shadedTimeBar)
+			{
+				repaintGradientTimeBarSprite(timeBar.leftBar, leftColor, rightColor);
+				repaintSolidTimeBarSprite(timeBar.rightBar, FlxColor.BLACK);
+			}
+			else
+			{
+				repaintSolidTimeBarSprite(timeBar.leftBar, leftColor);
+				repaintSolidTimeBarSprite(timeBar.rightBar, rightColor);
+			}
+			timeBar.regenerateClips();
+		}
+
 		if (ClientPrefs.data.shadedTimeBar)
 		{
 			timeProgressIndicator.setWaveGradient(leftColor, rightColor);
@@ -3899,9 +3980,11 @@ class PlayState extends MusicBeatState
 		}
 		else
 		{
-			timeProgressIndicator.setWaveColor(leftColor);
-			timeProgressIndicator.setTrackColor(withBarAlpha(rightColor, 0.55));
+			timeProgressIndicator.setWaveColor(FlxColor.WHITE);
+			timeProgressIndicator.setTrackColor(withBarAlpha(FlxColor.BLACK, 0.55));
 		}
+
+		refreshBreakTimerVisualStyle();
 
 		lastTimeBarLeftColor = leftColor;
 		lastTimeBarRightColor = rightColor;
@@ -3926,15 +4009,17 @@ class PlayState extends MusicBeatState
 		timeProgressIndicator.scale.set(timeBar.scale.x, timeBar.scale.y * TIME_PROGRESS_SCALE_Y);
 		timeProgressIndicator.value = songPercent;
 
-		if (timeBar.leftBar != null && timeBar.rightBar != null
-			&& (timeBar.leftBar.color != lastTimeBarLeftColor || timeBar.rightBar.color != lastTimeBarRightColor || ClientPrefs.data.shadedTimeBar != lastTimeBarGradientMode))
+		var leftColor = getTimeBarLeftColor();
+		var rightColor = getTimeBarRightColor();
+
+		if (leftColor != lastTimeBarLeftColor || rightColor != lastTimeBarRightColor || ClientPrefs.data.shadedTimeBar != lastTimeBarGradientMode)
 		{
 			refreshTimeBarVisualStyle();
 		}
 	}
 
 	public function gradientTimebar(?dadColor:FlxColor = null, ?bfColor:FlxColor = null) {
-		if (timeBar == null || timeBar.leftBar == null) return;
+		if (timeBar == null || timeProgressIndicator == null) return;
 		
 		if (dadColor == null && dad != null)
 			dadColor = FlxColor.fromRGB(dad.healthColorArray[0], dad.healthColorArray[1], dad.healthColorArray[2]);
@@ -3942,10 +4027,12 @@ class PlayState extends MusicBeatState
 		if (bfColor == null && boyfriend != null)
 			bfColor = FlxColor.fromRGB(boyfriend.healthColorArray[0], boyfriend.healthColorArray[1], boyfriend.healthColorArray[2]);
 
-		if (bfColor != null && dadColor != null) {
-			timeBar.setColors(bfColor, dadColor);
-			refreshTimeBarVisualStyle();
-		}
+		if (bfColor != null)
+			timeBarGradientLeftColor = bfColor;
+		if (dadColor != null)
+			timeBarGradientRightColor = dadColor;
+
+		refreshTimeBarVisualStyle();
 	}
 
 	public function reloadGradientColors() {
@@ -3958,6 +4045,9 @@ class PlayState extends MusicBeatState
 		setOnScripts('boyfriendHealthColor', boyfriendHealthColor);
 		if (gf != null)
 			setOnScripts('gfHealthColor', gfHealthColor);
+
+		timeBarGradientRightColor = FlxColor.fromRGB(dadHealthColor[0], dadHealthColor[1], dadHealthColor[2]);
+		timeBarGradientLeftColor = FlxColor.fromRGB(boyfriendHealthColor[0], boyfriendHealthColor[1], boyfriendHealthColor[2]);
 
 		if (ClientPrefs.data.shadedTimeBar)
 			gradientTimebar();
@@ -4724,12 +4814,14 @@ class PlayState extends MusicBeatState
 		}
 
 		if (bfColor != null || dadColor != null)
-			timeBar.setColors(bfColor != null ? bfColor : timeBar.leftBar.color, dadColor != null ? dadColor : timeBar.rightBar.color);
-		
-		if (ClientPrefs.data.shadedTimeBar)
-			gradientTimebar(dadColor, bfColor);
-		else
-			refreshTimeBarVisualStyle();
+		{
+			if (bfColor != null)
+				timeBarGradientLeftColor = bfColor;
+			if (dadColor != null)
+				timeBarGradientRightColor = dadColor;
+		}
+
+		refreshTimeBarVisualStyle();
 	}
 
 	public function tweenCamIn() {
