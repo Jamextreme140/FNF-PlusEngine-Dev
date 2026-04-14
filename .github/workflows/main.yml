@@ -180,7 +180,7 @@ jobs:
         run: haxelib run lime build windows -32 -D 32bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: windowsBuild32
           path: export/32bit/windows/bin/*
@@ -218,7 +218,7 @@ jobs:
         run: haxelib run lime build windows -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: windowsBuild64
           path: export/release/windows/bin/*
@@ -267,7 +267,7 @@ jobs:
         run: haxelib run lime build mac -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: macBuildIntel
           path: export/release/macos/bin/*
@@ -303,7 +303,7 @@ jobs:
         run: haxelib run lime build mac -arm64 --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_ARM64
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: macBuildARM
           path: export/release/macos/bin/*
@@ -357,7 +357,7 @@ jobs:
         run: haxelib run lime build linux -64bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: linuxBuild64
           path: export/release/linux/bin/*
@@ -382,7 +382,7 @@ jobs:
           java-version: '21'
       
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4.0.0
+        uses: android-actions/setup-android@v4.0.1
       
       - name: Install Android SDK 36 and NDK r27d
         run: |
@@ -427,7 +427,7 @@ jobs:
           haxelib run lime build android --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: androidBuild
           path: export/release/android/bin/app/build/outputs/apk/release/*.apk
@@ -471,7 +471,7 @@ jobs:
           rm -rf Payload
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: iOSBuild
           path: export/release/ios/build/Release-iphoneos/*.ipa
@@ -506,7 +506,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           path: artifacts/
 
