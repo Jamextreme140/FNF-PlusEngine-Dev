@@ -54,6 +54,7 @@ import lenin.slushithings.windows.WindowsAPI;
 
 #if LUA_ALLOWED
 import funkin.modding.scripting.*;
+import funkin.modding.scripting.psychlua.LuaModchart;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.LuaVideo;
 import funkin.modding.scripting.psychlua.CustomSubstate;
@@ -3337,6 +3338,24 @@ class PlayState extends MusicBeatState
 		}
 	}
 
+	inline function getRenderedStrumCenterX(strum:StrumNote):Float {
+		#if MODCHARTS_NOTITG_ALLOWED
+		final renderedPoint = LuaModchart.getRenderedStrumPosition(strum);
+		if (renderedPoint != null)
+			return renderedPoint.x + Manager.ARROW_SIZEDIV2;
+		#end
+		return strum.x + strum.width / 2;
+	}
+
+	inline function getRenderedStrumTopY(strum:StrumNote):Float {
+		#if MODCHARTS_NOTITG_ALLOWED
+		final renderedPoint = LuaModchart.getRenderedStrumPosition(strum);
+		if (renderedPoint != null)
+			return renderedPoint.y;
+		#end
+		return strum.y;
+	}
+
 	override public function update(elapsed:Float)
 	{
 		if(!inCutscene && !paused && !freezeCamera) {
@@ -3738,13 +3757,18 @@ class PlayState extends MusicBeatState
 						
 						// Center the timer on the player lane.
 						var centerX:Float = 0;
+						var centerY:Float = 0;
 						for (strum in playerStrums)
 						{
 							if (strum != null)
-								centerX += strum.x + strum.width / 2;
+							{
+								centerX += getRenderedStrumCenterX(strum);
+								centerY += getRenderedStrumTopY(strum);
+							}
 						}
 						centerX /= playerStrums.length;
-						var indicatorY = (ClientPrefs.data.downScroll ? FlxG.height - 236 : 84);
+						centerY /= playerStrums.length;
+						var indicatorY = centerY + (ClientPrefs.data.downScroll ? -116 : 64);
 						var indicatorSize = breakTimerIndicator.getIndicatorHeight();
 						breakTimerIndicator.x = centerX - indicatorSize / 2;
 						breakTimerIndicator.y = indicatorY;
@@ -5280,7 +5304,11 @@ class PlayState extends MusicBeatState
 		note.ratingMod = daRating.ratingMod;
 		if(!note.ratingDisabled) daRating.hits++;
 		note.rating = daRating.name;
-		score = daRating.score;		if(daRating.noteSplash && !note.noteSplashData.disabled)
+		score = daRating.score;
+		setOnScripts('lastJudgement', daRating.name);
+		setOnScripts('lastHitMs', noteDiffSigned);
+		setOnScripts('lastHitScoreGain', score);
+		if(daRating.noteSplash && !note.noteSplashData.disabled)
 			spawnNoteSplashOnNote(note);
 
 		if (judgementCounter != null) {

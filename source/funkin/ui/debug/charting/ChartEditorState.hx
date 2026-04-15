@@ -1000,12 +1000,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 				if(vortexEnabled && _keysPressedBuffer.contains(true))
 				{
-					var typeSelected:String = noteTypes[noteTypeDropDown.selectedIndex];
-					if(typeSelected != null)
-					{
-						typeSelected = typeSelected.trim();
-						if(typeSelected.length < 1) typeSelected = null;
-					}
+					var typeSelected:String = getSelectedNoteType();
 
 					var sectionStart:Float = cachedSectionTimes[curSec];
 					var strumTime:Float = Conductor.songPosition - sectionStart;
@@ -1567,7 +1562,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 									var didAdd:Bool = false;
 		
 									var noteSetupData:Array<Dynamic> = [strumTime, noteData, 0];
-									var typeSelected:String = noteTypes[noteTypeDropDown.selectedIndex].trim();
+									var typeSelected:String = getSelectedNoteType();
 									if(typeSelected != null && typeSelected.length > 0)
 										noteSetupData.push(typeSelected);
 		
@@ -1787,7 +1782,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 								var didAdd:Bool = false;
 	
 								var noteSetupData:Array<Dynamic> = [strumTime, noteData, 0];
-								var typeSelected:String = noteTypes[noteTypeDropDown.selectedIndex].trim();
+								var typeSelected:String = getSelectedNoteType();
 								if(typeSelected != null && typeSelected.length > 0)
 									noteSetupData.push(typeSelected);
 	
@@ -2200,6 +2195,23 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			value2InputText.text = '';
 		}
 		forceDataUpdate = true;
+	}
+
+	function getSelectedNoteType():Null<String>
+	{
+		if(noteTypeDropDown == null || noteTypes == null || noteTypes.length < 1)
+			return null;
+
+		var selectedIndex:Int = noteTypeDropDown.selectedIndex;
+		if(selectedIndex < 0 || selectedIndex >= noteTypes.length)
+			return null;
+
+		var typeSelected:String = noteTypes[selectedIndex];
+		if(typeSelected == null)
+			return null;
+
+		typeSelected = typeSelected.trim();
+		return typeSelected.length > 0 ? typeSelected : null;
 	}
 
 	function updateSelectedEventText()
@@ -3225,7 +3237,12 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		noteTypeDropDown = new PsychUIDropDownMenu(objX, objY, [], function(id:Int, changeToType:String)
 		{
 			var newSelected:Array<MetaNote> = [];
-			var typeSelected:String = noteTypes[id].trim();
+			var typeSelected:String = null;
+			if(noteTypes != null && id >= 0 && id < noteTypes.length && noteTypes[id] != null)
+			{
+				typeSelected = noteTypes[id].trim();
+				if(typeSelected.length < 1) typeSelected = null;
+			}
 			for (note in selectedNotes)
 			{
 				if(note == null || note.isEvent) continue;

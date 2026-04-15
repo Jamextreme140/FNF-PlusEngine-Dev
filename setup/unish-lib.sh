@@ -10,7 +10,7 @@ echo This might take a few moments depending on your internet speed.
 haxelib git hxcpp https://github.com/kittycathy233/hxcpp --quiet
 haxelib git lime https://github.com/Psych-Plus-Team/lime.git --quiet
 haxelib install openfl 9.5.0 --quiet
-haxelib git flixel https://github.com/kittycathy233/flixel --quiet
+haxelib git flixel https://github.com/Psych-Plus-Team/flixel --quiet
 haxelib install flixel-addons 3.3.2 --quiet
 haxelib install moonchart 0.5.1 --quiet
 haxelib install flixel-tools 1.5.1 --quiet

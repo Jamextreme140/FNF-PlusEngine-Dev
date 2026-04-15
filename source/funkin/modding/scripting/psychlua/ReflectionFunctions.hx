@@ -100,7 +100,7 @@ class ReflectionFunctions
 			LuaUtils.setVarInArray(myClass, variable, allowInstances ? parseInstances(value) : value, allowMaps);
 			return value;
 		});
-		Lua_helper.add_callback(lua, "getPropertyFromGroup", function(group:String, index:Int, variable:Dynamic, ?allowMaps:Bool = false) {
+		Lua_helper.add_callback(lua, "getPropertyFromGroup", function(group:String, index:Int, variable:Dynamic, ?allowMaps:Bool = false):Dynamic {
 			var split:Array<String> = group.split('.');
 			var realObject:Dynamic = null;
 			if(split.length > 1)
@@ -111,11 +111,21 @@ class ReflectionFunctions
 			var groupOrArray:Dynamic = Reflect.getProperty(LuaUtils.getTargetInstance(), group);
 			if(groupOrArray != null)
 			{
+				var groupLower = group.toLowerCase();
+				var variableName = Std.string(variable);
+				var propertyLower = variableName.toLowerCase();
 				switch(Type.typeof(groupOrArray))
 				{
 					case TClass(Array): //Is Array
 						var leArray:Dynamic = realObject[index];
 						if(leArray != null) {
+							#if MODCHARTS_NOTITG_ALLOWED
+							if ((groupLower == 'playerstrums' || groupLower == 'opponentstrums' || groupLower == 'strumlinenotes') && (propertyLower == 'x' || propertyLower == 'y')) {
+								final renderedPoint = LuaModchart.getRenderedStrumPosition(cast leArray);
+								if (renderedPoint != null)
+									return propertyLower == 'x' ? renderedPoint.x : renderedPoint.y;
+							}
+							#end
 							var result:Dynamic = null;
 							if(Type.typeof(variable) == ValueType.TInt)
 								result = leArray[variable];
@@ -126,6 +136,16 @@ class ReflectionFunctions
 						FunkinLua.luaTrace('getPropertyFromGroup: Object #$index from group: $group doesn\'t exist!', false, false, FlxColor.RED);
 
 					default: //Is Group
+						#if MODCHARTS_NOTITG_ALLOWED
+						if ((groupLower == 'playerstrums' || groupLower == 'opponentstrums' || groupLower == 'strumlinenotes') && (propertyLower == 'x' || propertyLower == 'y')) {
+							final member = realObject.members[index];
+							if (member != null) {
+								final renderedPoint = LuaModchart.getRenderedStrumPosition(cast member);
+								if (renderedPoint != null)
+									return propertyLower == 'x' ? renderedPoint.x : renderedPoint.y;
+							}
+						}
+						#end
 						var result:Dynamic = LuaUtils.getGroupStuff(realObject.members[index], variable, allowMaps);
 						return result;
 				}

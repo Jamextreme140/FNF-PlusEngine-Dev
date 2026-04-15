@@ -1,6 +1,7 @@
 package funkin.modding.scripting.psychlua;
 
 import funkin.modding.modchart.Manager;
+import funkin.modding.modchart.backend.core.ArrowData;
 import funkin.modding.modchart.backend.standalone.Adapter;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier.PathNode;
@@ -10,6 +11,67 @@ import flixel.tweens.FlxEase;
 
 class LuaModchart
 {
+    static final __luaArrowPoint:FlxPoint = FlxPoint.get();
+    static final __luaArrowData:ArrowData = {
+        hitTime: 0,
+        distance: 0,
+        lane: 0,
+        player: 0,
+        isTapArrow: false
+    };
+
+    public static function getRenderedStrumPosition(strum:FlxSprite, ?field:Int = -1):Null<FlxPoint> {
+        if (strum == null || Manager.instance == null || Adapter.instance == null)
+            return null;
+
+        final playfields = Manager.instance.playfields;
+        if (playfields == null || playfields.length == 0)
+            return null;
+
+        final player = Adapter.instance.getPlayerFromArrow(strum);
+        var targetField = field;
+        if (targetField < 0)
+            targetField = playfields.length > 1 ? Std.int(Math.min(player, playfields.length - 1)) : 0;
+
+        if (targetField < 0 || targetField >= playfields.length)
+            return null;
+
+        final playfield = playfields[targetField];
+        if (playfield == null)
+            return null;
+
+        final lane = Adapter.instance.getLaneFromArrow(strum);
+        final songPos = Adapter.instance.getSongPosition();
+        var arrowTime = Adapter.instance.getTimeFromArrow(strum);
+        var arrowDiff = arrowTime - songPos;
+        final centered2 = playfield.getPercent('centered2', player);
+        final isTapArrow = Adapter.instance.isTapNote(strum);
+
+        if (isTapArrow) {
+            arrowDiff += FlxG.height * 0.25 * centered2;
+        } else {
+            arrowTime = songPos + (FlxG.height * 0.25 * centered2);
+            arrowDiff = arrowTime - songPos;
+        }
+
+        __luaArrowData.hitTime = arrowTime;
+        __luaArrowData.distance = arrowDiff;
+        __luaArrowData.lane = lane;
+        __luaArrowData.player = player;
+        __luaArrowData.hitten = Adapter.instance.arrowHit(strum);
+        __luaArrowData.isTapArrow = isTapArrow;
+
+        final arrowPosition = new openfl.geom.Vector3D(
+            Adapter.instance.getDefaultReceptorX(lane, player) + Manager.ARROW_SIZEDIV2,
+            Adapter.instance.getDefaultReceptorY(lane, player) + Manager.ARROW_SIZEDIV2,
+            0
+        );
+        final output = playfield.modifiers.getPath(arrowPosition, __luaArrowData);
+
+        __luaArrowPoint.set(output.pos.x - Manager.ARROW_SIZEDIV2, output.pos.y - Manager.ARROW_SIZEDIV2);
+        return __luaArrowPoint;
+    }
+
     public static function implement(funk:FunkinLua) {
         var lua:State = funk.lua;
         

@@ -179,6 +179,9 @@ class FunkinLua {
 			set('misses', game.songMisses);
 			set('hits', game.songHits);
 			set('combo', game.combo);
+			set('lastJudgement', 'none');
+			set('lastHitMs', 0);
+			set('lastHitScoreGain', 0);
 			set('deaths', PlayState.deathCounter);
 	
 			set('rating', game.ratingPercent);

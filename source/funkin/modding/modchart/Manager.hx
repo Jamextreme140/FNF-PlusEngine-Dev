@@ -57,14 +57,13 @@ final class Manager extends FlxBasic {
 	 * Internal helper function to apply a function to each playfield.
 	 *
 	 * @param func The function to apply to each playfield.
-	 * @param player Optionally, the specific player to target (-1 for all).
+	 * @param field Optionally, the specific playfield to target (-1 for all).
 	 */
-	public inline function iteratePlayfields(func:PlayField->Void, player:Int = -1) {
-		// If there's only one playfield or a specific player is provided, apply the function directly
-		if (playfields.length == 1 && player != -1) {
-			var targetPlayer = player != -1 ? player : 0;
-			if (targetPlayer < playfields.length && playfields[targetPlayer] != null)
-				return func(playfields[targetPlayer]);
+	public inline function iteratePlayfields(func:PlayField->Void, field:Int = -1) {
+		// Apply to a specific playfield when requested.
+		if (field != -1) {
+			if (field < playfields.length && playfields[field] != null)
+				return func(playfields[field]);
 			return;
 		}
 
