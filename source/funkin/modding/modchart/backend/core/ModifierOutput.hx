@@ -9,4 +9,7 @@ package funkin.modding.modchart.backend.core;
 class ModifierOutput {
 	var pos:Vector3;
 	var visuals:VisualParameters;
+	var rawX:Float = 0;
+	var rawY:Float = 0;
+	var rawZ:Float = 0;
 }

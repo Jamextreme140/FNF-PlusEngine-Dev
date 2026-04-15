@@ -110,7 +110,7 @@ final class ModifierGroup {
 	 */
 	public inline function getPath(pos:Vector3, data:ArrowData, ?posDiff:Float = 0, ?allowVis:Bool = true, ?allowPos:Bool = true):ModifierOutput {
 		if (!allowVis && !allowPos)
-			return {pos: pos, visuals: {}};
+			return {pos: pos, visuals: {}, rawX: pos.x, rawY: pos.y, rawZ: pos.z};
 
 		final hitTime = data.hitTime + posDiff;
 		final distance = data.distance + posDiff;
@@ -146,10 +146,16 @@ final class ModifierGroup {
 				visuals = mod.visuals(visuals, args);
 		}
 		pos.z *= 0.001 * Config.Z_SCALE;
+		final rawX = pos.x;
+		final rawY = pos.y;
+		final rawZ = pos.z;
 		pos = playfield.view.transformVector(pos);
 		final output:ModifierOutput = {
 			pos: pos,
-			visuals: visuals
+			visuals: visuals,
+			rawX: rawX,
+			rawY: rawY,
+			rawZ: rawZ
 		};
 
 		return output;

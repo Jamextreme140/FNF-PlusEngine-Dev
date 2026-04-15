@@ -102,7 +102,6 @@ class MaterialButton extends FlxSpriteGroup
 			return;
 		}
 
-		redrawGeometry();
 		outline.color = enabled ? MD3Theme.outline : MD3Theme.disabledContentColor();
 
 		if (!enabled)

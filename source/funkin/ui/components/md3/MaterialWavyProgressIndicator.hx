@@ -35,6 +35,9 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 
 	var phase:Float = 0;
 	var sweepPhase:Float = 0;
+	var redrawAccumulator:Float = 0;
+
+	static inline var REDRAW_INTERVAL:Float = 1 / 30;
 
 	inline function linearHeight():Int return MD3Metrics.size(8);
 	inline function linearCorner():Int return MD3Metrics.corner(4, indicatorExtent, linearHeight());
@@ -195,11 +198,15 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 	override function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
+		if (!visible || alpha <= 0) return;
 
 		phase += elapsed * animationSpeed * TAU;
 		sweepPhase += elapsed * 1.15;
 		if (phase > TAU) phase -= TAU;
 		if (sweepPhase > 1000) sweepPhase = 0;
+		redrawAccumulator += elapsed;
+		if (redrawAccumulator < REDRAW_INTERVAL) return;
+		redrawAccumulator = 0;
 
 		redrawDynamic();
 	}

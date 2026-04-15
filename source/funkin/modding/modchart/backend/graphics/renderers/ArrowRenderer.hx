@@ -86,7 +86,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 			Adapter.instance.getDefaultReceptorY(arrowData.lane, arrowData.player) + Manager.ARROW_SIZEDIV2, 0);
 
 		final output = parent.modifiers.getPath(arrowPosition, arrowData);
-		arrowPosition.copyFrom(output.pos.clone());
+		arrowPosition.setTo(output.rawX, output.rawY, output.rawZ);
 
 		// internal mods
 		if (orient != 0) {
@@ -107,11 +107,10 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		final projectionDepth = arrowPosition.z;
 		final depth = projectionDepth;
 
-		var depthScale = 1 / depth;
 		var planeWidth = arrow.frame.frame.width * arrow.scale.x * .5;
 		var planeHeight = arrow.frame.frame.height * arrow.scale.y * .5;
 
-		arrow._z = (depth - 1) * 1000;
+		arrow._z = (output.pos.z - 1) * 1000;
 
 		var planeVertices = getGraphicVertices(planeWidth, planeHeight, arrow.flipX, arrow.flipY);
 		// reuse pre-allocated 4-element buffer instead of allocating per call
@@ -135,13 +134,11 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 				rotation.x = matrix.__transformX(rotation.x, rotation.y);
 				rotation.y = matrix.__transformY(rotation.x, rotation.y);
 			}
-			rotation.x = rotation.x * depthScale * output.visuals.scaleX;
-			rotation.y = rotation.y * depthScale * output.visuals.scaleY;
+			rotation.x = rotation.x * output.visuals.scaleX;
+			rotation.y = rotation.y * output.visuals.scaleY;
 
-			var view = new Vector3(rotation.x + arrowPosition.x, rotation.y + arrowPosition.y, rotation.z);
-			// if (Config.CAMERA3D_ENABLED)
-			// 	view = parent.camera3D.applyViewTo(view);
-			view.z *= 0.001 * Config.Z_SCALE;
+			var view = new Vector3(rotation.x + arrowPosition.x, rotation.y + arrowPosition.y,
+				(rotation.z * 0.001 * Config.Z_SCALE) + arrowPosition.z);
 
 			// The result of the perspective projection of rotation
 			final projection = this.view.transformVector(view);
