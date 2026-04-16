@@ -48,7 +48,7 @@ class CreditsState extends MusicBeatState
 			['Legacy Odyssey',      "",                 "Co-programmer of Plus Engine",                     "https://www.youtube.com/@LegacyOdyssey","8E07C2"],
 			['DaffyToons',             "daffytoons",             "Failed Attempt at Plus Engine Programmer",                    "https://github.com/DaffyToons",   "0A8451"],
 			["Andres",              "slu",     "Creator and owner of several codes used based on the Slushi Engine", "https://github.com/Slushi-Github","8FD9D1"],
-			['sirthegamercoder',    "sir",              'Indonesian translation (Currently unavailable due to my exhaustion) and others PRs',           'https://bsky.app/profile/stgmd.bsky.social','7FDBFF'],
+			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           'https://bsky.app/profile/stgmd.bsky.social','7FDBFF'],
 			['Hansuke H',           "hansu",            'Vietnamese translation and alphabet sprite',     'https://www.facebook.com/hansuke.hotaroshi', 'FF6C8D'],
 			['TheoDev',             "theo",             "Owner, Lead coder of Funkin Modchart",                    "https://github.com/TheoDevelops",   "FFB347"],
 			[''],
