@@ -42,6 +42,7 @@ class MaterialSlider extends FlxSpriteGroup
 	var displayCenterX:Float = 0;
 	var wavePhase:Float = 0;
 	var currentTrackVisualHeight:Int = 0;
+	var needsStaticTrackRedraw:Bool = true;
 
 	// Interaction state
 	var isDragging:Bool = false;
@@ -130,6 +131,13 @@ class MaterialSlider extends FlxSpriteGroup
 		MD3ShapeTools.fillCircle(thumb, size);
 	}
 
+	function redrawStaticActiveTrack(width:Int, height:Int):Void
+	{
+		var drawWidth = Std.int(Math.max(height, width));
+		MD3ShapeTools.fillRoundRect(trackActive, drawWidth, height, height * 0.5);
+		needsStaticTrackRedraw = false;
+	}
+
 	function redrawActiveTrack(width:Int, height:Int, pressed:Bool):Void
 	{
 		var drawWidth = Std.int(Math.max(height, width));
@@ -171,6 +179,8 @@ class MaterialSlider extends FlxSpriteGroup
 		thumb.color = MD3Theme.primary;
 		valueLabel.color = MD3Theme.primary;
 		valueLabelText.color = MD3Theme.onPrimary;
+		needsStaticTrackRedraw = true;
+		layoutComponents(isDragging);
 	}
 
 	function updateVisuals(animate:Bool = true):Void
@@ -205,12 +215,21 @@ class MaterialSlider extends FlxSpriteGroup
 	{
 		var currentThumbSize = pressed ? thumbPressedSize() : thumbSize();
 		var currentTrackHeight = pressed ? trackActiveHeight() : trackInactiveHeight();
+		var activeTrackWidth = Std.int(Math.max(currentTrackHeight, displayCenterX));
 		currentTrackVisualHeight = currentTrackHeight;
 
 		trackInactive.x = x;
 		trackInactive.y = y + trackY(trackInactiveHeight());
 		updateInactiveTrackClip();
-		redrawActiveTrack(Std.int(Math.max(currentTrackHeight, displayCenterX)), currentTrackHeight, pressed);
+		if (pressed)
+		{
+			redrawActiveTrack(activeTrackWidth, currentTrackHeight, true);
+			needsStaticTrackRedraw = true;
+		}
+		else if (needsStaticTrackRedraw || trackActive.frameWidth != activeTrackWidth || trackActive.frameHeight != currentTrackHeight)
+		{
+			redrawStaticActiveTrack(activeTrackWidth, currentTrackHeight);
+		}
 		trackActive.x = x;
 		trackActive.y = y + thumbCenterY() - trackActive.height * 0.5;
 
@@ -279,8 +298,6 @@ class MaterialSlider extends FlxSpriteGroup
 	override function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
-		wavePhase += elapsed * WAVE_SPEED * TAU;
-		if (wavePhase > TAU) wavePhase -= TAU;
 
 		if (!enabled) return;
 		if (!allowMouseInput)
@@ -291,7 +308,6 @@ class MaterialSlider extends FlxSpriteGroup
 				hideValueLabel();
 				layoutComponents(false);
 			}
-			redrawActiveTrack(Std.int(Math.max(currentTrackVisualHeight, displayCenterX)), currentTrackVisualHeight, false);
 			return;
 		}
 
@@ -342,13 +358,13 @@ class MaterialSlider extends FlxSpriteGroup
 		// Update label position if dragging
 		if (isDragging)
 		{
+			wavePhase += elapsed * WAVE_SPEED * TAU;
+			if (wavePhase > TAU) wavePhase -= TAU;
 			layoutComponents(true);
 			updateLabelPosition();
 			updateLabelText();
 		}
 		#end
-
-		redrawActiveTrack(Std.int(Math.max(currentTrackVisualHeight, displayCenterX)), currentTrackVisualHeight, isDragging);
 	}
 
 	function set_value(newValue:Float):Float

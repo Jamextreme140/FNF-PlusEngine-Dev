@@ -67,11 +67,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		if (__parentOutput == null || (__rotateX == 0 && __rotateY == 0 && __rotateZ == 0))
 			return pos;
 
-		var tailFactor = pos.subtract(__parentOutput.pos);
+		var tailFactor = pos.subtract(new Vector3(__parentOutput.rawX, __parentOutput.rawY, __parentOutput.rawZ));
 		tailFactor = ModchartUtil.rotate3DVector(tailFactor, __rotateX, __rotateY, __rotateZ);
-		var output = __parentOutput.pos.add(tailFactor);
-		output.z *= 0.001 * Config.Z_SCALE;
-		return view.transformVector(output, __parentOutput.pos);
+		return new Vector3(__parentOutput.rawX + tailFactor.x, __parentOutput.rawY + tailFactor.y, __parentOutput.rawZ + tailFactor.z);
 	}
 
 	/**
@@ -118,10 +116,11 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		final size = hold.frame.frame.width * hold.scale.x * .5;
 
 		var origin:ModifierOutput = parent.modifiers.getPath(basePos.clone(), params);
-		var curPoint = origin.pos;
+		var curPoint = new Vector3(origin.pos.x, origin.pos.y, 0);
 		final depth = (origin.pos.z - 1) * 1000;
-		final zScale:Float = curPoint.z != 0 ? (1 / curPoint.z) : 1;
-		curPoint.z = 0;
+		final worldX = origin.rawX;
+		final worldY = origin.rawY;
+		final worldZ = origin.rawZ;
 
 		// before this, bc it fails with optimiz eholds too
 		var unit:Vector3;
@@ -159,20 +158,14 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 				rotation.x = __matrix.__transformX(rotation.x, rotation.y);
 				rotation.y = __matrix.__transformY(rotation.x, rotation.y);
 			}
-			rotation.x = rotation.x * zScale * visuals.scaleX;
-			rotation.y = rotation.y * zScale * visuals.scaleY;
+			rotation.x = rotation.x * visuals.scaleX;
+			rotation.y = rotation.y * visuals.scaleY;
 
-			var view = new Vector3(rotation.x + curPoint.x, rotation.y + curPoint.y, rotation.z);
+			var view = new Vector3(rotation.x + worldX, rotation.y + worldY, worldZ + (rotation.z * 0.001 * Config.Z_SCALE));
 			view = __rotateTail(view);
-			// if (Config.CAMERA3D_ENABLED)
-			// 	view = parent.camera3D.applyViewTo(view);
-			view.z *= 0.001;
 
 			// The result of the perspective projection of rotation
-			var projection = view;
-
-			if (view.z != 0)
-				projection = this.view.transformVector(view);
+			var projection = this.view.transformVector(view);
 
 			quad.x = projection.x;
 			quad.y = projection.y;
@@ -283,7 +276,6 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		final parentData = _parentDataBuf;
 		if (__rotateX != 0 || __rotateY != 0 || __rotateZ != 0) {
 			__parentOutput = parent.modifiers.getPath(basePos.clone(), parentData);
-			__parentOutput.pos.z = (__parentOutput.pos.z - 1) * 1000;
 		}
 
 		var vertPointer = 0;

@@ -291,7 +291,7 @@ final class Manager extends FlxBasic {
 	 * Draws all playfields, sorting them by z-order before drawing.
 	 */
 	override function draw():Void {
-		var playerItems:Array<Array<Array<FlxSprite>>> = Adapter.instance.getArrowItems();
+		var playerItems = Adapter.instance.getArrowItems();
 
 		if (playerItems == null)
 			return;

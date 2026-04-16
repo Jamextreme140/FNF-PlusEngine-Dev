@@ -18,13 +18,18 @@ class MD3ShapeTools
 
 	static function render(sprite:FlxSprite, width:Int, height:Int, drawShape:Shape->Void):Void
 	{
-		sprite.makeGraphic(width, height, FlxColor.TRANSPARENT, true);
+		var sizeChanged = sprite.pixels == null || sprite.frameWidth != width || sprite.frameHeight != height;
+		if (sizeChanged)
+			sprite.makeGraphic(width, height, FlxColor.TRANSPARENT, true);
+		else
+			sprite.pixels.fillRect(sprite.pixels.rect, FlxColor.TRANSPARENT);
+
 		var shape = new Shape();
 		drawShape(shape);
-		sprite.pixels.fillRect(sprite.pixels.rect, FlxColor.TRANSPARENT);
 		sprite.pixels.draw(shape, null, null, null, null, true);
 		sprite.dirty = true;
-		sprite.updateHitbox();
+		if (sizeChanged)
+			sprite.updateHitbox();
 	}
 
 	public static function fillRoundRect(sprite:FlxSprite, width:Int, height:Int, radius:Float, ?fillColor:FlxColor = 0xFFFFFFFF):Void
