@@ -150,42 +150,42 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 		var cardX = panelX + 28;
 		var cardY = contentTop;
 
-		cardY = addCard(new ModchartSwitchCard('camera3dEnabled', phraseSetting('enable_3d_cameras', 'Enable 3D Cameras'), phraseDescription('enable_3d_cameras', 'Turns depth transformations on or off for modcharts that use 3D cameras.'), cardWidth, ClientPrefs.data.camera3dEnabled, ClientPrefs.defaultData.camera3dEnabled, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('camera3dEnabled', Language.getPhrase('setting_enable_3d_cameras', 'Enable 3D Cameras'), Language.getPhrase('description_enable_3d_cameras', 'Turns depth transformations on or off for modcharts that use 3D cameras.'), cardWidth, ClientPrefs.data.camera3dEnabled, ClientPrefs.defaultData.camera3dEnabled, function(value:Bool) {
 			ClientPrefs.data.camera3dEnabled = value;
 			saveSetting('Enable 3D Cameras ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSliderCard('zScale', phraseSetting('z_axis_depth_scale', 'Z Axis Depth Scale'), phraseDescription('z_axis_depth_scale', 'Controls how strong the perceived 3D depth becomes. Higher means more dramatic perspective.'), cardWidth, ClientPrefs.data.zScale, ClientPrefs.defaultData.zScale, 0.1, 5.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new ModchartSliderCard('zScale', Language.getPhrase('setting_z_axis_depth_scale', 'Z Axis Depth Scale'), Language.getPhrase('description_z_axis_depth_scale', 'Controls how strong the perceived 3D depth becomes. Higher means more dramatic perspective.'), cardWidth, ClientPrefs.data.zScale, ClientPrefs.defaultData.zScale, 0.1, 5.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.zScale = value;
 			saveSetting('Z Axis Depth Scale: ' + value);
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('renderArrowPaths', phraseSetting('render_arrow_paths', 'Render Arrow Paths'), phraseDescription('render_arrow_paths', 'Draws the path trail for notes. Great for debugging, less great for free performance.'), cardWidth, ClientPrefs.data.renderArrowPaths, ClientPrefs.defaultData.renderArrowPaths, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('renderArrowPaths', Language.getPhrase('setting_render_arrow_paths', 'Render Arrow Paths'), Language.getPhrase('description_render_arrow_paths', 'Draws the path trail for notes. Great for debugging, less great for free performance.'), cardWidth, ClientPrefs.data.renderArrowPaths, ClientPrefs.defaultData.renderArrowPaths, function(value:Bool) {
 			ClientPrefs.data.renderArrowPaths = value;
 			saveSetting('Render Arrow Paths ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('styledArrowPaths', phraseSetting('styled_arrow_paths', 'Styled Arrow Paths'), phraseDescription('styled_arrow_paths', 'Applies extra color and transparency styling to note paths when rendering is enabled.'), cardWidth, ClientPrefs.data.styledArrowPaths, ClientPrefs.defaultData.styledArrowPaths, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('styledArrowPaths', Language.getPhrase('setting_styled_arrow_paths', 'Styled Arrow Paths'), Language.getPhrase('description_styled_arrow_paths', 'Applies extra color and transparency styling to note paths when rendering is enabled.'), cardWidth, ClientPrefs.data.styledArrowPaths, ClientPrefs.defaultData.styledArrowPaths, function(value:Bool) {
 			ClientPrefs.data.styledArrowPaths = value;
 			saveSetting('Styled Arrow Paths ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('optimizeHolds', phraseSetting('optimize_hold_rendering', 'Optimize Hold Rendering'), phraseDescription('optimize_hold_rendering', 'Cuts down sustain calculations for better performance, but very fancy modcharts may complain visually.'), cardWidth, ClientPrefs.data.optimizeHolds, ClientPrefs.defaultData.optimizeHolds, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('optimizeHolds', Language.getPhrase('setting_optimize_hold_rendering', 'Optimize Hold Rendering'), Language.getPhrase('description_optimize_hold_rendering', 'Cuts down sustain calculations for better performance, but very fancy modcharts may complain visually.'), cardWidth, ClientPrefs.data.optimizeHolds, ClientPrefs.defaultData.optimizeHolds, function(value:Bool) {
 			ClientPrefs.data.optimizeHolds = value;
 			saveSetting('Optimize Hold Rendering ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('holdsBehindStrum', phraseSetting('holds_behind_strums', 'Holds Behind Strums'), phraseDescription('holds_behind_strums', 'Places sustain notes behind the receptor line instead of over it.'), cardWidth, ClientPrefs.data.holdsBehindStrum, ClientPrefs.defaultData.holdsBehindStrum, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('holdsBehindStrum', Language.getPhrase('setting_holds_behind_strums', 'Holds Behind Strums'), Language.getPhrase('description_holds_behind_strums', 'Places sustain notes behind the receptor line instead of over it.'), cardWidth, ClientPrefs.data.holdsBehindStrum, ClientPrefs.defaultData.holdsBehindStrum, function(value:Bool) {
 			ClientPrefs.data.holdsBehindStrum = value;
 			saveSetting('Holds Behind Strums ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSliderCard('holdEndScale', phraseSetting('hold_end_scale', 'Hold End Scale'), phraseDescription('hold_end_scale', 'Scales the sustain tail cap size. Leave it at 1.0 unless your chart is doing geometry crimes.'), cardWidth, ClientPrefs.data.holdEndScale, ClientPrefs.defaultData.holdEndScale, 0.1, 3.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new ModchartSliderCard('holdEndScale', Language.getPhrase('setting_hold_end_scale', 'Hold End Scale'), Language.getPhrase('description_hold_end_scale', 'Scales the sustain tail cap size. Leave it at 1.0 unless your chart is doing geometry crimes.'), cardWidth, ClientPrefs.data.holdEndScale, ClientPrefs.defaultData.holdEndScale, 0.1, 3.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.holdEndScale = value;
 			saveSetting('Hold End Scale: ' + value);
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('columnSpecificModifiers', phraseSetting('column_specific_modifiers', 'Column Specific Modifiers'), phraseDescription('column_specific_modifiers', 'Allows modifiers to target specific lanes instead of applying globally. Stronger effect, higher cost.'), cardWidth, ClientPrefs.data.columnSpecificModifiers, ClientPrefs.defaultData.columnSpecificModifiers, function(value:Bool) {
+		cardY = addCard(new ModchartSwitchCard('columnSpecificModifiers', Language.getPhrase('setting_column_specific_modifiers', 'Column Specific Modifiers'), Language.getPhrase('description_column_specific_modifiers', 'Allows modifiers to target specific lanes instead of applying globally. Stronger effect, higher cost.'), cardWidth, ClientPrefs.data.columnSpecificModifiers, ClientPrefs.defaultData.columnSpecificModifiers, function(value:Bool) {
 			ClientPrefs.data.columnSpecificModifiers = value;
 			saveSetting('Column Specific Modifiers ' + boolLabel(value));
 		}), cardX, cardY);
@@ -201,16 +201,6 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String

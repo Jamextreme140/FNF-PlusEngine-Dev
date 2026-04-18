@@ -167,8 +167,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		var framerateDefault:Int = Std.int(FlxMath.bound(currentRefreshRate, minFramerate, 240));
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('Low Quality', 'Low Quality'),
-			phraseDescription('Low Quality', 'Disables some background details to reduce cost and loading times.'),
+			Language.getPhrase('setting_Low Quality', 'Low Quality'),
+			Language.getPhrase('description_Low Quality', 'Disables some background details to reduce cost and loading times.'),
 			columnWidth,
 			ClientPrefs.data.lowQuality,
 			ClientPrefs.defaultData.lowQuality,
@@ -178,8 +178,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('Anti-Aliasing', 'Anti-Aliasing'),
-			phraseDescription('Anti-Aliasing', 'Smooths sprite edges. Turning it off improves performance, but everything looks extra crunchy.'),
+			Language.getPhrase('setting_Anti-Aliasing', 'Anti-Aliasing'),
+			Language.getPhrase('description_Anti-Aliasing', 'Smooths sprite edges. Turning it off improves performance, but everything looks extra crunchy.'),
 			columnWidth,
 			ClientPrefs.data.antialiasing,
 			ClientPrefs.defaultData.antialiasing,
@@ -190,8 +190,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('Shaders', 'Shaders'),
-			phraseDescription('Shaders', "Toggles shader-based effects. Pretty? Yes. Cheap? Not always, especially on weaker " + Main.platform + "."),
+			Language.getPhrase('setting_Shaders', 'Shaders'),
+			Language.getPhrase('description_Shaders', "Toggles shader-based effects. Pretty? Yes. Cheap? Not always, especially on weaker " + Main.platform + "."),
 			columnWidth,
 			ClientPrefs.data.shaders,
 			ClientPrefs.defaultData.shaders,
@@ -202,8 +202,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 
 		#if !html5
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('VSync', 'VSync'),
-			phraseDescription('VSync', 'Reduces tearing and aligns frame pacing to the display refresh rate. Some systems may need a restart.'),
+			Language.getPhrase('setting_VSync', 'VSync'),
+			Language.getPhrase('description_VSync', 'Reduces tearing and aligns frame pacing to the display refresh rate. Some systems may need a restart.'),
 			columnWidth,
 			ClientPrefs.data.vsync,
 			ClientPrefs.defaultData.vsync,
@@ -213,8 +213,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsFramerateCard(
-			phraseSetting('Framerate', 'Framerate'),
-			phraseDescription('Framerate', "Adjust the FPS cap used by the engine. Yes, this is the setting everybody pokes first."),
+			Language.getPhrase('setting_Framerate', 'Framerate'),
+			Language.getPhrase('description_Framerate', "Adjust the FPS cap used by the engine. Yes, this is the setting everybody pokes first."),
 			columnWidth,
 			ClientPrefs.data.framerate,
 			framerateDefault,
@@ -228,8 +228,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		#end
 
 		cardY = addCard(new GraphicsChoiceCard(
-			phraseSetting('Color Accessibility', 'Color Accessibility'),
-			phraseDescription('Color Accessibility', 'Choose a color blindness filter if you need better separation or clearer note colors.'),
+			Language.getPhrase('setting_Color Accessibility', 'Color Accessibility'),
+			Language.getPhrase('description_Color Accessibility', 'Choose a color blindness filter if you need better separation or clearer note colors.'),
 			columnWidth,
 			['None', 'Protanopia', 'Protanomaly', 'Deuteranopia', 'Deuteranomaly', 'Tritanopia', 'Tritanomaly', 'Achromatopsia', 'Achromatomaly'],
 			ClientPrefs.data.colorblindMode,
@@ -243,8 +243,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}, 'Color Accessibility'), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('GPU Caching', 'GPU Caching'),
-			phraseDescription('GPU Caching', "Lets the GPU cache textures to reduce RAM use. Avoid it if your graphics card throws tantrums."),
+			Language.getPhrase('setting_GPU Caching', 'GPU Caching'),
+			Language.getPhrase('description_GPU Caching', "Lets the GPU cache textures to reduce RAM use. Avoid it if your graphics card throws tantrums."),
 			columnWidth,
 			ClientPrefs.data.cacheOnGPU,
 			ClientPrefs.defaultData.cacheOnGPU,
@@ -254,8 +254,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('FPS Rework', 'FPS Rework'),
-			phraseDescription('FPS Rework', 'Uses the alternate frame pacing path so the game does not feel slow when FPS drops below the cap.'),
+			Language.getPhrase('setting_FPS Rework', 'FPS Rework'),
+			Language.getPhrase('description_FPS Rework', 'Uses the alternate frame pacing path so the game does not feel slow when FPS drops below the cap.'),
 			columnWidth,
 			ClientPrefs.data.fpsRework,
 			ClientPrefs.defaultData.fpsRework,
@@ -266,8 +266,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			phraseSetting('FPS Counter', 'FPS Counter'),
-			phraseDescription('FPS Counter', 'Shows or hides the FPS counter in the corner.'),
+			Language.getPhrase('setting_FPS Counter', 'FPS Counter'),
+			Language.getPhrase('description_FPS Counter', 'Shows or hides the FPS counter in the corner.'),
 			columnWidth,
 			ClientPrefs.data.showFPS,
 			ClientPrefs.defaultData.showFPS,
@@ -279,8 +279,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 
 		#if windows
 		cardY = addCard(new GraphicsChoiceCard(
-			phraseSetting('Fullscreen Mode', 'Fullscreen Mode'),
-			phraseDescription('Fullscreen Mode', 'Choose how fullscreen behaves: borderless, borderless fix or exclusive fullscreen.'),
+			Language.getPhrase('setting_Fullscreen Mode', 'Fullscreen Mode'),
+			Language.getPhrase('description_Fullscreen Mode', 'Choose how fullscreen behaves: borderless, borderless fix or exclusive fullscreen.'),
 			columnWidth,
 			['Borderless', 'Borderless Fix', 'Exclusive'],
 			ClientPrefs.data.fullscreenMode,
@@ -295,8 +295,8 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 		#if android
 		var tierChoices = ['Auto (Recommended)', 'Force Low-End', 'Force Mid-Range', 'Force High-End'];
 		cardY = addCard(new GraphicsChoiceCard(
-			phraseSetting('Auto-Optimization Tier', 'Auto-Optimization Tier'),
-			phraseDescription('Auto-Optimization Tier', 'Auto-detects device strength or forces a lower or higher optimization tier manually.'),
+			Language.getPhrase('setting_Auto-Optimization Tier', 'Auto-Optimization Tier'),
+			Language.getPhrase('description_Auto-Optimization Tier', 'Auto-detects device strength or forces a lower or higher optimization tier manually.'),
 			columnWidth,
 			tierChoices,
 			tierChoices[0],
@@ -362,16 +362,6 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			card.y = cardBaseY[index] + scrollOffset;
 			card.applyVerticalClip(clipTop, clipBottom);
 		}
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String

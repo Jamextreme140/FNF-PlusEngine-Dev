@@ -162,7 +162,7 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		var cardY:Float = contentTop;
 		var cardX:Float = panelX + 28;
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('downscroll', 'Downscroll'), phraseDescription('downscroll', 'If checked, notes go Down instead of Up, simple enough.'), cardWidth, ClientPrefs.data.downScroll, ClientPrefs.defaultData.downScroll, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_downscroll', 'Downscroll'), Language.getPhrase('description_downscroll', 'If checked, notes go Down instead of Up, simple enough.'), cardWidth, ClientPrefs.data.downScroll, ClientPrefs.defaultData.downScroll, function(value:Bool) {
 			ClientPrefs.data.downScroll = value;
 			#if mobile
 			onChangeDownscroll();
@@ -170,7 +170,7 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 			saveSetting('Downscroll ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('middlescroll', 'Middlescroll'), phraseDescription('middlescroll', 'If checked, your notes get centered.'), cardWidth, ClientPrefs.data.middleScroll, ClientPrefs.defaultData.middleScroll, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_middlescroll', 'Middlescroll'), Language.getPhrase('description_middlescroll', 'If checked, your notes get centered.'), cardWidth, ClientPrefs.data.middleScroll, ClientPrefs.defaultData.middleScroll, function(value:Bool) {
 			ClientPrefs.data.middleScroll = value;
 			#if mobile
 			onChangeMiddlescroll();
@@ -179,142 +179,142 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		}), cardX, cardY);
 
 		#if mobile
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('aligned_receptors', 'Aligned Receptors'), phraseDescription('aligned_receptors', 'ONLY FOR HITBOX-ARROWS MODE! Aligns player receptors with hitbox lanes and puts opponent receptors in the corner.'), cardWidth, ClientPrefs.data.mobileReceptorAlign, ClientPrefs.defaultData.mobileReceptorAlign, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_aligned_receptors', 'Aligned Receptors'), Language.getPhrase('description_aligned_receptors', 'ONLY FOR HITBOX-ARROWS MODE! Aligns player receptors with hitbox lanes and puts opponent receptors in the corner.'), cardWidth, ClientPrefs.data.mobileReceptorAlign, ClientPrefs.defaultData.mobileReceptorAlign, function(value:Bool) {
 			ClientPrefs.data.mobileReceptorAlign = value;
 			onChangeMobileReceptorAlign();
 			saveSetting('Aligned Receptors ' + boolLabel(value));
 		}), cardX, cardY);
 		#end
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('opponent_notes', 'Opponent Notes'), phraseDescription('opponent_notes', 'If unchecked, opponent notes get hidden.'), cardWidth, ClientPrefs.data.opponentStrums, ClientPrefs.defaultData.opponentStrums, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_opponent_notes', 'Opponent Notes'), Language.getPhrase('description_opponent_notes', 'If unchecked, opponent notes get hidden.'), cardWidth, ClientPrefs.data.opponentStrums, ClientPrefs.defaultData.opponentStrums, function(value:Bool) {
 			ClientPrefs.data.opponentStrums = value;
 			saveSetting('Opponent Notes ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('ghost_tapping', 'Ghost Tapping'), phraseDescription('ghost_tapping', 'If checked, you will not get misses from pressing keys while there are no notes able to be hit.'), cardWidth, ClientPrefs.data.ghostTapping, ClientPrefs.defaultData.ghostTapping, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_ghost_tapping', 'Ghost Tapping'), Language.getPhrase('description_ghost_tapping', 'If checked, you will not get misses from pressing keys while there are no notes able to be hit.'), cardWidth, ClientPrefs.data.ghostTapping, ClientPrefs.defaultData.ghostTapping, function(value:Bool) {
 			ClientPrefs.data.ghostTapping = value;
 			saveSetting('Ghost Tapping ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('bad_and_shit_break_combo', 'Bad and Shit Break Combo'), phraseDescription('bad_and_shit_break_combo', 'If checked, hitting Bad or Shit notes will break your combo instead of counting like normal misses only.'), cardWidth, ClientPrefs.data.badShitBreakCombo, ClientPrefs.defaultData.badShitBreakCombo, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_bad_and_shit_break_combo', 'Bad and Shit Break Combo'), Language.getPhrase('description_bad_and_shit_break_combo', 'If checked, hitting Bad or Shit notes will break your combo instead of counting like normal misses only.'), cardWidth, ClientPrefs.data.badShitBreakCombo, ClientPrefs.defaultData.badShitBreakCombo, function(value:Bool) {
 			ClientPrefs.data.badShitBreakCombo = value;
 			saveSetting('Bad and Shit Break Combo ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('version_text_on_gameplay', 'Version Text on Gameplay'), phraseDescription('version_text_on_gameplay', 'If checked, the version text will be shown.'), cardWidth, ClientPrefs.data.versionTextOnGameplay, ClientPrefs.defaultData.versionTextOnGameplay, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_version_text_on_gameplay', 'Version Text on Gameplay'), Language.getPhrase('description_version_text_on_gameplay', 'If checked, the version text will be shown.'), cardWidth, ClientPrefs.data.versionTextOnGameplay, ClientPrefs.defaultData.versionTextOnGameplay, function(value:Bool) {
 			ClientPrefs.data.versionTextOnGameplay = value;
 			saveSetting('Version Text on Gameplay ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('auto_pause', 'Auto Pause'), phraseDescription('auto_pause', 'If checked, the game automatically pauses if the screen is not in focus.'), cardWidth, ClientPrefs.data.autoPause, ClientPrefs.defaultData.autoPause, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_auto_pause', 'Auto Pause'), Language.getPhrase('description_auto_pause', 'If checked, the game automatically pauses if the screen is not in focus.'), cardWidth, ClientPrefs.data.autoPause, ClientPrefs.defaultData.autoPause, function(value:Bool) {
 			ClientPrefs.data.autoPause = value;
 			onChangeAutoPause();
 			saveSetting('Auto Pause ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('pop_up_score', 'Pop Up Score'), phraseDescription('pop_up_score', 'If unchecked, hitting notes will not spawn rating and combo popups.'), cardWidth, ClientPrefs.data.popUpRating, ClientPrefs.defaultData.popUpRating, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_pop_up_score', 'Pop Up Score'), Language.getPhrase('description_pop_up_score', 'If unchecked, hitting notes will not spawn rating and combo popups.'), cardWidth, ClientPrefs.data.popUpRating, ClientPrefs.defaultData.popUpRating, function(value:Bool) {
 			ClientPrefs.data.popUpRating = value;
 			saveSetting('Pop Up Score ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('disable_reset_button', 'Disable Reset Button'), phraseDescription('disable_reset_button', 'If checked, pressing Reset will not do anything.'), cardWidth, ClientPrefs.data.noReset, ClientPrefs.defaultData.noReset, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_disable_reset_button', 'Disable Reset Button'), Language.getPhrase('description_disable_reset_button', 'If checked, pressing Reset will not do anything.'), cardWidth, ClientPrefs.data.noReset, ClientPrefs.defaultData.noReset, function(value:Bool) {
 			ClientPrefs.data.noReset = value;
 			saveSetting('Disable Reset Button ' + boolLabel(value));
 		}), cardX, cardY);
 
 		#if mobile
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('game_over_vibration', 'Game Over Vibration'), phraseDescription('game_over_vibration', 'If checked, your device will vibrate at game over.'), cardWidth, ClientPrefs.data.gameOverVibration, ClientPrefs.defaultData.gameOverVibration, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_game_over_vibration', 'Game Over Vibration'), Language.getPhrase('description_game_over_vibration', 'If checked, your device will vibrate at game over.'), cardWidth, ClientPrefs.data.gameOverVibration, ClientPrefs.defaultData.gameOverVibration, function(value:Bool) {
 			ClientPrefs.data.gameOverVibration = value;
 			onChangeVibration();
 			saveSetting('Game Over Vibration ' + boolLabel(value));
 		}), cardX, cardY);
 		#end
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('sustains_as_one_note', 'Sustains as One Note'), phraseDescription('sustains_as_one_note', 'If checked, Hold Notes count as a single Hit/Miss and cannot be pressed if you missed the head note.'), cardWidth, ClientPrefs.data.guitarHeroSustains, ClientPrefs.defaultData.guitarHeroSustains, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_sustains_as_one_note', 'Sustains as One Note'), Language.getPhrase('description_sustains_as_one_note', 'If checked, Hold Notes count as a single Hit/Miss and cannot be pressed if you missed the head note.'), cardWidth, ClientPrefs.data.guitarHeroSustains, ClientPrefs.defaultData.guitarHeroSustains, function(value:Bool) {
 			ClientPrefs.data.guitarHeroSustains = value;
 			saveSetting('Sustains as One Note ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplayChoiceCard(phraseSetting('hitsound_in_what_way', 'Hitsound in what way'), phraseDescription('hitsound_in_what_way', 'If checked, note and keys do a hitsound when pressed, else only when notes are hit.'), cardWidth, ['None', 'Keys', 'Notes'], ClientPrefs.data.hitsoundType, ClientPrefs.defaultData.hitsoundType, openChoiceMenu, function(value:String) {
+		cardY = addCard(new GameplayChoiceCard(Language.getPhrase('setting_hitsound_in_what_way', 'Hitsound in what way'), Language.getPhrase('description_hitsound_in_what_way', 'If checked, note and keys do a hitsound when pressed, else only when notes are hit.'), cardWidth, ['None', 'Keys', 'Notes'], ClientPrefs.data.hitsoundType, ClientPrefs.defaultData.hitsoundType, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.hitsoundType = value;
 			saveSetting('Hitsound in what way: ' + value);
 		}, 'hitsound_in_what_way'), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('hitsound_volume', 'Hitsound Volume'), phraseDescription('hitsound_volume', 'Funny notes go tick when you hit them.'), cardWidth, ClientPrefs.data.hitsoundVolume, ClientPrefs.defaultData.hitsoundVolume, 0.0, 1.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_hitsound_volume', 'Hitsound Volume'), Language.getPhrase('description_hitsound_volume', 'Funny notes go tick when you hit them.'), cardWidth, ClientPrefs.data.hitsoundVolume, ClientPrefs.defaultData.hitsoundVolume, 0.0, 1.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.hitsoundVolume = value;
 			onChangeHitsoundVolume();
 			saveSetting('Hitsound Volume: ' + percentLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplayChoiceCard(phraseSetting('hitsound_sound', 'Hitsound Sound'), phraseDescription('hitsound_sound', 'Choose the sound used for hitsounds.'), cardWidth, ['None', 'quaver', 'osu', 'clap', 'camellia', 'stepmania', '21st century humor', 'vine boom', 'sexus'], ClientPrefs.data.hitSounds, ClientPrefs.defaultData.hitSounds, openChoiceMenu, function(value:String) {
+		cardY = addCard(new GameplayChoiceCard(Language.getPhrase('setting_hitsound_sound', 'Hitsound Sound'), Language.getPhrase('description_hitsound_sound', 'Choose the sound used for hitsounds.'), cardWidth, ['None', 'quaver', 'osu', 'clap', 'camellia', 'stepmania', '21st century humor', 'vine boom', 'sexus'], ClientPrefs.data.hitSounds, ClientPrefs.defaultData.hitSounds, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.hitSounds = value;
 			onChangeHitsound();
 			saveSetting('Hitsound Sound: ' + value);
 		}, 'hitsound_sound'), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('rating_offset', 'Rating Offset'), phraseDescription('rating_offset', 'Changes how late or early you have to hit for a Flawless!! Higher values mean you have to hit later.'), cardWidth, ClientPrefs.data.ratingOffset, ClientPrefs.defaultData.ratingOffset, -30, 30, 1, 0, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_rating_offset', 'Rating Offset'), Language.getPhrase('description_rating_offset', 'Changes how late or early you have to hit for a Flawless!! Higher values mean you have to hit later.'), cardWidth, ClientPrefs.data.ratingOffset, ClientPrefs.defaultData.ratingOffset, -30, 30, 1, 0, function(value:Float) {
 			ClientPrefs.data.ratingOffset = Std.int(value);
 			saveSetting('Rating Offset: ' + Std.int(value) + 'ms');
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('flawless_hit_window', 'Flawless!! Hit Window'), phraseDescription('flawless_hit_window', 'Changes the amount of time you have for hitting a Flawless!! in milliseconds.'), cardWidth, ClientPrefs.data.flawlessWindow, ClientPrefs.defaultData.flawlessWindow, 15.0, 25.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_flawless_hit_window', 'Flawless!! Hit Window'), Language.getPhrase('description_flawless_hit_window', 'Changes the amount of time you have for hitting a Flawless!! in milliseconds.'), cardWidth, ClientPrefs.data.flawlessWindow, ClientPrefs.defaultData.flawlessWindow, 15.0, 25.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.flawlessWindow = value;
 			saveSetting('Flawless!! Hit Window: ' + value + 'ms');
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('sick_hit_window', 'Sick! Hit Window'), phraseDescription('sick_hit_window', 'Changes the amount of time you have for hitting a Sick! in milliseconds.'), cardWidth, ClientPrefs.data.sickWindow, ClientPrefs.defaultData.sickWindow, 15.0, 45.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_sick_hit_window', 'Sick! Hit Window'), Language.getPhrase('description_sick_hit_window', 'Changes the amount of time you have for hitting a Sick! in milliseconds.'), cardWidth, ClientPrefs.data.sickWindow, ClientPrefs.defaultData.sickWindow, 15.0, 45.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.sickWindow = value;
 			saveSetting('Sick! Hit Window: ' + value + 'ms');
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('good_hit_window', 'Good Hit Window'), phraseDescription('good_hit_window', 'Changes the amount of time you have for hitting a Good in milliseconds.'), cardWidth, ClientPrefs.data.goodWindow, ClientPrefs.defaultData.goodWindow, 15.0, 90.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_good_hit_window', 'Good Hit Window'), Language.getPhrase('description_good_hit_window', 'Changes the amount of time you have for hitting a Good in milliseconds.'), cardWidth, ClientPrefs.data.goodWindow, ClientPrefs.defaultData.goodWindow, 15.0, 90.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.goodWindow = value;
 			saveSetting('Good Hit Window: ' + value + 'ms');
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('bad_hit_window', 'Bad Hit Window'), phraseDescription('bad_hit_window', 'Changes the amount of time you have for hitting a Bad in milliseconds.'), cardWidth, ClientPrefs.data.badWindow, ClientPrefs.defaultData.badWindow, 15.0, 135.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_bad_hit_window', 'Bad Hit Window'), Language.getPhrase('description_bad_hit_window', 'Changes the amount of time you have for hitting a Bad in milliseconds.'), cardWidth, ClientPrefs.data.badWindow, ClientPrefs.defaultData.badWindow, 15.0, 135.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.badWindow = value;
 			saveSetting('Bad Hit Window: ' + value + 'ms');
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySliderCard(phraseSetting('safe_frames', 'Safe Frames'), phraseDescription('safe_frames', 'Changes how many frames you have for hitting a note earlier or late.'), cardWidth, ClientPrefs.data.safeFrames, ClientPrefs.defaultData.safeFrames, 2.0, 10.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_safe_frames', 'Safe Frames'), Language.getPhrase('description_safe_frames', 'Changes how many frames you have for hitting a note earlier or late.'), cardWidth, ClientPrefs.data.safeFrames, ClientPrefs.defaultData.safeFrames, 2.0, 10.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.safeFrames = value;
 			saveSetting('Safe Frames: ' + value);
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplayChoiceCard(phraseSetting('accuracy_system', 'Accuracy System'), phraseDescription('accuracy_system', 'Choose the accuracy calculation system used by gameplay results.'), cardWidth, ['Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'], ClientPrefs.data.accuracySystem, ClientPrefs.defaultData.accuracySystem, openChoiceMenu, function(value:String) {
+		cardY = addCard(new GameplayChoiceCard(Language.getPhrase('setting_accuracy_system', 'Accuracy System'), Language.getPhrase('description_accuracy_system', 'Choose the accuracy calculation system used by gameplay results.'), cardWidth, ['Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'], ClientPrefs.data.accuracySystem, ClientPrefs.defaultData.accuracySystem, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.accuracySystem = value;
 			saveSetting('Accuracy System: ' + value);
 		}, 'accuracy_system'), cardX, cardY);
 
-		cardY = addCard(new GameplayChoiceCard(phraseSetting('system_score_multiplier', 'System Score Multiplier'), phraseDescription('system_score_multiplier', 'Choose the scoring system for note hits.'), cardWidth, ['Psych', 'Codename'], ClientPrefs.data.systemScoreMultiplier, ClientPrefs.defaultData.systemScoreMultiplier, openChoiceMenu, function(value:String) {
+		cardY = addCard(new GameplayChoiceCard(Language.getPhrase('setting_system_score_multiplier', 'System Score Multiplier'), Language.getPhrase('description_system_score_multiplier', 'Choose the scoring system for note hits.'), cardWidth, ['Psych', 'Codename'], ClientPrefs.data.systemScoreMultiplier, ClientPrefs.defaultData.systemScoreMultiplier, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.systemScoreMultiplier = value;
 			saveSetting('System Score Multiplier: ' + value);
 		}, 'system_score_multiplier'), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('pause_countdown', 'Pause Countdown'), phraseDescription('pause_countdown', 'If checked, resuming from pause plays a countdown similar to the intro countdown.'), cardWidth, ClientPrefs.data.pauseCountdown, ClientPrefs.defaultData.pauseCountdown, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_pause_countdown', 'Pause Countdown'), Language.getPhrase('description_pause_countdown', 'If checked, resuming from pause plays a countdown similar to the intro countdown.'), cardWidth, ClientPrefs.data.pauseCountdown, ClientPrefs.defaultData.pauseCountdown, function(value:Bool) {
 			ClientPrefs.data.pauseCountdown = value;
 			saveSetting('Pause Countdown ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('hey_intro', 'Hey Intro'), phraseDescription('hey_intro', 'If checked, BF and GF automatically do the Hey! animation when the countdown says Go!'), cardWidth, ClientPrefs.data.heyIntro, ClientPrefs.defaultData.heyIntro, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_hey_intro', 'Hey Intro'), Language.getPhrase('description_hey_intro', 'If checked, BF and GF automatically do the Hey! animation when the countdown says Go!'), cardWidth, ClientPrefs.data.heyIntro, ClientPrefs.defaultData.heyIntro, function(value:Bool) {
 			ClientPrefs.data.heyIntro = value;
 			saveSetting('Hey Intro ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('break_timer', 'Break Timer'), phraseDescription('break_timer', 'If checked, a timer appears when the next notes are still far away.'), cardWidth, ClientPrefs.data.breakTimer, ClientPrefs.defaultData.breakTimer, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_break_timer', 'Break Timer'), Language.getPhrase('description_break_timer', 'If checked, a timer appears when the next notes are still far away.'), cardWidth, ClientPrefs.data.breakTimer, ClientPrefs.defaultData.breakTimer, function(value:Bool) {
 			ClientPrefs.data.breakTimer = value;
 			saveSetting('Break Timer ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('heavy_charts_mode', 'Heavy Charts Mode'), phraseDescription('heavy_charts_mode', 'If checked, enables the Heavy Charts system for better performance on charts with many notes.'), cardWidth, ClientPrefs.data.heavyCharts, ClientPrefs.defaultData.heavyCharts, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_heavy_charts_mode', 'Heavy Charts Mode'), Language.getPhrase('description_heavy_charts_mode', 'If checked, enables the Heavy Charts system for better performance on charts with many notes.'), cardWidth, ClientPrefs.data.heavyCharts, ClientPrefs.defaultData.heavyCharts, function(value:Bool) {
 			ClientPrefs.data.heavyCharts = value;
 			onChangeHeavyCharts();
 			saveSetting('Heavy Charts Mode ' + boolLabel(value));
 		}), cardX, cardY);
 
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys && !mobile)
-		cardY = addCard(new GameplaySwitchCard(phraseSetting('use_scriptable_custom_states', 'Use Scriptable/Custom States'), phraseDescription('use_scriptable_custom_states', 'If checked, ScriptableState and CustomState can replace hardcoded states when matching scripts exist.'), cardWidth, ClientPrefs.data.useScriptableCustomStates, ClientPrefs.defaultData.useScriptableCustomStates, function(value:Bool) {
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_use_scriptable_custom_states', 'Use Scriptable/Custom States'), Language.getPhrase('description_use_scriptable_custom_states', 'If checked, ScriptableState and CustomState can replace hardcoded states when matching scripts exist.'), cardWidth, ClientPrefs.data.useScriptableCustomStates, ClientPrefs.defaultData.useScriptableCustomStates, function(value:Bool) {
 			ClientPrefs.data.useScriptableCustomStates = value;
 			saveSetting('Use Scriptable/Custom States ' + boolLabel(value));
 		}), cardX, cardY);
@@ -331,16 +331,6 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String

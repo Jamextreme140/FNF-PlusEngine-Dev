@@ -236,7 +236,7 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 			if (!noteSkins.contains(ClientPrefs.data.noteSkin))
 				ClientPrefs.data.noteSkin = ClientPrefs.defaultData.noteSkin;
 			prependUnique(noteSkins, ClientPrefs.defaultData.noteSkin);
-			cardY = addCard(new VisualsChoiceCard('noteSkin', phraseSetting('note_skins', 'Note Skins:'), phraseDescription('note_skins', 'Select your preferred Note skin.'), cardWidth, noteSkins, ClientPrefs.data.noteSkin, ClientPrefs.defaultData.noteSkin, openChoiceMenu, function(value:String) {
+			cardY = addCard(new VisualsChoiceCard('noteSkin', Language.getPhrase('setting_note_skins', 'Note Skins:'), Language.getPhrase('description_note_skins', 'Select your preferred Note skin.'), cardWidth, noteSkins, ClientPrefs.data.noteSkin, ClientPrefs.defaultData.noteSkin, openChoiceMenu, function(value:String) {
 				ClientPrefs.data.noteSkin = value;
 				onChangeNoteSkin();
 				saveSetting('Note Skin: ' + value);
@@ -249,109 +249,109 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 			if (!noteSplashes.contains(ClientPrefs.data.splashSkin))
 				ClientPrefs.data.splashSkin = ClientPrefs.defaultData.splashSkin;
 			prependUnique(noteSplashes, ClientPrefs.defaultData.splashSkin);
-			cardY = addCard(new VisualsChoiceCard('splashSkin', phraseSetting('note_splashes', 'Note Splashes:'), phraseDescription('note_splashes', 'Select your preferred Note Splash variation.'), cardWidth, noteSplashes, ClientPrefs.data.splashSkin, ClientPrefs.defaultData.splashSkin, openChoiceMenu, function(value:String) {
+			cardY = addCard(new VisualsChoiceCard('splashSkin', Language.getPhrase('setting_note_splashes', 'Note Splashes:'), Language.getPhrase('description_note_splashes', 'Select your preferred Note Splash variation.'), cardWidth, noteSplashes, ClientPrefs.data.splashSkin, ClientPrefs.defaultData.splashSkin, openChoiceMenu, function(value:String) {
 				ClientPrefs.data.splashSkin = value;
 				onChangeSplashSkin();
 				saveSetting('Note Splashes: ' + value);
 			}, 'note_splashes'), cardX, cardY);
 		}
 
-		cardY = addCard(new VisualsSliderCard('splashAlpha', phraseSetting('note_splash_opacity', 'Note Splash Opacity'), phraseDescription('note_splash_opacity', 'How transparent note splashes should be.'), cardWidth, ClientPrefs.data.splashAlpha, ClientPrefs.defaultData.splashAlpha, 0.0, 1.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new VisualsSliderCard('splashAlpha', Language.getPhrase('setting_note_splash_opacity', 'Note Splash Opacity'), Language.getPhrase('description_note_splash_opacity', 'How transparent note splashes should be.'), cardWidth, ClientPrefs.data.splashAlpha, ClientPrefs.defaultData.splashAlpha, 0.0, 1.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.splashAlpha = value;
 			playNoteSplashes();
 			saveSetting('Note Splash Opacity: ' + percentLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('colorQuantization', phraseSetting('color_quantization', 'Color Quantization'), phraseDescription('color_quantization', 'If checked, notes are colored by rhythm subdivision like StepMania and override default arrow colors.'), cardWidth, ClientPrefs.data.colorQuantization, ClientPrefs.defaultData.colorQuantization, function(value:Bool) {
+		cardY = addCard(new VisualsSwitchCard('colorQuantization', Language.getPhrase('setting_color_quantization', 'Color Quantization'), Language.getPhrase('description_color_quantization', 'If checked, notes are colored by rhythm subdivision like StepMania and override default arrow colors.'), cardWidth, ClientPrefs.data.colorQuantization, ClientPrefs.defaultData.colorQuantization, function(value:Bool) {
 			ClientPrefs.data.colorQuantization = value;
 			onChangeQuantization();
 			saveSetting('Color Quantization ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsChoiceCard('menuAccentColor', phraseSetting('menu_accent_color', 'Menu Accent Color'), phraseDescription('menu_accent_color', 'Pick the accent tint used by these refreshed options menus.'), cardWidth, OptionsMenuTheme.ACCENT_CHOICES, OptionsMenuTheme.normalizeAccent(ClientPrefs.data.menuAccentColor), OptionsMenuTheme.normalizeAccent(ClientPrefs.defaultData.menuAccentColor), openChoiceMenu, function(value:String) {
+		cardY = addCard(new VisualsChoiceCard('menuAccentColor', Language.getPhrase('setting_menu_accent_color', 'Menu Accent Color'), Language.getPhrase('description_menu_accent_color', 'Pick the accent tint used by these refreshed options menus.'), cardWidth, OptionsMenuTheme.ACCENT_CHOICES, OptionsMenuTheme.normalizeAccent(ClientPrefs.data.menuAccentColor), OptionsMenuTheme.normalizeAccent(ClientPrefs.defaultData.menuAccentColor), openChoiceMenu, function(value:String) {
 			onChangeMenuAccent(value);
 		}, 'menu_accent_color'), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('menuDarkTheme', phraseSetting('menu_dark_theme', 'Dark Theme'), phraseDescription('menu_dark_theme', 'Uses darker surfaces for the refreshed options and pause menus.'), cardWidth, ClientPrefs.data.menuDarkTheme, ClientPrefs.defaultData.menuDarkTheme, function(value:Bool) {
+		cardY = addCard(new VisualsSwitchCard('menuDarkTheme', Language.getPhrase('setting_menu_dark_theme', 'Dark Theme'), Language.getPhrase('description_menu_dark_theme', 'Uses darker surfaces for the refreshed options and pause menus.'), cardWidth, ClientPrefs.data.menuDarkTheme, ClientPrefs.defaultData.menuDarkTheme, function(value:Bool) {
 			onChangeMenuDarkTheme(value);
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('hideHud', phraseSetting('hide_hud', 'Hide HUD'), phraseDescription('hide_hud', 'If checked, hides most HUD elements.'), cardWidth, ClientPrefs.data.hideHud, ClientPrefs.defaultData.hideHud, function(value:Bool) { ClientPrefs.data.hideHud = value; saveSetting('Hide HUD ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('hideSustainSplash', phraseSetting('hide_sustain_splash', 'Hide Sustain Splash'), phraseDescription('hide_sustain_splash', 'If checked, hides Sustain Splash.'), cardWidth, ClientPrefs.data.hideSustainSplash, ClientPrefs.defaultData.hideSustainSplash, function(value:Bool) { ClientPrefs.data.hideSustainSplash = value; saveSetting('Hide Sustain Splash ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('showKeyViewer', phraseSetting('show_key_viewer', 'Show Key Viewer'), phraseDescription('show_key_viewer', 'If checked, shows a key viewer displaying which keys are being pressed.'), cardWidth, ClientPrefs.data.showKeyViewer, ClientPrefs.defaultData.showKeyViewer, function(value:Bool) { ClientPrefs.data.showKeyViewer = value; saveSetting('Show Key Viewer ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('hideHud', Language.getPhrase('setting_hide_hud', 'Hide HUD'), Language.getPhrase('description_hide_hud', 'If checked, hides most HUD elements.'), cardWidth, ClientPrefs.data.hideHud, ClientPrefs.defaultData.hideHud, function(value:Bool) { ClientPrefs.data.hideHud = value; saveSetting('Hide HUD ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('hideSustainSplash', Language.getPhrase('setting_hide_sustain_splash', 'Hide Sustain Splash'), Language.getPhrase('description_hide_sustain_splash', 'If checked, hides Sustain Splash.'), cardWidth, ClientPrefs.data.hideSustainSplash, ClientPrefs.defaultData.hideSustainSplash, function(value:Bool) { ClientPrefs.data.hideSustainSplash = value; saveSetting('Hide Sustain Splash ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('showKeyViewer', Language.getPhrase('setting_show_key_viewer', 'Show Key Viewer'), Language.getPhrase('description_show_key_viewer', 'If checked, shows a key viewer displaying which keys are being pressed.'), cardWidth, ClientPrefs.data.showKeyViewer, ClientPrefs.defaultData.showKeyViewer, function(value:Bool) { ClientPrefs.data.showKeyViewer = value; saveSetting('Show Key Viewer ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsChoiceCard('keyViewerColor', phraseSetting('key_viewer_color', 'Key Viewer Color:'), phraseDescription('key_viewer_color', 'Select the color for the key viewer buttons.'), cardWidth, ['Gray', 'Red', 'Blue', 'Green', 'Purple', 'Orange', 'Pink', 'Cyan', 'White', 'Black'], ClientPrefs.data.keyViewerColor, ClientPrefs.defaultData.keyViewerColor, openChoiceMenu, function(value:String) {
+		cardY = addCard(new VisualsChoiceCard('keyViewerColor', Language.getPhrase('setting_key_viewer_color', 'Key Viewer Color:'), Language.getPhrase('description_key_viewer_color', 'Select the color for the key viewer buttons.'), cardWidth, ['Gray', 'Red', 'Blue', 'Green', 'Purple', 'Orange', 'Pink', 'Cyan', 'White', 'Black'], ClientPrefs.data.keyViewerColor, ClientPrefs.defaultData.keyViewerColor, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.keyViewerColor = value;
 			onChangeKeyViewerColor();
 			saveSetting('Key Viewer Color: ' + value);
 		}, 'key_viewer_color'), cardX, cardY);
 
-		cardY = addCard(new VisualsChoiceCard('iconBounceType', phraseSetting('icon_bounce', 'Icon Bounce'), phraseDescription('icon_bounce', 'Select the icon bounce style you prefer. Scripts using this may expect the default value.'), cardWidth, ['Default', 'D&B', 'Old', 'NF'], ClientPrefs.data.iconBounceType, ClientPrefs.defaultData.iconBounceType, openChoiceMenu, function(value:String) {
+		cardY = addCard(new VisualsChoiceCard('iconBounceType', Language.getPhrase('setting_icon_bounce', 'Icon Bounce'), Language.getPhrase('description_icon_bounce', 'Select the icon bounce style you prefer. Scripts using this may expect the default value.'), cardWidth, ['Default', 'D&B', 'Old', 'NF'], ClientPrefs.data.iconBounceType, ClientPrefs.defaultData.iconBounceType, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.iconBounceType = value;
 			saveSetting('Icon Bounce: ' + value);
 		}, 'icon_bounce'), cardX, cardY);
 
-		cardY = addCard(new VisualsChoiceCard('timeBarType', phraseSetting('time_bar', 'Time Bar:'), phraseDescription('time_bar', 'Choose what the time bar displays during gameplay.'), cardWidth, ['Time Left', 'Time Elapsed', 'Song Name', 'Disabled'], ClientPrefs.data.timeBarType, ClientPrefs.defaultData.timeBarType, openChoiceMenu, function(value:String) {
+		cardY = addCard(new VisualsChoiceCard('timeBarType', Language.getPhrase('setting_time_bar', 'Time Bar:'), Language.getPhrase('description_time_bar', 'Choose what the time bar displays during gameplay.'), cardWidth, ['Time Left', 'Time Elapsed', 'Song Name', 'Disabled'], ClientPrefs.data.timeBarType, ClientPrefs.defaultData.timeBarType, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.timeBarType = value;
 			saveSetting('Time Bar: ' + value);
 		}, 'time_bar'), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('shadedTimeBar', phraseSetting('gradient_time_bar', 'Gradient Time Bar'), phraseDescription('gradient_time_bar', 'If checked, the time bar is shaded according to the character icon colors.'), cardWidth, ClientPrefs.data.shadedTimeBar, ClientPrefs.defaultData.shadedTimeBar, function(value:Bool) { ClientPrefs.data.shadedTimeBar = value; saveSetting('Gradient Time Bar ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('shadedTimeBar', Language.getPhrase('setting_gradient_time_bar', 'Gradient Time Bar'), Language.getPhrase('description_gradient_time_bar', 'If checked, the time bar is shaded according to the character icon colors.'), cardWidth, ClientPrefs.data.shadedTimeBar, ClientPrefs.defaultData.shadedTimeBar, function(value:Bool) { ClientPrefs.data.shadedTimeBar = value; saveSetting('Gradient Time Bar ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('flashing', phraseSetting('flashing_lights', 'Flashing Lights'), phraseDescription('flashing_lights', 'Disable this if you are sensitive to flashing lights.'), cardWidth, ClientPrefs.data.flashing, ClientPrefs.defaultData.flashing, function(value:Bool) { ClientPrefs.data.flashing = value; saveSetting('Flashing Lights ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('camZooms', phraseSetting('camera_zooms', 'Camera Zooms'), phraseDescription('camera_zooms', 'If unchecked, the camera will not zoom in on beat hits.'), cardWidth, ClientPrefs.data.camZooms, ClientPrefs.defaultData.camZooms, function(value:Bool) { ClientPrefs.data.camZooms = value; saveSetting('Camera Zooms ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('scoreZoom', phraseSetting('score_text_grow_on_hit', 'Score Text Grow on Hit'), phraseDescription('score_text_grow_on_hit', 'If unchecked, disables the score text growing every time you hit a note.'), cardWidth, ClientPrefs.data.scoreZoom, ClientPrefs.defaultData.scoreZoom, function(value:Bool) { ClientPrefs.data.scoreZoom = value; saveSetting('Score Text Grow on Hit ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('timeBump', phraseSetting('time_text_bump', 'Time Text Bump'), phraseDescription('time_text_bump', 'If unchecked, disables the time text bump animation on beat.'), cardWidth, ClientPrefs.data.timeBump, ClientPrefs.defaultData.timeBump, function(value:Bool) { ClientPrefs.data.timeBump = value; saveSetting('Time Text Bump ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('abbreviateScore', phraseSetting('abbreviate_score', 'Abbreviate Score'), phraseDescription('abbreviate_score', 'If enabled, the score is abbreviated like 10.00K or 1.00M.'), cardWidth, ClientPrefs.data.abbreviateScore, ClientPrefs.defaultData.abbreviateScore, function(value:Bool) { ClientPrefs.data.abbreviateScore = value; saveSetting('Abbreviate Score ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('flashing', Language.getPhrase('setting_flashing_lights', 'Flashing Lights'), Language.getPhrase('description_flashing_lights', 'Disable this if you are sensitive to flashing lights.'), cardWidth, ClientPrefs.data.flashing, ClientPrefs.defaultData.flashing, function(value:Bool) { ClientPrefs.data.flashing = value; saveSetting('Flashing Lights ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('camZooms', Language.getPhrase('setting_camera_zooms', 'Camera Zooms'), Language.getPhrase('description_camera_zooms', 'If unchecked, the camera will not zoom in on beat hits.'), cardWidth, ClientPrefs.data.camZooms, ClientPrefs.defaultData.camZooms, function(value:Bool) { ClientPrefs.data.camZooms = value; saveSetting('Camera Zooms ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('scoreZoom', Language.getPhrase('setting_score_text_grow_on_hit', 'Score Text Grow on Hit'), Language.getPhrase('description_score_text_grow_on_hit', 'If unchecked, disables the score text growing every time you hit a note.'), cardWidth, ClientPrefs.data.scoreZoom, ClientPrefs.defaultData.scoreZoom, function(value:Bool) { ClientPrefs.data.scoreZoom = value; saveSetting('Score Text Grow on Hit ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('timeBump', Language.getPhrase('setting_time_text_bump', 'Time Text Bump'), Language.getPhrase('description_time_text_bump', 'If unchecked, disables the time text bump animation on beat.'), cardWidth, ClientPrefs.data.timeBump, ClientPrefs.defaultData.timeBump, function(value:Bool) { ClientPrefs.data.timeBump = value; saveSetting('Time Text Bump ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('abbreviateScore', Language.getPhrase('setting_abbreviate_score', 'Abbreviate Score'), Language.getPhrase('description_abbreviate_score', 'If enabled, the score is abbreviated like 10.00K or 1.00M.'), cardWidth, ClientPrefs.data.abbreviateScore, ClientPrefs.defaultData.abbreviateScore, function(value:Bool) { ClientPrefs.data.abbreviateScore = value; saveSetting('Abbreviate Score ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsSliderCard('healthBarAlpha', phraseSetting('health_bar_opacity', 'Health Bar Opacity'), phraseDescription('health_bar_opacity', 'How transparent the health bar and icons should be.'), cardWidth, ClientPrefs.data.healthBarAlpha, ClientPrefs.defaultData.healthBarAlpha, 0.0, 1.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new VisualsSliderCard('healthBarAlpha', Language.getPhrase('setting_health_bar_opacity', 'Health Bar Opacity'), Language.getPhrase('description_health_bar_opacity', 'How transparent the health bar and icons should be.'), cardWidth, ClientPrefs.data.healthBarAlpha, ClientPrefs.defaultData.healthBarAlpha, 0.0, 1.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.healthBarAlpha = value;
 			saveSetting('Health Bar Opacity: ' + percentLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('smoothHealthBar', phraseSetting('smooth_health_bar', 'Smooth Health Bar'), phraseDescription('smooth_health_bar', 'If checked, the health bar moves smoothly instead of instantly.'), cardWidth, ClientPrefs.data.smoothHealthBar, ClientPrefs.defaultData.smoothHealthBar, function(value:Bool) { ClientPrefs.data.smoothHealthBar = value; saveSetting('Smooth Health Bar ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('smoothHPBug', phraseSetting('health_bar_overflow', 'Health Bar Overflow'), phraseDescription('health_bar_overflow', 'If checked, health icons can go outside the bar edges on health spikes.'), cardWidth, ClientPrefs.data.smoothHPBug, ClientPrefs.defaultData.smoothHPBug, function(value:Bool) { ClientPrefs.data.smoothHPBug = value; saveSetting('Health Bar Overflow ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('showWatermark', phraseSetting('show_watermark', 'Show Watermark'), phraseDescription('show_watermark', 'If checked, shows the watermark on screen.'), cardWidth, ClientPrefs.data.showWatermark, ClientPrefs.defaultData.showWatermark, function(value:Bool) { ClientPrefs.data.showWatermark = value; onChangeWatermark(); saveSetting('Show Watermark ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('smoothHealthBar', Language.getPhrase('setting_smooth_health_bar', 'Smooth Health Bar'), Language.getPhrase('description_smooth_health_bar', 'If checked, the health bar moves smoothly instead of instantly.'), cardWidth, ClientPrefs.data.smoothHealthBar, ClientPrefs.defaultData.smoothHealthBar, function(value:Bool) { ClientPrefs.data.smoothHealthBar = value; saveSetting('Smooth Health Bar ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('smoothHPBug', Language.getPhrase('setting_health_bar_overflow', 'Health Bar Overflow'), Language.getPhrase('description_health_bar_overflow', 'If checked, health icons can go outside the bar edges on health spikes.'), cardWidth, ClientPrefs.data.smoothHPBug, ClientPrefs.defaultData.smoothHPBug, function(value:Bool) { ClientPrefs.data.smoothHPBug = value; saveSetting('Health Bar Overflow ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('showWatermark', Language.getPhrase('setting_show_watermark', 'Show Watermark'), Language.getPhrase('description_show_watermark', 'If checked, shows the watermark on screen.'), cardWidth, ClientPrefs.data.showWatermark, ClientPrefs.defaultData.showWatermark, function(value:Bool) { ClientPrefs.data.showWatermark = value; onChangeWatermark(); saveSetting('Show Watermark ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsChoiceCard('pauseMusic', phraseSetting('pause_music', 'Pause Music:'), phraseDescription('pause_music', 'Choose the song used in the pause screen.'), cardWidth, ['None', 'Tea Time', 'Breakfast', 'Breakfast (Pico)'], ClientPrefs.data.pauseMusic, ClientPrefs.defaultData.pauseMusic, openChoiceMenu, function(value:String) {
+		cardY = addCard(new VisualsChoiceCard('pauseMusic', Language.getPhrase('setting_pause_music', 'Pause Music:'), Language.getPhrase('description_pause_music', 'Choose the song used in the pause screen.'), cardWidth, ['None', 'Tea Time', 'Breakfast', 'Breakfast (Pico)'], ClientPrefs.data.pauseMusic, ClientPrefs.defaultData.pauseMusic, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.pauseMusic = value;
 			onChangePauseMusic();
 			saveSetting('Pause Music: ' + value);
 		}, 'pause_music'), cardX, cardY);
 
 		#if CHECK_FOR_UPDATES
-		cardY = addCard(new VisualsSwitchCard('checkForUpdates', phraseSetting('check_for_updates', 'Check for Updates'), phraseDescription('check_for_updates', 'On release builds, checks for updates when you start the game.'), cardWidth, ClientPrefs.data.checkForUpdates, ClientPrefs.defaultData.checkForUpdates, function(value:Bool) { ClientPrefs.data.checkForUpdates = value; saveSetting('Check for Updates ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('checkForUpdates', Language.getPhrase('setting_check_for_updates', 'Check for Updates'), Language.getPhrase('description_check_for_updates', 'On release builds, checks for updates when you start the game.'), cardWidth, ClientPrefs.data.checkForUpdates, ClientPrefs.defaultData.checkForUpdates, function(value:Bool) { ClientPrefs.data.checkForUpdates = value; saveSetting('Check for Updates ' + boolLabel(value)); }), cardX, cardY);
 		#end
 
 		#if DISCORD_ALLOWED
-		cardY = addCard(new VisualsSwitchCard('discordRPC', phraseSetting('discord_rich_presence', 'Discord Rich Presence'), phraseDescription('discord_rich_presence', 'Disable this to prevent accidental leaks and hide the application from Discord status.'), cardWidth, ClientPrefs.data.discordRPC, ClientPrefs.defaultData.discordRPC, function(value:Bool) { ClientPrefs.data.discordRPC = value; saveSetting('Discord Rich Presence ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('discordRPC', Language.getPhrase('setting_discord_rich_presence', 'Discord Rich Presence'), Language.getPhrase('description_discord_rich_presence', 'Disable this to prevent accidental leaks and hide the application from Discord status.'), cardWidth, ClientPrefs.data.discordRPC, ClientPrefs.defaultData.discordRPC, function(value:Bool) { ClientPrefs.data.discordRPC = value; saveSetting('Discord Rich Presence ' + boolLabel(value)); }), cardX, cardY);
 		#end
 
-		cardY = addCard(new VisualsSwitchCard('comboStacking', phraseSetting('combo_stacking', 'Combo Stacking'), phraseDescription('combo_stacking', 'If unchecked, ratings and combo do not stack, saving memory and making them easier to read.'), cardWidth, ClientPrefs.data.comboStacking, ClientPrefs.defaultData.comboStacking, function(value:Bool) { ClientPrefs.data.comboStacking = value; saveSetting('Combo Stacking ' + boolLabel(value)); }), cardX, cardY);
-		cardY = addCard(new VisualsSwitchCard('showCombo', phraseSetting('show_combo_sprite', 'Show Combo Sprite'), phraseDescription('show_combo_sprite', 'If checked, shows the COMBO sprite when you hit notes.'), cardWidth, ClientPrefs.data.showCombo, ClientPrefs.defaultData.showCombo, function(value:Bool) { ClientPrefs.data.showCombo = value; saveSetting('Show Combo Sprite ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('comboStacking', Language.getPhrase('setting_combo_stacking', 'Combo Stacking'), Language.getPhrase('description_combo_stacking', 'If unchecked, ratings and combo do not stack, saving memory and making them easier to read.'), cardWidth, ClientPrefs.data.comboStacking, ClientPrefs.defaultData.comboStacking, function(value:Bool) { ClientPrefs.data.comboStacking = value; saveSetting('Combo Stacking ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('showCombo', Language.getPhrase('setting_show_combo_sprite', 'Show Combo Sprite'), Language.getPhrase('description_show_combo_sprite', 'If checked, shows the COMBO sprite when you hit notes.'), cardWidth, ClientPrefs.data.showCombo, ClientPrefs.defaultData.showCombo, function(value:Bool) { ClientPrefs.data.showCombo = value; saveSetting('Show Combo Sprite ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('comboInGame', phraseSetting('combo_in_game', 'Combo and Rating in camGame'), phraseDescription('combo_in_game', 'If enabled, combo and ratings render in camGame instead of camHUD.'), cardWidth, ClientPrefs.data.comboInGame, ClientPrefs.defaultData.comboInGame, function(value:Bool) {
+		cardY = addCard(new VisualsSwitchCard('comboInGame', Language.getPhrase('setting_combo_in_game', 'Combo and Rating in camGame'), Language.getPhrase('description_combo_in_game', 'If enabled, combo and ratings render in camGame instead of camHUD.'), cardWidth, ClientPrefs.data.comboInGame, ClientPrefs.defaultData.comboInGame, function(value:Bool) {
 			ClientPrefs.data.comboInGame = value;
 			if (PlayState.instance != null && PlayState.instance.comboGroup != null)
 				PlayState.instance.comboGroup.cameras = [value ? PlayState.instance.camGame : PlayState.instance.camHUD];
 			saveSetting('Combo and Rating in camGame ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('judgementCounter', phraseSetting('judgement_counter', 'Judgement Counter'), phraseDescription('judgement_counter', 'Shows the judgement counter during gameplay.'), cardWidth, ClientPrefs.data.judgementCounter, ClientPrefs.defaultData.judgementCounter, function(value:Bool) {
+		cardY = addCard(new VisualsSwitchCard('judgementCounter', Language.getPhrase('setting_judgement_counter', 'Judgement Counter'), Language.getPhrase('description_judgement_counter', 'Shows the judgement counter during gameplay.'), cardWidth, ClientPrefs.data.judgementCounter, ClientPrefs.defaultData.judgementCounter, function(value:Bool) {
 			ClientPrefs.data.judgementCounter = value;
 			ClientPrefs.judgementCounter = value;
 			saveSetting('Judgement Counter ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new VisualsSwitchCard('showEndCountdown', phraseSetting('show_end_countdown', 'Show End Countdown'), phraseDescription('show_end_countdown', 'If checked, shows a countdown in the last seconds of the song.'), cardWidth, ClientPrefs.data.showEndCountdown, ClientPrefs.defaultData.showEndCountdown, function(value:Bool) { ClientPrefs.data.showEndCountdown = value; saveSetting('Show End Countdown ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('showEndCountdown', Language.getPhrase('setting_show_end_countdown', 'Show End Countdown'), Language.getPhrase('description_show_end_countdown', 'If checked, shows a countdown in the last seconds of the song.'), cardWidth, ClientPrefs.data.showEndCountdown, ClientPrefs.defaultData.showEndCountdown, function(value:Bool) { ClientPrefs.data.showEndCountdown = value; saveSetting('Show End Countdown ' + boolLabel(value)); }), cardX, cardY);
 
-		cardY = addCard(new VisualsStepperCard('endCountdownSeconds', phraseSetting('end_countdown_seconds', 'End Countdown Seconds'), phraseDescription('end_countdown_seconds', 'How many seconds before the song ends the countdown appears.'), cardWidth, ClientPrefs.data.endCountdownSeconds, ClientPrefs.defaultData.endCountdownSeconds, 10, 30, 1, function(value:Int) {
+		cardY = addCard(new VisualsStepperCard('endCountdownSeconds', Language.getPhrase('setting_end_countdown_seconds', 'End Countdown Seconds'), Language.getPhrase('description_end_countdown_seconds', 'How many seconds before the song ends the countdown appears.'), cardWidth, ClientPrefs.data.endCountdownSeconds, ClientPrefs.defaultData.endCountdownSeconds, 10, 30, 1, function(value:Int) {
 			ClientPrefs.data.endCountdownSeconds = value;
 			saveSetting('End Countdown Seconds: ' + value + 's');
 		}), cardX, cardY);
 
 		#if windows
-		cardY = addCard(new VisualsSwitchCard('changeWindowBorderColorWithNoteHit', phraseSetting('change_window_border_color_with_note_hit', 'Change Window Border Color With Note Hit'), phraseDescription('change_window_border_color_with_note_hit', 'Changes the window border color when you hit a note. Windows 11 only.'), cardWidth, ClientPrefs.data.changeWindowBorderColorWithNoteHit, ClientPrefs.defaultData.changeWindowBorderColorWithNoteHit, function(value:Bool) { ClientPrefs.data.changeWindowBorderColorWithNoteHit = value; saveSetting('Window Border Color With Note Hit ' + boolLabel(value)); }), cardX, cardY);
+		cardY = addCard(new VisualsSwitchCard('changeWindowBorderColorWithNoteHit', Language.getPhrase('setting_change_window_border_color_with_note_hit', 'Change Window Border Color With Note Hit'), Language.getPhrase('description_change_window_border_color_with_note_hit', 'Changes the window border color when you hit a note. Windows 11 only.'), cardWidth, ClientPrefs.data.changeWindowBorderColorWithNoteHit, ClientPrefs.defaultData.changeWindowBorderColorWithNoteHit, function(value:Bool) { ClientPrefs.data.changeWindowBorderColorWithNoteHit = value; saveSetting('Window Border Color With Note Hit ' + boolLabel(value)); }), cardX, cardY);
 		#end
 
 		contentHeight = Math.max(0, cardY - contentTop - 10);
@@ -371,16 +371,6 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String

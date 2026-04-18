@@ -148,47 +148,47 @@ class LegacySettingsSubState extends MusicBeatSubstate
 		var cardX = panelX + 28;
 		var cardY = contentTop;
 
-		cardY = addCard(new LegacySwitchCard('legacyMemoryManagement', phraseSetting('legacy_memory_management', 'Legacy Memory Management'), phraseDescription('legacy_memory_management', 'Uses Psych 0.7.3-style cleanup and avoids GPU texture disposal. Handy for ancient mods with fragile memory expectations.'), cardWidth, ClientPrefs.data.legacyMemoryManagement, ClientPrefs.defaultData.legacyMemoryManagement, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('legacyMemoryManagement', Language.getPhrase('setting_legacy_memory_management', 'Legacy Memory Management'), Language.getPhrase('description_legacy_memory_management', 'Uses Psych 0.7.3-style cleanup and avoids GPU texture disposal. Handy for ancient mods with fragile memory expectations.'), cardWidth, ClientPrefs.data.legacyMemoryManagement, ClientPrefs.defaultData.legacyMemoryManagement, function(value:Bool) {
 			ClientPrefs.data.legacyMemoryManagement = value;
 			saveSetting('Legacy Memory Management ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('legacyFileSystemAccess', phraseSetting('legacy_filesystem_access', 'Legacy FileSystem Access'), phraseDescription('legacy_filesystem_access', 'Restores direct FileSystem.readDirectory access for mods that assume old filesystem behavior.'), cardWidth, ClientPrefs.data.legacyFileSystemAccess, ClientPrefs.defaultData.legacyFileSystemAccess, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('legacyFileSystemAccess', Language.getPhrase('setting_legacy_filesystem_access', 'Legacy FileSystem Access'), Language.getPhrase('description_legacy_filesystem_access', 'Restores direct FileSystem.readDirectory access for mods that assume old filesystem behavior.'), cardWidth, ClientPrefs.data.legacyFileSystemAccess, ClientPrefs.defaultData.legacyFileSystemAccess, function(value:Bool) {
 			ClientPrefs.data.legacyFileSystemAccess = value;
 			saveSetting('Legacy FileSystem Access ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('useLegacyFont', phraseSetting('use_legacy_font', 'Use Legacy Font'), phraseDescription('use_legacy_font', 'Switches the engine back to the classic VCR look instead of the newer font stack.'), cardWidth, ClientPrefs.data.useLegacyFont, ClientPrefs.defaultData.useLegacyFont, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('useLegacyFont', Language.getPhrase('setting_use_legacy_font', 'Use Legacy Font'), Language.getPhrase('description_use_legacy_font', 'Switches the engine back to the classic VCR look instead of the newer font stack.'), cardWidth, ClientPrefs.data.useLegacyFont, ClientPrefs.defaultData.useLegacyFont, function(value:Bool) {
 			ClientPrefs.data.useLegacyFont = value;
 			saveSetting('Use Legacy Font ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('legacyShaderInit', phraseSetting('legacy_shader_init', 'Legacy Shader Init'), phraseDescription('legacy_shader_init', 'Uses the older shader bootstrap path for mods that were written before the safer modern wrapper existed.'), cardWidth, ClientPrefs.data.legacyShaderInit, ClientPrefs.defaultData.legacyShaderInit, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('legacyShaderInit', Language.getPhrase('setting_legacy_shader_init', 'Legacy Shader Init'), Language.getPhrase('description_legacy_shader_init', 'Uses the older shader bootstrap path for mods that were written before the safer modern wrapper existed.'), cardWidth, ClientPrefs.data.legacyShaderInit, ClientPrefs.defaultData.legacyShaderInit, function(value:Bool) {
 			ClientPrefs.data.legacyShaderInit = value;
 			saveSetting('Legacy Shader Init ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('useWavyTimeBar', phraseSetting('use_wavy_time_bar', 'Use Wavy Time Bar'), phraseDescription('use_wavy_time_bar', 'Uses the new wavy time bar in gameplay and loading screens. Leave this off if you want the classic engine bars instead.'), cardWidth, ClientPrefs.data.useWavyTimeBar, ClientPrefs.defaultData.useWavyTimeBar, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('useWavyTimeBar', Language.getPhrase('setting_use_wavy_time_bar', 'Use Wavy Time Bar'), Language.getPhrase('description_use_wavy_time_bar', 'Uses the new wavy time bar in gameplay and loading screens. Leave this off if you want the classic engine bars instead.'), cardWidth, ClientPrefs.data.useWavyTimeBar, ClientPrefs.defaultData.useWavyTimeBar, function(value:Bool) {
 			ClientPrefs.data.useWavyTimeBar = value;
 			saveSetting('Use Wavy Time Bar ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('vanillaTransition', phraseSetting('vanilla_transition', 'Vanilla Transition'), phraseDescription('vanilla_transition', 'Brings back the classic transition flow instead of the custom Plus Engine wipe.'), cardWidth, ClientPrefs.data.vanillaTransition, ClientPrefs.defaultData.vanillaTransition, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('vanillaTransition', Language.getPhrase('setting_vanilla_transition', 'Vanilla Transition'), Language.getPhrase('description_vanilla_transition', 'Brings back the classic transition flow instead of the custom Plus Engine wipe.'), cardWidth, ClientPrefs.data.vanillaTransition, ClientPrefs.defaultData.vanillaTransition, function(value:Bool) {
 			ClientPrefs.data.vanillaTransition = value;
 			saveSetting('Vanilla Transition ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('usePsychScoreText', phraseSetting('use_psych_score_text', 'Use Psych Score Text'), phraseDescription('use_psych_score_text', 'Keeps the original Psych HUD score formatting during gameplay.'), cardWidth, ClientPrefs.data.usePsychScoreText, ClientPrefs.defaultData.usePsychScoreText, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('usePsychScoreText', Language.getPhrase('setting_use_psych_score_text', 'Use Psych Score Text'), Language.getPhrase('description_use_psych_score_text', 'Keeps the original Psych HUD score formatting during gameplay.'), cardWidth, ClientPrefs.data.usePsychScoreText, ClientPrefs.defaultData.usePsychScoreText, function(value:Bool) {
 			ClientPrefs.data.usePsychScoreText = value;
 			saveSetting('Use Psych Score Text ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('newfreeplay', phraseSetting('use_new_freeplay', 'Use New Freeplay'), phraseDescription('use_new_freeplay', 'Disabling this sends you back to the classic Psych freeplay screen. Retro tourism, but optional.'), cardWidth, ClientPrefs.data.newfreeplay, ClientPrefs.defaultData.newfreeplay, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('newfreeplay', Language.getPhrase('setting_use_new_freeplay', 'Use New Freeplay'), Language.getPhrase('description_use_new_freeplay', 'Disabling this sends you back to the classic Psych freeplay screen. Retro tourism, but optional.'), cardWidth, ClientPrefs.data.newfreeplay, ClientPrefs.defaultData.newfreeplay, function(value:Bool) {
 			ClientPrefs.data.newfreeplay = value;
 			saveSetting('Use New Freeplay ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new LegacySwitchCard('autoConvertChartsToV2', phraseSetting('auto_convert_charts_to_v2', 'Auto Convert Charts to V2'), phraseDescription('auto_convert_charts_to_v2', 'Automatically rewrites legacy psych_v1 charts into psych_v2 on load. Good for archival work, risky if you enjoy pristine fossils.'), cardWidth, ClientPrefs.data.autoConvertChartsToV2, ClientPrefs.defaultData.autoConvertChartsToV2, function(value:Bool) {
+		cardY = addCard(new LegacySwitchCard('autoConvertChartsToV2', Language.getPhrase('setting_auto_convert_charts_to_v2', 'Auto Convert Charts to V2'), Language.getPhrase('description_auto_convert_charts_to_v2', 'Automatically rewrites legacy psych_v1 charts into psych_v2 on load. Good for archival work, risky if you enjoy pristine fossils.'), cardWidth, ClientPrefs.data.autoConvertChartsToV2, ClientPrefs.defaultData.autoConvertChartsToV2, function(value:Bool) {
 			ClientPrefs.data.autoConvertChartsToV2 = value;
 			saveSetting('Auto Convert Charts to V2 ' + boolLabel(value));
 		}), cardX, cardY);
@@ -204,16 +204,6 @@ class LegacySettingsSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String

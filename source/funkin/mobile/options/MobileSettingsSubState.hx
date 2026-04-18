@@ -169,12 +169,12 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		cardY = addCard(new MobileInfoCard('deviceInfo', Language.getPhrase('mobile_device_info', 'Device Performance Info'), tierInfo, cardWidth), cardX, cardY);
 		#end
 
-		cardY = addCard(new MobileChoiceCard('extraButtons', phraseSetting('extra_controls', 'Extra Controls'), phraseDescription('extra_controls', 'Choose how many extra mobile buttons you want available for mod mechanics.'), cardWidth, exControlTypes, ClientPrefs.data.extraButtons, ClientPrefs.defaultData.extraButtons, openChoiceMenu, function(value:String) {
+		cardY = addCard(new MobileChoiceCard('extraButtons', Language.getPhrase('setting_extra_controls', 'Extra Controls'), Language.getPhrase('description_extra_controls', 'Choose how many extra mobile buttons you want available for mod mechanics.'), cardWidth, exControlTypes, ClientPrefs.data.extraButtons, ClientPrefs.defaultData.extraButtons, openChoiceMenu, function(value:String) {
 			ClientPrefs.data.extraButtons = value;
 			saveSetting('Extra Controls: ' + value);
 		}, 'extra_controls'), cardX, cardY);
 
-		cardY = addCard(new MobileSliderCard('controlsAlpha', phraseSetting('mobile_controls_opacity', 'Mobile Controls Opacity'), phraseDescription('mobile_controls_opacity', 'Adjust button opacity without making them vanish into the void.'), cardWidth, ClientPrefs.data.controlsAlpha, ClientPrefs.defaultData.controlsAlpha, 0.001, 1.0, 0.1, 1, function(value:Float) {
+		cardY = addCard(new MobileSliderCard('controlsAlpha', Language.getPhrase('setting_mobile_controls_opacity', 'Mobile Controls Opacity'), Language.getPhrase('description_mobile_controls_opacity', 'Adjust button opacity without making them vanish into the void.'), cardWidth, ClientPrefs.data.controlsAlpha, ClientPrefs.defaultData.controlsAlpha, 0.001, 1.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.controlsAlpha = value;
 			if (touchPad != null) touchPad.alpha = value;
 			ClientPrefs.toggleVolumeKeys();
@@ -182,13 +182,13 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		}), cardX, cardY);
 
 		#if mobile
-		cardY = addCard(new MobileSwitchCard('screensaver', phraseSetting('allow_phone_screensaver', 'Allow Phone Screensaver'), phraseDescription('allow_phone_screensaver', 'Lets the device sleep after inactivity according to the phone settings.'), cardWidth, ClientPrefs.data.screensaver, ClientPrefs.defaultData.screensaver, function(value:Bool) {
+		cardY = addCard(new MobileSwitchCard('screensaver', Language.getPhrase('setting_allow_phone_screensaver', 'Allow Phone Screensaver'), Language.getPhrase('description_allow_phone_screensaver', 'Lets the device sleep after inactivity according to the phone settings.'), cardWidth, ClientPrefs.data.screensaver, ClientPrefs.defaultData.screensaver, function(value:Bool) {
 			ClientPrefs.data.screensaver = value;
 			lime.system.System.allowScreenTimeout = value;
 			saveSetting('Allow Phone Screensaver ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new MobileSwitchCard('infinityDisplay', phraseSetting('infinity_display', 'Infinity Display'), phraseDescription('infinity_display', 'Expands the visible play area on wider phone ratios while keeping old 1280x720 mods sane.'), cardWidth, ClientPrefs.data.infinityDisplay, ClientPrefs.defaultData.infinityDisplay, function(value:Bool) {
+		cardY = addCard(new MobileSwitchCard('infinityDisplay', Language.getPhrase('setting_infinity_display', 'Infinity Display'), Language.getPhrase('description_infinity_display', 'Expands the visible play area on wider phone ratios while keeping old 1280x720 mods sane.'), cardWidth, ClientPrefs.data.infinityDisplay, ClientPrefs.defaultData.infinityDisplay, function(value:Bool) {
 			ClientPrefs.data.infinityDisplay = value;
 			FlxG.scaleMode = new MobileScaleMode();
 			saveSetting('Infinity Display ' + boolLabel(value));
@@ -197,23 +197,23 @@ class MobileSettingsSubState extends MusicBeatSubstate
 
 		if (MobileData.mode == 3)
 		{
-			cardY = addCard(new MobileChoiceCard('hitboxType', phraseSetting('hitbox_design', 'Hitbox Design'), phraseDescription('hitbox_design', 'Choose how the hitbox visuals should look on touch controls.'), cardWidth, hintOptions, ClientPrefs.data.hitboxType, ClientPrefs.defaultData.hitboxType, openChoiceMenu, function(value:String) {
+			cardY = addCard(new MobileChoiceCard('hitboxType', Language.getPhrase('setting_hitbox_design', 'Hitbox Design'), Language.getPhrase('description_hitbox_design', 'Choose how the hitbox visuals should look on touch controls.'), cardWidth, hintOptions, ClientPrefs.data.hitboxType, ClientPrefs.defaultData.hitboxType, openChoiceMenu, function(value:String) {
 				ClientPrefs.data.hitboxType = value;
 				saveSetting('Hitbox Design: ' + value);
 			}, 'hitbox_design'), cardX, cardY);
 
-			cardY = addCard(new MobileSwitchCard('hitboxPos', phraseSetting('hitbox_position', 'Hitbox Position'), phraseDescription('hitbox_position', 'Places the hitbox at the bottom when enabled, otherwise it stays up top.'), cardWidth, ClientPrefs.data.hitboxPos, ClientPrefs.defaultData.hitboxPos, function(value:Bool) {
+			cardY = addCard(new MobileSwitchCard('hitboxPos', Language.getPhrase('setting_hitbox_position', 'Hitbox Position'), Language.getPhrase('description_hitbox_position', 'Places the hitbox at the bottom when enabled, otherwise it stays up top.'), cardWidth, ClientPrefs.data.hitboxPos, ClientPrefs.defaultData.hitboxPos, function(value:Bool) {
 				ClientPrefs.data.hitboxPos = value;
 				saveSetting('Hitbox Position ' + boolLabel(value));
 			}), cardX, cardY);
 		}
 
-		cardY = addCard(new MobileSwitchCard('dynamicColors', phraseSetting('dynamic_controls_color', 'Dynamic Controls Color'), phraseDescription('dynamic_controls_color', 'Makes the mobile controls follow your note colors during gameplay.'), cardWidth, ClientPrefs.data.dynamicColors, ClientPrefs.defaultData.dynamicColors, function(value:Bool) {
+		cardY = addCard(new MobileSwitchCard('dynamicColors', Language.getPhrase('setting_dynamic_controls_color', 'Dynamic Controls Color'), Language.getPhrase('description_dynamic_controls_color', 'Makes the mobile controls follow your note colors during gameplay.'), cardWidth, ClientPrefs.data.dynamicColors, ClientPrefs.defaultData.dynamicColors, function(value:Bool) {
 			ClientPrefs.data.dynamicColors = value;
 			saveSetting('Dynamic Controls Color ' + boolLabel(value));
 		}), cardX, cardY);
 
-		cardY = addCard(new MobileSwitchCard('showMobileDebugButtons', phraseSetting('show_debug_buttons', 'Show Debug Buttons'), phraseDescription('show_debug_buttons', 'Displays the Trace and Debug buttons in the top-right corner.'), cardWidth, ClientPrefs.data.showMobileDebugButtons, ClientPrefs.defaultData.showMobileDebugButtons, function(value:Bool) {
+		cardY = addCard(new MobileSwitchCard('showMobileDebugButtons', Language.getPhrase('setting_show_debug_buttons', 'Show Debug Buttons'), Language.getPhrase('description_show_debug_buttons', 'Displays the Trace and Debug buttons in the top-right corner.'), cardWidth, ClientPrefs.data.showMobileDebugButtons, ClientPrefs.defaultData.showMobileDebugButtons, function(value:Bool) {
 			ClientPrefs.data.showMobileDebugButtons = value;
 			onChangeMobileDebugButtons();
 			saveSetting('Show Debug Buttons ' + boolLabel(value));
@@ -237,16 +237,6 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		cards.push(card);
 		cardBaseY.push(y);
 		return y + card.cardHeight + 10;
-	}
-
-	function phraseSetting(key:String, fallback:String):String
-	{
-		return Language.getPhrase('setting_' + key, fallback);
-	}
-
-	function phraseDescription(key:String, fallback:String):String
-	{
-		return Language.getPhrase('description_' + key, fallback);
 	}
 
 	function boolLabel(value:Bool):String
