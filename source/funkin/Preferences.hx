@@ -20,6 +20,7 @@ import funkin.ui.title.TitleState;
 	#if android
 	public var storageType:String = "EXTERNAL_DATA";
 	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
+	public var androidOptimizationProfileVersion:Int = 0;
 	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;

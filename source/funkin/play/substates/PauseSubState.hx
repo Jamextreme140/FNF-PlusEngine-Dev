@@ -851,7 +851,6 @@ class PauseSubState extends MusicBeatSubstate
 				requestClose(function() {
 					PlayState.instance.notes.clear();
 					PlayState.instance.unspawnNotes = [];
-					PlayState.instance.preloadedNotes = [];
 					PlayState.instance.finishSong(true);
 				});
 

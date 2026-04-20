@@ -99,15 +99,17 @@ class FreeplayState extends MusicBeatState {
     
     // Touch support
     #if mobile
+    var backChip:MaterialChip;
     var touchScroll:funkin.mobile.backend.TouchScroll;
     var difficultyScroll:funkin.mobile.backend.TouchScroll;
+    var backChipHitbox:FlxSprite;
     var gameplayChangersChip:MaterialChip;
     var resetScoreChip:MaterialChip;
     var gameplayChangersChipHitbox:FlxSprite;
     var resetScoreChipHitbox:FlxSprite;
-    var playTouchTarget:FlxSprite;
     #end
     
+    var playTouchTarget:FlxSprite;
     // Icon arrays for songs
     private var iconArray:Array<HealthIcon> = [];
     
@@ -388,17 +390,22 @@ class FreeplayState extends MusicBeatState {
         playText.setFormat(Paths.font('inter-bold.otf'), 22, FlxColor.PURPLE, 'left');
         add(playText);
 
-        #if mobile
         playTouchTarget = new FlxSprite(playIcon.x - 30, playIcon.y - 12);
         playTouchTarget.makeGraphic(
             Std.int((playText.x + playText.width) - playTouchTarget.x + 30),
             Std.int(Math.max(playIcon.height, playText.height) + 24),
             FlxColor.WHITE
         );
+
         playTouchTarget.alpha = 0;
         add(playTouchTarget);
 
-        gameplayChangersChip = new MaterialChip(340, 60, Language.getPhrase('gameplay_changers_menu', 'Gameplay Changers'), ASSIST, false, openGameplayChangersSubstate);
+        #if mobile
+        backChip = new MaterialChip(54, 60, Language.getPhrase('back', 'Back'), ASSIST, false, goBackToMainMenu);
+        add(backChip);
+        backChipHitbox = createMobileActionHitbox(backChip, 14, 10);
+
+        gameplayChangersChip = new MaterialChip(backChip.x + Math.max(backChip.width, 112) + 16, 60, Language.getPhrase('gameplay_changers_menu', 'Gameplay Changers'), ASSIST, false, openGameplayChangersSubstate);
         add(gameplayChangersChip);
         gameplayChangersChipHitbox = createMobileActionHitbox(gameplayChangersChip, 14, 10);
 
@@ -1112,9 +1119,7 @@ class FreeplayState extends MusicBeatState {
         }
 
         if (controls.BACK && !isTyping) {
-            persistentUpdate = false;
-            FlxG.sound.play(Paths.sound('cancelMenu'));
-            MusicBeatState.switchState(new funkin.ui.mainmenu.MainMenuState());
+            goBackToMainMenu();
         }
 
         // Gameplay changers
@@ -2802,6 +2807,11 @@ class FreeplayState extends MusicBeatState {
         var point = new FlxPoint(x, y);
 
         #if mobile
+        if (backChipHitbox != null && backChipHitbox.overlapsPoint(point)) {
+            goBackToMainMenu();
+            return;
+        }
+
         if (gameplayChangersChipHitbox != null && gameplayChangersChipHitbox.overlapsPoint(point)) {
             openGameplayChangersSubstate();
             return;
@@ -2814,9 +2824,7 @@ class FreeplayState extends MusicBeatState {
         #end
 
         var hitPlayTouchTarget:Bool = false;
-        #if mobile
         hitPlayTouchTarget = playTouchTarget != null && playTouchTarget.overlapsPoint(point);
-        #end
 
         if (hitPlayTouchTarget || (playIcon != null && playIcon.overlapsPoint(point))) {
             playSong();
@@ -2908,6 +2916,19 @@ class FreeplayState extends MusicBeatState {
         return hitbox;
     }
     #end
+
+    function goBackToMainMenu():Void {
+        if (PsychUIInputText.focusOn == searchInput)
+            return;
+
+        persistentUpdate = false;
+        #if mobile
+        if (touchScroll != null) touchScroll.stopScroll();
+        if (difficultyScroll != null) difficultyScroll.stopScroll();
+        #end
+        FlxG.sound.play(Paths.sound('cancelMenu'));
+        MusicBeatState.switchState(new funkin.ui.mainmenu.MainMenuState());
+    }
 
     function openGameplayChangersSubstate():Void {
         persistentUpdate = false;

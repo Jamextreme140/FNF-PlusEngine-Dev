@@ -44,9 +44,6 @@ import funkin.play.notes.Note.EventNote;
 import funkin.play.stage.*;
 import funkin.ui.components.md3.MaterialWavyProgressIndicator;
 import funkin.ui.components.md3.MaterialWavyProgressIndicator.WavyProgressType;
-import lenin.PreloadedChartNote;
-import lenin.HeavyChartManager;
-import lenin.NoteSpawner;
 
 #if windows
 import lenin.slushithings.windows.WindowsAPI;
@@ -250,18 +247,6 @@ class PlayState extends MusicBeatState
 	public var unspawnNotes:Array<Note> = [];
 	public var eventNotes:Array<EventNote> = [];
 
-	// Heavy Charts System
-	public var useHeavyCharts:Bool = false;
-	public var preloadedNotes:Array<PreloadedChartNote> = [];
-	public var notesAddedCount:Int = 0;
-	public var noteLimitCount:Int = 0; // Cuenta de notas activas en memoria
-	public var dynamicNoteLimit:Int = 200; // Límite dinámico basado en RAM
-
-	// Rendering optimization variables (from JS Engine)
-	public var amountOfRenderedNotes:Float = 0; // Tracks total rendering cost this frame
-	public var maxRenderedNotes:Float = 0; // Peak rendering cost
-	public var maxNotesOnScreen:Int = 0; // For limiting visible notes (set to 0 = unlimited)
-
 	public var camFollow:FlxObject;
 	private static var prevCamFollow:FlxObject;
 
@@ -406,10 +391,12 @@ class PlayState extends MusicBeatState
 
 	// Key Viewer System
 	public var keyViewer:funkin.play.components.KeyViewer;
+	var botplayKeyReleaseTimers:Array<Float> = [0, 0, 0, 0];
 	var popupTimer:FlxTimer = null;
 	var popupVisible:Bool = false;
 	var turnValue:Int = 10;
 	public var displayedScore:Int = 0;
+	var ratingIndicesByName:Map<String, Int> = [];
 	
 	// Variables para animación de íconos DNB
 	var iconTurnValue:Float = 10;
@@ -691,6 +678,7 @@ class PlayState extends MusicBeatState
 		
 		// Clear hit data for results graph
 		hitDataArray = [];
+		cacheRatingIndices();
 
 		if(FlxG.sound.music != null)
 			FlxG.sound.music.stop();
@@ -2544,24 +2532,8 @@ class PlayState extends MusicBeatState
 		if (bpmChangesV2 != null)
 			bpmChangesV2.sort(function(a, b) return Std.int(a.time - b.time));
 
-		var getV2BpmAtTime = function(timeMs:Float):Float
-		{
-			if (bpmChangesV2 == null || bpmChangesV2.length == 0)
-				return songData.bpm;
-
-			var bpm:Float = songData.bpm;
-			for (change in bpmChangesV2)
-			{
-				if (change == null) continue;
-				if (change.time != null && change.time <= timeMs + 1)
-				{
-					if (change.bpm != null)
-						bpm = change.bpm;
-				}
-				else break;
-			}
-			return bpm;
-		};
+		var currentV2Bpm:Float = songData.bpm;
+		var bpmChangeIndex:Int = 0;
 	
 		if (useV2FastPath && notesV2 != null)
 		{
@@ -2615,7 +2587,27 @@ class PlayState extends MusicBeatState
 				unspawnNotes.push(swagNote);
 				noteDedupMap.set(dedupKey, swagNote);
 
-				var noteBpm:Float = getV2BpmAtTime(spawnTime);
+				while (bpmChangesV2 != null && bpmChangeIndex < bpmChangesV2.length)
+				{
+					var change = bpmChangesV2[bpmChangeIndex];
+					if (change == null)
+					{
+						bpmChangeIndex++;
+						continue;
+					}
+
+					if (change.time != null && change.time <= spawnTime + 1)
+					{
+						if (change.bpm != null)
+							currentV2Bpm = change.bpm;
+						bpmChangeIndex++;
+						continue;
+					}
+
+					break;
+				}
+
+				var noteBpm:Float = currentV2Bpm;
 				var curStepCrochet:Float = 60 / noteBpm * 1000 / 4.0;
 				final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
 				if(roundSus > 0)
@@ -2858,26 +2850,6 @@ class PlayState extends MusicBeatState
 
 		unspawnNotes.sort(sortByTime);
 		cacheBreakTimerNotes();
-		
-		// Heavy Charts Mode: Convert notes to lightweight structure
-		useHeavyCharts = HeavyChartManager.shouldUseHeavyCharts();
-		if (useHeavyCharts && unspawnNotes.length > 0)
-		{
-			preloadedNotes = NoteSpawner.convertNotesToPreloaded(unspawnNotes);
-			unspawnNotes = [];
-			// Calcular el límite dinámico de notas basado en RAM disponible
-			dynamicNoteLimit = HeavyChartManager.getDynamicNoteLimit();
-			HeavyChartManager.logChartInfo(songData.song, preloadedNotes.length, true);
-		}
-		else
-		{
-			HeavyChartManager.logChartInfo(songData.song, unspawnNotes.length, false);
-		}
-
-		#if android
-		lowEndEventMode = funkin.mobile.AndroidOptimizer.getCurrentTier() == 0 && eventNotes.length > 80;
-		lowEndEventAccumulator = 0;
-		#end
 		
 		generatedMusic = true;
 		
@@ -3414,6 +3386,22 @@ class PlayState extends MusicBeatState
 			botplayTxt.alpha = 1 - Math.sin((Math.PI * botplaySine) / 180);
 		}
 
+		if (keyViewer != null)
+		{
+			for (i in 0...botplayKeyReleaseTimers.length)
+			{
+				if (botplayKeyReleaseTimers[i] <= 0)
+					continue;
+
+				botplayKeyReleaseTimers[i] -= elapsed;
+				if (botplayKeyReleaseTimers[i] <= 0)
+				{
+					botplayKeyReleaseTimers[i] = 0;
+					keyViewer.keyReleased(i);
+				}
+			}
+		}
+
 		if (!paused && controls.PAUSE #if android || FlxG.android.justReleased.BACK #end && startedCountdown && canPause)
 		{
 			var ret:Dynamic = callOnScripts('onPause', null, true);
@@ -3641,9 +3629,6 @@ class PlayState extends MusicBeatState
 				{
 					if(startedCountdown)
 					{
-						// Reset rendering counter each frame (like JS Engine)
-						amountOfRenderedNotes = 0;
-						
 						var fakeCrochet:Float = (60 / SONG.bpm) * 1000;
 						var i:Int = 0;
 						while(i < notes.length)
@@ -3654,10 +3639,6 @@ class PlayState extends MusicBeatState
 								i++;
 								continue;
 							}
-
-							// Track rendering cost (JS Engine optimization)
-							amountOfRenderedNotes += daNote.noteDensity;
-							if (maxRenderedNotes < amountOfRenderedNotes) maxRenderedNotes = amountOfRenderedNotes;
 
 							var strumGroup:FlxTypedGroup<StrumNote> = playerStrums;
 							if(!daNote.mustPress) strumGroup = opponentStrums;
@@ -3705,9 +3686,6 @@ class PlayState extends MusicBeatState
 					}
 				}
 			}
-			// Heavy Charts Mode: Spawnear notas dinámicamente
-			if (useHeavyCharts && !paused && startedCountdown)
-				spawnHeavyNotes();
 
 				#if android
 				if (lowEndEventMode)
@@ -4891,23 +4869,11 @@ class PlayState extends MusicBeatState
 				if(daNote.strumTime < songLength - Conductor.safeZoneOffset)
 					health -= 0.05 * healthLoss;
 			});
-			
-			// Verificar notas sin spawnear
-			if (useHeavyCharts)
+
+			for (daNote in unspawnNotes)
 			{
-				for (daNote in preloadedNotes)
-				{
-					if(daNote != null && !daNote.wasHit && daNote.strumTime < songLength - Conductor.safeZoneOffset)
-						health -= 0.05 * healthLoss;
-				}
-			}
-			else
-			{
-				for (daNote in unspawnNotes)
-				{
-					if(daNote != null && daNote.strumTime < songLength - Conductor.safeZoneOffset)
-						health -= 0.05 * healthLoss;
-				}
+				if(daNote != null && daNote.strumTime < songLength - Conductor.safeZoneOffset)
+					health -= 0.05 * healthLoss;
 			}
 
 			if(doDeathCheck()) {
@@ -5143,11 +5109,6 @@ class PlayState extends MusicBeatState
 			invalidateNote(daNote);
 		}
 		unspawnNotes = [];
-		if (preloadedNotes.length > 0)
-		{
-			HeavyChartManager.cleanupPreloadedNotes(preloadedNotes);
-			preloadedNotes = [];
-		}
 		eventNotes = [];
 	}
 
@@ -5312,14 +5273,7 @@ class PlayState extends MusicBeatState
 			spawnNoteSplashOnNote(note);
 
 		if (judgementCounter != null) {
-			// Determinar el índice del rating basado en el nombre
-			var ratingIndex = -1;
-			for (i in 0...ratingsData.length) {
-				if (ratingsData[i] == daRating) {
-					ratingIndex = i;
-					break;
-				}
-			}
+			var ratingIndex:Int = ratingIndicesByName.exists(daRating.name) ? ratingIndicesByName.get(daRating.name) : -1;
 			
 			if (ratingIndex >= 0) {
 				judgementCounter.doBump(ratingIndex);
@@ -6099,11 +6053,12 @@ class PlayState extends MusicBeatState
 		if(note.wasGoodHit) return;
 		if(cpuControlled && note.ignoreNote) return;
 
+		var noteIndex:Int = notes.members.indexOf(note);
 		var isSus:Bool = note.isSustainNote; //GET OUT OF MY HEAD, GET OUT OF MY HEAD, GET OUT OF MY HEAD
 		var leData:Int = Math.round(Math.abs(note.noteData));
 		var leType:String = note.noteType;
 
-		var result:Dynamic = callOnLuas('goodNoteHitPre', [notes.members.indexOf(note), leData, leType, isSus]);
+		var result:Dynamic = callOnLuas('goodNoteHitPre', [noteIndex, leData, leType, isSus]);
 		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll) result = callOnHScript('goodNoteHitPre', [note]);
 
 		if(result == LuaUtils.Function_Stop) return;
@@ -6167,10 +6122,7 @@ class PlayState extends MusicBeatState
 				if(keyViewer != null && !note.isSustainNote) {
 					var keyIndex:Int = note.noteData % 4;
 					keyViewer.keyPressed(keyIndex);
-					// Programar release automático después de un corto tiempo
-					new FlxTimer().start(0.1, function(tmr:FlxTimer) {
-						if(keyViewer != null) keyViewer.keyReleased(keyIndex);
-					});
+					botplayKeyReleaseTimers[keyIndex] = 0.1;
 				}
 			}
 			vocals.volume = 1;
@@ -6212,12 +6164,23 @@ class PlayState extends MusicBeatState
 		}
 
 		stagesFunc(function(stage:BaseStage) stage.goodNoteHit(note));
-		var result:Dynamic = callOnLuas('goodNoteHit', [notes.members.indexOf(note), leData, leType, isSus]);
+		var result:Dynamic = callOnLuas('goodNoteHit', [noteIndex, leData, leType, isSus]);
 		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll) callOnHScript('goodNoteHit', [note]);
 		spawnHoldSplashOnNote(note);
 		
 		// Guardar nota en el replay (solo si no estamos en modo replay)
 		if(!note.isSustainNote) invalidateNote(note);
+	}
+
+	function cacheRatingIndices():Void
+	{
+		ratingIndicesByName = [];
+		for (i in 0...ratingsData.length)
+		{
+			var rating:Rating = ratingsData[i];
+			if (rating != null && rating.name != null)
+				ratingIndicesByName.set(rating.name, i);
+		}
 	}
 
 	public function invalidateNote(note:Note):Void {
@@ -7433,82 +7396,6 @@ class PlayState extends MusicBeatState
 			FlxG.signals.preUpdate.add(checkForResync);
 	}
 
-	/**
-	 * Spawnea notas dinámicamente para el Heavy Charts Mode
-	 * Solo crea notas visuales cuando están cerca de ser ejecutadas
-	 */
-	function spawnHeavyNotes():Void
-	{
-		if (!useHeavyCharts || preloadedNotes.length == 0 || notesAddedCount >= preloadedNotes.length)
-			return;
-
-		// Tiempo de spawn: notas aparecen 1600ms antes de ser ejecutadas (ajustable con songSpeed)
-		var NOTE_SPAWN_TIME:Float = 1600 / songSpeed;
-		var currentSongPos:Float = Conductor.songPosition;
-
-		// Contar cuántas notas activas hay en memoria ahora (solo una vez antes del loop)
-		var limitNC:Int = notes.countLiving();
-
-		var targetNote:PreloadedChartNote = null;
-		var spawnedCount:Int = 0;
-		var lastNote:Note = null; // Rastrear la última nota para sustains
-		var maxNotesPerFrame:Int = adaptiveHeavySpawnCap;
-		if (maxNotesPerFrame < 8)
-			maxNotesPerFrame = 8;
-
-		// Spawnear notas mientras haya espacio en el límite dinámico
-		while (notesAddedCount < preloadedNotes.length && limitNC < dynamicNoteLimit && spawnedCount < maxNotesPerFrame)
-		{
-			targetNote = preloadedNotes[notesAddedCount];
-
-			if (targetNote == null)
-			{
-				notesAddedCount++;
-				continue;
-			}
-
-			// Calcular distancia hasta la nota
-			var timeUntilNote:Float = targetNote.strumTime - currentSongPos;
-
-			// Si la nota está fuera del rango de spawn (aún muy lejana), detener
-			if (timeUntilNote > NOTE_SPAWN_TIME)
-				break;
-
-			// Si la nota ya pasó y no fue ejecutada, marcarla como ejecutada
-			if (timeUntilNote < -200) // 200ms de margen para misses
-			{
-				targetNote.wasHit = true;
-				notesAddedCount++;
-				continue;
-			}
-
-			// Crear la nota visual con la relación parent correcta
-			var newNote:Note = new Note(targetNote.strumTime, targetNote.noteData, lastNote, targetNote.isSustainNote);
-			newNote.gfNote = targetNote.gfNote;
-			newNote.animSuffix = targetNote.animSuffix;
-			newNote.mustPress = targetNote.mustPress;
-			newNote.isOpponentMode = targetNote.isOpponentMode;
-			newNote.sustainLength = targetNote.sustainLength;
-			newNote.noteType = targetNote.noteType;
-			newNote.scrollFactor.set();
-
-			// Si es una sustain note y tiene un parent, agregarlo a la cola del parent
-			if (targetNote.isSustainNote && lastNote != null && lastNote.isSustainNote)
-			{
-				lastNote.tail.push(newNote);
-				newNote.parent = lastNote;
-			}
-
-			// Agregar a la lista de notas activas
-			notes.add(newNote);
-			spawnedCount++;
-			targetNote.wasHit = true; // Marcar como que ya fue spawneada
-			lastNote = newNote; // Actualizar lastNote para la siguiente iteración
-			limitNC++; // Incrementar el contador local
-
-			notesAddedCount++;
-		}
-	}
 }
 
 

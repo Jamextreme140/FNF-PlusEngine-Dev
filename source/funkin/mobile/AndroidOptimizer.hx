@@ -18,6 +18,8 @@ class AndroidOptimizer
     public static var GPU_TIER_MID:Int = 1;
     public static var GPU_TIER_HIGH:Int = 2;
 
+    static inline var OPTIMIZATION_PROFILE_VERSION:Int = 2;
+
     static inline var LOW_END_FPS_CAP:Int = 45;
     static inline var MID_RANGE_FPS_CAP:Int = 60;
     static inline var HIGH_END_FPS_CAP:Int = 60;
@@ -34,7 +36,8 @@ class AndroidOptimizer
         if (hasBeenOptimized) return;
         
         // Check if optimizations were already applied in a previous session
-        if (ClientPrefs.data.androidOptimizationsApplied == true)
+        if (ClientPrefs.data.androidOptimizationsApplied == true
+            && ClientPrefs.data.androidOptimizationProfileVersion >= OPTIMIZATION_PROFILE_VERSION)
         {
             hasBeenOptimized = true;
             return;
@@ -52,6 +55,7 @@ class AndroidOptimizer
         // Mark as optimized (will be saved automatically by ClientPrefs system)
         hasBeenOptimized = true;
         ClientPrefs.data.androidOptimizationsApplied = true;
+        ClientPrefs.data.androidOptimizationProfileVersion = OPTIMIZATION_PROFILE_VERSION;
     }
     
     /**
@@ -110,6 +114,41 @@ class AndroidOptimizer
         
         // Default to 60Hz for compatibility
         return 60;
+    }
+
+    private static function getDisplayPixelCount():Int
+    {
+        try
+        {
+            #if lime
+            var display = lime.system.System.getDisplay(0);
+            if (display != null && display.currentMode != null)
+            {
+                var width:Int = display.currentMode.width;
+                var height:Int = display.currentMode.height;
+                if (width > 0 && height > 0)
+                    return width * height;
+            }
+            #end
+        }
+        catch (e:Dynamic)
+        {
+            // Silent fail
+        }
+
+        return 0;
+    }
+
+    private static function getMaliCoreCount(gpu:String):Int
+    {
+        var mcMatch = ~/mc(\d+)/;
+        if (mcMatch.match(gpu))
+        {
+            var cores:Null<Int> = Std.parseInt(mcMatch.matched(1));
+            if (cores != null && cores > 0)
+                return cores;
+        }
+        return 0;
     }
 
     private static function normalizeRefreshRate(refreshRate:Int):Int
@@ -208,6 +247,7 @@ class AndroidOptimizer
     {
         var gpuName = funkin.util.Native.detectGPU();
         var cpuCores = getCPUCores();
+        var displayPixels:Int = getDisplayPixelCount();
         
         if (gpuName == null || gpuName == 'Unknown')
         {
@@ -241,12 +281,39 @@ class AndroidOptimizer
         // ARM Mali detection (expanded)
         if (gpu.indexOf('mali') != -1)
         {
-            // Mali-G7x, G8x, G9x = High tier (newer gens)
+            var maliModelMatch = ~/mali-g(\d+)/;
+            var maliCores:Int = getMaliCoreCount(gpu);
+            if (maliModelMatch.match(gpu))
+            {
+                var model:Int = Std.parseInt(maliModelMatch.matched(1));
+
+                // Newer flagship-class Valhall/Immortalis parts.
+                if (model >= 710)
+                    return GPU_TIER_HIGH;
+
+                // Mid/high crossover parts. Small MC counts at high resolutions should stay mid-tier.
+                if (model >= 78)
+                {
+                    if (maliCores >= 6 && (displayPixels <= 0 || displayPixels <= 2073600))
+                        return GPU_TIER_HIGH;
+                    return GPU_TIER_MID;
+                }
+
+                // G57/G68/G615-class parts are good, but not "enable every expensive default" good.
+                if (model >= 57)
+                    return GPU_TIER_MID;
+
+                // Mali-G5x and G6x = Mid tier
+                if (model >= 52)
+                    return GPU_TIER_MID;
+
+                if (model >= 31)
+                    return cpuCores >= 6 ? GPU_TIER_MID : GPU_TIER_LOW;
+            }
+
+            // Fallback string-based detection for unusual names.
             if (gpu.indexOf('g7') != -1 || gpu.indexOf('g8') != -1 || gpu.indexOf('g9') != -1)
-                return GPU_TIER_HIGH;
-            // Mali-G5x and G6x = Mid tier
-            if (gpu.indexOf('g5') != -1 || gpu.indexOf('g6') != -1)
-                return GPU_TIER_MID;
+                return maliCores >= 6 && (displayPixels <= 0 || displayPixels <= 2073600) ? GPU_TIER_HIGH : GPU_TIER_MID;
             // Mali-G4x = Low-Mid tier
             if (gpu.indexOf('g4') != -1)
                 return cpuCores >= 6 ? GPU_TIER_MID : GPU_TIER_LOW;
