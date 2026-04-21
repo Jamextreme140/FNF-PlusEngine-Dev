@@ -41,9 +41,18 @@ class NoteSplash extends FlxSprite
 
 	var spawned:Bool = false;
 	var noteDataMap:Map<Int, String> = new Map();
+	var noteVariantMap:Map<Int, Array<String>> = new Map();
 
 	public static var defaultNoteSplash(default, never):String = "noteSplashes/noteSplashes";
+	public static var legacyNoteSplash(default, never):String = "noteSplashes/noteSplashes-legacy";
 	public static var configs:Map<String, NoteSplashConfig> = new Map();
+
+	public static function getDefaultSplashTexture():String
+	{
+		if (!ClientPrefs.data.noteRGB && Paths.fileExists('images/' + legacyNoteSplash + '.png', IMAGE))
+			return legacyNoteSplash;
+		return defaultNoteSplash + getSplashSkinPostfix();
+	}
 
 	public function new(?x:Float = 0, ?y:Float = 0, ?splash:String)
 	{
@@ -65,7 +74,7 @@ class NoteSplash extends FlxSprite
 
 		if(splash == null)
 		{
-			splash = defaultNoteSplash + getSplashSkinPostfix();
+			splash = getDefaultSplashTexture();
 			// SONG.splashSkin may be a legacy short name without folder - normalize it.
 			if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
 			{
@@ -78,7 +87,7 @@ class NoteSplash extends FlxSprite
 		frames = Paths.getSparrowAtlas(texture);
 		if (frames == null)
 		{
-			texture = defaultNoteSplash + getSplashSkinPostfix();
+			texture = getDefaultSplashTexture();
 			frames = Paths.getSparrowAtlas(texture);
 			if (frames == null)
 			{
@@ -111,13 +120,21 @@ class NoteSplash extends FlxSprite
 					rgb: config.rgb
 				}
 
+				var variantCountByLane:Map<Int, Int> = new Map();
 				for (i in Reflect.fields(config.animations))
 				{
 					var anim:NoteSplashAnim = Reflect.field(config.animations, i);
 					tempConfig.animations.set(i, anim);
-					if (anim.noteData % 4 == 0)
-						maxAnims++;
+
+					var lane:Int = anim.noteData % Note.colArray.length;
+					var laneCount:Int = variantCountByLane.exists(lane) ? variantCountByLane.get(lane) + 1 : 1;
+					variantCountByLane.set(lane, laneCount);
+					if (laneCount > maxAnims)
+						maxAnims = laneCount;
 				}
+
+				if (maxAnims < 1)
+					maxAnims = 1;
 
 				this.config = tempConfig;
 				configs.set(path, this.config);
@@ -205,7 +222,7 @@ class NoteSplash extends FlxSprite
 			// Priority: per-note texture > SONG.splashSkin > options skin (postfix).
 			// Both note.noteSplashData.texture and SONG.splashSkin are already normalized
 			// to full paths (e.g. "noteSplashes/myName") by Note.set_noteType.
-			var loadedTexture:String = defaultNoteSplash + getSplashSkinPostfix();
+			var loadedTexture:String = getDefaultSplashTexture();
 			if (note != null && note.noteSplashData.texture != null)
 				loadedTexture = note.noteSplashData.texture;
 			else if (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
@@ -335,7 +352,17 @@ class NoteSplash extends FlxSprite
 	
 	public function playDefaultAnim()
 	{
-		var anim:String = noteDataMap.get(noteData);
+		var anim:String = null;
+		var baseNoteData:Int = noteData % Note.colArray.length;
+		var variants:Array<String> = noteVariantMap.get(baseNoteData);
+		if (variants != null && variants.length > 0)
+		{
+			var variantIndex:Int = Std.int(noteData / Note.colArray.length);
+			variantIndex = Std.int(FlxMath.wrap(variantIndex, 0, variants.length - 1));
+			anim = variants[variantIndex];
+		}
+		if (anim == null)
+			anim = noteDataMap.get(noteData);
 		if (anim != null && animation.exists(anim))
 			animation.play(anim, true);
 
@@ -436,6 +463,7 @@ class NoteSplash extends FlxSprite
 		@:privateAccess
 		animation.clearAnimations();
 		noteDataMap.clear();
+		noteVariantMap.clear();
 
 		for (i in value.animations)
 		{
@@ -448,8 +476,16 @@ class NoteSplash extends FlxSprite
 					animation.addByPrefix(key, i.prefix, i.fps[1], false);
 
 				noteDataMap.set(i.noteData, key);
+
+				var baseNoteData:Int = i.noteData % Note.colArray.length;
+				if (!noteVariantMap.exists(baseNoteData))
+					noteVariantMap.set(baseNoteData, []);
+				noteVariantMap.get(baseNoteData).push(key);
 			}
 		}
+
+		for (variants in noteVariantMap)
+			variants.sort(Reflect.compare);
 
 		scale.set(value.scale, value.scale);
 		return config = value;

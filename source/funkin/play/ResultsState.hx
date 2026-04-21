@@ -54,6 +54,12 @@ class ResultsState extends MusicBeatState
     var misses:FlxText;
     var comboText:FlxText;
     var accText:FlxText;
+    var showFlawless:Bool = true;
+
+	var judgementLeftX:Float = 30;
+	var judgementRightX:Float = 300;
+	var judgementStartY:Float = 235;
+	var judgementSpacing:Float = 90;
 
     var graph:HitGraph;
     var graphSprite:OFLSprite;
@@ -84,6 +90,8 @@ class ResultsState extends MusicBeatState
             funkin.modding.Mods.currentModDirectory = params.modFolder;
         }
         #end
+
+        showFlawless = params.showFlawless != null ? params.showFlawless : true;
 
         menuBG = new FlxSprite();
         menuBG.loadGraphic(Paths.image('menuBG'));
@@ -143,42 +151,39 @@ class ResultsState extends MusicBeatState
         scoreText.setFormat(Paths.font("aller.ttf"), 44, FlxColor.WHITE, "left");
         add(scoreText);
 
-        var leftX = 30;
-        var rightX = 300;
-        var judgY = 235;
-        var judgSpacing = 90; // Más espacio
-
-        flawlesss = new FlxText(leftX, judgY, 340, Language.getPhrase('judgement_flawlesss', 'flawlesss') + ': 0', 32);
+        flawlesss = new FlxText(judgementLeftX, judgementStartY, 340, Language.getPhrase('judgement_flawlesss', 'flawlesss') + ': 0', 32);
         flawlesss.setFormat(Paths.font("aller.ttf"), 32, 0xFFA17FFF, "left");
         add(flawlesss);
 
-        sicks = new FlxText(rightX, judgY, 340, Language.getPhrase('judgement_sicks', 'Sicks') + ': 0', 32);
+        sicks = new FlxText(judgementRightX, judgementStartY, 340, Language.getPhrase('judgement_sicks', 'Sicks') + ': 0', 32);
         sicks.setFormat(Paths.font("aller.ttf"), 32, 0xFF7FC9FF, "left");
         add(sicks);
 
-        goods = new FlxText(leftX, judgY + judgSpacing, 340, Language.getPhrase('judgement_goods', 'Goods') + ': 0', 32);
+        goods = new FlxText(judgementLeftX, judgementStartY + judgementSpacing, 340, Language.getPhrase('judgement_goods', 'Goods') + ': 0', 32);
         goods.setFormat(Paths.font("aller.ttf"), 32, 0xFF7FFF8E, "left");
         add(goods);
 
-        bads = new FlxText(rightX, judgY + judgSpacing, 340, Language.getPhrase('judgement_bads', 'Bads') + ': 0', 32);
+        bads = new FlxText(judgementRightX, judgementStartY + judgementSpacing, 340, Language.getPhrase('judgement_bads', 'Bads') + ': 0', 32);
         bads.setFormat(Paths.font("aller.ttf"), 32, 0xFF888888, "left");
         add(bads);
 
-        shits = new FlxText(leftX, judgY + judgSpacing * 2, 340, Language.getPhrase('judgement_shits', 'Shits') + ': 0', 32);
+        shits = new FlxText(judgementLeftX, judgementStartY + judgementSpacing * 2, 340, Language.getPhrase('judgement_shits', 'Shits') + ': 0', 32);
         shits.setFormat(Paths.font("aller.ttf"), 32, 0xFFFF7F7F, "left");
         add(shits);
 
-        misses = new FlxText(rightX, judgY + judgSpacing * 2, 340, Language.getPhrase('judgement_misses', 'Misses') + ': 0', 32);
+        misses = new FlxText(judgementRightX, judgementStartY + judgementSpacing * 2, 340, Language.getPhrase('judgement_misses', 'Misses') + ': 0', 32);
         misses.setFormat(Paths.font("aller.ttf"), 32, FlxColor.RED, "left");
         add(misses);
 
-        comboText = new FlxText(leftX, judgY + judgSpacing * 3 - 14, 700, Language.getPhrase('judgement_max_combo', 'Highest Combo') + ': 0', 26);
+        comboText = new FlxText(judgementLeftX, judgementStartY + judgementSpacing * 3 - 14, 700, Language.getPhrase('judgement_max_combo', 'Highest Combo') + ': 0', 26);
         comboText.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, "left");
         add(comboText);
 
-        accText = new FlxText(leftX, judgY + judgSpacing * 3 + 20, 700, Language.getPhrase('results_accuracy', 'Accuracy') + ': 0%', 26);
+        accText = new FlxText(judgementLeftX, judgementStartY + judgementSpacing * 3 + 20, 700, Language.getPhrase('results_accuracy', 'Accuracy') + ': 0%', 26);
         accText.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, "left");
         add(accText);
+
+        refreshJudgementLayout();
 
         // Create hit precision graph - positioned higher on screen
         var graphX = FlxG.width - 550;
@@ -253,12 +258,17 @@ class ResultsState extends MusicBeatState
         }
         scoreText.text = StringTools.lpad(Std.string(animatedScore), "0", 8);
 
-        if (animatedFlawlesss < params.flawlesss) {
-            animatedFlawlesss = animateInt(animatedFlawlesss, params.flawlesss);
+        if (showFlawless)
+        {
+            if (animatedFlawlesss < params.flawlesss) {
+                animatedFlawlesss = animateInt(animatedFlawlesss, params.flawlesss);
+                flawlesss.text = Language.getPhrase('judgement_flawlesss', 'Flawlesss') + ': $animatedFlawlesss';
+                return;
+            }
             flawlesss.text = Language.getPhrase('judgement_flawlesss', 'Flawlesss') + ': $animatedFlawlesss';
-            return;
         }
-        flawlesss.text = Language.getPhrase('judgement_flawlesss', 'Flawlesss') + ': $animatedFlawlesss';
+        else
+            animatedFlawlesss = params.flawlesss;
         if (animatedSicks < params.sicks) {
             animatedSicks = animateInt(animatedSicks, params.sicks);
             sicks.text = Language.getPhrase('judgement_sicks', 'Sicks') + ': $animatedSicks';
@@ -347,5 +357,31 @@ class ResultsState extends MusicBeatState
         if (current < target)
             return current + Math.ceil((target - current) * 0.2 + 1);
         return target;
+    }
+
+    function refreshJudgementLayout():Void
+    {
+        if (showFlawless)
+        {
+            flawlesss.visible = true;
+            flawlesss.setPosition(judgementLeftX, judgementStartY);
+            sicks.setPosition(judgementRightX, judgementStartY);
+            goods.setPosition(judgementLeftX, judgementStartY + judgementSpacing);
+            bads.setPosition(judgementRightX, judgementStartY + judgementSpacing);
+            shits.setPosition(judgementLeftX, judgementStartY + judgementSpacing * 2);
+            misses.setPosition(judgementRightX, judgementStartY + judgementSpacing * 2);
+        }
+        else
+        {
+            flawlesss.visible = false;
+            sicks.setPosition(judgementLeftX, judgementStartY);
+            goods.setPosition(judgementRightX, judgementStartY);
+            bads.setPosition(judgementLeftX, judgementStartY + judgementSpacing);
+            shits.setPosition(judgementRightX, judgementStartY + judgementSpacing);
+            misses.setPosition(judgementLeftX, judgementStartY + judgementSpacing * 2);
+        }
+
+        comboText.setPosition(judgementLeftX, judgementStartY + judgementSpacing * 3 - 14);
+        accText.setPosition(judgementLeftX, judgementStartY + judgementSpacing * 3 + 20);
     }
 }

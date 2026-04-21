@@ -2258,13 +2258,34 @@ class PlayState extends MusicBeatState
 		});
 	}
 
+	function getRatingHits(name:String):Int
+	{
+		if (name == null || ratingsData == null)
+			return 0;
+
+		if (ratingIndicesByName != null && ratingIndicesByName.exists(name))
+		{
+			var index = ratingIndicesByName.get(name);
+			if (index != null && index >= 0 && index < ratingsData.length && ratingsData[index] != null)
+				return ratingsData[index].hits;
+		}
+
+		for (rating in ratingsData)
+		{
+			if (rating != null && rating.name == name)
+				return rating.hits;
+		}
+
+		return 0;
+	}
+
 	public dynamic function fullComboFunction()
 	{
-		var flawlesss:Int = ratingsData[0].hits;  
-		var sicks:Int = ratingsData[1].hits;
-		var goods:Int = ratingsData[2].hits;
-		var bads:Int = ratingsData[3].hits;
-		var shits:Int = ratingsData[4].hits;  
+		var flawlesss:Int = getRatingHits('flawless');
+		var sicks:Int = getRatingHits('sick');
+		var goods:Int = getRatingHits('good');
+		var bads:Int = getRatingHits('bad');
+		var shits:Int = getRatingHits('shit');
 
 		ratingFC = "";
 		if(songMisses == 0)
@@ -2274,12 +2295,11 @@ class PlayState extends MusicBeatState
 			else if (bads > 0) ratingFC = Language.getPhrase('rating_bfc', 'BFC');
 			else if (goods > 0) ratingFC = Language.getPhrase('rating_gfc', 'GFC');
 			else if (sicks > 0) ratingFC = Language.getPhrase('rating_sfc', 'SFC');
-			else if (flawlesss > 0) ratingFC = Language.getPhrase('rating_efc', 'FFC');
+			else if (ClientPrefs.data.flawlessRating && flawlesss > 0) ratingFC = Language.getPhrase('rating_efc', 'FFC');
+			else ratingFC = Language.getPhrase('rating_clear', 'Clear');
 		} else {
-			if (songMisses < 2) ratingFC = Language.getPhrase('rating_smc', 'SMC');
-			else if (songMisses < 5) ratingFC = Language.getPhrase('rating_lmc', 'LMC');
-			else if (songMisses < 10) ratingFC = Language.getPhrase('rating_mmc', 'MMC');
-			else ratingFC = Language.getPhrase('rating_hmc', 'HMC');
+			if (songMisses < 10) ratingFC = Language.getPhrase('rating_sdcb', 'SDCB');
+			else ratingFC = Language.getPhrase('rating_clear', 'Clear');
 		}
 	}
 
@@ -4918,11 +4938,11 @@ class PlayState extends MusicBeatState
 					score: songScore,
 					prevHighScore: Highscore.getScore(Song.loadedSongName, storyDifficulty),
 					accuracy: ratingPercent,
-					flawlesss: ratingsData[0].hits,
-					sicks: ratingsData[1].hits,
-					goods: ratingsData[2].hits,
-					bads: ratingsData[3].hits,
-					shits: ratingsData[4].hits,
+					flawlesss: getRatingHits('flawless'),
+					sicks: getRatingHits('sick'),
+					goods: getRatingHits('good'),
+					bads: getRatingHits('bad'),
+					shits: getRatingHits('shit'),
 					misses: songMisses,
 					maxCombo: maxCombo,
 					totalNotes: totalNotes,
@@ -4933,6 +4953,7 @@ class PlayState extends MusicBeatState
 					isPractice: practiceMode,
 					ratingName: ratingName,
 					ratingFC: ratingFC,
+					showFlawless: ClientPrefs.data.flawlessRating,
 					hitData: hitDataArray
 				}));
 			transitioning = true;
@@ -4951,11 +4972,11 @@ class PlayState extends MusicBeatState
 				campaignMisses += songMisses;
 				
 				// Acumular estadísticas de la canción actual
-				campaignFlawlesss += ratingsData[0].hits;
-				campaignSicks += ratingsData[1].hits;
-				campaignGoods += ratingsData[2].hits;
-				campaignBads += ratingsData[3].hits;
-				campaignShits += ratingsData[4].hits;
+				campaignFlawlesss += getRatingHits('flawless');
+				campaignSicks += getRatingHits('sick');
+				campaignGoods += getRatingHits('good');
+				campaignBads += getRatingHits('bad');
+				campaignShits += getRatingHits('shit');
 				if (maxCombo > campaignMaxCombo) campaignMaxCombo = maxCombo;
 				campaignTotalNotes += totalNotes;
 				campaignSongsPlayed.push(SONG.song);
@@ -5006,7 +5027,7 @@ class PlayState extends MusicBeatState
 					{
 						if (campaignBads == 0 && campaignShits == 0) {
 							if (campaignGoods == 0) {
-								if (campaignSicks == 0)
+								if (ClientPrefs.data.flawlessRating && campaignFlawlesss > 0 && campaignSicks == 0)
 									weekRatingFC = Language.getPhrase('rating_efc', 'EFC');
 								else
 									weekRatingFC = Language.getPhrase('rating_sfc', 'SFC');
@@ -5053,6 +5074,7 @@ class PlayState extends MusicBeatState
 						isPractice: practiceMode,
 						ratingName: weekRatingName,
 						ratingFC: weekRatingFC,
+						showFlawless: ClientPrefs.data.flawlessRating,
 						isWeek: true // Indicador de que es una semana completa
 					}));
 				}
@@ -5272,13 +5294,8 @@ class PlayState extends MusicBeatState
 		if(daRating.noteSplash && !note.noteSplashData.disabled)
 			spawnNoteSplashOnNote(note);
 
-		if (judgementCounter != null) {
-			var ratingIndex:Int = ratingIndicesByName.exists(daRating.name) ? ratingIndicesByName.get(daRating.name) : -1;
-			
-			if (ratingIndex >= 0) {
-				judgementCounter.doBump(ratingIndex);
-			}
-		}
+		if (judgementCounter != null)
+			judgementCounter.doBumpByName(daRating.name);
 
 		// Change window border color on note hit (Windows 11 only) - Using Slushi Engine method
 		#if windows

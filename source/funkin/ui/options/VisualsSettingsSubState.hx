@@ -243,6 +243,12 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 			}, 'note_skins'), cardX, cardY);
 		}
 
+		cardY = addCard(new VisualsSwitchCard('noteRGB', Language.getPhrase('setting_note_rgb', 'Note RGB Shader'), Language.getPhrase('description_note_rgb', 'If checked, notes use the RGB palette shader. Disable it to keep their original colors when possible.'), cardWidth, ClientPrefs.data.noteRGB, ClientPrefs.defaultData.noteRGB, function(value:Bool) {
+			ClientPrefs.data.noteRGB = value;
+			onChangeNoteRGB();
+			saveSetting('Note RGB Shader ' + boolLabel(value));
+		}), cardX, cardY);
+
 		var noteSplashes:Array<String> = Mods.mergeAllTextsNamed('images/noteSplashes/list.txt');
 		if (noteSplashes.length > 0)
 		{
@@ -629,6 +635,12 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 			note.centerOffsets();
 			note.centerOrigin();
 		});
+		onChangeNoteRGB();
+	}
+
+	function onChangeNoteRGB():Void
+	{
+		onChangeQuantization();
 	}
 
 	function changeNoteSkin(note:StrumNote):Void
@@ -642,7 +654,7 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 		}
 		note.texture = skin;
 		note.playAnim('static');
-		note.checkNotITGSkin();
+		note.refreshColorMode();
 	}
 
 	function onChangeSplashSkin():Void
@@ -699,7 +711,13 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 	{
 		for (note in notes)
 		{
-			if (!note.useRGBShader) continue;
+			note.refreshColorMode();
+			if (note.rgbShader == null) continue;
+			if (!ClientPrefs.data.noteRGB || !note.useRGBShader)
+			{
+				note.rgbShader.enabled = false;
+				continue;
+			}
 			note.rgbShader.enabled = true;
 			if (ClientPrefs.data.colorQuantization)
 			{

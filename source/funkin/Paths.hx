@@ -168,7 +168,34 @@ class Paths
 			dumpExclusions.push(key);
 	}
 
-	public static var dumpExclusions:Array<String> = ['assets/shared/music/freakyMenu.$SOUND_EXT', 'assets/shared/mobile/touchpad/bg.png'];
+	public static var dumpExclusions:Array<String> = [
+		'assets/shared/music/freakyMenu.$SOUND_EXT',
+		'images/touchpad/*',
+		'assets/shared/mobile/touchpad/*'
+	];
+
+	static function isAssetExcluded(key:String):Bool
+	{
+		if (key == null)
+			return false;
+
+		for (excluded in dumpExclusions)
+		{
+			if (excluded == null)
+				continue;
+
+			if (excluded.endsWith('*'))
+			{
+				var prefix = excluded.substr(0, excluded.length - 1);
+				if (key.startsWith(prefix) || ('assets/' + key).startsWith(prefix))
+					return true;
+			}
+			else if (key == excluded || ('assets/' + key) == excluded)
+				return true;
+		}
+
+		return false;
+	}
 	// haya I love you for the base cache dump I took to the max
 	public static function clearUnusedMemory()
 	{
@@ -176,10 +203,10 @@ class Paths
 		for (key in currentTrackedAssets.keys())
 		{
 			// if it is not currently contained within the used local assets
-			if (!localTrackedAssets.contains(key) && !dumpExclusions.contains(key))
+			if (!localTrackedAssets.contains(key) && !isAssetExcluded(key))
 			{
-				destroyGraphic(currentTrackedAssets.get(key)); // get rid of the graphic
-				currentTrackedAssets.remove(key); // and remove the key from local cache map
+				if (destroyGraphic(currentTrackedAssets.get(key)))
+					currentTrackedAssets.remove(key); // and remove the key from local cache map
 			}
 		}
 
@@ -216,7 +243,7 @@ class Paths
 		// clear all sounds that are cached
 		for (key => asset in currentTrackedSounds)
 		{
-			if (!localTrackedAssets.contains(key) && !dumpExclusions.contains(key) && asset != null)
+			if (!localTrackedAssets.contains(key) && !isAssetExcluded(key) && asset != null)
 			{
 				Assets.cache.clear(key);
 				currentTrackedSounds.remove(key);
@@ -269,42 +296,48 @@ class Paths
 		for (key in currentTrackedAssets.keys())
 		{
 			// if it is not currently contained within the used local assets
-			if (!dumpExclusions.contains(key))
+			if (!isAssetExcluded(key))
 			{
 				var graphic:FlxGraphic = currentTrackedAssets.get(key);
 				if(!protectedGfx.contains(graphic))
 				{
-					destroyGraphic(graphic); // get rid of the graphic
-					currentTrackedAssets.remove(key); // and remove the key from local cache map
+					if (destroyGraphic(graphic))
+						currentTrackedAssets.remove(key); // and remove the key from local cache map
 					//trace('deleted $key');
 				}
 			}
 		}
 	}
 
-	inline static function destroyGraphic(graphic:FlxGraphic)
+	static function destroyGraphic(graphic:FlxGraphic):Bool
 	{
+		if (graphic == null)
+			return false;
+
+		// Never dispose a texture while sprites still reference it.
+		if (graphic.useCount > 0)
+			return false;
+
 		// Check if legacy mode is enabled
 		if (ClientPrefs.data.legacyMemoryManagement)
 		{
 			// Psych 0.7.3 style cleanup (no GPU disposal)
 			@:privateAccess
-			if (graphic != null)
-			{
-				openfl.Assets.cache.removeBitmapData(graphic.key);
-				FlxG.bitmap._cache.remove(graphic.key);
-				graphic.persist = false;
-				graphic.destroyOnNoUse = true;
-				graphic.destroy();
-			}
+			openfl.Assets.cache.removeBitmapData(graphic.key);
+			FlxG.bitmap.remove(graphic);
+			graphic.persist = false;
+			graphic.destroyOnNoUse = true;
+			graphic.destroy();
 		}
 		else
 		{
 			// Modern style with GPU memory cleanup
-			if (graphic != null && graphic.bitmap != null && graphic.bitmap.__texture != null)
+			if (graphic.bitmap != null && graphic.bitmap.__texture != null)
 				graphic.bitmap.__texture.dispose();
 			FlxG.bitmap.remove(graphic);
 		}
+
+		return true;
 	}
 
 	static public var currentLevel:String;

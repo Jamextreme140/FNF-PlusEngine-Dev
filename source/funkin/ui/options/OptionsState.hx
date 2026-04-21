@@ -74,7 +74,12 @@ class OptionsState extends MusicBeatState
 		{
 			case 'Note Colors':
 				if (!ClientPrefs.data.colorQuantization)
-					openSubState(new funkin.ui.options.NotesColorSubState());
+				{
+					if (ClientPrefs.data.noteRGB)
+						openSubState(new funkin.ui.options.NotesColorSubState());
+					else
+						openSubState(new funkin.ui.options.NotesColorLegacySubState());
+				}
 			case 'Controls':
 				openSubState(new funkin.ui.options.ControlsSubState());
 			case 'Graphics':

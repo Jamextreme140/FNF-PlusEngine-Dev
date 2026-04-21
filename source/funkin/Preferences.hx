@@ -54,6 +54,7 @@ import funkin.ui.title.TitleState;
 	public var changeWindowBorderColorWithNoteHit:Bool = false; // Changes window border color on note hit (Windows 11 only)
 	#end
 	public var noteSkin:String = 'Default';
+	public var noteRGB:Bool = true;
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
 	public var colorQuantization:Bool = false; // StepMania-style color quantization
@@ -110,6 +111,12 @@ import funkin.ui.title.TitleState;
 		[0xFF3DCAFF, 0xFFF4FFFF, 0xFF003060],
 		[0xFF71E300, 0xFFF6FFE6, 0xFF003100],
 		[0xFFFF884E, 0xFFFFFAF5, 0xFF6C0000]];
+	public var arrowHSV:Array<Array<Float>> = [
+		[0, 0, 0],
+		[0, 0, 0],
+		[0, 0, 0],
+		[0, 0, 0]
+	];
 
 	public var ghostTapping:Bool = true;
 	public var timeBarType:String = 'Time Left';
@@ -158,6 +165,7 @@ import funkin.ui.title.TitleState;
 	public var keyViewerOffset:Array<Int> = [0, 0]; // X, Y offset for key viewer
 	public var keyViewerColor:String = 'Gray'; // Color name for key viewer
 	public var ratingOffset:Int = 0;
+	public var flawlessRating:Bool = true;
 	public var flawlessWindow:Float = 20.0;
 	public var sickWindow:Float = 45.0;
 	public var goodWindow:Float = 90.0;

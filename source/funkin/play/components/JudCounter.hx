@@ -38,6 +38,7 @@ class JudCounter extends FlxTypedGroup<FlxText>
     // ← CACHE DE TRADUCCIONES PARA OPTIMIZACIÓN
     var cachedLabels:Array<String> = [];
     var lastVisibilityState:Bool = false;
+    var lastFlawlessState:Bool = true;
     var lastValues:Array<Int> = [-1, -1, -1, -1, -1, -1, -1, -1]; // Cache para evitar actualizaciones innecesarias
 
     // Configuración
@@ -60,6 +61,7 @@ class JudCounter extends FlxTypedGroup<FlxText>
         // ← INICIALIZAR CACHE DE TRADUCCIONES
         cacheLabels();
         createTexts();
+        refreshJudgementLayout();
         updateVisibility();
     }
 
@@ -110,12 +112,52 @@ class JudCounter extends FlxTypedGroup<FlxText>
         return judText;
     }
 
+    function getRatingHits(ratingsData:Array<Rating>, ratingName:String):Int
+    {
+        if (ratingsData == null || ratingName == null)
+            return 0;
+
+        for (rating in ratingsData)
+        {
+            if (rating != null && rating.name == ratingName)
+                return rating.hits;
+        }
+
+        return 0;
+    }
+
+    function refreshJudgementLayout():Void
+    {
+        var row:Int = 0;
+        if (ClientPrefs.data.flawlessRating)
+        {
+            flawlesssText.x = baseX;
+            flawlesssText.y = baseY + (spacing * row++);
+        }
+
+        sicksText.x = baseX;
+        sicksText.y = baseY + (spacing * row++);
+        goodsText.x = baseX;
+        goodsText.y = baseY + (spacing * row++);
+        badsText.x = baseX;
+        badsText.y = baseY + (spacing * row++);
+        shitsText.x = baseX;
+        shitsText.y = baseY + (spacing * row++);
+        missesText.x = baseX;
+        missesText.y = baseY + (spacing * row++);
+        comboText.x = baseX;
+        comboText.y = baseY + (spacing * row++);
+        maxComboText.x = baseX;
+        maxComboText.y = baseY + (spacing * row++);
+    }
+
     public function updateCounter(ratingsData:Array<Rating>, songMisses:Int, combo:Int, maxCombo:Int)
     {
         var currentVisible = ClientPrefs.data.judgementCounter;
+        var currentFlawlessState = ClientPrefs.data.flawlessRating;
         
         // ← SOLO ACTUALIZAR VISIBILIDAD SI REALMENTE CAMBIÓ
-        if (currentVisible != lastVisibilityState) {
+        if (currentVisible != lastVisibilityState || currentFlawlessState != lastFlawlessState) {
             updateVisibility();
         }
         
@@ -123,11 +165,11 @@ class JudCounter extends FlxTypedGroup<FlxText>
 
         // ← CACHE DE VALORES PARA EVITAR ACTUALIZACIONES INNECESARIAS
         var newValues = [
-            ratingsData[0].hits,
-            ratingsData[1].hits,
-            ratingsData[2].hits,
-            ratingsData[3].hits,
-            ratingsData[4].hits,
+            currentFlawlessState ? getRatingHits(ratingsData, 'flawless') : 0,
+            getRatingHits(ratingsData, 'sick'),
+            getRatingHits(ratingsData, 'good'),
+            getRatingHits(ratingsData, 'bad'),
+            getRatingHits(ratingsData, 'shit'),
             songMisses,
             combo,
             maxCombo
@@ -159,26 +201,58 @@ class JudCounter extends FlxTypedGroup<FlxText>
     public function updateVisibility()
     {
         var shouldShow = ClientPrefs.data.judgementCounter;
-        forEach(function(text:FlxText) {
-            text.visible = shouldShow;
-        });
+        refreshJudgementLayout();
+		forEach(function(text:FlxText) {
+			if (text != flawlesssText)
+				text.visible = shouldShow;
+		});
+		flawlesssText.visible = shouldShow && ClientPrefs.data.flawlessRating;
         lastVisibilityState = shouldShow;
+        lastFlawlessState = ClientPrefs.data.flawlessRating;
     }
 
     // Efecto bump cuando se acierta una nota
     public function doBump(judgmentIndex:Int)
     {
+        var ratingName:String = null;
+
+        if (ClientPrefs.data.flawlessRating)
+        {
+            switch(judgmentIndex) {
+                case 0: ratingName = 'flawless';
+                case 1: ratingName = 'sick';
+                case 2: ratingName = 'good';
+                case 3: ratingName = 'bad';
+                case 4: ratingName = 'shit';
+            }
+        }
+        else
+        {
+            switch(judgmentIndex) {
+                case 0: ratingName = 'sick';
+                case 1: ratingName = 'good';
+                case 2: ratingName = 'bad';
+                case 3: ratingName = 'shit';
+            }
+        }
+
+        if (ratingName != null)
+            doBumpByName(ratingName);
+    }
+
+    public function doBumpByName(ratingName:String)
+    {
         if (!ClientPrefs.data.judgementCounter) return;
 
         var targetText:FlxText = null;
-        
-        switch(judgmentIndex) {
-            case 0: targetText = flawlesssText;
-            case 1: targetText = sicksText;
-            case 2: targetText = goodsText;
-            case 3: targetText = badsText;
-            case 4: targetText = shitsText;
-            default: return; // Índice inválido
+
+        switch(ratingName) {
+            case 'flawless': targetText = flawlesssText;
+            case 'sick': targetText = sicksText;
+            case 'good': targetText = goodsText;
+            case 'bad': targetText = badsText;
+            case 'shit': targetText = shitsText;
+            default: return;
         }
 
         if (targetText == null) return;
@@ -281,6 +355,7 @@ class JudCounter extends FlxTypedGroup<FlxText>
         for (i in 0...lastValues.length) {
             lastValues[i] = -1;
         }
+		refreshJudgementLayout();
     }
 
     // Reposicionar el contador

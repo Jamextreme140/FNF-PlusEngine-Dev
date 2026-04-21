@@ -257,6 +257,11 @@ class GameplaySettingsSubState extends MusicBeatSubstate
 			saveSetting('Rating Offset: ' + Std.int(value) + 'ms');
 		}), cardX, cardY);
 
+		cardY = addCard(new GameplaySwitchCard(Language.getPhrase('setting_flawless_rating', 'Use Flawless Rating'), Language.getPhrase('description_flawless_rating', 'If checked, gameplay adds the Flawless!! judgement above Sick!. Disable it to use Sick! as the highest standard rating on the next song.'), cardWidth, ClientPrefs.data.flawlessRating, ClientPrefs.defaultData.flawlessRating, function(value:Bool) {
+			ClientPrefs.data.flawlessRating = value;
+			saveSetting('Use Flawless Rating ' + boolLabel(value));
+		}), cardX, cardY);
+
 		cardY = addCard(new GameplaySliderCard(Language.getPhrase('setting_flawless_hit_window', 'Flawless!! Hit Window'), Language.getPhrase('description_flawless_hit_window', 'Changes the amount of time you have for hitting a Flawless!! in milliseconds.'), cardWidth, ClientPrefs.data.flawlessWindow, ClientPrefs.defaultData.flawlessWindow, 15.0, 25.0, 0.1, 1, function(value:Float) {
 			ClientPrefs.data.flawlessWindow = value;
 			saveSetting('Flawless!! Hit Window: ' + value + 'ms');
