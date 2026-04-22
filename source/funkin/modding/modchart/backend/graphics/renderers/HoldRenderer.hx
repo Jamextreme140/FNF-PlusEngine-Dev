@@ -226,6 +226,10 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	final _parentDataBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, hitten: false, isTapArrow: false, straightHolds: false};
 
 	override public function prepare(item:FlxSprite):Null<DrawCommand> {
+		if (item == null || item.graphic == null || item.frame == null) {
+			return null;
+		}
+
 		if (item.alpha <= 0) {
 			return null;
 		}

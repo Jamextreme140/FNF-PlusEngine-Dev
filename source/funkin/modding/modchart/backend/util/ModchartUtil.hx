@@ -48,7 +48,20 @@ using StringTools;
 				cameras = playfieldCameras;
 		}
 
-		return cameras;
+		if (cameras == null || cameras.length == 0)
+			cameras = FlxG.cameras.list;
+
+		if (cameras == null || cameras.length == 0)
+			return [];
+
+		var filtered:Array<FlxCamera> = [];
+		for (camera in cameras)
+		{
+			if (camera != null)
+				filtered.push(camera);
+		}
+
+		return filtered;
 	}
 
 	inline public static function findEntryFrom(event:Event) {

@@ -3436,6 +3436,9 @@ class PlayState extends MusicBeatState
 				openChartEditor();
 			else if (controls.justPressed('debug_2'))
 				openCharacterEditor();
+			else if (!funkin.ui.debug.modcharting.ModchartLuaEditorState.shouldIgnorePlayStateHotkey(controls.pressed('modchart_editor'))
+				&& controls.justPressed('modchart_editor'))
+				openModchartEditor();
 		}
 
 		if (healthBar.bounds.max != null && health > healthBar.bounds.max)
@@ -4200,6 +4203,26 @@ class PlayState extends MusicBeatState
 		#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
 		restoreWindowState();
 		MusicBeatState.switchState(new funkin.ui.debug.character.CharacterEditorState(SONG.player2));
+	}
+
+	function openModchartEditor()
+	{
+		canResync = false;
+		FlxG.camera.followLerp = 0;
+		persistentUpdate = false;
+		paused = true;
+
+		if(FlxG.sound.music != null)
+			FlxG.sound.music.stop();
+		if(vocals != null)
+			vocals.pause();
+		if(opponentVocals != null)
+			opponentVocals.pause();
+
+		#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
+		restoreWindowState();
+		funkin.ui.debug.modcharting.ModchartLuaEditorState.capturePlayStateContext(this);
+		MusicBeatState.switchState(new funkin.ui.debug.modcharting.ModchartLuaEditorState(true));
 	}
 
 	public var isDead:Bool = false; //Don't mess with this on Lua!!!

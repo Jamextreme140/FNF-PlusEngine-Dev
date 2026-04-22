@@ -1,8 +1,12 @@
 package funkin.modding;
 
+import funkin.InitState;
 import funkin.data.story.level.WeekData;
 import funkin.modding.Mods;
 import funkin.modding.CustomState;
+#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
+import funkin.modding.ScriptableState;
+#end
 import funkin.ui.mainmenu.MainMenuState;
 import funkin.ui.freeplay.FreeplayState;
 import funkin.ui.title.TitleState;
@@ -324,6 +328,18 @@ class ModsMenuState extends MusicBeatState
 
 	var holdTime:Float = 0;
 	var exiting:Bool = false;
+	function hasBootStateOverrides():Bool
+	{
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
+		return ScriptableState.hasScript('TitleState')
+			|| ScriptableState.hasScript('FlashingState')
+			|| CustomState.hasScript('TitleState')
+			|| CustomState.hasScript('FlashingState');
+		#else
+		return false;
+		#end
+	}
+
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
@@ -332,19 +348,12 @@ class ModsMenuState extends MusicBeatState
 		{
 			exiting = true;
 			saveTxt();
-
-			#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-			// Check if the top mod has state scripts (TitleState, FlashingState, etc.)
-			var hasModStates:Bool = CustomState.hasScript('TitleState') || CustomState.hasScript('FlashingState');
-			#else
-			var hasModStates:Bool = false;
-			#end
+			var hasBootStates:Bool = hasBootStateOverrides();
 
 			FlxG.sound.play(Paths.sound('cancelMenu'));
-			// Restart game if mod needs restart OR if mod has custom state scripts
-			if(waitingToRestart || hasModStates)
+			// Only go through the boot flow when a mod actually overrides boot states.
+			if(hasBootStates)
 			{
-				//MusicBeatState.switchState(new TitleState());
 				TitleState.initialized = false;
 				TitleState.closedState = false;
 				FlxG.sound.music.fadeOut(0.3);
@@ -353,9 +362,18 @@ class ModsMenuState extends MusicBeatState
 					FreeplayState.vocals.fadeOut(0.3);
 					FreeplayState.vocals = null;
 				}
-				FlxG.camera.fade(FlxColor.BLACK, 0.5, false, FlxG.resetGame, false);
+				FlxG.camera.fade(FlxColor.BLACK, 0.5, false, function()
+				{
+					FlxTransitionableState.skipNextTransIn = true;
+					FlxTransitionableState.skipNextTransOut = true;
+					MusicBeatState.switchState(new InitialState());
+				}, false);
 			}
-			else MusicBeatState.switchState(new MainMenuState());
+			else
+			{
+				if(waitingToRestart) Language.reloadPhrases();
+				MusicBeatState.switchState(new MainMenuState());
+			}
 
 			persistentUpdate = false;
 			FlxG.autoPause = ClientPrefs.data.autoPause;

@@ -5,6 +5,7 @@ import flixel.FlxCamera;
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.tile.FlxDrawTrianglesItem;
 import flixel.math.FlxPoint;
+import flixel.math.FlxRect;
 import flixel.system.FlxAssets.FlxShader;
 import flixel.util.FlxSignal;
 import flixel.util.FlxSort;
@@ -225,11 +226,28 @@ class CtxRenderer {
 		var i = 0;
 		while (i < count) {
 			var item = queue[i];
+			if (item == null || item.graphic == null || item.cameras == null || item.cameras.length == 0 || item.vertices == null || item.indices == null || item.uvs == null) {
+				i++;
+				continue;
+			}
 			for (camera in item.cameras) {
+				if (camera == null)
+					continue;
 				var dc = camera.startTrianglesBatch(item.graphic, item.antialiasing, item.isColored, item.blend, item.hasColorOffsets, item.shader);
-				@:privateAccess final cameraBounds = camera._bounds.set(camera.viewMarginLeft, camera.viewMarginTop, camera.viewWidth, camera.viewHeight);
+				if (dc == null)
+					continue;
+				@:privateAccess var cameraBounds:FlxRect = camera._bounds;
+				if (cameraBounds == null) {
+					cameraBounds = new FlxRect();
+					@:privateAccess camera._bounds = cameraBounds;
+				}
+				cameraBounds.set(camera.viewMarginLeft, camera.viewMarginTop, camera.viewWidth, camera.viewHeight);
 
-				final point = FlxPoint.weak(camera.scroll.x * -item.parent.scrollFactor.x, camera.scroll.y * -item.parent.scrollFactor.y);
+				final scrollFactorX = item.parent != null ? item.parent.scrollFactor.x : 0;
+				final scrollFactorY = item.parent != null ? item.parent.scrollFactor.y : 0;
+				final cameraScrollX = camera.scroll != null ? camera.scroll.x : 0;
+				final cameraScrollY = camera.scroll != null ? camera.scroll.y : 0;
+				final point = FlxPoint.weak(cameraScrollX * -scrollFactorX, cameraScrollY * -scrollFactorY);
 
 				if (item.color != null)
 					dc.addTriangles(item.vertices, item.indices, item.uvs, emptyVec, point, cameraBounds,

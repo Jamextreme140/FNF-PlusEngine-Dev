@@ -50,7 +50,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 	var __lastPlayer:Int = -1;
 
 	override public function prepare(arrow:FlxSprite):Null<DrawCommand> {
-		if (arrow.alpha <= 0)
+		if (arrow == null || arrow.graphic == null || arrow.frame == null || arrow.alpha <= 0)
 			return null;
 
 		final arrowPosition = helperVector;

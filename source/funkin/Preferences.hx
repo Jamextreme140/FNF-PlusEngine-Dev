@@ -224,6 +224,7 @@ class Preferences {
 		
 		'debug_1'		=> [SEVEN],
 		'debug_2'		=> [EIGHT],
+		'modchart_editor'=> [NINE, NONE],
 		
 		'fullscreen'	=> [F11]
 	];

@@ -22,7 +22,8 @@ class MasterEditorMenu extends MusicBeatState
         'dialogue_editor',
         'dialogue_portrait_editor',
         'note_splash_editor',
-        'hold_splash_editor'
+		'hold_splash_editor',
+		'modchart_lua_editor'
 	];
 	private var grpTexts:FlxTypedGroup<Alphabet>;
 	private var directories:Array<String> = [null];
@@ -99,7 +100,8 @@ class MasterEditorMenu extends MusicBeatState
             Language.getPhrase('dialogue_editor', 'Dialogue Editor'),
             Language.getPhrase('dialogue_portrait_editor', 'Dialogue Portrait Editor'),
             Language.getPhrase('note_splash_editor', 'Note Splash Editor'),
-            Language.getPhrase('hold_splash_editor', 'Hold Splash Editor')
+			Language.getPhrase('hold_splash_editor', 'Hold Splash Editor'),
+			Language.getPhrase('modchart_lua_editor', 'Modchart Lua Editor')
         ];
     }
 
@@ -153,6 +155,8 @@ class MasterEditorMenu extends MusicBeatState
 					MusicBeatState.switchState(new NoteSplashEditorState());
                 case 8: // Hold Splash Editor
 					MusicBeatState.switchState(new HoldSplashEditorState());
+				case 9: // Modchart Lua Editor
+					MusicBeatState.switchState(new funkin.ui.debug.modcharting.ModchartLuaEditorState());
 			}
 			FlxG.sound.music.volume = 0;
 			FreeplayState.destroyFreeplayVocals();
