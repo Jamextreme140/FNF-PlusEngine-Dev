@@ -224,6 +224,7 @@ class Main extends Sprite
 		initializeMaterialVolumeTray();
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
+		funkin.graphics.RenderInterpolation.install();
 		#if android
 		funkin.mobile.AndroidOptimizer.applyRuntimeFramePacing();
 		#end
@@ -268,7 +269,7 @@ class Main extends Sprite
 		Cursor.hide();
 		#end
 
-		FlxG.fixedTimestep = false;
+		ClientPrefs.applyFramePacing();
 		FlxG.game.focusLostFramerate = #if mobile 30 #else 60 #end;
 		#if web
 		FlxG.keys.preventDefaultKeys.push(TAB);

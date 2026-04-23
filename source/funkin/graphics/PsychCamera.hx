@@ -5,8 +5,22 @@ package funkin.graphics;
 
 class PsychCamera extends FlxCamera
 {
+	var _previousScroll:FlxPoint = FlxPoint.get();
+	var _simulationScroll:FlxPoint = FlxPoint.get();
+	var _interpolationReady:Bool = false;
+	var _interpolationApplied:Bool = false;
+
 	override public function update(elapsed:Float):Void
 	{
+		if (!_interpolationReady)
+		{
+			syncInterpolationState();
+			_interpolationReady = true;
+		}
+
+		_previousScroll.copyFrom(scroll);
+		_interpolationApplied = false;
+
 		// follow the target, if there is one
 		if (target != null)
 		{
@@ -21,6 +35,34 @@ class PsychCamera extends FlxCamera
 
 		updateFlashSpritePosition();
 		updateShake(elapsed);
+		_simulationScroll.copyFrom(scroll);
+	}
+
+	public function applyRenderInterpolation(alpha:Float):Void
+	{
+		if (!_interpolationReady || _interpolationApplied)
+			return;
+
+		var clampedAlpha:Float = FlxMath.bound(alpha, 0, 1);
+		scroll.x = _previousScroll.x + (_simulationScroll.x - _previousScroll.x) * clampedAlpha;
+		scroll.y = _previousScroll.y + (_simulationScroll.y - _previousScroll.y) * clampedAlpha;
+		_interpolationApplied = true;
+	}
+
+	public function restoreSimulationState():Void
+	{
+		if (!_interpolationApplied)
+			return;
+
+		scroll.copyFrom(_simulationScroll);
+		_interpolationApplied = false;
+	}
+
+	public function syncInterpolationState():Void
+	{
+		_previousScroll.copyFrom(scroll);
+		_simulationScroll.copyFrom(scroll);
+		_interpolationApplied = false;
 	}
 
 	public function updateFollowDelta(?elapsed:Float = 0):Void
@@ -105,6 +147,12 @@ class PsychCamera extends FlxCamera
 		scroll.x += (_scrollTarget.x - scroll.x) * mult;
 		scroll.y += (_scrollTarget.y - scroll.y) * mult;
 		//trace('lerp on this frame: $mult');
+	}
+
+	override public function snapToTarget():Void
+	{
+		super.snapToTarget();
+		syncInterpolationState();
 	}
 
 	override function set_followLerp(value:Float)

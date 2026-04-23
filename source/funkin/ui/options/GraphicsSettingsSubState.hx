@@ -254,15 +254,15 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
-			Language.getPhrase('setting_FPS Rework', 'FPS Rework'),
-			Language.getPhrase('description_FPS Rework', 'Uses the alternate frame pacing path so the game does not feel slow when FPS drops below the cap.'),
+			Language.getPhrase('setting_FPS Rework', 'Fixed Timestep'),
+			Language.getPhrase('description_FPS Rework', 'Uses a fixed update step for steadier gameplay timing when rendering drops below the cap.'),
 			columnWidth,
 			ClientPrefs.data.fpsRework,
 			ClientPrefs.defaultData.fpsRework,
 			function(value:Bool) {
 				ClientPrefs.data.fpsRework = value;
 				applyFramerate();
-				saveSetting('FPS Rework ' + boolLabel(value));
+				saveSetting('Fixed Timestep ' + boolLabel(value));
 			}), cardX, cardY);
 
 		cardY = addCard(new GraphicsSwitchCard(
@@ -384,18 +384,7 @@ class GraphicsSettingsSubState extends MusicBeatSubstate
 
 	function applyFramerate():Void
 	{
-		if (ClientPrefs.data.fpsRework)
-			FlxG.stage.window.frameRate = ClientPrefs.data.framerate;
-		else if (ClientPrefs.data.framerate > FlxG.drawFramerate)
-		{
-			FlxG.updateFramerate = ClientPrefs.data.framerate;
-			FlxG.drawFramerate = ClientPrefs.data.framerate;
-		}
-		else
-		{
-			FlxG.drawFramerate = ClientPrefs.data.framerate;
-			FlxG.updateFramerate = ClientPrefs.data.framerate;
-		}
+		ClientPrefs.applyFramePacing();
 	}
 
 	function applyFPSCounter():Void

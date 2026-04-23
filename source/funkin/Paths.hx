@@ -197,7 +197,7 @@ class Paths
 		return false;
 	}
 	// haya I love you for the base cache dump I took to the max
-	public static function clearUnusedMemory()
+	public static function clearUnusedMemory(forceGc:Bool = true)
 	{
 		// clear non local assets in the tracked assets list
 		for (key in currentTrackedAssets.keys())
@@ -210,21 +210,24 @@ class Paths
 			}
 		}
 
-		// run the garbage collector for good measure lmfao
-		System.gc();
-		#if cpp
-		cpp.NativeGc.run(true);
-		#end
-		
-		// Extra aggressive cleanup on low-end Android
-		#if android
-		if (funkin.mobile.AndroidOptimizer.getCurrentTier() == 0)
+		if (forceGc)
 		{
-			// Force additional GC cycles on low-end
+			// Run garbage collection only when the caller explicitly asks for it.
 			System.gc();
+			#if cpp
 			cpp.NativeGc.run(true);
+			#end
+			
+			// Extra aggressive cleanup on low-end Android
+			#if android
+			if (funkin.mobile.AndroidOptimizer.getCurrentTier() == 0)
+			{
+				// Force additional GC cycles on low-end
+				System.gc();
+				cpp.NativeGc.run(true);
+			}
+			#end
 		}
-		#end
 	}
 
 	// define the locally tracked assets

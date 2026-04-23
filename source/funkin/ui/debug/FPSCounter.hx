@@ -159,7 +159,6 @@ class FPSCounter extends Sprite
 	private var avgFrameTimeMs:Float = 0.0;
 
 	@:noCompletion private var times:Array<Float>;
-	@:noCompletion private var lastFramerateUpdateTime:Float;
 	@:noCompletion private var updateTime:Int;
 	@:noCompletion private var framesCount:Int;
 	@:noCompletion private var prevTime:Int;
@@ -209,7 +208,6 @@ class FPSCounter extends Sprite
 		addChild(textDisplay);
 
 		times = [];
-		lastFramerateUpdateTime = Timer.stamp();
 		prevTime = Lib.getTimer();
 		updateTime = prevTime + 500;
 		
@@ -419,7 +417,7 @@ class FPSCounter extends Sprite
 		
 		if (ClientPrefs.data.fpsRework)
 		{
-			// Flixel keeps reseting this to 60 on focus gained
+			// Flixel can reset this to 60 on focus gained, so keep the draw cap aligned.
 			if (FlxG.stage.window.frameRate != ClientPrefs.data.framerate && FlxG.stage.window.frameRate != FlxG.game.focusLostFramerate)
 				FlxG.stage.window.frameRate = ClientPrefs.data.framerate;
 
@@ -434,15 +432,6 @@ class FPSCounter extends Sprite
 				framesCount = 0;
 				prevTime = currentTime;
 				updateTime = currentTime + 500;
-			}
-
-			// Set Update and Draw framerate to the current FPS every 1.5 second to prevent "slowness" issue
-			if ((FlxG.updateFramerate >= currentFPS + 5 || FlxG.updateFramerate <= currentFPS - 5)
-				&& haxe.Timer.stamp() - lastFramerateUpdateTime >= 1.5
-				&& currentFPS >= 30)
-			{
-				FlxG.updateFramerate = FlxG.drawFramerate = currentFPS;
-				lastFramerateUpdateTime = haxe.Timer.stamp();
 			}
 		}
 		else

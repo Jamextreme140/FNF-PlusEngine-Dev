@@ -224,8 +224,8 @@ class EnUS
         "description_gpu_caching" => "If checked, allows the GPU to be used for caching textures, decreasing RAM usage.\nDon't turn this on if you have a shitty Graphics Card.",
         "setting_framerate" => "Framerate",
         "description_framerate" => "Pretty self explanatory, isn't it?",
-        "setting_fps_rework" => "FPS Rework",
-        "description_fps_rework" => "If checked, this prevents the game from becoming \"slower\" and \"smoother\" when current FPS are lower than the framerate cap.",
+        "setting_fps_rework" => "Fixed Timestep",
+        "description_fps_rework" => "If checked, gameplay updates run on a fixed step for steadier timing when rendering drops below the framerate cap.",
 
         // Visuals Settings
         "setting_note_skins" => "Note Skins:",

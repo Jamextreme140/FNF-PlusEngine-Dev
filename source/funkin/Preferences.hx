@@ -352,19 +352,7 @@ class Preferences {
             judgementCounter = !!Reflect.field(FlxG.save.data, "judgementCounter");
 		    judgementCounter = data.judgementCounter;
 
-		// Apply framerate settings consistently
-		if (data.fpsRework)
-		{
-			// FPS Rework mode: Set window framerate directly
-			FlxG.stage.window.frameRate = data.framerate;
-		}
-		else
-		{
-			// Standard mode: Set both update and draw framerates equally
-			// This ensures consistent timing on all devices
-			FlxG.updateFramerate = data.framerate;
-			FlxG.drawFramerate = data.framerate;
-		}
+		applyFramePacing();
 
 		#if (!html5 && !switch)
 		try
@@ -417,6 +405,50 @@ class Preferences {
 			}
 			reloadVolumeKeys();
 		}
+	}
+
+	public static function applyFramePacing():Void
+	{
+		var safeFramerate:Int = Std.int(Math.max(30, data.framerate));
+		var drawFramerate:Int = data.fpsRework ? getInterpolatedDrawFramerate(safeFramerate) : safeFramerate;
+
+		FlxG.fixedTimestep = data.fpsRework;
+		FlxG.updateFramerate = safeFramerate;
+		FlxG.drawFramerate = drawFramerate;
+		FlxG.maxElapsed = data.fpsRework ? (1 / safeFramerate) : 0.1;
+
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.window != null)
+				FlxG.stage.window.frameRate = drawFramerate;
+		}
+		catch (e:Dynamic)
+		{
+			// Ignore targets that do not expose window frame rate at runtime.
+		}
+		#end
+	}
+
+	static function getInterpolatedDrawFramerate(safeFramerate:Int):Int
+	{
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.application != null && FlxG.stage.application.window != null)
+			{
+				var refreshRate:Int = FlxG.stage.application.window.displayMode.refreshRate;
+				if (refreshRate > safeFramerate)
+					return Std.int(FlxMath.bound(refreshRate, safeFramerate, 240));
+			}
+		}
+		catch (e:Dynamic)
+		{
+			// Fallback to the gameplay framerate when refresh rate is unavailable.
+		}
+		#end
+
+		return safeFramerate;
 	}
 
 	inline public static function getGameplaySetting(name:String, defaultValue:Dynamic = null, ?customDefaultValue:Bool = false):Dynamic

@@ -43,11 +43,15 @@ class MemoryManager
     private static var cleanupCooldown:Float = 0;
     private static var pendingCleanupLevel:Int = 0;
     private static var pendingCleanupAge:Float = 0;
+    private static var timeSinceGameplayCritical:Float = 9999;
 
     static inline var QUICK_CLEANUP_LEVEL:Int = 1;
     static inline var AGGRESSIVE_CLEANUP_LEVEL:Int = 2;
     static inline var ULTRA_CLEANUP_LEVEL:Int = 3;
     static inline var DEFERRED_CLEANUP_MIN_DELAY:Float = 0.75;
+    static inline var QUICK_CLEANUP_GRACE_DELAY:Float = 0.8;
+    static inline var AGGRESSIVE_CLEANUP_GRACE_DELAY:Float = 2.0;
+    static inline var ULTRA_CLEANUP_GRACE_DELAY:Float = 3.5;
     static inline var QUICK_CLEANUP_COOLDOWN:Float = 8;
     static inline var AGGRESSIVE_CLEANUP_COOLDOWN:Float = 15;
     static inline var ULTRA_CLEANUP_COOLDOWN:Float = 25;
@@ -123,13 +127,20 @@ class MemoryManager
      */
     public static function update(elapsed:Float):Void
     {
+        var gameplayCritical:Bool = isGameplayCritical();
+
+        if (gameplayCritical)
+            timeSinceGameplayCritical = 0;
+        else
+            timeSinceGameplayCritical += elapsed;
+
         if (cleanupCooldown > 0)
             cleanupCooldown = Math.max(0, cleanupCooldown - elapsed);
 
         if (pendingCleanupLevel > 0)
         {
             pendingCleanupAge += elapsed;
-            if (pendingCleanupAge >= DEFERRED_CLEANUP_MIN_DELAY && cleanupCooldown <= 0 && !isGameplayCritical())
+            if (pendingCleanupAge >= DEFERRED_CLEANUP_MIN_DELAY && canRunCleanupLevel(pendingCleanupLevel))
                 runPendingCleanup();
         }
 
@@ -184,9 +195,28 @@ class MemoryManager
         };
     }
 
+    private static function getCleanupGraceDelay(level:Int):Float
+    {
+        return switch (level)
+        {
+            case 1: QUICK_CLEANUP_GRACE_DELAY;
+            case 2: AGGRESSIVE_CLEANUP_GRACE_DELAY;
+            case 3: ULTRA_CLEANUP_GRACE_DELAY;
+            default: QUICK_CLEANUP_GRACE_DELAY;
+        };
+    }
+
+    private static function canRunCleanupLevel(level:Int):Bool
+    {
+        if (cleanupCooldown > 0 || isGameplayCritical())
+            return false;
+
+        return timeSinceGameplayCritical >= getCleanupGraceDelay(level);
+    }
+
     private static function shouldDelayCleanup(level:Int):Bool
     {
-        if (isGameplayCritical() || cleanupCooldown > 0)
+        if (!canRunCleanupLevel(level))
         {
             queueCleanup(level);
             return true;
@@ -385,17 +415,10 @@ class MemoryManager
         trace('[MemoryManager] Running quick cleanup...');
         
         // Clear Paths unused memory
-        Paths.clearUnusedMemory();
+        Paths.clearUnusedMemory(false);
         
         // Clear temp frames cache
         Paths.clearTempFramesCache();
-        
-        // Minor GC
-        System.gc();
-        
-        #if cpp
-        cpp.NativeGc.run(false);
-        #end
         
 		finishCleanup(QUICK_CLEANUP_LEVEL);
         trace('[MemoryManager] Quick cleanup complete');
@@ -419,7 +442,7 @@ class MemoryManager
 		trace('[MemoryManager] Running aggressive cleanup...');
 
         // Clear Paths caches
-        Paths.clearUnusedMemory();
+    Paths.clearUnusedMemory(false);
         Paths.clearStoredMemory();
         Paths.clearTempFramesCache();
         
@@ -431,24 +454,8 @@ class MemoryManager
         
         // Clear shaders
         clearShaders();
-        
-        // Force multiple GC cycles for thorough cleanup
-        System.gc();
-        #if cpp
-        cpp.NativeGc.run(true);
-        cpp.NativeGc.compact();
-        #elseif neko
-        neko.vm.Gc.run(true);
-        #end
-        
-        // On aggressive mode, do multiple passes
-        if (aggressiveMode)
-        {
-            System.gc();
-            #if cpp
-            cpp.NativeGc.run(true);
-            #end
-        }
+
+		performGarbageCollection(true, false);
 
 		finishCleanup(AGGRESSIVE_CLEANUP_LEVEL);
 		trace('[MemoryManager] Aggressive cleanup complete');
@@ -469,8 +476,15 @@ class MemoryManager
 
 	private static function performUltraCleanup():Void
 	{
-        // Run aggressive cleanup first
-		performAggressiveCleanup();
+    trace('[MemoryManager] Running ultra cleanup...');
+
+    // Run the same cache release steps as aggressive cleanup first.
+    Paths.clearUnusedMemory(false);
+    Paths.clearStoredMemory();
+    Paths.clearTempFramesCache();
+    clearUnusedUI();
+    clearPreloadedCharacters();
+    clearShaders();
         
         // Clear FlxG bitmap cache (careful!)
         @:privateAccess
@@ -488,18 +502,25 @@ class MemoryManager
         
         // Clear all sound caches
         Assets.cache.clear();
-        
-        // Force maximum GC
-        for (i in 0...3)
-        {
-            System.gc();
-            #if cpp
-            cpp.NativeGc.run(true);
-            cpp.NativeGc.compact();
-            #end
-        }
+
+        performGarbageCollection(true, true);
 
 		finishCleanup(ULTRA_CLEANUP_LEVEL);
+    }
+
+    private static function performGarbageCollection(major:Bool, compact:Bool):Void
+    {
+        #if cpp
+        cpp.vm.Gc.run(major);
+        if (compact)
+            cpp.vm.Gc.compact();
+        #elseif hl
+        hl.Gc.major();
+        #elseif neko
+        neko.vm.Gc.run(major);
+        #else
+        System.gc();
+        #end
     }
     
     /**

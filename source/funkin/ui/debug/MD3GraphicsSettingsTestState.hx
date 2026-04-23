@@ -203,13 +203,13 @@ class MD3GraphicsSettingsTestState extends MusicBeatState
 		rowY += MD3SettingsRowBase.ROW_HEIGHT + 12;
 
 		addRow(new MD3SwitchSettingsRow(rowX, rowY, rowWidth,
-			"FPS Rework",
-			"Uses the alternate frame pacing path so the game does not feel slow when FPS drops below the cap.",
+			"Fixed Timestep",
+			"Uses a fixed update step for steadier gameplay timing when rendering drops below the cap.",
 			ClientPrefs.data.fpsRework,
 			function(value:Bool) {
 				ClientPrefs.data.fpsRework = value;
 				applyFramerate();
-				saveAndNotify("FPS Rework " + boolLabel(value));
+				saveAndNotify("Fixed Timestep " + boolLabel(value));
 			}));
 		rowY += MD3SettingsRowBase.ROW_HEIGHT + 12;
 
@@ -312,18 +312,7 @@ class MD3GraphicsSettingsTestState extends MusicBeatState
 
 	function applyFramerate():Void
 	{
-		if (ClientPrefs.data.fpsRework)
-			FlxG.stage.window.frameRate = ClientPrefs.data.framerate;
-		else if (ClientPrefs.data.framerate > FlxG.drawFramerate)
-		{
-			FlxG.updateFramerate = ClientPrefs.data.framerate;
-			FlxG.drawFramerate = ClientPrefs.data.framerate;
-		}
-		else
-		{
-			FlxG.drawFramerate = ClientPrefs.data.framerate;
-			FlxG.updateFramerate = ClientPrefs.data.framerate;
-		}
+		ClientPrefs.applyFramePacing();
 	}
 
 	function applyFPSCounter():Void

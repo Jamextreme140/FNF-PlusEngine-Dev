@@ -255,8 +255,8 @@ class EsLA
         "description_gpu_caching" => "Si está marcado, permite que la GPU se use para almacenar en caché texturas, reduce el uso de RAM.\nNo actives esto si tienes una Tarjeta Gráfica de la puta mare.",
         "setting_framerate" => "Fotogramas x Segundo",
         "description_framerate" => "Muy explicativo, ¿no?",
-        "setting_fps_rework" => "Rework de FPS",
-        "description_fps_rework" => "Si está marcado, esto evita que el juego se vuelva \"lento\" y \"suave\" cuando los FPS actuales son más bajos que el límite de FPS.",
+        "setting_fps_rework" => "Fixed Timestep",
+        "description_fps_rework" => "Si está marcado, el gameplay se actualiza con un paso fijo para mantener un timing más estable cuando el render cae por debajo del límite de FPS.",
 
         // Visuals Settings
         "setting_note_skins" => "Estilo de Notas:",
