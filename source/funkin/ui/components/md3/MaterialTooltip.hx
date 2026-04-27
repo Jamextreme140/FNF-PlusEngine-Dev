@@ -43,10 +43,6 @@ class MaterialTooltip extends FlxSpriteGroup
 	static inline var HOVER_DELAY:Float = 0.5; // seconds before tooltip appears
 	static inline var HIDE_DELAY:Float = 1.5;  // seconds before auto-hiding
 
-	// Colors (MD3)
-	static inline var BG_COLOR:FlxColor = 0xFF313033;
-	static inline var TEXT_COLOR:FlxColor = 0xFFE6E1E5;
-
 	// State
 	var _wasHovering:Bool = false;
 	var _hideTimer:Float = 0;
@@ -82,7 +78,7 @@ class MaterialTooltip extends FlxSpriteGroup
 
 		// Label
 		messageText = new FlxText(PADDING_H, PADDING_V, labelW + 2, text, LABEL_SIZE);
-		messageText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
+		messageText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
 		messageText.antialiasing = ClientPrefs.data.antialiasing;
 		add(messageText);
 

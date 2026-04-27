@@ -21,6 +21,7 @@ class KeyViewer extends FlxSpriteGroup
 	
 	public var keys:Array<KeyButton> = [];
 	public var keyTexts:Array<FlxText> = [];
+	public var keyTextLabels:Array<String> = [];
 	public var keyCount:Int = 4;
 	
 	public var pressureBars:Array<PressureBar> = [];
@@ -63,12 +64,13 @@ class KeyViewer extends FlxSpriteGroup
 			add(keyButton);
 			
 			var keyName:String = getKeyName(i);
-			var keyText = new FlxText(keyButton.x, keyButton.y, keySize, keyName, 14); 
+			var keyText = new FlxText(keyButton.x, keyButton.y, keySize, keyName, 11); 
 			var textColor = FlxColor.WHITE;
-			keyText.setFormat(Paths.font("phantom.ttf"), 14, textColor, CENTER);
-			keyText.y += (keySize - keyText.height) / 2; 
+			keyText.setFormat(Paths.font("phantom.ttf"), 11, textColor, CENTER);
+			alignKeyText(keyText, keyButton, keySize);
 			keyText.alpha = 0.6; 
 			keyTexts.push(keyText);
+			keyTextLabels.push(keyName);
 			add(keyText);
 		}
 		
@@ -95,9 +97,21 @@ class KeyViewer extends FlxSpriteGroup
 		var keysArray = ['note_left', 'note_down', 'note_up', 'note_right'];
 		
 		if (keyIndex < keysArray.length) {
-			var keyBind = Controls.instance.keyboardBinds.get(keysArray[keyIndex]);
+			var keyBind = Controls.instance.getKeyboardBind(keysArray[keyIndex]);
 			if (keyBind != null && keyBind.length > 0) {
-				return InputFormatter.getKeyName(keyBind[0]);
+				var names:Array<String> = [];
+				for (boundKey in keyBind) {
+					var name = InputFormatter.getKeyName(boundKey);
+					if (name != null && name.length > 0 && !names.contains(name))
+						names.push(name);
+					if (names.length >= 2)
+						break;
+				}
+
+				if (names.length > 1)
+					return names.join("\n");
+				if (names.length == 1)
+					return names[0];
 			}
 		}
 		
@@ -151,6 +165,7 @@ class KeyViewer extends FlxSpriteGroup
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		refreshKeyLabels();
 		
 		var i = flyingBars.length - 1;
 		while (i >= 0)
@@ -179,6 +194,57 @@ class KeyViewer extends FlxSpriteGroup
 			kps = newKps;
 			updateTexts();
 		}
+	}
+
+	inline function alignKeyText(keyText:FlxText, keyButton:KeyButton, keySize:Float):Void
+	{
+		keyText.x = keyButton.x;
+		keyText.y = keyButton.y + (keySize - keyText.height) / 2;
+	}
+
+	function refreshKeyLabels():Void
+	{
+		final keySize:Float = 45;
+
+		for (i in 0...keyTexts.length)
+		{
+			final newLabel = getKeyName(i);
+			if (keyTextLabels[i] == newLabel)
+				continue;
+
+			keyTextLabels[i] = newLabel;
+			animateKeyLabelChange(i, newLabel, keySize);
+		}
+	}
+
+	function animateKeyLabelChange(keyIndex:Int, newLabel:String, keySize:Float):Void
+	{
+		if (keyIndex < 0 || keyIndex >= keyTexts.length)
+			return;
+
+		final keyText = keyTexts[keyIndex];
+		final keyButton = keys[keyIndex];
+		final pressed = keyButton.isPressed;
+		final targetAlpha = pressed ? 1.0 : 0.6;
+		final targetColor = pressed ? CoolUtil.colorFromString(ClientPrefs.data.keyViewerColor) : FlxColor.WHITE;
+
+		FlxTween.cancelTweensOf(keyText);
+		FlxTween.cancelTweensOf(keyText.scale);
+
+		keyText.text = newLabel;
+		keyText.color = targetColor;
+		keyText.alpha = 0.2;
+		keyText.scale.set(1.25, 1.25);
+		alignKeyText(keyText, keyButton, keySize);
+
+		FlxTween.tween(keyText, {alpha: targetAlpha}, 0.14, {ease: FlxEase.quadOut});
+		FlxTween.tween(keyText.scale, {x: 1.0, y: 1.0}, 0.18, {
+			ease: FlxEase.backOut,
+			onUpdate: function(_)
+			{
+				alignKeyText(keyText, keyButton, keySize);
+			}
+		});
 	}
 	
 	function updateTexts()

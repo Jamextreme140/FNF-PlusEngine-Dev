@@ -20,6 +20,7 @@ import funkin.ui.title.TitleState;
 	#if android
 	public var storageType:String = "EXTERNAL_DATA";
 	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
+	public var androidOptimizationProfileVersion:Int = 0;
 	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;
@@ -53,9 +54,12 @@ import funkin.ui.title.TitleState;
 	public var changeWindowBorderColorWithNoteHit:Bool = false; // Changes window border color on note hit (Windows 11 only)
 	#end
 	public var noteSkin:String = 'Default';
+	public var noteRGB:Bool = true;
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
 	public var colorQuantization:Bool = false; // StepMania-style color quantization
+	public var menuAccentColor:String = 'Purple';
+	public var menuDarkTheme:Bool = false;
 	public var lowQuality:Bool = false;
 	public var shaders:Bool = true;
 	public var colorblindMode:String = 'None';
@@ -73,9 +77,6 @@ import funkin.ui.title.TitleState;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
-	#if android
-	public var useNativeWavyTimebar:Bool = false;
-	#end
 	
 	// ========== Modchart Config Options ==========
 	// Camera & 3D Settings
@@ -91,7 +92,6 @@ import funkin.ui.title.TitleState;
 	public var optimizeHolds:Bool = false; // Optimizes hold rendering (not recommended for complex modcharts)
 	public var holdsBehindStrum:Bool = false; // Renders sustains behind strum line
 	public var holdEndScale:Float = 1.0; // Scale multiplier for hold note endings (0.1-3.0)
-	public var preventScaledHoldEnd:Bool = false; // Prevents modifier scaling on hold ends (performance cost)
 	
 	// Hold Cache Settings (Auto-managed by AndroidOptimizer)
 	public var holdCacheEnabled:Bool = true; // Hold graphics cache for performance
@@ -111,9 +111,16 @@ import funkin.ui.title.TitleState;
 		[0xFF3DCAFF, 0xFFF4FFFF, 0xFF003060],
 		[0xFF71E300, 0xFFF6FFE6, 0xFF003100],
 		[0xFFFF884E, 0xFFFFFAF5, 0xFF6C0000]];
+	public var arrowHSV:Array<Array<Float>> = [
+		[0, 0, 0],
+		[0, 0, 0],
+		[0, 0, 0],
+		[0, 0, 0]
+	];
 
 	public var ghostTapping:Bool = true;
 	public var timeBarType:String = 'Time Left';
+	public var useWavyTimeBar:Bool = false;
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
 	public var timeBump:Bool = false;
@@ -158,6 +165,7 @@ import funkin.ui.title.TitleState;
 	public var keyViewerOffset:Array<Int> = [0, 0]; // X, Y offset for key viewer
 	public var keyViewerColor:String = 'Gray'; // Color name for key viewer
 	public var ratingOffset:Int = 0;
+	public var flawlessRating:Bool = true;
 	public var flawlessWindow:Float = 20.0;
 	public var sickWindow:Float = 45.0;
 	public var goodWindow:Float = 90.0;
@@ -183,6 +191,8 @@ import funkin.ui.title.TitleState;
 	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
 	public var useLegacyFont:Bool = true; // Use legacy VCR font instead of Phantom font
 	public var legacyShaderInit:Bool = false; // Use Psych 0.7.3 shader initialization (glslVersion parameter, direct FlxRuntimeShader)
+	public var autoConvertChartsToV2:Bool = false; // Automatically convert psych_v1 charts to psych_v2 format when loading
+	public var useScriptableCustomStates:Bool = false; // Allow scripted state overrides through ScriptableState and CustomState
 }
 
 class Preferences {
@@ -214,6 +224,7 @@ class Preferences {
 		
 		'debug_1'		=> [SEVEN],
 		'debug_2'		=> [EIGHT],
+		'debug_3'		=> [SIX],
 		
 		'fullscreen'	=> [F11]
 	];
@@ -341,19 +352,7 @@ class Preferences {
             judgementCounter = !!Reflect.field(FlxG.save.data, "judgementCounter");
 		    judgementCounter = data.judgementCounter;
 
-		// Apply framerate settings consistently
-		if (data.fpsRework)
-		{
-			// FPS Rework mode: Set window framerate directly
-			FlxG.stage.window.frameRate = data.framerate;
-		}
-		else
-		{
-			// Standard mode: Set both update and draw framerates equally
-			// This ensures consistent timing on all devices
-			FlxG.updateFramerate = data.framerate;
-			FlxG.drawFramerate = data.framerate;
-		}
+		applyFramePacing();
 
 		#if (!html5 && !switch)
 		try
@@ -406,6 +405,50 @@ class Preferences {
 			}
 			reloadVolumeKeys();
 		}
+	}
+
+	public static function applyFramePacing():Void
+	{
+		var safeFramerate:Int = Std.int(Math.max(30, data.framerate));
+		var drawFramerate:Int = data.fpsRework ? getInterpolatedDrawFramerate(safeFramerate) : safeFramerate;
+
+		FlxG.fixedTimestep = data.fpsRework;
+		FlxG.updateFramerate = safeFramerate;
+		FlxG.drawFramerate = drawFramerate;
+		FlxG.maxElapsed = data.fpsRework ? (1 / safeFramerate) : 0.1;
+
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.window != null)
+				FlxG.stage.window.frameRate = drawFramerate;
+		}
+		catch (e:Dynamic)
+		{
+			// Ignore targets that do not expose window frame rate at runtime.
+		}
+		#end
+	}
+
+	static function getInterpolatedDrawFramerate(safeFramerate:Int):Int
+	{
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.application != null && FlxG.stage.application.window != null)
+			{
+				var refreshRate:Int = FlxG.stage.application.window.displayMode.refreshRate;
+				if (refreshRate > safeFramerate)
+					return Std.int(FlxMath.bound(refreshRate, safeFramerate, 240));
+			}
+		}
+		catch (e:Dynamic)
+		{
+			// Fallback to the gameplay framerate when refresh rate is unavailable.
+		}
+		#end
+
+		return safeFramerate;
 	}
 
 	inline public static function getGameplaySetting(name:String, defaultValue:Dynamic = null, ?customDefaultValue:Bool = false):Dynamic

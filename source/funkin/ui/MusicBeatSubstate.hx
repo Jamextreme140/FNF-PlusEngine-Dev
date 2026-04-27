@@ -19,7 +19,14 @@ import funkin.modding.scripting.psychlua.LuaUtils;
 import sys.FileSystem;
 #end
 
-class MusicBeatSubstate extends FlxSubState
+// Script layer on top of BaseMusicBeatSubstate.
+// Adds GlobalScript forwarding and per-substate HScript/Lua callbacks.
+//
+// Hierarchy:
+//   BaseMusicBeatSubstate (beat, mobile controls)
+//   └── MusicBeatSubstate (this file — + script hooks)
+
+class MusicBeatSubstate extends BaseMusicBeatSubstate
 {
 	public static var instance:MusicBeatSubstate;
 	
@@ -35,256 +42,256 @@ class MusicBeatSubstate extends FlxSubState
 	public static var musicBeatSubstateScript:HScript = null;
 	#end
 
+	// Companion script — loaded automatically alongside any hardcoded substate.
+	// Path: scripts/substates/{ClassName}.hx (or .lua), searched in mod → global mods → assets/shared.
+	// Callbacks: onCreate / onCreatePost / onUpdate / onUpdatePost / onDestroy
+	// and beat/step/section hooks — same pattern as MusicBeatState companion scripts.
+	#if HSCRIPT_ALLOWED
+	public var companionScript:HScript = null;
+	#end
+	#if LUA_ALLOWED
+	public var companionLuaScript:FunkinLua = null;
+	#end
+
 	public function new()
 	{
-		instance = this;
-		controls.isInSubstate = true;
 		super();
 	}
 
-	public var curSection:Int = 0;
-	private var stepsToDo:Int = 0;
-
-	private var lastBeat:Float = 0;
-	private var lastStep:Float = 0;
-
-	public var curStep:Int = 0;
-	public var curBeat:Int = 0;
-
-	public var curDecStep:Float = 0;
-	public var curDecBeat:Float = 0;
-	private var controls(get, never):Controls;
-
-	inline function get_controls():Controls
-		return Controls.instance;
-	
-	// Get the current substate instance
-	public static function getSubstate():MusicBeatSubstate {
+	override function create()
+	{
+		instance = this;
+		controls.isInSubstate = true;
+		super.create();
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys)
+		// Skip companion for CustomSubstate (Lua-driven substates handle their own scripts)
+		if (!(this is funkin.modding.scripting.psychlua.CustomSubstate) && MusicBeatState.stateScriptOverridesEnabled())
+			_loadCompanionScript();
+		callOnCompanionScript('onCreate', []);
+		#end
+	}
+	public static function getSubstate():MusicBeatSubstate
+	{
 		return instance;
 	}
-	
-	// Get the parent MusicBeatState
-	public function getParentState():MusicBeatState {
-		if(FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+
+	// Get the parent MusicBeatState (shadows Base version which returns BaseMusicBeatState)
+	public function getParentState():MusicBeatState
+	{
+		if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
 			return cast(FlxG.state, MusicBeatState);
 		return null;
 	}
 
-	public var touchPad:TouchPad;
-	public var touchPadCam:FlxCamera;
-	public var mobileControls:IMobileControls;
-	public var mobileControlsCam:FlxCamera;
-
-	public function addTouchPad(DPad:String, Action:String)
-	{
-		touchPad = new TouchPad(DPad, Action);
-		add(touchPad);
-	}
-
-	public function removeTouchPad()
-	{
-		if (touchPad != null)
-		{
-			remove(touchPad);
-			touchPad = FlxDestroyUtil.destroy(touchPad);
-		}
-
-		if(touchPadCam != null)
-		{
-			FlxG.cameras.remove(touchPadCam);
-			touchPadCam = FlxDestroyUtil.destroy(touchPadCam);
-		}
-	}
-
-	public function addMobileControls(defaultDrawTarget:Bool = false):Void
-	{
-		var extraMode = MobileData.extraActions.get(ClientPrefs.data.extraButtons);
-		
-		// Fallback to NONE if extraMode is null
-		if (extraMode == null)
-			extraMode = NONE;
-
-		switch (MobileData.mode)
-		{
-			case 0: // RIGHT_FULL
-				mobileControls = new TouchPad('RIGHT_FULL', 'NONE', extraMode);
-			case 1: // LEFT_FULL
-				mobileControls = new TouchPad('LEFT_FULL', 'NONE', extraMode);
-			case 2: // CUSTOM
-				mobileControls = MobileData.getTouchPadCustom(new TouchPad('RIGHT_FULL', 'NONE', extraMode));
-			case 3: // HITBOX
-				mobileControls = new Hitbox(extraMode);
-			case 4: // HITBOX_ARROWS
-				mobileControls = new Hitbox(NONE, true);
-		}
-
-		// Ensure instance is set before using it
-		if (mobileControls != null && mobileControls.instance != null)
-		{
-			mobileControls.instance = MobileData.setButtonsColors(mobileControls.instance);
-			mobileControlsCam = new FlxCamera();
-			mobileControlsCam.bgColor.alpha = 0;
-			FlxG.cameras.add(mobileControlsCam, defaultDrawTarget);
-
-			mobileControls.instance.cameras = [mobileControlsCam];
-			mobileControls.instance.visible = false;
-			add(mobileControls.instance);
-		}
-		else
-		{
-			trace('Warning: Failed to create mobile controls! extraButtons: ${ClientPrefs.data.extraButtons}, mode: ${MobileData.mode}');
-		}
-	}
-
-	public function removeMobileControls()
-	{
-		if (mobileControls != null)
-		{
-			remove(mobileControls.instance);
-			mobileControls.instance = FlxDestroyUtil.destroy(mobileControls.instance);
-			mobileControls = null;
-		}
-
-		if (mobileControlsCam != null)
-		{
-			FlxG.cameras.remove(mobileControlsCam);
-			mobileControlsCam = FlxDestroyUtil.destroy(mobileControlsCam);
-		}
-	}
-
-	public function addTouchPadCamera(defaultDrawTarget:Bool = false):Void
-	{
-		if (touchPad != null)
-		{
-			touchPadCam = new FlxCamera();
-			touchPadCam.bgColor.alpha = 0;
-			FlxG.cameras.add(touchPadCam, defaultDrawTarget);
-			touchPad.cameras = [touchPadCam];
-		}
-	}
-
-	override function destroy()
-	{
-		controls.isInSubstate = false;
-		removeTouchPad();
-		removeMobileControls();
-		
-		super.destroy();
-	}
-
 	override function update(elapsed:Float)
 	{
-		//everyStep();
-		if(!persistentUpdate) MusicBeatState.timePassedOnState += elapsed;
-		var oldStep:Int = curStep;
-
-		updateCurStep();
-		updateBeat();
-
-		if (oldStep != curStep)
-		{
-			if(curStep > 0)
-				stepHit();
-
-			if(PlayState.SONG != null)
-			{
-				if (oldStep < curStep)
-					updateSection();
-				else
-					rollbackSection();
-			}
-		}
-
 		// Call global script update
 		MusicBeatState.callOnGlobalScript('onSubstateUpdate', [elapsed]);
 		// Call MusicBeatSubstate-specific script
 		callOnMusicBeatSubstateScript('onUpdate', [elapsed]);
+		// Companion pre-update
+		callOnCompanionScript('onUpdate', [elapsed]);
 
 		super.update(elapsed);
+
+		// Companion post-update
+		callOnCompanionScript('onUpdatePost', [elapsed]);
 	}
 
-	private function updateSection():Void
-	{
-		if(stepsToDo < 1) stepsToDo = Math.round(getBeatsOnSection() * 4);
-		while(curStep >= stepsToDo)
-		{
-			curSection++;
-			var beats:Float = getBeatsOnSection();
-			stepsToDo += Math.round(beats * 4);
-			sectionHit();
-		}
-	}
-
-	private function rollbackSection():Void
-	{
-		if(curStep < 0) return;
-
-		var lastSection:Int = curSection;
-		curSection = 0;
-		stepsToDo = 0;
-		for (i in 0...PlayState.SONG.notes.length)
-		{
-			if (PlayState.SONG.notes[i] != null)
-			{
-				stepsToDo += Math.round(getBeatsOnSection() * 4);
-				if(stepsToDo > curStep) break;
-				
-				curSection++;
-			}
-		}
-
-		if(curSection > lastSection) sectionHit();
-	}
-
-	private function updateBeat():Void
-	{
-		curBeat = Math.floor(curStep / 4);
-		curDecBeat = curDecStep/4;
-	}
-
-	private function updateCurStep():Void
-	{
-		var lastChange = Conductor.getBPMFromSeconds(Conductor.songPosition);
-
-		var shit = ((Conductor.songPosition - ClientPrefs.data.noteOffset) - lastChange.songTime) / lastChange.stepCrochet;
-		curDecStep = lastChange.stepTime + shit;
-		curStep = lastChange.stepTime + Math.floor(shit);
-	}
-
-	public function stepHit():Void
+	override public function stepHit():Void
 	{
 		// Call global script
 		MusicBeatState.callOnGlobalScript('onSubstateStepHit', [curStep]);
 		// Call MusicBeatSubstate-specific script
 		callOnMusicBeatSubstateScript('onStepHit', [curStep]);
-		
-		if (curStep % 4 == 0)
-			beatHit();
+		callOnCompanionScript('onStepHit', [curStep]);
+
+		super.stepHit();
+
+		callOnCompanionScript('onStepHitPost', [curStep]);
 	}
 
-	public function beatHit():Void
+	override public function beatHit():Void
 	{
 		// Call global script
 		MusicBeatState.callOnGlobalScript('onSubstateBeatHit', [curBeat]);
 		// Call MusicBeatSubstate-specific script
 		callOnMusicBeatSubstateScript('onBeatHit', [curBeat]);
+		callOnCompanionScript('onBeatHit', [curBeat]);
+
+		super.beatHit();
+
+		callOnCompanionScript('onBeatHitPost', [curBeat]);
 	}
-	
-	public function sectionHit():Void
+
+	override public function sectionHit():Void
 	{
 		// Call global script
 		MusicBeatState.callOnGlobalScript('onSubstateSectionHit', [curSection]);
 		// Call MusicBeatSubstate-specific script
 		callOnMusicBeatSubstateScript('onSectionHit', [curSection]);
+		callOnCompanionScript('onSectionHit', [curSection]);
+
+		super.sectionHit();
+
+		callOnCompanionScript('onSectionHitPost', [curSection]);
 	}
-	
-	function getBeatsOnSection()
+
+	override function destroy()
 	{
-		var val:Null<Float> = 4;
-		if(PlayState.SONG != null && PlayState.SONG.notes[curSection] != null) val = PlayState.SONG.notes[curSection].sectionBeats;
-		return val == null ? 4 : val;
+		if (instance == this)
+		{
+			controls.isInSubstate = false;
+			instance = null;
+		}
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			callOnCompanionScript('onDestroy', []);
+			companionScript.destroy();
+			companionScript = null;
+		}
+		#end
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			companionLuaScript.call('onDestroy', []);
+			companionLuaScript.stop();
+			companionLuaScript = null;
+		}
+		#end
+		super.destroy();
 	}
 	
+	// ── Companion script helpers ─────────────────────────────────────────────────
+
+	#if (HSCRIPT_ALLOWED && sys)
+	function _loadCompanionScript():Void
+	{
+		var fullName:String = Type.getClassName(Type.getClass(this));
+		var parts = fullName.split('.');
+		var clsName:String = parts[parts.length - 1];
+		var rel:String = 'scripts/substates/$clsName.hx';
+
+		var path:String = null;
+
+		#if MODS_ALLOWED
+		var modded:String = Paths.modFolders(rel);
+		if (FileSystem.exists(modded)) path = modded;
+		#end
+
+		if (path == null)
+		{
+			var shared:String = Paths.getSharedPath(rel);
+			if (FileSystem.exists(shared)) path = shared;
+		}
+
+		#if LUA_ALLOWED
+		var luaRel:String = 'scripts/substates/$clsName.lua';
+		var luaPath:String = null;
+		#if MODS_ALLOWED
+		var moddedLua:String = Paths.modFolders(luaRel);
+		if (FileSystem.exists(moddedLua)) luaPath = moddedLua;
+		#end
+		if (luaPath == null)
+		{
+			var sharedLua:String = Paths.getSharedPath(luaRel);
+			if (FileSystem.exists(sharedLua)) luaPath = sharedLua;
+		}
+		if (luaPath != null)
+		{
+			try { companionLuaScript = new FunkinLua(luaPath); }
+			catch(e:Dynamic) { trace('[CompanionSubstate] Lua error in $luaPath: $e'); }
+		}
+		#end
+
+		if (path == null) return;
+
+		try
+		{
+			companionScript = new HScript(null, path);
+
+			// Expose the substate itself and its parent state
+			companionScript.set('game',           this);
+			companionScript.set('parentState',    getParentState());
+			companionScript.set('add',            this.add);
+			companionScript.set('remove',         this.remove);
+			companionScript.set('close',          this.close);
+
+			companionScript.set('setSharedVar', function(n:String, v:Dynamic) {
+				MusicBeatState.globalVariables.set(n, v);
+				variables.set(n, v);
+				return v;
+			});
+			companionScript.set('getSharedVar', function(n:String, ?def:Dynamic = null):Dynamic {
+				if (MusicBeatState.globalVariables.exists(n)) return MusicBeatState.globalVariables.get(n);
+				if (variables.exists(n)) return variables.get(n);
+				return def;
+			});
+			companionScript.set('setStaticVar', function(n:String, v:Dynamic) {
+				MusicBeatState.staticVariables.set(n, v); return v;
+			});
+			companionScript.set('getStaticVar', function(n:String, ?def:Dynamic = null):Dynamic
+				return MusicBeatState.staticVariables.exists(n) ? MusicBeatState.staticVariables.get(n) : def);
+
+			trace('[CompanionSubstate] Loaded for "$clsName": $path');
+		}
+		catch(e:crowplexus.hscript.Expr.Error)
+		{
+			var msg = crowplexus.hscript.Printer.errorToString(e, false);
+			trace('[CompanionSubstate] HScript error in $path:\n$msg');
+			if (funkin.ui.debug.TraceDisplay.instance != null)
+				funkin.ui.debug.TraceDisplay.addHScriptError(msg, path);
+		}
+		catch(e:Dynamic)
+		{
+			trace('[CompanionSubstate] Failed to load $path: $e');
+		}
+	}
+	#end
+
+	public function callOnCompanionScript(funcName:String, args:Array<Dynamic> = null):Dynamic
+	{
+		if (args == null) args = [];
+		var ret:Dynamic = LuaUtils.Function_Continue;
+		if (!MusicBeatState.stateScriptOverridesEnabled()) return ret;
+
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			var v = companionLuaScript.call(funcName, args);
+			if (v != null && v != LuaUtils.Function_Continue) ret = v;
+		}
+		#end
+
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			try
+			{
+				var fn:String = companionScript.exists(funcName) ? funcName : null;
+				if (fn == null && funcName.startsWith('on'))
+				{
+					var bare = funcName.charAt(2).toLowerCase() + funcName.substr(3);
+					if (companionScript.exists(bare)) fn = bare;
+				}
+				if (fn != null)
+				{
+					var callValue = companionScript.call(fn, args);
+					if (callValue != null && callValue.returnValue != null && callValue.returnValue != LuaUtils.Function_Continue)
+						ret = callValue.returnValue;
+				}
+			}
+			catch(e:Dynamic)
+			{
+				trace('[CompanionSubstate] Runtime error calling $funcName: $e');
+			}
+		}
+		#end
+
+		return ret;
+	}
+
 	public static function initMusicBeatSubstateScript():Void
 	{
 		// Try to load Lua MusicBeatSubstate script first

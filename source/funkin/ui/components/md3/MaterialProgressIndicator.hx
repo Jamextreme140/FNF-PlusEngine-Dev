@@ -40,11 +40,6 @@ class MaterialProgressIndicator extends FlxSpriteGroup
 	static inline var CIRCULAR_SIZE:Int = 48;
 	static inline var CIRCULAR_THICKNESS:Int = 5;
 
-	// Colors (MD3)
-	static inline var TRACK_COLOR:FlxColor = 0xFFE7E0EC;
-	static inline var FILL_COLOR:FlxColor = 0xFF6750A4;
-	static inline var STOP_INDICATOR_COLOR:FlxColor = 0xFF6750A4;
-
 	// Indeterminate animation
 	var indeterminateTimer:Float = 0;
 	var indeterminateTween:FlxTween;

@@ -16,6 +16,9 @@ import flixel.util.FlxColor;
  */
 class MD3Theme
 {
+	public static var isDark(default, null):Bool = false;
+	public static var currentAccent(default, null):FlxColor = ACCENT_PURPLE;
+
 	// -----------------------------------------------------------------------
 	// Light-scheme color roles (M3 baseline — default = purple 40 palette)
 	// -----------------------------------------------------------------------
@@ -149,6 +152,58 @@ class MD3Theme
 	public static function removeListener(fn:Void->Void):Void
 		_listeners.remove(fn);
 
+	static inline function clamp01(value:Float):Float
+	{
+		return value < 0 ? 0 : (value > 1 ? 1 : value);
+	}
+
+	public static inline function withAlpha(color:FlxColor, alpha:Float):FlxColor
+	{
+		return (Std.int(clamp01(alpha) * 255) << 24) | (color & 0x00FFFFFF);
+	}
+
+	public static inline function mix(colorA:FlxColor, colorB:FlxColor, amount:Float):FlxColor
+	{
+		return FlxColor.interpolate(colorA, colorB, clamp01(amount));
+	}
+
+	public static inline function stateLayerColor(baseColor:FlxColor, ?pressed:Bool = false):FlxColor
+	{
+		return withAlpha(baseColor, pressed ? 0.12 : 0.08);
+	}
+
+	public static inline function disabledContentColor():FlxColor
+	{
+		return withAlpha(onSurface, 0.38);
+	}
+
+	public static inline function disabledContainerColor():FlxColor
+	{
+		return withAlpha(onSurface, 0.12);
+	}
+
+	public static inline function scrimColor():FlxColor
+	{
+		return withAlpha(FlxColor.BLACK, isDark ? 0.60 : 0.32);
+	}
+
+	public static inline function shadowColor():FlxColor
+	{
+		return withAlpha(FlxColor.BLACK, isDark ? 0.42 : 0.20);
+	}
+
+	public static inline function filledFieldColor(?hovered:Bool = false):FlxColor
+	{
+		return hovered
+			? mix(surfaceVariant, primary, isDark ? 0.10 : 0.06)
+			: surfaceVariant;
+	}
+
+	public static inline function dividerColor():FlxColor
+	{
+		return outlineVariant;
+	}
+
 	// -----------------------------------------------------------------------
 	// Theme generation
 	// -----------------------------------------------------------------------
@@ -158,53 +213,105 @@ class MD3Theme
 	 * All color roles are derived from the hue and saturation of `accentColor`.
 	 * Notifies all registered component listeners so the UI updates immediately.
 	 */
-	public static function setAccent(accentColor:FlxColor):Void
+	public static function setAccent(accentColor:FlxColor, ?darkMode:Null<Bool>):Void
 	{
+		currentAccent = accentColor;
+		if (darkMode != null)
+			isDark = darkMode;
+
+		applyTheme();
+	}
+
+	public static function setDarkMode(darkMode:Bool):Void
+	{
+		if (isDark == darkMode)
+			return;
+
+		isDark = darkMode;
+		applyTheme();
+	}
+
+	static function applyTheme():Void
+	{
+		var accentColor = currentAccent;
 		var h:Float = accentColor.hue;
 		// Ensure the source color is vivid enough to generate a usable palette
 		var s:Float = Math.max(0.30, accentColor.saturation);
 
-		// Primary palette
-		primary            = colorFromHSL(h, s * 0.82, 0.40);
-		onPrimary          = 0xFFFFFFFF;
-		primaryContainer   = colorFromHSL(h, s * 0.48, 0.90);
-		onPrimaryContainer = colorFromHSL(h, s * 0.95, 0.10);
+		if (isDark)
+		{
+			primary            = colorFromHSL(h, s * 0.58, 0.80);
+			onPrimary          = colorFromHSL(h, s * 0.70, 0.16);
+			primaryContainer   = colorFromHSL(h, s * 0.55, 0.30);
+			onPrimaryContainer = colorFromHSL(h, s * 0.55, 0.92);
 
-		// Secondary — same hue family, lower chroma
-		secondary            = colorFromHSL((h + 10) % 360, s * 0.30, 0.40);
-		onSecondary          = 0xFFFFFFFF;
-		secondaryContainer   = colorFromHSL((h + 10) % 360, s * 0.20, 0.88);
-		onSecondaryContainer = colorFromHSL((h + 10) % 360, s * 0.55, 0.12);
+			secondary            = colorFromHSL((h + 10) % 360, s * 0.18, 0.72);
+			onSecondary          = colorFromHSL((h + 10) % 360, s * 0.30, 0.16);
+			secondaryContainer   = colorFromHSL((h + 10) % 360, s * 0.22, 0.28);
+			onSecondaryContainer = colorFromHSL((h + 10) % 360, s * 0.22, 0.90);
 
-		// Tertiary — offset hue (analogous / complementary)
-		tertiary             = colorFromHSL((h + 60) % 360, s * 0.30, 0.43);
-		onTertiary           = 0xFFFFFFFF;
-		tertiaryContainer    = colorFromHSL((h + 60) % 360, s * 0.25, 0.88);
-		onTertiaryContainer  = colorFromHSL((h + 60) % 360, s * 0.55, 0.12);
+			tertiary             = colorFromHSL((h + 60) % 360, s * 0.24, 0.76);
+			onTertiary           = colorFromHSL((h + 60) % 360, s * 0.36, 0.16);
+			tertiaryContainer    = colorFromHSL((h + 60) % 360, s * 0.24, 0.30);
+			onTertiaryContainer  = colorFromHSL((h + 60) % 360, s * 0.24, 0.92);
 
-		// Neutral / surface — very low chroma, same hue
-		surface              = colorFromHSL(h, s * 0.04, 0.98);
-		onSurface            = colorFromHSL(h, s * 0.08, 0.11);
-		surfaceVariant       = colorFromHSL(h, s * 0.14, 0.91);
-		onSurfaceVariant     = colorFromHSL(h, s * 0.10, 0.31);
-		background           = surface;
-		onBackground         = onSurface;
+			surface              = colorFromHSL(h, s * 0.05, 0.09);
+			onSurface            = colorFromHSL(h, s * 0.04, 0.92);
+			surfaceVariant       = colorFromHSL(h, s * 0.10, 0.24);
+			onSurfaceVariant     = colorFromHSL(h, s * 0.08, 0.78);
+			background           = surface;
+			onBackground         = onSurface;
 
-		// Surface containers (elevation tiers)
-		surfaceContainerLowest  = colorFromHSL(h, s * 0.02, 0.99);
-		surfaceContainerLow     = colorFromHSL(h, s * 0.06, 0.96);
-		surfaceContainer        = colorFromHSL(h, s * 0.09, 0.93);
-		surfaceContainerHigh    = colorFromHSL(h, s * 0.12, 0.90);
-		surfaceContainerHighest = colorFromHSL(h, s * 0.16, 0.87);
+			surfaceContainerLowest  = colorFromHSL(h, s * 0.03, 0.04);
+			surfaceContainerLow     = colorFromHSL(h, s * 0.04, 0.08);
+			surfaceContainer        = colorFromHSL(h, s * 0.05, 0.12);
+			surfaceContainerHigh    = colorFromHSL(h, s * 0.06, 0.16);
+			surfaceContainerHighest = colorFromHSL(h, s * 0.07, 0.20);
 
-		// Outline
-		outline              = colorFromHSL(h, s * 0.12, 0.50);
-		outlineVariant       = colorFromHSL(h, s * 0.15, 0.80);
+			outline              = colorFromHSL(h, s * 0.08, 0.52);
+			outlineVariant       = colorFromHSL(h, s * 0.08, 0.32);
 
-		// Inverse (dark panel on light background)
-		inverseSurface       = colorFromHSL(h, s * 0.06, 0.19);
-		inverseOnSurface     = colorFromHSL(h, s * 0.04, 0.95);
-		inversePrimary       = colorFromHSL(h, s * 0.55, 0.80);
+			inverseSurface       = colorFromHSL(h, s * 0.04, 0.90);
+			inverseOnSurface     = colorFromHSL(h, s * 0.04, 0.18);
+			inversePrimary       = colorFromHSL(h, s * 0.82, 0.40);
+		}
+		else
+		{
+			primary            = colorFromHSL(h, s * 0.82, 0.40);
+			onPrimary          = 0xFFFFFFFF;
+			primaryContainer   = colorFromHSL(h, s * 0.48, 0.90);
+			onPrimaryContainer = colorFromHSL(h, s * 0.95, 0.10);
+
+			secondary            = colorFromHSL((h + 10) % 360, s * 0.30, 0.40);
+			onSecondary          = 0xFFFFFFFF;
+			secondaryContainer   = colorFromHSL((h + 10) % 360, s * 0.20, 0.88);
+			onSecondaryContainer = colorFromHSL((h + 10) % 360, s * 0.55, 0.12);
+
+			tertiary             = colorFromHSL((h + 60) % 360, s * 0.30, 0.43);
+			onTertiary           = 0xFFFFFFFF;
+			tertiaryContainer    = colorFromHSL((h + 60) % 360, s * 0.25, 0.88);
+			onTertiaryContainer  = colorFromHSL((h + 60) % 360, s * 0.55, 0.12);
+
+			surface              = colorFromHSL(h, s * 0.04, 0.98);
+			onSurface            = colorFromHSL(h, s * 0.08, 0.11);
+			surfaceVariant       = colorFromHSL(h, s * 0.14, 0.91);
+			onSurfaceVariant     = colorFromHSL(h, s * 0.10, 0.31);
+			background           = surface;
+			onBackground         = onSurface;
+
+			surfaceContainerLowest  = colorFromHSL(h, s * 0.02, 0.99);
+			surfaceContainerLow     = colorFromHSL(h, s * 0.06, 0.96);
+			surfaceContainer        = colorFromHSL(h, s * 0.09, 0.93);
+			surfaceContainerHigh    = colorFromHSL(h, s * 0.12, 0.90);
+			surfaceContainerHighest = colorFromHSL(h, s * 0.16, 0.87);
+
+			outline              = colorFromHSL(h, s * 0.12, 0.50);
+			outlineVariant       = colorFromHSL(h, s * 0.15, 0.80);
+
+			inverseSurface       = colorFromHSL(h, s * 0.06, 0.19);
+			inverseOnSurface     = colorFromHSL(h, s * 0.04, 0.95);
+			inversePrimary       = colorFromHSL(h, s * 0.55, 0.80);
+		}
 
 		// Notify all registered component listeners
 		for (fn in _listeners) fn();

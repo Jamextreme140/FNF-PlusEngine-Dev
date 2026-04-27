@@ -75,6 +75,7 @@ class Config {
 			APPLY_DEPTH: true,
 			APPLY_SCALE: ClientPrefs.data.styledArrowPaths,
 			RESOLUTION: 1.0,
+			BASE_DIVISIONS: 60,
 			LENGTH: ClientPrefs.data.arrowPathBoundary
 		};
 	}
@@ -86,17 +87,6 @@ class Config {
 	 */
 	public static var HOLD_END_SCALE(get, never):Float;
 	private static inline function get_HOLD_END_SCALE():Float return ClientPrefs.data.holdEndScale;
-
-	/**
-	 * Prevents scaling the hold ends. (Some people doens't like that lol)
-	 * 
-	 * **WARNING**: Performance may be affected if there's too much
-	 * hold arrows at screen. (it basicly uses one extra `getPath()` call)
-	 * 
-	 * Synced with: `ClientPrefs.data.preventScaledHoldEnd`
-	 */
-	public static var PREVENT_SCALED_HOLD_END(get, never):Bool;
-	private static inline function get_PREVENT_SCALED_HOLD_END():Bool return ClientPrefs.data.preventScaledHoldEnd;
 
 	/**
 	 * Enables or disables column-specific modifiers.
@@ -152,6 +142,13 @@ typedef ArrowPathConfig = {
 	 * **WARNING**: Can't be zero or it will CRASH.
 	 */
 	RESOLUTION:Float,
+
+	/**
+	 * Base division count (before RESOLUTION multiplier).
+	 * Higher value = more sample points = smoother wave mods (drunk/bumpy).
+	 * Default: 60 (good balance between quality and performance).
+	 */
+	BASE_DIVISIONS:Int,
 
 	/**
 	 * Path lines length addition.

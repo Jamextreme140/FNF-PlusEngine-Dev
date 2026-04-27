@@ -6,6 +6,7 @@ import flixel.group.FlxGroup;
 import flixel.input.gamepad.FlxGamepad;
 
 import funkin.graphics.shaders.ColorSwap;
+import openfl.utils.Assets as OpenFlAssets;
 
 import funkin.ui.story.StoryMenuState;
 import funkin.ui.mainmenu.MainMenuState;
@@ -79,7 +80,8 @@ class TitleState extends MusicBeatState
 
 		if(FlxG.save.data.introFinished == null) FlxG.save.data.introFinished = false;
 
-		curWacky = FlxG.random.getObject(getIntroTextShit());
+		var introTexts = getIntroTextShit();
+		curWacky = introTexts.length > 0 ? FlxG.random.getObject(introTexts) : ['Intro Text', 'Example'];
 
 		if(!initialized || forceShowIntro)
 		{
@@ -103,8 +105,8 @@ class TitleState extends MusicBeatState
 		MusicBeatState.switchState(new FreeplayState());
 		#elseif CHARTING
 		MusicBeatState.switchState(new ChartEditorState());
-		//#elseif TEST
-		//MusicBeatState.switchState(new funkin.ui.debug.MD3TestState());
+		#elseif TEST
+		MusicBeatState.switchState(new funkin.ui.debug.isolated.MD3IsolatedComponentState());
 		#else
 		if(FlxG.save.data.flashing == null && !FlashingState.leftState)
 		{
@@ -459,19 +461,33 @@ class TitleState extends MusicBeatState
 		}
 		#end
 		
-		// Fallback: usar archivo introText.txt
+		// Fallback: use introText.txt file
 		#if MODS_ALLOWED
 		var firstArray:Array<String> = Mods.mergeAllTextsNamed('data/introText.txt');
+		// When running from an APK the filesystem is not accessible, fall back to OpenFL assets
+		if (firstArray.length == 0)
+		{
+			var assetPath:String = Paths.txt('introText');
+			if (OpenFlAssets.exists(assetPath))
+				firstArray = OpenFlAssets.getText(assetPath).split('\n');
+		}
 		#else
-		var fullText:String = Assets.getText(Paths.txt('introText'));
+		var fullText:String = OpenFlAssets.getText(Paths.txt('introText'));
 		var firstArray:Array<String> = fullText.split('\n');
 		#end
 		var swagGoodArray:Array<Array<String>> = [];
 
 		for (i in firstArray)
 		{
-			swagGoodArray.push(i.split('--'));
+			var parts = i.split('--');
+			// Only add entries that have exactly two non-empty parts
+			if (parts.length >= 2 && parts[0].length > 0)
+				swagGoodArray.push(parts);
 		}
+
+		// Fallback so curWacky is never null
+		if (swagGoodArray.length == 0)
+			swagGoodArray.push(['Friday Night', 'Funkin']);
 
 		return swagGoodArray;
 	}

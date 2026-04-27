@@ -24,7 +24,7 @@ using flixel.util.FlxArrayUtil;
  */
 class CrashHandler
 {
-	// Link de ayuda/repositorio para mostrar en caso de crash
+	// Help link / repository shown in crash messages
 	public static final HELP_LINK:String = "https://github.com/LeninAsto/FNF-PlusEngine";
 	
 	// Fun error messages for null references
@@ -267,7 +267,7 @@ class CrashHandler
 		// Generate system report
 		var systemReport = generateSystemReport();
 
-		// Mostrar error en la consola/terminal
+		// Print error to the console/terminal
 		trace('\n\n$m\n\n$stackLabel\n\n$systemReport\n======================\nFor help, visit: $HELP_LINK');
 		
 		#if sys
@@ -309,7 +309,7 @@ class CrashHandler
 		
 		var errorLog = log.join('\n');
 		
-		// Mostrar error en la consola/terminal
+		// Print error to the console/terminal
 		trace('=== CRITICAL ERROR ===');
 		trace(errorLog);
 		trace('======================');
@@ -338,7 +338,7 @@ class CrashHandler
 	#if sys
 	private static function saveErrorMessage(message:String):Void
 	{
-		final folder:String = #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
+		final folder:String = #if mobile StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'logs/';
 
 		try
 		{

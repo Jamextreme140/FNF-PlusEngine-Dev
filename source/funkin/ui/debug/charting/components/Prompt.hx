@@ -1,6 +1,7 @@
 package funkin.ui.debug.charting.components;
 
 import flixel.util.FlxDestroyUtil;
+import funkin.ui.components.PsychUISkin;
 
 // Exit confirmation prompt used on all editors, for convenience
 class ExitConfirmationPrompt extends Prompt
@@ -42,14 +43,36 @@ class Prompt extends BasePrompt
 			controls.isInSubstate = false;
 			close();
 		});
-		btn.normalStyle.bgColor = FlxColor.RED;
-		btn.normalStyle.textColor = FlxColor.WHITE;
+		btn.useDynamicTheme = false;
+		btn.normalStyle = {
+			bgColor: 0xFFC74B56,
+			textColor: FlxColor.WHITE,
+			bgAlpha: 1,
+			strokeColor: 0xFFC74B56,
+			radius: 12
+		};
+		btn.hoverStyle = {
+			bgColor: 0xFFD75A66,
+			textColor: FlxColor.WHITE,
+			bgAlpha: 1,
+			strokeColor: 0xFFD75A66,
+			radius: 12
+		};
+		btn.clickStyle = {
+			bgColor: 0xFFA93A44,
+			textColor: FlxColor.WHITE,
+			bgAlpha: 1,
+			strokeColor: 0xFFA93A44,
+			radius: 12
+		};
+		btn.resize(110, 32);
 		btn.screenCenter(X);
 		btn.x -= 100;
 		btn.cameras = cameras;
 		add(btn);
 
 		var btn2:PsychUIButton = new PsychUIButton(0, btnY, _noTxt, close);
+		btn2.resize(110, 32);
 		btn2.screenCenter(X);
 		btn2.x += 100;
 		btn2.cameras = cameras;
@@ -68,6 +91,7 @@ class BasePrompt extends MusicBeatSubstate
 	var _sizeX:Float = 0;
 	var _sizeY:Float = 0;
 	var _title:String;
+	var _themeSignature:String = null;
 
 	public var onCreate:BasePrompt->Void;
 	public var onUpdate:BasePrompt->Float->Void;
@@ -82,21 +106,37 @@ class BasePrompt extends MusicBeatSubstate
 	}
 
 	public var bg:FlxSprite;
+	public var backdrop:FlxSprite;
 	public var titleText:FlxText;
 	override function create()
 	{
 		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
-		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
-		bg.alpha = 0.8;
-		bg.scale.set(_sizeX, _sizeY);
-		bg.updateHitbox();
+		backdrop = new FlxSprite().makeGraphic(Std.int(FlxG.width), Std.int(FlxG.height), 0x96000000);
+		backdrop.cameras = cameras;
+		backdrop.scrollFactor.set();
+		add(backdrop);
+
+		bg = new FlxSprite();
+		PsychUISkin.drawStyledRect(bg, Std.int(_sizeX), Std.int(_sizeY), PsychUISkin.panelStyle());
 		bg.screenCenter();
 		bg.cameras = cameras;
 		add(bg);
 		
-		titleText = new FlxText(0, bg.y + 30, 400, _title, 16);
-		titleText.screenCenter(X);
+		var headerBar:FlxSprite = new FlxSprite(bg.x + 18, bg.y + 14);
+		PsychUISkin.drawStyledRect(headerBar, Std.int(bg.width - 36), 8, {
+			bgColor: PsychUISkin.accent(),
+			textColor: FlxColor.WHITE,
+			bgAlpha: 1.0,
+			radius: PsychUISkin.PILL_RADIUS
+		});
+		headerBar.cameras = cameras;
+		add(headerBar);
+
+		titleText = new FlxText(bg.x + 24, bg.y + 34, Std.int(bg.width - 48), _title, 16);
 		titleText.alignment = CENTER;
+		titleText.color = PsychUISkin.textPrimary();
+		titleText.textField.wordWrap = true;
+		titleText.textField.multiline = true;
 		titleText.cameras = cameras;
 		add(titleText);
 		
@@ -109,6 +149,7 @@ class BasePrompt extends MusicBeatSubstate
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		refreshThemeTexts();
 
 		_blockInput = Math.max(0, _blockInput - elapsed);
 		if(_blockInput <= 0 && FlxG.keys.justPressed.ESCAPE)
@@ -120,6 +161,20 @@ class BasePrompt extends MusicBeatSubstate
 
 		if(onUpdate != null)
 			onUpdate(this, elapsed);
+	}
+
+	function refreshThemeTexts(force:Bool = false):Void
+	{
+		var signature:String = PsychUISkin.signature();
+		if(!force && _themeSignature == signature)
+			return;
+
+		for(member in members)
+		{
+			if(member != null && member.exists && Std.isOfType(member, FlxText))
+				cast(member, FlxText).color = PsychUISkin.textPrimary();
+		}
+		_themeSignature = signature;
 	}
 
 	override function destroy()

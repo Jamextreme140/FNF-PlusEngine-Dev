@@ -49,14 +49,26 @@ class CoolUtil
 	inline public static function capitalize(text:String)
 		return text.charAt(0).toUpperCase() + text.substr(1).toLowerCase();
 
+	// Used for ClientPrefs.data.iconBounceType for Old, so please don't delete this
+	public static function boundTo(value:Float, min:Float, max:Float):Float {
+		var newValue:Float = value;
+		if(newValue < min) newValue = min;
+		else if(newValue > max) newValue = max;
+		return newValue;
+	}
+
 	inline public static function coolTextFile(path:String):Array<String>
 	{
+		// Try loading from mods first (FileSystem), then from APK (OpenFlAssets)
 		var daList:String = null;
-		#if (sys && MODS_ALLOWED)
-		if(FileSystem.exists(path)) daList = File.getContent(path);
-		#else
-		if(Assets.exists(path)) daList = Assets.getText(path);
+		#if MODS_ALLOWED
+		if(FileSystem.exists(path))
+			daList = File.getContent(path);
 		#end
+		
+		if(daList == null && Assets.exists(path))
+			daList = Assets.getText(path);
+		
 		return daList != null ? listFromString(daList) : [];
 	}
 

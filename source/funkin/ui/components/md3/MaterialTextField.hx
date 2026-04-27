@@ -53,18 +53,6 @@ class MaterialTextField extends FlxSpriteGroup
 	static inline var LABEL_Y_FLOATING:Int = 8; // Label position when floating
 	static inline var LABEL_SCALE_SMALL:Float = 0.75;
 	
-	// Colors (MD3)
-	static inline var OUTLINE_COLOR:FlxColor = 0xFF79747E;
-	static inline var OUTLINE_COLOR_FOCUSED:FlxColor = 0xFF6750A4;
-	static inline var OUTLINE_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var LABEL_COLOR:FlxColor = 0xFF49454F;
-	static inline var LABEL_COLOR_FOCUSED:FlxColor = 0xFF6750A4;
-	static inline var LABEL_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var TEXT_COLOR:FlxColor = 0xFF1C1B1F;
-	static inline var SUPPORTING_COLOR:FlxColor = 0xFF49454F;
-	static inline var SUPPORTING_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var CURSOR_COLOR:FlxColor = 0xFF6750A4;
-	
 	// State
 	var isFocused:Bool = false;
 	var isHovered:Bool = false;
@@ -94,14 +82,14 @@ class MaterialTextField extends FlxSpriteGroup
 		// Create label text (relative to group)
 		labelYPos = LABEL_Y_NORMAL;
 		labelText = new FlxText(PADDING_HORIZONTAL, 0, fieldWidth - PADDING_HORIZONTAL * 2, this.label, 16);
-		labelText.setFormat(Paths.font("phantom.ttf"), 16, LABEL_COLOR, LEFT);
+		labelText.setFormat(Paths.font("inter.otf"), 16, MD3Theme.onSurfaceVariant, LEFT);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		labelText.offset.y = -labelYPos; // Use negative offset to position downward
 		add(labelText);
 		
 		// Create input text (relative to group)
 		inputText = new FlxText(PADDING_HORIZONTAL, 28, fieldWidth - PADDING_HORIZONTAL * 2, "", 16);
-		inputText.setFormat(Paths.font("phantom.ttf"), 16, TEXT_COLOR, LEFT);
+		inputText.setFormat(Paths.font("inter.otf"), 16, MD3Theme.onSurface, LEFT);
 		inputText.antialiasing = ClientPrefs.data.antialiasing;
 		inputText.alpha = 0;
 		add(inputText);
@@ -115,7 +103,7 @@ class MaterialTextField extends FlxSpriteGroup
 		
 		// Create supporting text (relative to group)
 		supportingText = new FlxText(PADDING_HORIZONTAL, FIELD_HEIGHT + 4, fieldWidth - PADDING_HORIZONTAL * 2, "", 12);
-		supportingText.setFormat(Paths.font("phantom.ttf"), 12, SUPPORTING_COLOR, LEFT);
+		supportingText.setFormat(Paths.font("inter.otf"), 12, MD3Theme.onSurfaceVariant, LEFT);
 		supportingText.antialiasing = ClientPrefs.data.antialiasing;
 		add(supportingText);
 		
@@ -131,7 +119,7 @@ class MaterialTextField extends FlxSpriteGroup
 		var graphics = sprite.pixels;
 		graphics.fillRect(graphics.rect, FlxColor.TRANSPARENT);
 		
-		var color = focused ? MD3Theme.primary : (hasError ? OUTLINE_COLOR_ERROR : OUTLINE_COLOR);
+		var color = hasError ? MD3Theme.error : (focused ? MD3Theme.primary : MD3Theme.outline);
 		var cornerRadius = 4;
 		
 		// Draw outline using rectangles for each side
@@ -231,7 +219,7 @@ class MaterialTextField extends FlxSpriteGroup
 		drawOutline(outline, Std.int(fieldWidth), FIELD_HEIGHT, thickness, isFocused);
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? MD3Theme.primary : LABEL_COLOR);
+		labelText.color = hasError ? MD3Theme.error : (isFocused ? MD3Theme.primary : MD3Theme.onSurfaceVariant);
 	}
 	
 	function updateSupportingText():Void
@@ -239,12 +227,12 @@ class MaterialTextField extends FlxSpriteGroup
 		if (hasError && errorText.length > 0)
 		{
 			supportingText.text = errorText;
-			supportingText.color = SUPPORTING_COLOR_ERROR;
+			supportingText.color = MD3Theme.error;
 		}
 		else if (helperText.length > 0)
 		{
 			supportingText.text = helperText;
-			supportingText.color = SUPPORTING_COLOR;
+			supportingText.color = MD3Theme.onSurfaceVariant;
 		}
 		else
 		{
@@ -381,7 +369,9 @@ class MaterialTextField extends FlxSpriteGroup
 	function _onThemeChange():Void
 	{
 		if (cursor != null) cursor.color = MD3Theme.primary;
+		if (inputText != null) inputText.color = MD3Theme.onSurface;
 		updateOutline();
+		updateSupportingText();
 	}
 
 	override function destroy():Void

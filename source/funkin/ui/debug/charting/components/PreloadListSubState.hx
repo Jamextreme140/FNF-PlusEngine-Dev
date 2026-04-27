@@ -113,7 +113,7 @@ class PreloadListSubState extends MusicBeatSubstate implements PsychUIEvent
 		{
 			var exePath:String = Sys.getCwd().replace('\\', '/');
 			#if android
-			var externalPath = StorageUtil.getExternalStorageDirectory();
+			var externalPath = StorageUtil.getStorageDirectory();
 			#end
 			if(path.dir.startsWith(exePath) #if android || path.dir.startsWith(externalPath) #end)
 			{

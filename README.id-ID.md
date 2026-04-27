@@ -5,40 +5,37 @@
 **[EN-US](README.md) | ES-LA | ID-ID**
 
 
-[![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)
-[![VirusTotal Scan](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml)
-![Security](https://img.shields.io/badge/security-scanned-brightgreen?logo=virustotal)
+![Made with](https://forthebadge.com/api/badges/generate?panels=3&primaryLabel=Made+with&secondaryLabel=Haxe&primaryBGColor=%23689bb1&primaryTextColor=%23ffffff&secondaryBGColor=%23fea948&secondaryTextColor=%23ffffff&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&tertiaryLabel=Kotlin&tertiaryBGColor=%23c14dff&tertiaryTextColor=%23FFFFFF&tertiaryFontSize=12&tertiaryFontWeight=700&tertiaryLetterSpacing=2&tertiaryFontFamily=Arial&tertiaryTextTransform=capitalize&tertiaryIcon=kotlin&tertiaryIconColor=%23FFFFFF&tertiaryIconSize=16&tertiaryIconPosition=left&secondaryIcon=haxe&secondaryIconColor=%23ffffff&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)
+[![Design with](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=Design+with&secondaryLabel=Material+Design&primaryBGColor=%23689bb1&primaryTextColor=%23ffffff&secondaryBGColor=%2300639b&secondaryTextColor=%23ffffff&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=materialdesign&secondaryIconColor=%23ffffff&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://m3.material.io/)
 
-[![GitHub stars](https://img.shields.io/github/stars/LeninAsto/FNF-PlusEngine?style=social)](https://github.com/LeninAsto/FNF-PlusEngine/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/LeninAsto/FNF-PlusEngine?style=social)](https://github.com/LeninAsto/FNF-PlusEngine/network/members)
-[![GitHub watchers](https://img.shields.io/github/watchers/LeninAsto/FNF-PlusEngine?style=social)](https://github.com/LeninAsto/FNF-PlusEngine/watchers)
+[![VirusTotal](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=Verified+by&secondaryLabel=VirusTotal&primaryBGColor=%237090d7&primaryTextColor=%23ffffff&secondaryBGColor=%23161625&secondaryTextColor=%2386aaf9&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=virustotal&secondaryIconColor=%2386aaf9&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://www.virustotal.com/)
+[![Play Console](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=Certified+by&secondaryLabel=Play+Console&primaryBGColor=%23ffffff&primaryTextColor=%2368a4f1&secondaryBGColor=%23488fef&secondaryTextColor=%23ffffff&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=googleplay&secondaryIconColor=%23ffffff&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://developer.android.com/distribute/console)
 
 [![License](https://img.shields.io/github/license/LeninAsto/FNF-PlusEngine)](LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/LeninAsto/FNF-PlusEngine)](https://github.com/LeninAsto/FNF-PlusEngine/releases)
 [![GitHub issues](https://img.shields.io/github/issues/LeninAsto/FNF-PlusEngine)](https://github.com/LeninAsto/FNF-PlusEngine/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/LeninAsto/FNF-PlusEngine)](https://github.com/LeninAsto/FNF-PlusEngine/pulls)
-[![GitHub contributors](https://img.shields.io/github/contributors/LeninAsto/FNF-PlusEngine)](https://github.com/LeninAsto/FNF-PlusEngine/graphs/contributors)
+
+[![Android](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=+&secondaryLabel=Android&primaryBGColor=%2322ce75&primaryTextColor=%23FFFFFF&secondaryBGColor=%2332de84&secondaryTextColor=%23FFFFFF&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2.5&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=capitalize&secondaryIcon=android&secondaryIconColor=%23FFFFFF&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://www.android.com/)
+[![iOS](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=+&secondaryLabel=iOS&primaryBGColor=%231c1c1c&primaryTextColor=%23FFFFFF&secondaryBGColor=%23000000&secondaryTextColor=%23FFFFFF&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2.5&primaryFontFamily=Arial&primaryTextTransform=none&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=ios&secondaryIconColor=%23FFFFFF&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://www.apple.com/ios/)
+[![Windows](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=+&secondaryLabel=Windows&primaryBGColor=%23005fa8&primaryTextColor=%23FFFFFF&secondaryBGColor=%230078d4&secondaryTextColor=%23FFFFFF&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2.5&primaryFontFamily=Arial&primaryTextTransform=none&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&scale=0.7&borderRadius=10)](https://www.microsoft.com/windows)
+[![Mac](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=+&secondaryLabel=Mac&primaryBGColor=%231c1c1c&primaryTextColor=%23FFFFFF&secondaryBGColor=%23000000&secondaryTextColor=%23FFFFFF&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2.5&primaryFontFamily=Arial&primaryTextTransform=none&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=macos&secondaryIconColor=%23FFFFFF&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://www.apple.com/macos/)
+[![Linux](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=+&secondaryLabel=Linux&primaryBGColor=%23dba80f&primaryTextColor=%23FFFFFF&secondaryBGColor=%23ffc107&secondaryTextColor=%23FFFFFF&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2.5&primaryFontFamily=Arial&primaryTextTransform=none&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=linux&secondaryIconColor=%23FFFFFF&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://www.linux.org/)
 
 Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan video hxcodec dari mod Psych 0.6.3 dan 0.7.3.
 
-[Bergabunglah dengan Discord!!](https://discord.gg/EBvUWcMdqV)
+[![Discord](https://forthebadge.com/api/badges/generate?panels=2&primaryLabel=Join+to+the+&secondaryLabel=Discord&primaryBGColor=%23689bb1&primaryTextColor=%23ffffff&secondaryBGColor=%235665ed&secondaryTextColor=%23ffffff&primaryFontSize=12&primaryFontWeight=700&primaryLetterSpacing=2&primaryFontFamily=Arial&primaryTextTransform=capitalize&secondaryFontSize=12&secondaryFontWeight=700&secondaryLetterSpacing=2&secondaryFontFamily=Arial&secondaryTextTransform=none&secondaryIcon=discord&secondaryIconColor=%23ffffff&secondaryIconSize=16&secondaryIconPosition=left&scale=0.7&borderRadius=10)](https://discord.gg/EBvUWcMdqV)
 
 </div>
 
-## Kontributor
+### Kontributor Psych - Plus Engine secara umum:
 
-<p align="center">
-  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
-  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
-  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
-</p>
+<a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine&max=10" />
+  Dan 100+ lainnya...
+</a>
 
-## Ucapan Terima Kasih Khusus
-
-<p align="center">
-  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
-  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
-</p>
+Dibuat dengan (contrib.rocks)[https://contrib.rocks/].
 
 Kontribusi sangat diharapkan! Jika Anda memiliki ide, perbaikan, atau pembaruan, silakan fork repositori ini dan buka pull request.
 
@@ -133,7 +130,7 @@ Anda memerlukan:
 * Dukungan untuk level NotITG (tanpa modifikasi) dan Stepmania, termasuk antarmuka pengguna (UI)
 ![Stepmania](docs/img/Stepmania.png)
 - Dukungan Android
-- Ditambahkan sprite "miss"" dan "kombo rusak"
+- Ditambahkan sprite "miss" dan "kombo rusak"
 - Ditambahkan opsi "buruk" dan "jancok" untuk memecah kombo
 - Fungsi VideoSprite baru dengan hxvlc yang dioptimalkan
 - Kompatibilitas shader baru tergantung pada kartu grafis Anda

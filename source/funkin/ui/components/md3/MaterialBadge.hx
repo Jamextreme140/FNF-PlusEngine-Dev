@@ -33,10 +33,6 @@ class MaterialBadge extends FlxSpriteGroup
 	static inline var LABEL_SIZE:Int = 11;
 	static inline var MAX_COUNT:Int = 999;
 
-	// Colors (MD3)
-	static inline var BADGE_COLOR:FlxColor = 0xFFB3261E; // Error color
-	static inline var LABEL_COLOR:FlxColor = 0xFFFFFFFF;
-
 	public function new(x:Float = 0, y:Float = 0, ?count:Int = -1)
 	{
 		super(x, y);
@@ -46,7 +42,7 @@ class MaterialBadge extends FlxSpriteGroup
 		add(background);
 
 		labelText = new FlxText(0, 0, 0, "", LABEL_SIZE);
-		labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, LABEL_COLOR, CENTER);
+		labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.onError, CENTER);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		add(labelText);
 
@@ -79,6 +75,7 @@ class MaterialBadge extends FlxSpriteGroup
 			var displayStr = count > MAX_COUNT ? (MAX_COUNT + "+") : Std.string(count);
 			labelText.text = displayStr;
 			labelText.visible = true;
+			labelText.color = MD3Theme.onError;
 
 			var textW = Std.int(labelText.width);
 			var badgeW = Std.int(Math.max(BADGE_HEIGHT, textW + BADGE_PADDING_H * 2));

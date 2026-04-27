@@ -31,24 +31,16 @@ class MaterialMenu extends FlxSpriteGroup
 	var stateLayerIndex:Int = -1;
 	var hoveredLayer:FlxSprite;
 
-	// Dimensions (MD3 specs)
+	// Dimensions
 	public var menuWidth:Float = 200;
-	static inline var ITEM_HEIGHT:Int = 48;
-	static inline var CORNER_RADIUS:Int = 4;
-	static inline var PADDING_HORIZONTAL:Int = 12;
-	static inline var LABEL_SIZE:Int = 14;
-
-	// Colors (MD3)
-	static inline var SURFACE_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var SURFACE_TINT:FlxColor = 0xFFECE6F0;
-	static inline var TEXT_COLOR:FlxColor = 0xFF1C1B1F;
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-	static inline var DISABLED_COLOR:FlxColor = 0x611C1B1F;
-	static inline var SHADOW_COLOR:FlxColor = 0x33000000;
 
 	// Animation
 	var openTween:FlxTween;
+
+	inline function itemHeight():Int return MD3Metrics.size(52);
+	inline function menuRadius():Int return MD3Metrics.corner(8, menuWidth, itemHeight());
+	inline function horizontalPadding():Int return MD3Metrics.size(16);
+	inline function itemLabelSize():Int return MD3Metrics.text(15);
 
 	public function new(x:Float = 0, y:Float = 0, items:Array<String>, ?width:Float = 200, ?onSelect:Int->String->Void = null)
 	{
@@ -58,49 +50,51 @@ class MaterialMenu extends FlxSpriteGroup
 		this.menuWidth = width;
 		this.onSelect = onSelect;
 
-		var totalHeight = items.length * ITEM_HEIGHT;
+		var totalHeight = items.length * itemHeight();
 
 		// Shadow / elevation simulation (offset darker rect)
 		var shadow = new FlxSprite(2, 4);
-		shadow.makeGraphic(Std.int(menuWidth), totalHeight, SHADOW_COLOR);
-		drawRoundedRect(shadow, Std.int(menuWidth), totalHeight, CORNER_RADIUS);
+		shadow.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(shadow, Std.int(menuWidth), totalHeight, menuRadius(), MD3Theme.shadowColor());
 		add(shadow);
 
 		// Panel
 		panel = new FlxSprite(0, 0);
-		panel.makeGraphic(Std.int(menuWidth), totalHeight, SURFACE_TINT);
-		drawRoundedRect(panel, Std.int(menuWidth), totalHeight, CORNER_RADIUS);
+		panel.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(panel, Std.int(menuWidth), totalHeight, menuRadius());
+		panel.color = MD3Theme.surfaceContainerHigh;
 		add(panel);
 
 		// Hover state layer (single reused sprite)
 		hoveredLayer = new FlxSprite(0, 0);
-		hoveredLayer.makeGraphic(Std.int(menuWidth), ITEM_HEIGHT, FlxColor.TRANSPARENT);
-		hoveredLayer.color = HOVER_OVERLAY;
+		hoveredLayer.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(hoveredLayer, Std.int(menuWidth), itemHeight(), MD3Metrics.corner(6, menuWidth, itemHeight()));
+		hoveredLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		hoveredLayer.alpha = 0;
 		add(hoveredLayer);
 
 		// Items
 		for (i in 0...items.length)
 		{
-			var itemY = i * ITEM_HEIGHT;
+			var itemY = i * itemHeight();
 
 			var container = new FlxSprite(0, itemY);
-			container.makeGraphic(Std.int(menuWidth), ITEM_HEIGHT, FlxColor.TRANSPARENT);
+			container.makeGraphic(Std.int(menuWidth), itemHeight(), FlxColor.TRANSPARENT);
 			itemContainers.push(container);
 			add(container);
 
-			var label = new FlxText(PADDING_HORIZONTAL, itemY, menuWidth - PADDING_HORIZONTAL * 2, items[i], LABEL_SIZE);
-			label.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, TEXT_COLOR, LEFT);
+			var label = new FlxText(horizontalPadding(), itemY, menuWidth - horizontalPadding() * 2, items[i], itemLabelSize());
+			label.setFormat(Paths.font("inter.otf"), itemLabelSize(), MD3Theme.onSurface, LEFT);
 			label.antialiasing = ClientPrefs.data.antialiasing;
-			label.y = itemY + (ITEM_HEIGHT - label.height) / 2;
+			label.y = itemY + (itemHeight() - label.height) / 2;
 			itemLabels.push(label);
 			add(label);
 
 			// Divider between items (not after last)
 			if (i < items.length - 1)
 			{
-				var divider = new FlxSprite(PADDING_HORIZONTAL, itemY + ITEM_HEIGHT - 1);
-				divider.makeGraphic(Std.int(menuWidth - PADDING_HORIZONTAL * 2), 1, 0xFFCAC4D0);
+				var divider = new FlxSprite(horizontalPadding(), itemY + itemHeight() - 1);
+				divider.makeGraphic(Std.int(menuWidth - horizontalPadding() * 2), 1, MD3Theme.outlineVariant);
 				dividers.push(divider);
 				add(divider);
 			}
@@ -109,43 +103,17 @@ class MaterialMenu extends FlxSpriteGroup
 		// Start hidden
 		visible = false;
 		alpha = 0;
+		MD3Theme.addListener(_onThemeChange);
 	}
 
-	function drawRoundedRect(sprite:FlxSprite, width:Int, height:Int, radius:Int):Void
+	function _onThemeChange():Void
 	{
-		var graphics = sprite.pixels;
-		graphics.fillRect(graphics.rect, FlxColor.TRANSPARENT);
-
-		for (py in 0...height)
-		{
-			for (px in 0...width)
-			{
-				var inRect = true;
-				if (px < radius && py < radius)
-				{
-					var dx = radius - px; var dy = radius - py;
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px >= width - radius && py < radius)
-				{
-					var dx = px - (width - radius); var dy = radius - py;
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px < radius && py >= height - radius)
-				{
-					var dx = radius - px; var dy = py - (height - radius);
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px >= width - radius && py >= height - radius)
-				{
-					var dx = px - (width - radius); var dy = py - (height - radius);
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-
-				if (inRect)
-					graphics.setPixel32(px, py, 0xFFFFFFFF);
-			}
-		}
+		if (panel != null) panel.color = MD3Theme.surfaceContainerHigh;
+		if (hoveredLayer != null) hoveredLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
+		for (label in itemLabels)
+			if (label != null) label.color = MD3Theme.onSurface;
+		for (divider in dividers)
+			if (divider != null) divider.color = MD3Theme.outlineVariant;
 	}
 
 	public function open():Void
@@ -185,18 +153,18 @@ class MaterialMenu extends FlxSpriteGroup
 
 		#if FLX_MOUSE
 		var mousePos = FlxG.mouse.getScreenPosition();
-		var totalHeight = items.length * ITEM_HEIGHT;
+		var totalHeight = items.length * itemHeight();
 		var isOverMenu = mousePos.x >= x && mousePos.x <= x + menuWidth && mousePos.y >= y && mousePos.y <= y + totalHeight;
 
 		if (isOverMenu)
 		{
 			var relY = mousePos.y - y;
-			var hovIndex = Std.int(relY / ITEM_HEIGHT);
+			var hovIndex = Std.int(relY / itemHeight());
 
 			// Update hover highlight position
 			if (hovIndex >= 0 && hovIndex < items.length)
 			{
-				hoveredLayer.y = y + hovIndex * ITEM_HEIGHT;
+				hoveredLayer.y = hovIndex * itemHeight();
 				hoveredLayer.alpha = 1;
 
 				if (FlxG.mouse.justReleased && onSelect != null)
@@ -219,6 +187,7 @@ class MaterialMenu extends FlxSpriteGroup
 
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		if (openTween != null) openTween.cancel();
 		super.destroy();
 	}

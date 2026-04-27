@@ -14,4 +14,7 @@ class SchmovinDrunk extends Modifier {
 
 	override public function shouldRun(params:ModifierParameters):Bool
 		return true;
+
+	override public function allowOnStraightHolds():Bool
+		return false;
 }

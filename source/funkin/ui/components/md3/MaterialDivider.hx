@@ -12,8 +12,10 @@ import flixel.util.FlxColor;
  */
 class MaterialDivider extends FlxSprite
 {
-	// Colors (MD3)
-	static inline var DIVIDER_COLOR:FlxColor = 0xFFCAC4D0;
+	var dividerLength:Int = 0;
+	var isVertical:Bool = false;
+	var dividerInsetStart:Float = 0;
+	var dividerInsetEnd:Float = 0;
 
 	/**
 	 * @param x          Position X.
@@ -26,27 +28,39 @@ class MaterialDivider extends FlxSprite
 	public function new(x:Float = 0, y:Float = 0, length:Float = 240, ?vertical:Bool = false, ?insetStart:Float = 0, ?insetEnd:Float = 0)
 	{
 		super(x, y);
+		dividerLength = Std.int(length);
+		isVertical = vertical;
+		dividerInsetStart = insetStart;
+		dividerInsetEnd = insetEnd;
+		antialiasing = false;
+		rebuild();
+		MD3Theme.addListener(rebuild);
+	}
 
-		var totalLength = Std.int(length);
-		var insetedLength = Std.int(length - insetStart - insetEnd);
+	function rebuild():Void
+	{
+		var insetedLength = Std.int(dividerLength - dividerInsetStart - dividerInsetEnd);
 		if (insetedLength < 1) insetedLength = 1;
 
-		if (!vertical)
+		if (!isVertical)
 		{
-			// Horizontal divider — 1px tall
-			makeGraphic(totalLength, 1, FlxColor.TRANSPARENT, true);
-			for (px in Std.int(insetStart)...Std.int(insetStart + insetedLength))
-				pixels.setPixel32(px, 0, DIVIDER_COLOR);
+			makeGraphic(dividerLength, 1, FlxColor.TRANSPARENT, true);
+			for (px in Std.int(dividerInsetStart)...Std.int(dividerInsetStart + insetedLength))
+				pixels.setPixel32(px, 0, MD3Theme.dividerColor());
 		}
 		else
 		{
-			// Vertical divider — 1px wide
-			makeGraphic(1, totalLength, FlxColor.TRANSPARENT, true);
-			for (py in Std.int(insetStart)...Std.int(insetStart + insetedLength))
-				pixels.setPixel32(0, py, DIVIDER_COLOR);
+			makeGraphic(1, dividerLength, FlxColor.TRANSPARENT, true);
+			for (py in Std.int(dividerInsetStart)...Std.int(dividerInsetStart + insetedLength))
+				pixels.setPixel32(0, py, MD3Theme.dividerColor());
 		}
 
 		dirty = true;
-		antialiasing = false; // hairline lines should never be anti-aliased
+	}
+
+	override function destroy():Void
+	{
+		MD3Theme.removeListener(rebuild);
+		super.destroy();
 	}
 }

@@ -3,6 +3,11 @@ package funkin.data.stage;
 import openfl.utils.Assets;
 import haxe.Json;
 import funkin.data.song.Song;
+
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 import funkin.modding.scripting.psychlua.ModchartSprite;
 
 typedef StageFile = {
@@ -79,13 +84,23 @@ class StageData {
 		try
 		{
 			var path:String = Paths.getPath('stages/' + stage + '.json', TEXT, null, true);
+			
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
 			if(FileSystem.exists(path))
-				return cast tjson.TJSON.parse(File.getContent(path));
-			#else
-			if(Assets.exists(path))
-				return cast tjson.TJSON.parse(Assets.getText(path));
+				jsonContent = File.getContent(path);
 			#end
+			
+			if(jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if(jsonContent != null)
+				return cast tjson.TJSON.parse(jsonContent);
+		}
+		catch(e:Dynamic)
+		{
+			trace('Error loading stage $stage: $e');
 		}
 		return dummy();
 	}

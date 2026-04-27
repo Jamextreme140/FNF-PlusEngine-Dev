@@ -4,6 +4,11 @@ import lime.app.Future;
 import sys.thread.FixedThreadPool;
 import haxe.Json;
 import lime.utils.Assets;
+
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 import openfl.display.BitmapData;
 import openfl.utils.AssetType;
 import openfl.utils.Assets as OpenFlAssets;
@@ -15,6 +20,8 @@ import flash.media.Sound;
 
 import funkin.data.song.Song;
 import funkin.data.stage.StageData;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator.WavyProgressType;
 
 import sys.thread.Mutex;
 
@@ -66,11 +73,14 @@ class LoadingState extends MusicBeatState
 	var dontUpdate:Bool = false;
 
 	var barGroup:FlxSpriteGroup;
+	var barBack:FlxSprite;
 	var bar:FlxSprite;
+	var wavyBar:MaterialWavyProgressIndicator;
 	var barWidth:Int = 0;
 	var intendedPercent:Float = 0;
 	var curPercent:Float = 0;
 	var stateChangeDelay:Float = 0;
+	static inline var LOADING_WAVY_SCALE_Y:Float = 1.35;
 
 	#if PSYCH_WATERMARKS
 	var logo:FlxSprite;
@@ -91,13 +101,46 @@ class LoadingState extends MusicBeatState
 	#if HSCRIPT_ALLOWED
 	var hscript:HScript;
 	#end
+
+	inline function isWavyTimeBarEnabled():Bool
+	{
+		return ClientPrefs.data.useWavyTimeBar;
+	}
+
+	inline function withAlpha(color:FlxColor, alpha:Float):FlxColor
+	{
+		return (Std.int(FlxMath.bound(alpha, 0, 1) * 255) << 24) | (color & 0x00FFFFFF);
+	}
+
+	function syncLoadingBarVisual():Void
+	{
+		var useWavyTimeBar = isWavyTimeBarEnabled();
+
+		if (barBack != null)
+			barBack.visible = !useWavyTimeBar;
+		if (bar != null)
+			bar.visible = !useWavyTimeBar;
+
+		if (wavyBar == null || bar == null || barBack == null)
+			return;
+
+		wavyBar.visible = useWavyTimeBar;
+		wavyBar.x = bar.x;
+		var wavyHeight = wavyBar.getIndicatorHeight() * LOADING_WAVY_SCALE_Y;
+		wavyBar.y = bar.y + Math.max(0, (bar.height - wavyHeight) * 0.5);
+		wavyBar.scale.set(1, LOADING_WAVY_SCALE_Y);
+		wavyBar.setWaveColor(bar.color);
+		wavyBar.setTrackColor(withAlpha(barBack.color, 0.85));
+		wavyBar.value = curPercent;
+	}
+
 	override function create()
 	{
 		persistentUpdate = true;
 		barGroup = new FlxSpriteGroup();
 		add(barGroup);
 
-		var barBack:FlxSprite = new FlxSprite(0, 660).makeGraphic(1, 1, FlxColor.BLACK);
+		barBack = new FlxSprite(0, 660).makeGraphic(1, 1, FlxColor.BLACK);
 		barBack.scale.set(FlxG.width - 300, 25);
 		barBack.updateHitbox();
 		barBack.screenCenter(X);
@@ -109,8 +152,17 @@ class LoadingState extends MusicBeatState
 		barGroup.add(bar);
 		barWidth = Std.int(barBack.width - 10);
 
+		wavyBar = new MaterialWavyProgressIndicator(bar.x, bar.y, LINEAR, barWidth);
+		wavyBar.scrollFactor.set();
+		wavyBar.setWaveColor(bar.color);
+		wavyBar.setTrackColor(withAlpha(barBack.color, 0.85));
+		wavyBar.value = 0;
+		barGroup.add(wavyBar);
+		syncLoadingBarVisual();
+		barGroup.visible = isIntrusive;
+
 		#if HSCRIPT_ALLOWED
-		if(Mods.currentModDirectory != null && Mods.currentModDirectory.trim().length > 0)
+		if(isIntrusive && Mods.currentModDirectory != null && Mods.currentModDirectory.trim().length > 0)
 		{
 			var scriptPath:String = 'mods/${Mods.currentModDirectory}/data/LoadingScreen.hx'; //mods/My-Mod/data/LoadingScreen.hx
 			if(FileSystem.exists(scriptPath))
@@ -146,61 +198,65 @@ class LoadingState extends MusicBeatState
 		}
 		#end
 
-		#if PSYCH_WATERMARKS // PSYCH LOADING SCREEN
-		var bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.setGraphicSize(Std.int(FlxG.width));
-		bg.color = 0xFFD16FFF;
-		bg.updateHitbox();
-		addBehindBar(bg);
+		if (isIntrusive)
+		{
+			#if PSYCH_WATERMARKS // PSYCH LOADING SCREEN
+			var bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
+			bg.antialiasing = ClientPrefs.data.antialiasing;
+			bg.setGraphicSize(Std.int(FlxG.width));
+			bg.color = 0xFFD16FFF;
+			bg.updateHitbox();
+			addBehindBar(bg);
 	
-		loadingText = new FlxText(520, 600, 0, Language.getPhrase('now_loading', 'Now Loading', ['...']), 32);
-		loadingText.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, LEFT, OUTLINE_FAST, FlxColor.BLACK);
-		loadingText.borderSize = 2;
-		addBehindBar(loadingText);
+			loadingText = new FlxText(520, 600, 0, Language.getPhrase('now_loading', 'Now Loading', ['...']), 32);
+			loadingText.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, LEFT, OUTLINE_FAST, FlxColor.BLACK);
+			loadingText.borderSize = 2;
+			addBehindBar(loadingText);
 	
-		logo = new FlxSprite(0, 0).loadGraphic(Paths.image('loading_screen/icon'));
-		logo.antialiasing = ClientPrefs.data.antialiasing;
-		logo.scale.set(0.75, 0.75);
-		logo.updateHitbox();
-		logo.screenCenter();
-		logo.x -= 50;
-		logo.y -= 40;
-		addBehindBar(logo);
+			logo = new FlxSprite(0, 0).loadGraphic(Paths.image('loading_screen/icon'));
+			logo.antialiasing = ClientPrefs.data.antialiasing;
+			logo.scale.set(0.75, 0.75);
+			logo.updateHitbox();
+			logo.screenCenter();
+			logo.x -= 50;
+			logo.y -= 40;
+			addBehindBar(logo);
 
-		#else // BASE GAME LOADING SCREEN
-		var bg = new FlxSprite().makeGraphic(1, 1, 0xFFCAFF4D);
-		bg.scale.set(FlxG.width, FlxG.height);
-		bg.updateHitbox();
-		bg.screenCenter();
-		addBehindBar(bg);
+			#else // BASE GAME LOADING SCREEN
+			var bg = new FlxSprite().makeGraphic(1, 1, 0xFFCAFF4D);
+			bg.scale.set(FlxG.width, FlxG.height);
+			bg.updateHitbox();
+			bg.screenCenter();
+			addBehindBar(bg);
 
-		funkay = new FlxSprite(0, 0).loadGraphic(Paths.image('funkay'));
-		funkay.antialiasing = ClientPrefs.data.antialiasing;
-		funkay.setGraphicSize(0, FlxG.height);
-		funkay.updateHitbox();
-		addBehindBar(funkay);
-		#end
-		
-		// Timeout warning message
-		#if mobile
-		timeoutWarningMobile = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
-		timeoutWarningMobile.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		timeoutWarningMobile.borderSize = 2;
-		timeoutWarningMobile.visible = false;
-		add(timeoutWarningMobile);
-		#else
-		timeoutWarning = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
-		timeoutWarning.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		timeoutWarning.borderSize = 2;
-		timeoutWarning.visible = false;
-		add(timeoutWarning);
-		#end
-		
-		// Añadir touchpad para Android
-		addTouchPad('NONE', 'B');
+			funkay = new FlxSprite(0, 0).loadGraphic(Paths.image('funkay'));
+			funkay.antialiasing = ClientPrefs.data.antialiasing;
+			funkay.setGraphicSize(0, FlxG.height);
+			funkay.updateHitbox();
+			addBehindBar(funkay);
+			#end
+			
+			// Timeout warning message
+			#if mobile
+			timeoutWarningMobile = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
+			timeoutWarningMobile.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			timeoutWarningMobile.borderSize = 2;
+			timeoutWarningMobile.visible = false;
+			add(timeoutWarningMobile);
+			#else
+			timeoutWarning = new FlxText(0, FlxG.height - 100, FlxG.width, "", 24);
+			timeoutWarning.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.RED, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			timeoutWarning.borderSize = 2;
+			timeoutWarning.visible = false;
+			add(timeoutWarning);
+			#end
+			
+			// Add touchpad only on visible loading screens
+			addTouchPad('NONE', 'B');
+		}
 		
 		super.create();
+		GlobalLoadingOverlay.showPersistent();
 
 		if (stateChangeDelay <= 0 && checkLoaded())
 		{
@@ -221,7 +277,7 @@ class LoadingState extends MusicBeatState
 		if (dontUpdate) return;
 		
 		// Timeout system - incrementar el temporizador
-		if (!transitioning && !finishedLoading)
+		if (isIntrusive && !transitioning && !finishedLoading)
 		{
 			loadingTimer += elapsed;
 			
@@ -288,6 +344,8 @@ class LoadingState extends MusicBeatState
 			bar.scale.x = barWidth * curPercent;
 			bar.updateHitbox();
 		}
+
+		syncLoadingBarVisual();
 		
 		#if HSCRIPT_ALLOWED
 		if(hscript != null)
@@ -446,23 +504,11 @@ class LoadingState extends MusicBeatState
 		LoadingState.isIntrusive = intrusive;
 		_startPool();
 		loadNextDirectory();
-
-		if(intrusive)
-			return new LoadingState(target, stopMusic);
 		
-		if (stopMusic && FlxG.sound.music != null)
+		if (!intrusive && stopMusic && FlxG.sound.music != null)
 			FlxG.sound.music.stop();
 
-		while(true)
-		{
-			if(checkLoaded())
-			{
-				_loaded();
-				break;
-			}
-			else Sys.sleep(0.001);
-		}
-		return target;
+		return new LoadingState(target, stopMusic);
 	}
 
 	static var imagesToPrepare:Array<String> = [];
@@ -547,13 +593,17 @@ class LoadingState extends MusicBeatState
 				var path:String = Paths.json('$folder/preload');
 				var json:Dynamic = null;
 
+				// Try loading from mods first, then from APK
 				#if MODS_ALLOWED
 				var moddyFile:String = Paths.modsJson('$folder/preload');
-				if (FileSystem.exists(moddyFile)) json = Json.parse(File.getContent(moddyFile));
-				else json = Json.parse(File.getContent(path));
-				#else
-				json = Json.parse(Assets.getText(path));
+				if (FileSystem.exists(moddyFile))
+					json = Json.parse(File.getContent(moddyFile));
+				else if (FileSystem.exists(path))
+					json = Json.parse(File.getContent(path));
 				#end
+				
+				if (json == null && Assets.exists(path))
+					json = Json.parse(Assets.getText(path));
 
 				if(json != null)
 				{
@@ -787,19 +837,30 @@ class LoadingState extends MusicBeatState
 		try
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
-			var character:Dynamic = Json.parse(File.getContent(path));
-			#else
-			var character:Dynamic = Json.parse(Assets.getText(path));
+			if(FileSystem.exists(path))
+				jsonContent = File.getContent(path);
 			#end
+			
+			if(jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if(jsonContent == null)
+			{
+				trace('Character file not found: $path');
+				return;
+			}
+			
+			var character:Dynamic = Json.parse(jsonContent);
 
 			var isAnimateAtlas:Bool = false;
 			var img:String = character.image;
 			img = img.trim();
 			#if flxanimate
-			var animToFind:String = Paths.getPath('images/$img/Animation.json', TEXT);
-			if (#if MODS_ALLOWED FileSystem.exists(animToFind) || #end Assets.exists(animToFind))
-				isAnimateAtlas = true;
+			isAnimateAtlas = Paths.hasAnimateAtlas(img);
 			#end
 
 			if(!isAnimateAtlas)
@@ -813,17 +874,10 @@ class LoadingState extends MusicBeatState
 			#if flxanimate
 			else
 			{
-				for (i in 0...10)
+				for (pageKey in Paths.getAnimateAtlasPageKeys(img))
 				{
-					var st:String = '$i';
-					if(i == 0) st = '';
-	
-					if(Paths.fileExists('images/$img/spritemap$st.png', IMAGE))
-					{
-						//trace('found Sprite PNG');
-						imagesToPrepare.push('$img/spritemap$st');
-						break;
-					}
+					if (!imagesToPrepare.contains(pageKey))
+						imagesToPrepare.push(pageKey);
 				}
 			}
 			#end

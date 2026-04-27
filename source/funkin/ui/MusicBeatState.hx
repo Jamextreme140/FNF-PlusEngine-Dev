@@ -1,7 +1,5 @@
 package funkin.ui;
 
-import flixel.FlxState;
-import funkin.graphics.PsychCamera;
 import funkin.ui.debug.TraceDisplay;
 
 #if LUA_ALLOWED
@@ -21,17 +19,20 @@ import funkin.modding.scripting.psychlua.LuaUtils;
 import sys.FileSystem;
 #end
 
-class MusicBeatState extends FlxState
+// Script layer on top of BaseMusicBeatState.
+// Adds GlobalScript, per-state HScript/Lua infrastructure and beat callbacks.
+//
+// Hierarchy:
+//   BaseMusicBeatState (camera, beat, mobile, stages)
+//   └── MusicBeatState  (this file — + script hooks)
+//       ├── TitleState / PlayState / etc.
+//       └── CustomState
+
+class MusicBeatState extends BaseMusicBeatState
 {
-	public var curSection:Int = 0;
-	private var stepsToDo:Int = 0;
+	public static inline function stateScriptOverridesEnabled():Bool
+		return ClientPrefs.data.useScriptableCustomStates;
 
-	public var curStep:Int = 0;
-	public var curBeat:Int = 0;
-
-	public var curDecStep:Float = 0;
-	public var curDecBeat:Float = 0;
-	
 	// Global scripts system
 	#if LUA_ALLOWED
 	public static var globalLuaScript:FunkinLua = null;
@@ -60,7 +61,18 @@ class MusicBeatState extends FlxState
 	public var scriptsAllowed:Bool = true;
 	public var scriptName:String = null;
 
-	// Optional constructor used by ModState to pass script configuration
+	// Companion script — loaded automatically alongside any hardcoded state.
+	// Path: scripts/states/{ClassName}.hx (or .lua), searched in mod → global mods → assets/shared.
+	// Scripts use  onCreate / onCreatePost / onUpdate / onUpdatePost / onDestroy
+	// and beat/step/section callbacks — same pattern as ALE-Psych's scriptCallbackCall.
+	#if HSCRIPT_ALLOWED
+	public var companionScript:HScript = null;
+	#end
+	#if LUA_ALLOWED
+	public var companionLuaScript:FunkinLua = null;
+	#end
+
+	// Optional constructor used by CustomState to pass script configuration
 	public function new(?scriptsAllowed:Bool = false, ?scriptName:String = null)
 	{
 		super();
@@ -68,132 +80,9 @@ class MusicBeatState extends FlxState
 		this.scriptName = scriptName;
 	}
 	
-	public var controls(get, never):Controls;
-	private function get_controls()
-	{
-		return Controls.instance;
-	}
 
-	public var touchPad:TouchPad;
-	public var touchPadCam:FlxCamera;
-	public var mobileControls:IMobileControls;
-	public var mobileControlsCam:FlxCamera;
 
-	public function addTouchPad(DPad:String, Action:String)
-	{
-		touchPad = new TouchPad(DPad, Action);
-		add(touchPad);
-	}
 
-	public function removeTouchPad()
-	{
-		if (touchPad != null)
-		{
-			remove(touchPad);
-			touchPad = FlxDestroyUtil.destroy(touchPad);
-		}
-
-		if(touchPadCam != null)
-		{
-			FlxG.cameras.remove(touchPadCam);
-			touchPadCam = FlxDestroyUtil.destroy(touchPadCam);
-		}
-	}
-
-	public function addMobileControls(defaultDrawTarget:Bool = false):Void
-	{
-		var extraMode = MobileData.extraActions.get(ClientPrefs.data.extraButtons);
-		
-		// Fallback to NONE if extraMode is null
-		if (extraMode == null)
-			extraMode = NONE;
-
-		switch (MobileData.mode)
-		{
-			case 0: // RIGHT_FULL
-				mobileControls = new TouchPad('RIGHT_FULL', 'NONE', extraMode);
-			case 1: // LEFT_FULL
-				mobileControls = new TouchPad('LEFT_FULL', 'NONE', extraMode);
-			case 2: // CUSTOM
-				mobileControls = MobileData.getTouchPadCustom(new TouchPad('RIGHT_FULL', 'NONE', extraMode));
-			case 3: // HITBOX
-				mobileControls = new Hitbox(extraMode);
-			case 4: // HITBOX_ARROWS
-				mobileControls = new Hitbox(NONE, true);
-		}
-
-		// Ensure instance is set before using it
-		if (mobileControls != null && mobileControls.instance != null)
-		{
-			mobileControls.instance = MobileData.setButtonsColors(mobileControls.instance);
-			mobileControlsCam = new FlxCamera();
-			mobileControlsCam.bgColor.alpha = 0;
-			FlxG.cameras.add(mobileControlsCam, defaultDrawTarget);
-
-			mobileControls.instance.cameras = [mobileControlsCam];
-			mobileControls.instance.visible = false;
-			add(mobileControls.instance);
-		}
-		else
-		{
-			trace('Warning: Failed to create mobile controls! extraButtons: ${ClientPrefs.data.extraButtons}, mode: ${MobileData.mode}');
-		}
-	}
-
-	public function removeMobileControls()
-	{
-		if (mobileControls != null)
-		{
-			remove(mobileControls.instance);
-			mobileControls.instance = FlxDestroyUtil.destroy(mobileControls.instance);
-			mobileControls = null;
-		}
-
-		if (mobileControlsCam != null)
-		{
-			FlxG.cameras.remove(mobileControlsCam);
-			mobileControlsCam = FlxDestroyUtil.destroy(mobileControlsCam);
-		}
-	}
-
-	public function addTouchPadCamera(defaultDrawTarget:Bool = false):Void
-	{
-		if (touchPad != null)
-		{
-			touchPadCam = new FlxCamera();
-			touchPadCam.bgColor.alpha = 0;
-			FlxG.cameras.add(touchPadCam, defaultDrawTarget);
-			touchPad.cameras = [touchPadCam];
-		}
-	}
-
-	override function destroy()
-	{
-		removeTouchPad();
-		removeMobileControls();
-		
-		// TraceDisplay cleanup if this is the last instance
-		if(traceDisplay != null) {
-			// Only destroy if there are no other active states
-			// In practice, TraceDisplay should persist across states
-		}
-		
-		super.destroy();
-	}
-
-	var _psychCameraInitialized:Bool = false;
-
-	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
-	public var videoHandlers:Map<String, Dynamic> = new Map<String, Dynamic>(); // Separar videos de variables normales
-
-	public static var traceDisplay:TraceDisplay;
-	
-	// Helper functions for PlayState mod scripts (simple system)
-	public static function getVariables()
-		return getState().variables;
-		
-	public static function getVideoHandlers()
-		return getState().videoHandlers;
 
 	override function create() {
 		var skip:Bool = FlxTransitionableState.skipNextTransOut;
@@ -226,18 +115,20 @@ class MusicBeatState extends FlxState
 		}
 		FlxTransitionableState.skipNextTransOut = false;
 		timePassedOnState = 0;
+
+		// Auto-load companion script for this specific state class.
+		// Skipped for ScriptableState/CustomState (they handle their own scripts),
+		// and when running inside them as sub-instances.
+		#if (HSCRIPT_ALLOWED && sys)
+		var isScriptDriven:Bool = (this is funkin.modding.ScriptableState) || (this is funkin.modding.CustomState);
+		if (!isScriptDriven && stateScriptOverridesEnabled())
+			_loadCompanionScript();
+		#end
+
+		callOnCompanionScript('onCreate');
 	}
 
-	public function initPsychCamera():PsychCamera
-	{
-		var camera = new PsychCamera();
-		FlxG.cameras.reset(camera);
-		FlxG.cameras.setDefaultDrawTarget(camera, true);
-		_psychCameraInitialized = true;
-		//trace('initialized psych camera ' + Sys.cpuTime());
-		return camera;
-	}
-
+	public static var traceDisplay:TraceDisplay;
 	public static var timePassedOnState:Float = 0;
 	override function update(elapsed:Float)
 	{
@@ -263,6 +154,7 @@ class MusicBeatState extends FlxState
 		}
 
 		if(FlxG.save.data != null) FlxG.save.data.fullscreen = funkin.util.WindowMode.borderlessFullscreen;
+		funkin.util.MemoryManager.update(elapsed);
 		
 		// Screenshot support with F5
 		#if desktop
@@ -276,60 +168,17 @@ class MusicBeatState extends FlxState
 		callOnGlobalScript('onUpdate', [elapsed]);
 		// Call MusicBeatState-specific script
 		callOnMusicBeatStateScript('onUpdate', [elapsed]);
+		// Call companion script pre-update
+		callOnCompanionScript('onUpdate', [elapsed]);
 		
 		stagesFunc(function(stage:BaseStage) {
 			stage.update(elapsed);
 		});
 
 		super.update(elapsed);
-	}
 
-	private function updateSection():Void
-	{
-		if(stepsToDo < 1) stepsToDo = Math.round(getBeatsOnSection() * 4);
-		while(curStep >= stepsToDo)
-		{
-			curSection++;
-			var beats:Float = getBeatsOnSection();
-			stepsToDo += Math.round(beats * 4);
-			sectionHit();
-		}
-	}
-
-	private function rollbackSection():Void
-	{
-		if(curStep < 0) return;
-
-		var lastSection:Int = curSection;
-		curSection = 0;
-		stepsToDo = 0;
-		for (i in 0...PlayState.SONG.notes.length)
-		{
-			if (PlayState.SONG.notes[i] != null)
-			{
-				stepsToDo += Math.round(getBeatsOnSection() * 4);
-				if(stepsToDo > curStep) break;
-				
-				curSection++;
-			}
-		}
-
-		if(curSection > lastSection) sectionHit();
-	}
-
-	private function updateBeat():Void
-	{
-		curBeat = Math.floor(curStep / 4);
-		curDecBeat = curDecStep/4;
-	}
-
-	private function updateCurStep():Void
-	{
-		var lastChange = Conductor.getBPMFromSeconds(Conductor.songPosition);
-
-		var shit = ((Conductor.songPosition - ClientPrefs.data.noteOffset) - lastChange.songTime) / lastChange.stepCrochet;
-		curDecStep = lastChange.stepTime + shit;
-		curStep = lastChange.stepTime + Math.floor(shit);
+		// Companion post-update (fires after all logic)
+		callOnCompanionScript('onUpdatePost', [elapsed]);
 	}
 
 	public static function switchState(nextState:FlxState = null) {
@@ -339,6 +188,13 @@ class MusicBeatState extends FlxState
 			resetState();
 			return;
 		}
+
+		// Check if a mod script overrides this state before switching.
+		// Only applies on sys targets with mods and HScript support (not mobile).
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys && !mobile)
+		var scriptOverride = funkin.modding.ScriptableState.tryOverride(nextState);
+		if (scriptOverride != null) nextState = scriptOverride;
+		#end
 
 		// Call scripts before switching - they can stop the default transition
 		var globalResult = callOnGlobalScript('onSwitchState', [Type.getClassName(Type.getClass(nextState))]);
@@ -364,13 +220,30 @@ class MusicBeatState extends FlxState
 		// If scripts stopped the transition, they handle it themselves
 		if(globalResult == LuaUtils.Function_Stop || stateResult == LuaUtils.Function_Stop) {
 			// Script is handling the transition, just reset without custom transition
-			FlxG.resetState();
+			FlxG.switchState(_makeCurrentStateReset());
 			return;
 		}
 		
-		if(FlxTransitionableState.skipNextTransIn) FlxG.resetState();
+		if(FlxTransitionableState.skipNextTransIn) FlxG.switchState(_makeCurrentStateReset());
 		else startTransition();
 		FlxTransitionableState.skipNextTransIn = false;
+	}
+
+	/**
+	 * Returns a lambda that creates a fresh instance of the current state.
+	 * Handles ScriptableState properly (FlxG.resetState breaks it because
+	 * ScriptableState requires a constructor argument).
+	 */
+	static function _makeCurrentStateReset():()->flixel.FlxState {
+		#if (HSCRIPT_ALLOWED && sys)
+		var cs = FlxG.state;
+		if (cs is funkin.modding.ScriptableState) {
+			var name:String = (cast cs : funkin.modding.ScriptableState).stateName;
+			return () -> new funkin.modding.ScriptableState(name);
+		}
+		#end
+		var cls = Type.getClass(FlxG.state);
+		return () -> Type.createInstance(cls, []);
 	}
 
 	// Custom made Trans in
@@ -378,6 +251,7 @@ class MusicBeatState extends FlxState
 	{
 		if(nextState == null)
 			nextState = FlxG.state;
+		GlobalLoadingOverlay.showPersistent();
 
 		// Call scripts when transition starts - if they return Function_Stop, they handle their own transition
 		var isReset:Bool = (nextState == FlxG.state);
@@ -386,91 +260,230 @@ class MusicBeatState extends FlxState
 		
 		// If scripts stopped it, they're handling the transition themselves
 		if(globalResult == LuaUtils.Function_Stop || stateResult == LuaUtils.Function_Stop) {
-			// Script handles the transition, just switch/reset directly
 			if(isReset)
-				FlxG.resetState();
+				FlxG.switchState(_makeCurrentStateReset());
 			else
 				FlxG.switchState(nextState);
 			return;
 		}
 		
 		FlxG.state.openSubState(new CustomFadeTransition(0.7, false));
-		if(nextState == FlxG.state)
-			CustomFadeTransition.finishCallback = function() FlxG.resetState();
-		else
+		if(nextState == FlxG.state) {
+			var resetFn = _makeCurrentStateReset();
+			CustomFadeTransition.finishCallback = function() FlxG.switchState(resetFn);
+		} else {
 			CustomFadeTransition.finishCallback = function() FlxG.switchState(nextState);
+		}
 	}
 
 	public static function getState():MusicBeatState {
-		return cast (FlxG.state, MusicBeatState);
+		return cast(FlxG.state, MusicBeatState);
 	}
 
-	// Get current substate if any
-	public function getSubstate():flixel.FlxSubState {
-		return subState;
-	}
+	// Bridge static methods — Haxe does not inherit static fields,
+	// so these delegate to the definitions in BaseMusicBeatState.
+	public static function getVariables():Map<String, Dynamic>
+		return BaseMusicBeatState.getVariables();
 
-	public function stepHit():Void
+	public static function getVideoHandlers():Map<String, Dynamic>
+		return BaseMusicBeatState.getVideoHandlers();
+
+	override public function stepHit():Void
 	{
-		// Call global scripts first
 		callOnGlobalScript('onStepHit', [curStep]);
-		// Call MusicBeatState-specific script
 		callOnMusicBeatStateScript('onStepHit', [curStep]);
-		
-		stagesFunc(function(stage:BaseStage) {
-			stage.curStep = curStep;
-			stage.curDecStep = curDecStep;
-			stage.stepHit();
-		});
-
-		if (curStep % 4 == 0)
-			beatHit();
+		callOnCompanionScript('onStepHit', [curStep]);
+		super.stepHit();
+		callOnCompanionScript('onStepHitPost', [curStep]);
 	}
 
-	public var stages:Array<BaseStage> = [];
-	public function beatHit():Void
+	override public function beatHit():Void
 	{
-		// Call global scripts first
 		callOnGlobalScript('onBeatHit', [curBeat]);
-		// Call MusicBeatState-specific script
 		callOnMusicBeatStateScript('onBeatHit', [curBeat]);
-		
-		//trace('Beat: ' + curBeat);
-		stagesFunc(function(stage:BaseStage) {
-			stage.curBeat = curBeat;
-			stage.curDecBeat = curDecBeat;
-			stage.beatHit();
-		});
+		callOnCompanionScript('onBeatHit', [curBeat]);
+		super.beatHit();
+		callOnCompanionScript('onBeatHitPost', [curBeat]);
 	}
 
-	public function sectionHit():Void
+	override public function sectionHit():Void
 	{
-		// Call global scripts first
 		callOnGlobalScript('onSectionHit', [curSection]);
-		// Call MusicBeatState-specific script
 		callOnMusicBeatStateScript('onSectionHit', [curSection]);
-		
-		//trace('Section: ' + curSection + ', Beat: ' + curBeat + ', Step: ' + curStep);
-		stagesFunc(function(stage:BaseStage) {
-			stage.curSection = curSection;
-			stage.sectionHit();
-		});
+		callOnCompanionScript('onSectionHit', [curSection]);
+		super.sectionHit();
+		callOnCompanionScript('onSectionHitPost', [curSection]);
 	}
 
-	function stagesFunc(func:BaseStage->Void)
+	override function destroy():Void
 	{
-		for (stage in stages)
-			if(stage != null && stage.exists && stage.active)
-				func(stage);
+		callOnCompanionScript('onDestroy');
+
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			companionScript.destroy();
+			companionScript = null;
+		}
+		#end
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			companionLuaScript.stop();
+			companionLuaScript = null;
+		}
+		#end
+
+		super.destroy();
 	}
 
-	function getBeatsOnSection()
+	// ─── Companion script helpers ──────────────────────────────────────────────
+
+	#if (HSCRIPT_ALLOWED && sys)
+	/**
+	 * Loads the companion script for the current state class.
+	 * Search order: active mod → global mods → assets/shared.
+	 * File: scripts/states/{ClassName}.hx (and .lua if LUA_ALLOWED).
+	 */
+	function _loadCompanionScript():Void
 	{
-		var val:Null<Float> = 4;
-		if(PlayState.SONG != null && PlayState.SONG.notes[curSection] != null) val = PlayState.SONG.notes[curSection].sectionBeats;
-		return val == null ? 4 : val;
+		// Get simple class name from the fully-qualified one
+		var fullName:String = Type.getClassName(Type.getClass(this));
+		var parts = fullName.split('.');
+		var clsName:String = parts[parts.length - 1];
+		var rel:String = 'scripts/states/$clsName.hx';
+
+		var path:String = null;
+
+		#if MODS_ALLOWED
+		// modFolders checks currentModDirectory then global mods in priority order
+		var modded:String = Paths.modFolders(rel);
+		if (FileSystem.exists(modded)) path = modded;
+		#end
+
+		if (path == null)
+		{
+			var shared:String = Paths.getSharedPath(rel);
+			if (FileSystem.exists(shared)) path = shared;
+		}
+
+		#if LUA_ALLOWED
+		// Also check for a Lua companion
+		var luaRel:String = 'scripts/states/$clsName.lua';
+		var luaPath:String = null;
+		#if MODS_ALLOWED
+		var moddedLua:String = Paths.modFolders(luaRel);
+		if (FileSystem.exists(moddedLua)) luaPath = moddedLua;
+		#end
+		if (luaPath == null)
+		{
+			var sharedLua:String = Paths.getSharedPath(luaRel);
+			if (FileSystem.exists(sharedLua)) luaPath = sharedLua;
+		}
+		if (luaPath != null)
+		{
+			try { companionLuaScript = new FunkinLua(luaPath); }
+			catch(e:Dynamic) { trace('[CompanionScript] Lua error in $luaPath: $e'); }
+		}
+		#end
+
+		if (path == null) return;
+
+		try
+		{
+			companionScript = new HScript(null, path);
+
+			// Expose useful variables — 'game' points to the actual hardcoded state
+			companionScript.set('game',         this);
+			companionScript.set('add',          this.add);
+			companionScript.set('remove',       this.remove);
+			companionScript.set('insert',       this.insert);
+			companionScript.set('openSubState', this.openSubState);
+
+			// Shared/static var helpers (same API as CustomState)
+			companionScript.set('setSharedVar', function(n:String, v:Dynamic) {
+				MusicBeatState.globalVariables.set(n, v);
+				variables.set(n, v);
+				return v;
+			});
+			companionScript.set('getSharedVar', function(n:String, ?def:Dynamic = null):Dynamic {
+				if (MusicBeatState.globalVariables.exists(n)) return MusicBeatState.globalVariables.get(n);
+				if (variables.exists(n)) return variables.get(n);
+				return def;
+			});
+			companionScript.set('setStaticVar', function(n:String, v:Dynamic) {
+				MusicBeatState.staticVariables.set(n, v); return v;
+			});
+			companionScript.set('getStaticVar', function(n:String, ?def:Dynamic = null):Dynamic
+				return MusicBeatState.staticVariables.exists(n) ? MusicBeatState.staticVariables.get(n) : def);
+
+			trace('[CompanionScript] Loaded for state "$clsName": $path');
+		}
+		catch(e:crowplexus.hscript.Expr.Error)
+		{
+			var msg = crowplexus.hscript.Printer.errorToString(e, false);
+			trace('[CompanionScript] HScript error in $path:\n$msg');
+			if (funkin.ui.debug.TraceDisplay.instance != null)
+				funkin.ui.debug.TraceDisplay.addHScriptError(msg, path);
+		}
+		catch(e:Dynamic)
+		{
+			trace('[CompanionScript] Failed to load $path: $e');
+		}
 	}
-	
+	#end
+
+	/**
+	 * Calls a callback on the companion script(s).
+	 * On HScript: tries `onXxx` then bare `xxx` (CustomState convention).
+	 * On Lua: calls the function directly.
+	 */
+	public function callOnCompanionScript(funcName:String, args:Array<Dynamic> = null):Dynamic
+	{
+		if (args == null) args = [];
+		var ret:Dynamic = LuaUtils.Function_Continue;
+		if (!MusicBeatState.stateScriptOverridesEnabled()) return ret;
+
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			var v = companionLuaScript.call(funcName, args);
+			if (v != null && v != LuaUtils.Function_Continue) ret = v;
+		}
+		#end
+
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			try
+			{
+				// Try bare name first (onCreate), then try without 'on' prefix as fallback
+				var fn:String = companionScript.exists(funcName) ? funcName : null;
+				if (fn == null && funcName.startsWith('on'))
+				{
+					var bare = funcName.charAt(2).toLowerCase() + funcName.substr(3);
+					if (companionScript.exists(bare)) fn = bare;
+				}
+				if (fn != null)
+				{
+					var callValue = companionScript.call(fn, args);
+					if (callValue != null && callValue.returnValue != null && callValue.returnValue != LuaUtils.Function_Continue)
+						ret = callValue.returnValue;
+				}
+			}
+			catch(e:Dynamic)
+			{
+				trace('[CompanionScript] Error calling $funcName: $e');
+				@:privateAccess
+				var fileName = companionScript.origin != null ? companionScript.origin : "CompanionScript";
+				funkin.ui.debug.TraceDisplay.addHScriptError('Runtime error in $funcName: $e', fileName);
+			}
+		}
+		#end
+
+		return ret;
+	}
+
 	// Global Script Management
 	public static function clearAllSharedVars():Void
 	{
@@ -664,7 +677,7 @@ class MusicBeatState extends FlxState
 				globalScript.execute();
 				trace('GlobalScript: Script parsed and executed successfully');
 				
-				// Call onCreate if it exists (like PlayState and ModState do)
+				// Call onCreate if it exists (like PlayState and CustomState do)
 				try {
 					if (globalScript.exists('onCreate')) {
 						globalScript.call('onCreate');

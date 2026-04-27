@@ -4,6 +4,8 @@ typedef UIStyleData = {
 	var bgColor:FlxColor;
 	var textColor:FlxColor;
 	var bgAlpha:Float;
+	@:optional var strokeColor:FlxColor;
+	@:optional var radius:Float;
 }
 
 class PsychUIBox extends FlxSpriteGroup
@@ -40,15 +42,17 @@ class PsychUIBox extends FlxSpriteGroup
 	public var canMinimize(default, set):Bool = true;
 	public var isMinimized(default, set):Bool = false;
 	public var minimizeOnFocusLost:Bool = false;
+	public var useDynamicTheme:Bool = true;
+
+	var _themeSignature:String = null;
 
 	public function new(x:Float, y:Float, width:Int, height:Int, tabs:Array<String> = null)
 	{
 		super(x, y);
 		
-		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
-		bg.color = FlxColor.BLACK;
-		bg.alpha = 0.6;
+		bg = new FlxSprite();
 		add(bg);
+		applyThemeDefaults();
 
 		if(tabs != null)
 		{
@@ -77,6 +81,7 @@ class PsychUIBox extends FlxSpriteGroup
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		refreshTheme();
 
 		_lastClick += elapsed;
 		if(!FlxG.mouse.released && _draggingBox && canMove)
@@ -112,9 +117,7 @@ class PsychUIBox extends FlxSpriteGroup
 			{
 				if(FlxG.mouse.overlaps(tab, camera))
 				{
-					tab.color = hoverStyle.bgColor;
-					tab.alpha = hoverStyle.bgAlpha;
-					tab.text.color = hoverStyle.textColor;
+					tab.applyStyle(hoverStyle);
 	
 					if(FlxG.mouse.justPressed)
 						_pressedBox = true;
@@ -151,9 +154,7 @@ class PsychUIBox extends FlxSpriteGroup
 				}
 				
 				var style:UIStyleData = (selectedTab == tab) ? selectedStyle : unselectedStyle;
-				tab.color = style.bgColor;
-				tab.alpha = style.bgAlpha;
-				tab.text.color = style.textColor;
+				tab.applyStyle(style);
 			}
 		}
 
@@ -212,9 +213,27 @@ class PsychUIBox extends FlxSpriteGroup
 	}
 
 	public var tabHeight:Int = 20;
+	public var minTabHeight:Int = 20;
+	public var minTabWidth:Int = 72;
+	var _originalWidth:Int = 0;
 	public function updateTabs()
 	{
+		if (tabs.length < 1)
+			return;
+
+		var targetWidth:Int = getResolvedWidth(_originalWidth);
+		if (Std.int(bg.width) != targetWidth)
+		{
+			_originalWidth = targetWidth;
+			redrawBackground(_originalWidth, Std.int(Math.max(1, bg.height)));
+		}
+
 		var wid:Int = Std.int(bg.width / tabs.length);
+		var computedHeight:Int = minTabHeight;
+		for (tab in tabs)
+			computedHeight = Std.int(Math.max(computedHeight, tab.recommendedHeight(wid, minTabHeight)));
+
+		tabHeight = computedHeight;
 		for (num => tab in tabs)
 		{
 			tab.x = x + wid * num;
@@ -226,10 +245,58 @@ class PsychUIBox extends FlxSpriteGroup
 	var _originalHeight:Int = 0;
 	public function resize(width:Int, height:Int)
 	{
+		_originalWidth = getResolvedWidth(width);
 		_originalHeight = height;
-		bg.setGraphicSize(width, height);
-		bg.updateHitbox();
+		redrawBackground(_originalWidth, height);
 		updateTabs();
+	}
+
+	public function resizeBackground(width:Int, height:Int):Void
+	{
+		redrawBackground(width, height);
+	}
+
+	function applyThemeDefaults():Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		selectedStyle = PsychUISkin.tabSelectedStyle();
+		hoverStyle = PsychUISkin.tabHoverStyle();
+		unselectedStyle = PsychUISkin.tabIdleStyle();
+		_themeSignature = PsychUISkin.signature();
+	}
+
+	function refreshTheme(force:Bool = false):Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		var signature:String = PsychUISkin.signature();
+		if (force || _themeSignature != signature)
+		{
+			applyThemeDefaults();
+			redrawBackground(Std.int(bg.width), _originalHeight);
+			for (tab in tabs)
+			{
+				var style:UIStyleData = (selectedTab == tab) ? selectedStyle : unselectedStyle;
+				tab.applyStyle(style);
+			}
+			forceCheckNext = true;
+		}
+	}
+
+	function redrawBackground(width:Int, height:Int):Void
+	{
+		PsychUISkin.drawStyledRect(bg, width, height, PsychUISkin.panelStyle());
+	}
+
+	inline function getResolvedWidth(width:Int):Int
+	{
+		if (tabs == null || tabs.length < 1)
+			return width;
+
+		return Std.int(Math.max(width, tabs.length * minTabWidth));
 	}
 
 	private function set_selectedTab(v:PsychUITab)
@@ -287,17 +354,9 @@ class PsychUIBox extends FlxSpriteGroup
 
 	function set_isMinimized(v:Bool)
 	{
-		if(!v)
-		{
-			bg.scale.y = _originalHeight;
-			bg.updateHitbox();
-		}
-		else
-		{
-			bg.scale.y = tabHeight + 20;
-			bg.updateHitbox();
-			selectedTab = null;
-		}
+		var targetHeight:Int = v ? Std.int(Math.max(tabHeight + 4, minTabHeight + 4)) : _originalHeight;
+		redrawBackground(_originalWidth, targetHeight);
+		forceCheckNext = true;
 		return (isMinimized = v);
 	}
 }

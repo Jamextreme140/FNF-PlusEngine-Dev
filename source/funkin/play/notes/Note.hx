@@ -3,6 +3,7 @@ package funkin.play.notes;
 import funkin.graphics.animation.PsychAnimationController;
 import funkin.data.notestyle.NoteTypesConfig;
 
+import funkin.graphics.shaders.ColorSwap;
 import funkin.graphics.shaders.RGBPalette;
 import funkin.graphics.shaders.RGBPalette.RGBShaderReference;
 
@@ -90,6 +91,7 @@ class Note extends FlxSprite
 
 	public var rgbShader:RGBShaderReference;
 	public static var globalRgbShaders:Array<RGBPalette> = [];
+	public var colorSwap:ColorSwap;
 	public var inEditor:Bool = false;
 
 	public var animSuffix:String = '';
@@ -102,13 +104,14 @@ class Note extends FlxSprite
 	public static var swagWidth:Float = 160 * 0.7;
 	public static var colArray:Array<String> = ['purple', 'blue', 'green', 'red'];
 	public static var defaultNoteSkin(default, never):String = 'noteSkins/NOTE_assets';
+	public static var legacyNoteSkin(default, never):String = 'noteSkins/NOTE_assets-legacy';
 
 	public var noteSplashData:NoteSplashData = {
 		disabled: false,
 		texture: null,
 		antialiasing: !PlayState.isPixelStage,
 		useGlobalShader: false,
-		useRGBShader: (PlayState.SONG != null) ? !(PlayState.SONG.disableNoteRGB == true) : true,
+		useRGBShader: (PlayState.SONG != null) ? !(PlayState.SONG.disableNoteRGB == true) && ClientPrefs.data.noteRGB : ClientPrefs.data.noteRGB,
 		r: -1,
 		g: -1,
 		b: -1,
@@ -224,9 +227,76 @@ class Note extends FlxSprite
 		}
 	}
 
+	function getLegacyHSV():Array<Float>
+	{
+		var index:Int = noteData % ClientPrefs.data.arrowHSV.length;
+		if (index < 0) index += ClientPrefs.data.arrowHSV.length;
+		return ClientPrefs.data.arrowHSV[index];
+	}
+
+	public function refreshLegacyColorSwap():Void
+	{
+		if (colorSwap == null) return;
+
+		var values:Array<Float> = getLegacyHSV();
+		colorSwap.hue = values[0] / 360;
+		colorSwap.saturation = values[1] / 100;
+		colorSwap.brightness = values[2] / 100;
+	}
+
+	function canUseRGBShader():Bool
+	{
+		return ClientPrefs.data.noteRGB && (PlayState.SONG == null || !PlayState.SONG.disableNoteRGB);
+	}
+
+	function canUseLegacyColorSwap():Bool
+	{
+		return !ClientPrefs.data.noteRGB && !ClientPrefs.data.colorQuantization && (PlayState.SONG == null || !PlayState.SONG.disableNoteRGB);
+	}
+
+	public function refreshColorMode(?skinName:String):Void
+	{
+		var resolvedSkin:String = skinName != null ? skinName : texture;
+		var skinLower:String = resolvedSkin != null ? resolvedSkin.toLowerCase() : '';
+		var isSpecialSkin:Bool = skinLower.contains('notitg');
+
+		if (rgbShader != null)
+		{
+			rgbShader.forceDisabled = isSpecialSkin || !canUseRGBShader();
+			rgbShader.enabled = !isSpecialSkin && canUseRGBShader();
+		}
+
+		if (isSpecialSkin)
+		{
+			shader = null;
+			return;
+		}
+
+		if (canUseLegacyColorSwap())
+		{
+			refreshLegacyColorSwap();
+			shader = colorSwap.shader;
+		}
+		else if (rgbShader != null && rgbShader.enabled)
+		{
+			shader = rgbShader.parent.shader;
+		}
+		else
+		{
+			shader = null;
+		}
+	}
+
 	private function set_noteType(value:String):String {
-		noteSplashData.texture = PlayState.SONG != null ? PlayState.SONG.splashSkin : 'noteSplashes/noteSplashes';
+		// Normalize SONG.splashSkin to a full atlas path so noteSplashData.texture is always valid.
+		// SONG.splashSkin may be a legacy short name (e.g. "noteSplashes") without folder.
+		var rawSkin:String = (PlayState.SONG != null && PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0)
+			? PlayState.SONG.splashSkin : null;
+		if (rawSkin != null && !rawSkin.contains('/'))
+			rawSkin = 'noteSplashes/$rawSkin';
+		noteSplashData.texture = rawSkin; // null = let spawnSplashNote use defaultNoteSplash + options postfix
 		defaultRGB();
+		refreshLegacyColorSwap();
 
 		if(noteData > -1 && noteType != value) {
 			switch(value) {
@@ -295,7 +365,9 @@ class Note extends FlxSprite
 		if(noteData > -1)
 		{
 			rgbShader = new RGBShaderReference(this, initializeGlobalRGBShader(noteData));
-			if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) rgbShader.enabled = false;
+			rgbShader.enabled = false;
+			colorSwap = new ColorSwap();
+			refreshLegacyColorSwap();
 			texture = '';
 
 			x += swagWidth * (noteData);
@@ -473,7 +545,7 @@ class Note extends FlxSprite
 			skin = PlayState.SONG != null ? PlayState.SONG.arrowSkin : null;
 			if(skin == null || skin.length < 1)
 			{
-				skin = defaultNoteSkin + postfix;
+				skin = getDefaultNoteSkin() + postfix;
 			}
 		}
 		else rgbShader.enabled = false;
@@ -485,11 +557,24 @@ class Note extends FlxSprite
 
 		var skinPixel:String = skin;
 		var lastScaleY:Float = scale.y;
-		var skinPostfix:String = getNoteSkinPostfix();
+		var skinPostfix:String = (skin == legacyNoteSkin && !ClientPrefs.data.noteRGB) ? '' : getNoteSkinPostfix();
+		var pixelSkinBase:String = skinPixel;
+		var pixelSkinPostfix:String = skinPostfix;
+		var activeNoteSkinPostfix:String = getNoteSkinPostfix();
+		if (skinPixel == legacyNoteSkin)
+		{
+			pixelSkinBase = defaultNoteSkin;
+			pixelSkinPostfix = '-legacy';
+		}
+		else if (activeNoteSkinPostfix.length > 0 && skinPixel.endsWith(activeNoteSkinPostfix))
+		{
+			pixelSkinBase = skinPixel.substr(0, skinPixel.length - activeNoteSkinPostfix.length);
+			pixelSkinPostfix = activeNoteSkinPostfix;
+		}
 		var customSkin:String = skin + skinPostfix;
-		// NotITG/Psych skins have no pixel variant - treat them as normal skins on any stage
+		// NotITG skins have no pixel variant - treat them as normal skins on any stage
 		var skinLower:String = skin.toLowerCase();
-		var isSpecialSkin:Bool = skinLower.contains('notitg') || skinLower.contains('psych');
+		var isSpecialSkin:Bool = skinLower.contains('notitg');
 		var path:String = (PlayState.isPixelStage && !isSpecialSkin) ? 'pixelUI/' : '';
 		if(customSkin == _lastValidChecked || Paths.fileExists('images/' + path + customSkin + '.png', IMAGE))
 		{
@@ -500,7 +585,11 @@ class Note extends FlxSprite
 
 		if(PlayState.isPixelStage && !isSpecialSkin) {
 			if(isSustainNote) {
-				var graphic = Paths.image('pixelUI/' + skinPixel + 'ENDS' + skinPostfix);
+				var sustainPath:String = 'pixelUI/' + pixelSkinBase + 'ENDS' + pixelSkinPostfix;
+				if (!Paths.fileExists('images/' + sustainPath + '.png', IMAGE))
+					sustainPath = 'pixelUI/NOTE_assetsENDS';
+
+				var graphic = Paths.image(sustainPath);
 				loadGraphic(graphic, true, Math.floor(graphic.width / 4), Math.floor(graphic.height / 2));
 				originalHeight = graphic.height / 2;
 			} else {
@@ -518,7 +607,7 @@ class Note extends FlxSprite
 				
 				// Reapply RGB shader for pixel sustain notes only if enabled
 				var skinLower = skin.toLowerCase();
-				if(rgbShader != null && rgbShader.enabled && !skinLower.contains('notitg') && !skinLower.contains('psych'))
+				if(rgbShader != null && rgbShader.enabled && !skinLower.contains('notitg'))
 					shader = rgbShader.parent.shader;
 			}
 		} else {
@@ -539,25 +628,10 @@ class Note extends FlxSprite
 		if(animName != null)
 			animation.play(animName, true);
 		
-		// Detect NotITG/Psych skins and keep RGB shader disabled for them.
+		// Detect NotITG skins and keep RGB shader disabled for them.
 		if(skin != null)
 		{
-			var skinLower = skin.toLowerCase();
-			if(skinLower.contains('notitg') || skinLower.contains('psych'))
-			{
-				if(rgbShader != null)
-				{
-					rgbShader.forceDisabled = true;
-					rgbShader.enabled = false;
-				}
-				shader = null;
-			}
-			else
-			{
-				// Re-enable shader for normal skins.
-				if(rgbShader != null)
-					rgbShader.forceDisabled = false;
-			}
+			refreshColorMode(skin);
 		}
 	}
 
@@ -567,6 +641,13 @@ class Note extends FlxSprite
 		if(ClientPrefs.data.noteSkin != ClientPrefs.defaultData.noteSkin)
 			skin = '-' + ClientPrefs.data.noteSkin.trim().toLowerCase().replace(' ', '_');
 		return skin;
+	}
+
+	public static function getDefaultNoteSkin():String
+	{
+		if (!ClientPrefs.data.noteRGB && Paths.fileExists('images/' + legacyNoteSkin + '.png', IMAGE))
+			return legacyNoteSkin;
+		return defaultNoteSkin;
 	}
 
 	function loadNoteAnims() {

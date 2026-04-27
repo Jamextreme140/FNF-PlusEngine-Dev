@@ -1,6 +1,7 @@
 package funkin.modding.modchart.engine.modifiers.list.psych_noteTween;
 
 import funkin.play.PlayState;
+import funkin.ui.debug.modcharting.ModchartEditorState;
 import funkin.play.notes.StrumNote;
 import funkin.modding.modchart.engine.modifiers.Modifier;
 import funkin.modding.modchart.backend.core.ModifierParameters;
@@ -39,6 +40,9 @@ class NoteTweenAngle extends Modifier {
 	
 	// Función helper para obtener el StrumNote específico
 	private function getStrumFromInfo(lane:Int, player:Int):StrumNote {
+		if (ModchartEditorState.instance != null)
+			return ModchartEditorState.instance.getModchartStrumFromInfo(lane, player);
+
 		if (PlayState.instance == null) return null;
 		
 		var group = player == 0 ? PlayState.instance.opponentStrums : PlayState.instance.playerStrums;

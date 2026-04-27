@@ -24,6 +24,7 @@
 
 package com.leninasto.plusengine
 
+import android.app.Activity
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -87,6 +88,8 @@ class FileManagerActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_INITIAL_PATH = "initial_path"
         const val EXTRA_START_LOCATION = "start_location"
+        const val EXTRA_SELECT_FILE = "select_file"
+        const val EXTRA_RESULT_PATH = "result_path"
         private const val REQUEST_STORAGE_PERMISSION = 1001
         private const val REQUEST_MANAGE_STORAGE = 1002
     }
@@ -105,6 +108,7 @@ class FileManagerActivity : AppCompatActivity() {
 
     private var fileList = mutableListOf<File?>()
     private var searchQuery = ""
+    private var selectFileMode = false
 
     private var clipboardFile: File? = null
     private var isCutOperation: Boolean = false
@@ -120,6 +124,8 @@ class FileManagerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         DynamicColors.applyToActivityIfAvailable(this)
         super.onCreate(savedInstanceState)
+
+        selectFileMode = intent.getBooleanExtra(EXTRA_SELECT_FILE, false)
 
         setupLanguage()
         buildUI()
@@ -396,9 +402,18 @@ class FileManagerActivity : AppCompatActivity() {
             goBack()
         } else if (f.isDirectory) {
             loadDirectory(f)
+        } else if (selectFileMode) {
+            returnSelectedFile(f)
         } else {
             openFile(f)
         }
+    }
+
+    private fun returnSelectedFile(file: File) {
+        setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(EXTRA_RESULT_PATH, file.absolutePath)
+        })
+        finish()
     }
 
     private fun loadDirectory(dir: File) {
@@ -411,7 +426,7 @@ class FileManagerActivity : AppCompatActivity() {
     private fun resolveInitialPath(): File {
         val startLoc = intent.getStringExtra(EXTRA_START_LOCATION)
         return when (startLoc) {
-            "mods" -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods").also { it.mkdirs() }
+            "mods" -> File(getExternalFilesDir(null), "mods").also { it.mkdirs() }
             "assets" -> File(getExternalFilesDir(null), "assets").also { it.mkdirs() }
             "saves" -> File(getExternalFilesDir(null), "saves").also { it.mkdirs() }
             else -> intent.getStringExtra(EXTRA_INITIAL_PATH)?.let { File(it) } ?: getExternalFilesDir(null)!!
@@ -420,7 +435,7 @@ class FileManagerActivity : AppCompatActivity() {
 
     private fun navigateTo(location: String) {
         val target = when(location) {
-            "mods" -> File(Environment.getExternalStorageDirectory(), ".PlusEngine/mods")
+            "mods" -> File(getExternalFilesDir(null), "mods")
             "assets" -> File(getExternalFilesDir(null), "assets")
             "saves" -> File(getExternalFilesDir(null), "saves")
             else -> getExternalFilesDir(null)!!

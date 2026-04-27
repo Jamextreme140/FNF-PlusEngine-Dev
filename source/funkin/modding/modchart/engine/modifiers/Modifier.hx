@@ -30,6 +30,9 @@ class Modifier {
 	public function shouldRun(params:ModifierParameters):Bool
 		return false;
 
+	public function allowOnStraightHolds():Bool
+		return true;
+
 	public inline function findID(name:String):Int {
 		@:privateAccess return pf.modifiers.percents.__hashKey(name.toLowerCase());
 	}

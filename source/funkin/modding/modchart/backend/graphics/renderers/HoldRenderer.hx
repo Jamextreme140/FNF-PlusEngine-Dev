@@ -21,6 +21,9 @@ private final class HoldSegment {
 
 final __matrix:Matrix = new Matrix();
 
+/** Reusable unit-up vector for OPTIMIZE_HOLDS path — avoids allocating `new Vector3(0,1,0)` per segment. */
+final __holdUnitUp:Vector3 = new Vector3(0, 1, 0);
+
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
 @:noDebug
@@ -28,7 +31,31 @@ final __matrix:Matrix = new Matrix();
 final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	private var __lastHoldSubs:Int = -1;
 
-	var _indices:NativeVector<Int>;
+	/** Debug: total getPath() calls in the last frame across all holds. */
+	public var dbgGetPathCalls:Int = 0;
+
+	var _indices:openfl.Vector<Int>;
+
+	// UVT cache: avoids re-computing identical UV data every frame for the same hold tile
+	var _uvtCacheKeys:Array<Dynamic> = [];
+	var _uvtCacheVals:Array<openfl.Vector<Float>> = [];
+	var _uvtCacheSubs:Int = -1;
+
+	inline private function _getCachedUVT(item:FlxSprite, subs:Int):openfl.Vector<Float> {
+		if (subs != _uvtCacheSubs) {
+			// Subdivision count changed (settings) — invalidate entire cache
+			_uvtCacheKeys = [];
+			_uvtCacheVals = [];
+			_uvtCacheSubs = subs;
+		}
+		final frame = item.frame;
+		final idx = _uvtCacheKeys.indexOf(frame);
+		if (idx >= 0) return _uvtCacheVals[idx];
+		final uvt:openfl.Vector<Float> = ModchartUtil.getHoldUVT(item, subs);
+		_uvtCacheKeys.push(frame);
+		_uvtCacheVals.push(uvt);
+		return uvt;
+	}
 
 	public function new(parent:PlayField) {
 		super(parent);
@@ -40,11 +67,24 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		if (__parentOutput == null || (__rotateX == 0 && __rotateY == 0 && __rotateZ == 0))
 			return pos;
 
-		var tailFactor = pos.subtract(__parentOutput.pos);
+		var tailFactor = pos.subtract(new Vector3(__parentOutput.rawX, __parentOutput.rawY, __parentOutput.rawZ));
 		tailFactor = ModchartUtil.rotate3DVector(tailFactor, __rotateX, __rotateY, __rotateZ);
-		var output = __parentOutput.pos.add(tailFactor);
-		output.z *= 0.001 * Config.Z_SCALE;
-		return view.transformVector(output, __parentOutput.pos);
+		return new Vector3(__parentOutput.rawX + tailFactor.x, __parentOutput.rawY + tailFactor.y, __parentOutput.rawZ + tailFactor.z);
+	}
+
+	/**
+	 * Measures the visible distance between two hold segments on screen.
+	 * Using the projected center avoids over-stretching the cap with strong scroll modifiers.
+	 */
+	@:noCompletion
+	inline private function getSegmentScreenLength(first:HoldSegmentOutput, second:HoldSegmentOutput):Float {
+		final startX = (first.left.x + first.right.x) * 0.5;
+		final startY = (first.left.y + first.right.y) * 0.5;
+		final endX = (second.left.x + second.right.x) * 0.5;
+		final endY = (second.left.y + second.right.y) * 0.5;
+		final deltaX = endX - startX;
+		final deltaY = endY - startY;
+		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
 	}
 
 	/**
@@ -76,16 +116,17 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		final size = hold.frame.frame.width * hold.scale.x * .5;
 
 		var origin:ModifierOutput = parent.modifiers.getPath(basePos.clone(), params);
-		var curPoint = origin.pos;
+		var curPoint = new Vector3(origin.pos.x, origin.pos.y, 0);
 		final depth = (origin.pos.z - 1) * 1000;
-		final zScale:Float = curPoint.z != 0 ? (1 / curPoint.z) : 1;
-		curPoint.z = 0;
+		final worldX = origin.rawX;
+		final worldY = origin.rawY;
+		final worldZ = origin.rawZ;
 
 		// before this, bc it fails with optimiz eholds too
 		var unit:Vector3;
 
 		if (Config.OPTIMIZE_HOLDS) {
-			unit = new Vector3(0, 1, 0);
+			unit = __holdUnitUp; // reuse static up-vector, no allocation
 		} else {
 			var next = parent.modifiers.getPath(basePos.clone(), params, 1, false, true);
 			next.pos.z = 0;
@@ -117,20 +158,14 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 				rotation.x = __matrix.__transformX(rotation.x, rotation.y);
 				rotation.y = __matrix.__transformY(rotation.x, rotation.y);
 			}
-			rotation.x = rotation.x * zScale * visuals.scaleX;
-			rotation.y = rotation.y * zScale * visuals.scaleY;
+			rotation.x = rotation.x * visuals.scaleX;
+			rotation.y = rotation.y * visuals.scaleY;
 
-			var view = new Vector3(rotation.x + curPoint.x, rotation.y + curPoint.y, rotation.z);
+			var view = new Vector3(rotation.x + worldX, rotation.y + worldY, worldZ + (rotation.z * 0.001 * Config.Z_SCALE));
 			view = __rotateTail(view);
-			// if (Config.CAMERA3D_ENABLED)
-			// 	view = parent.camera3D.applyViewTo(view);
-			view.z *= 0.001;
 
 			// The result of the perspective projection of rotation
-			var projection = view;
-
-			if (view.z != 0)
-				projection = this.view.transformVector(view);
+			var projection = this.view.transformVector(view);
 
 			quad.x = projection.x;
 			quad.y = projection.y;
@@ -152,13 +187,14 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	private var __rotateY:Float = 0;
 	private var __rotateZ:Float = 0;
 	private var __dizzy:Float = 0;
+	private var __straightHolds:Float = 0;
 	private var __parentOutput:ModifierOutput;
 	private var __centered2:Float = 0;
 	private var basePos:Vector3;
 
 	@:noCompletion
 	inline private function updateIndices(subdivisionCount:Int) {
-		_indices = new NativeVector<Int>(subdivisionCount * 6);
+		_indices = new openfl.Vector<Int>(subdivisionCount * 6, true);
 
 		for (subdivision in 0...subdivisionCount) {
 			var vertexPosition = subdivision * 4;
@@ -172,10 +208,10 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			_indices[indexCount + 5] = vertexPosition + 3;
 		}
 	}
-
 	var __lastLong:Float = 0;
 	var __lastC2:Float = 0;
 	var __lastDizzy:Float = 0;
+	var __lastStraightHolds:Float = 0;
 
 	var __lastRX:Float = 0;
 	var __lastRY:Float = 0;
@@ -184,7 +220,16 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	// YOU MOTHERFUCKER
 	var __lastPlayer:Int = -1;
 
+	/** Pre-allocated ArrowData buffer reused by getArrowParams() to avoid per-segment heap allocation. */
+	final _holdArrowBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, hitten: false, isTapArrow: false, straightHolds: false};
+	/** Pre-allocated ArrowData buffer for parentData (rotate path) to avoid per-hold heap allocation. */
+	final _parentDataBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, hitten: false, isTapArrow: false, straightHolds: false};
+
 	override public function prepare(item:FlxSprite):Null<DrawCommand> {
+		if (item == null || item.graphic == null || item.frame == null) {
+			return null;
+		}
+
 		if (item.alpha <= 0) {
 			return null;
 		}
@@ -194,7 +239,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 		final HOLD_SUBDIVISIONS = Adapter.instance.getHoldSubdivisions(item);
 
-		updateIndices(HOLD_SUBDIVISIONS);
+		// Only reallocate indices when subdivision count changes (global setting)
+		if (HOLD_SUBDIVISIONS != __lastHoldSubs)
+			updateIndices(HOLD_SUBDIVISIONS);
 
 		final player = Adapter.instance.getPlayerFromArrow(item);
 		final lane = Adapter.instance.getLaneFromArrow(item);
@@ -203,7 +250,8 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		basePos.x += Adapter.instance.getDefaultReceptorX(lane, player);
 		basePos.y += Adapter.instance.getDefaultReceptorY(lane, player);
 
-		var vertices = new NativeVector(8 * HOLD_SUBDIVISIONS);
+		// build directly as openfl.Vector to avoid conversion at render time
+		var vertices = new openfl.Vector<Float>(8 * HOLD_SUBDIVISIONS, true);
 		var transfTotal = new NativeVector<ColorTransform>(HOLD_SUBDIVISIONS);
 		var tID = 0;
 
@@ -218,31 +266,32 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		__long = canUseLast ? __lastLong : (__lastLong = parent.getPercent('longHolds', player) - parent.getPercent('shortHolds', player) + 1);
 		__centered2 = canUseLast ? __lastC2 : (__lastC2 = parent.getPercent('centered2', player));
 		__dizzy = canUseLast ? __lastDizzy : (__lastDizzy = parent.getPercent('dizzyHolds', player));
+		__straightHolds = canUseLast ? __lastStraightHolds : (__lastStraightHolds = parent.getPercent('straightHolds', player));
 
 		__rotateX = canUseLast ? __lastRX : (__lastRX = parent.getPercent('holdRotateX', player));
 		__rotateY = canUseLast ? __lastRY : (__lastRY = parent.getPercent('holdRotateY', player));
 		__rotateZ = canUseLast ? __lastRZ : (__lastRZ = parent.getPercent('holdRotateZ', player));
 
 		var parentTime = Adapter.instance.getHoldParentTime(item);
-		var parentData:ArrowData = {
-			hitTime: parentTime,
-			// this fixed the clipping gaps
-			distance: Math.max(0, parentTime - Adapter.instance.getSongPosition()),
-			lane: lane,
-			player: player,
-			hitten: Adapter.instance.arrowHit(item),
-			isTapArrow: true
-		};
+		_parentDataBuf.hitTime = parentTime;
+		// this fixed the clipping gaps
+		_parentDataBuf.distance = Math.max(0, parentTime - Adapter.instance.getSongPosition());
+		_parentDataBuf.sourceTime = parentTime;
+		_parentDataBuf.lane = lane;
+		_parentDataBuf.player = player;
+		_parentDataBuf.hitten = Adapter.instance.arrowHit(item);
+		_parentDataBuf.isTapArrow = true;
+		_parentDataBuf.straightHolds = __straightHolds > 0;
+		final parentData = _parentDataBuf;
 		if (__rotateX != 0 || __rotateY != 0 || __rotateZ != 0) {
 			__parentOutput = parent.modifiers.getPath(basePos.clone(), parentData);
-			__parentOutput.pos.z = (__parentOutput.pos.z - 1) * 1000;
 		}
 
 		var vertPointer = 0;
 
-		final isHoldEnd:Bool = Adapter.instance.isHoldEnd(item);
-		final holdHeight:Float = item.frame.frame.height * item.scale.y * Config.HOLD_END_SCALE;
-		final holdTimeInterval:Float = (Adapter.instance.getHoldLength(item) * ((isHoldEnd ? (Config.PREVENT_SCALED_HOLD_END ? 1 : 0.5) * Config.HOLD_END_SCALE : 1))) / HOLD_SUBDIVISIONS;
+		final holdIsEnd:Bool = Adapter.instance.isHoldEnd(item);
+		final holdHeight:Float = item.width * Config.HOLD_END_SCALE;
+		final holdTimeInterval:Float = (Adapter.instance.getHoldLength(item) * (holdIsEnd ? Config.HOLD_END_SCALE : 1.0)) / HOLD_SUBDIVISIONS;
 		var timeScale:Float = 1;
 		var firstIteration:Bool = true;
 
@@ -261,18 +310,17 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			if (firstIteration) {
 				item._z = out1.depth;
 
-				if (isHoldEnd && Config.PREVENT_SCALED_HOLD_END) {
-					if (out1.clipped) {
-						final rawStart = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
-						final rawEnd = out2.clipped ? getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false) : out2;
+				if (holdIsEnd) {
+					var segmentLength = getSegmentScreenLength(out1, out2);
 
-						final rawLength = (rawEnd.origin - rawStart.origin).length;
-						if (rawLength > 0) {
-							timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
-							out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
-						}
-					} else {
-						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, (out2.origin - out1.origin).length);
+					if (out1.clipped || out2.clipped) {
+						final rawStartSegment = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
+						final rawEndSegment = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false);
+						segmentLength = getSegmentScreenLength(rawStartSegment, rawEndSegment);
+					}
+
+					if (segmentLength > 0) {
+						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / segmentLength;
 						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
 					}
 				}
@@ -322,7 +370,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			shader: item.shader,
 
 			vertices: vertices,
-			uvs: ModchartUtil.getHoldUVT(item, HOLD_SUBDIVISIONS),
+			uvs: _getCachedUVT(item, HOLD_SUBDIVISIONS),
 			indices: _indices,
 			colors: transfTotal,
 			isColored: hasC,
@@ -342,16 +390,17 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		final hitTime = Adapter.instance.getTimeFromArrow(arrow);
 
 		var pos = (hitTime - Adapter.instance.getSongPosition()) + posOff;
-
 		pos += timeC2;
 
-		return {
-			hitTime: hitTime + posOff + timeC2,
-			distance: pos,
-			lane: lane,
-			player: player,
-			hitten: Adapter.instance.arrowHit(arrow),
-			isTapArrow: true
-		};
+		// Reuse _holdArrowBuf to avoid a heap allocation per segment.
+		_holdArrowBuf.hitTime = hitTime + posOff + timeC2;
+		_holdArrowBuf.distance = pos;
+		_holdArrowBuf.sourceTime = Adapter.instance.getHoldParentTime(arrow);
+		_holdArrowBuf.lane = lane;
+		_holdArrowBuf.player = player;
+		_holdArrowBuf.hitten = Adapter.instance.arrowHit(arrow);
+		_holdArrowBuf.isTapArrow = true;
+		_holdArrowBuf.straightHolds = __straightHolds > 0;
+		return _holdArrowBuf;
 	}
 }

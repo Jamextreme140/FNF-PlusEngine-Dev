@@ -50,6 +50,7 @@ interface IAdapter {
 
 	// Options section
 	public function getHoldSubdivisions(item:FlxSprite):Int; // Hold resolution
+	public function setHoldSubdivisions(value:Int):Void;    // Set hold resolution (used by adaptive FPS logic)
 	public function getDownscroll():Bool; // Get if it is downscroll
 
 	/**

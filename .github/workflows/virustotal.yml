@@ -1,11 +1,6 @@
 name: VirusTotal Scan
 
 on:
-  # Triggers automatically when the Build workflow finishes on main/dev
-  workflow_run:
-    workflows: ["Build"]
-    types: [completed]
-    branches: [main, dev]
   # Also allows manual triggering (searches for the most recent Build artifacts)
   workflow_dispatch:
 

@@ -1,0 +1,8 @@
+{
+  "StoryMode": { "x": "default", "y": "default", "scale": 1, "FPS": "default" },
+  "Freeplay": { "x": "default", "y": "default", "scale": 1, "FPS": "default" },
+  "Mods": { "x": "default", "y": "default", "scale": 1, "FPS": "default" },
+  "Credits": { "x": "default", "y": "default", "scale": 1, "FPS": "default" },
+  "Settings": { "x": "default", "y": "default", "scale": 1, "FPS": "default" },
+  "Achievements": { "x": "default", "y": "default", "scale": 1, "FPS": "default" }
+}

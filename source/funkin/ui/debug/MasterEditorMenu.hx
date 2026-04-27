@@ -15,6 +15,7 @@ class MasterEditorMenu extends MusicBeatState
     // ← NUEVO: Array con las claves de traducción
     var optionKeys:Array<String> = [
         'chart_editor',
+		'modchart_editor',
         'character_editor', 
         'stage_editor',
         'week_editor',
@@ -22,7 +23,7 @@ class MasterEditorMenu extends MusicBeatState
         'dialogue_editor',
         'dialogue_portrait_editor',
         'note_splash_editor',
-        'hold_splash_editor'
+		'hold_splash_editor'
 	];
 	private var grpTexts:FlxTypedGroup<Alphabet>;
 	private var directories:Array<String> = [null];
@@ -92,6 +93,7 @@ class MasterEditorMenu extends MusicBeatState
     {
         options = [
             Language.getPhrase('chart_editor', 'Chart Editor'),
+			Language.getPhrase('modchart_editor', 'Modchart Editor'),
             Language.getPhrase('character_editor', 'Character Editor'),
             Language.getPhrase('stage_editor', 'Stage Editor'),
             Language.getPhrase('week_editor', 'Week Editor'),
@@ -99,7 +101,7 @@ class MasterEditorMenu extends MusicBeatState
             Language.getPhrase('dialogue_editor', 'Dialogue Editor'),
             Language.getPhrase('dialogue_portrait_editor', 'Dialogue Portrait Editor'),
             Language.getPhrase('note_splash_editor', 'Note Splash Editor'),
-            Language.getPhrase('hold_splash_editor', 'Hold Splash Editor')
+			Language.getPhrase('hold_splash_editor', 'Hold Splash Editor')
         ];
     }
 
@@ -137,21 +139,23 @@ class MasterEditorMenu extends MusicBeatState
             switch(curSelected) {
                 case 0: // Chart Editor
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.charting.ChartEditorState(), false);
-                case 1: // Character Editor
+                case 1: // Modchart Editor
+					LoadingState.loadAndSwitchState(new funkin.ui.debug.modcharting.ModchartEditorState(), false);
+                case 2: // Character Editor
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.character.CharacterEditorState(Character.DEFAULT_CHARACTER, false));
-                case 2: // Stage Editor
+                case 3: // Stage Editor
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.stage.StageEditorState());
-                case 3: // Week Editor
+                case 4: // Week Editor
 					MusicBeatState.switchState(new WeekEditorState());
-                case 4: // Menu Character Editor
+                case 5: // Menu Character Editor
 					MusicBeatState.switchState(new MenuCharacterEditorState());
-                case 5: // Dialogue Editor
+                case 6: // Dialogue Editor
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.dialogue.DialogueEditorState(), false);
-                case 6: // Dialogue Portrait Editor
+                case 7: // Dialogue Portrait Editor
 					LoadingState.loadAndSwitchState(new funkin.ui.debug.dialogue.DialogueCharacterEditorState(), false);
-                case 7: // Note Splash Editor
+                case 8: // Note Splash Editor
 					MusicBeatState.switchState(new NoteSplashEditorState());
-                case 8: // Hold Splash Editor
+                case 9: // Hold Splash Editor
 					MusicBeatState.switchState(new HoldSplashEditorState());
 			}
 			FlxG.sound.music.volume = 0;

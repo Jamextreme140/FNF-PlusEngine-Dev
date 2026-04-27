@@ -3,6 +3,11 @@ package funkin.ui;
 import openfl.utils.Assets;
 import haxe.Json;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 typedef MenuCharacterFile = {
 	var image:String;
 	var scale:Float;
@@ -63,11 +68,18 @@ class MenuCharacter extends FlxSprite
 				var charFile:MenuCharacterFile = null;
 				try
 				{
+					// Try loading from mods first, then from APK
+					var jsonContent:String = null;
 					#if MODS_ALLOWED
-					charFile = Json.parse(File.getContent(path));
-					#else
-					charFile = Json.parse(Assets.getText(path));
+					if(FileSystem.exists(path))
+						jsonContent = File.getContent(path);
 					#end
+					
+					if(jsonContent == null && Assets.exists(path))
+						jsonContent = Assets.getText(path);
+					
+					if(jsonContent != null)
+						charFile = Json.parse(jsonContent);
 				}
 				catch(e:Dynamic)
 				{

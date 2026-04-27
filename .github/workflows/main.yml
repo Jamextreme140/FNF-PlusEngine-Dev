@@ -1,58 +1,63 @@
-# ╔════════════════════════════════════════════════════════════════════╗
-# ║              FNF PlusEngine - Multi-Platform Builder              ║
-# ╚════════════════════════════════════════════════════════════════════╝
-#
-# 📦 Trigger builds by including keywords in your commit message
-#
-# ┌─────────────────────────────────────────────────────────────────┐
-# │ 🪟 WINDOWS BUILDS                                               │
-# ├─────────────────────────────────────────────────────────────────┤
-# │  ├── 'winall' or 'win'    → Build both 32-bit and 64-bit       │
-# │  ├── 'winx86' or 'win32'  → Build 32-bit only                  │
-# │  └── 'winx64' or 'win64'  → Build 64-bit only                  │
-# └─────────────────────────────────────────────────────────────────┘
-#
-# ┌─────────────────────────────────────────────────────────────────┐
-# │ 🍎 MAC BUILDS                                                   │
-# ├─────────────────────────────────────────────────────────────────┤
-# │  ├── 'macall' or 'mac'       → Build Intel and ARM             │
-# │  ├── 'macin' or 'macintel'   → Build Intel only                │
-# │  └── 'macar' or 'macarm'     → Build ARM (Apple Silicon) only  │
-# └─────────────────────────────────────────────────────────────────┘
-#
-# ┌─────────────────────────────────────────────────────────────────┐
-# │ 🐧📱 LINUX & MOBILE BUILDS                                      │
-# ├─────────────────────────────────────────────────────────────────┤
-# │  ├── 'linx' or 'linux'    → Build Linux 64-bit                 │
-# │  ├── 'andr' or 'android'  → Build Android APK                  │
-# │  └── 'ios'                → Build iOS (unsigned)               │
-# └─────────────────────────────────────────────────────────────────┘
-#
-# ┌─────────────────────────────────────────────────────────────────┐
-# │ 🌍 ALL PLATFORMS                                                │
-# ├─────────────────────────────────────────────────────────────────┤
-# │  └── 'all'  → Build everything (Win32, Win64, Mac Intel,       │
-# │               Mac ARM, Linux, Android, iOS)                     │
-# └─────────────────────────────────────────────────────────────────┘
-
 name: Build
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, optimized ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, optimized ]
   workflow_dispatch:
+    inputs:
+      build_windows:
+        description: 'Windows Build'
+        required: false
+        type: choice
+        default: 'none'
+        options:
+          - 'none'
+          - 'win32'
+          - 'win64'
+          - 'winall'
+
+      build_mac:
+        description: 'Mac Build'
+        required: false
+        type: choice
+        default: 'none'
+        options:
+          - 'none'
+          - 'macintel'
+          - 'macarm'
+          - 'macall'
+
+      build_linux:
+        description: 'Linux Build'
+        required: false
+        type: boolean
+        default: false
+
+      build_android:
+        description: 'Android Build'
+        required: false
+        type: boolean
+        default: false
+
+      build_ios:
+        description: 'iOS Build'
+        required: false
+        type: boolean
+        default: false
+
+      create_prerelease:
+        description: 'Create Pre-release'
+        required: false
+        type: boolean
+        default: false
 
 env:
   APP_VERSION: 4.0.0-${{ github.run_id }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ╔═══════════════════════════════════════════════════════════════════╗
-  # ║                       🧭 TARGET RESOLUTION                        ║
-  # ╚═══════════════════════════════════════════════════════════════════╝
-  # Decides what to build based on commit message (push) or PR title/body (pull_request)
   targets:
     runs-on: ubuntu-latest
 
@@ -64,6 +69,7 @@ jobs:
       linux: ${{ steps.set.outputs.linux }}
       android: ${{ steps.set.outputs.android }}
       ios: ${{ steps.set.outputs.ios }}
+      create_prerelease: ${{ steps.set.outputs.create_prerelease }}
 
     steps:
       - id: set
@@ -72,29 +78,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          TRIGGER_TEXT="${{ github.event.head_commit.message }}"
-          if [ -z "$TRIGGER_TEXT" ]; then
-            TRIGGER_TEXT="${{ github.event.pull_request.title }}"
-          fi
-          if [ -z "$TRIGGER_TEXT" ]; then
-            TRIGGER_TEXT="${{ github.event.pull_request.body }}"
-          fi
-
-          text=$(echo "$TRIGGER_TEXT" | tr '[:upper:]' '[:lower:]')
-          echo "Trigger text: $text"
-
-          has() {
-            case "$text" in
-              *"$1"*) return 0 ;;
-              *) return 1 ;;
-            esac
-          }
-
-          do_all=false
-          if has "all"; then
-            do_all=true
-          fi
-
           win32=false
           win64=false
           mac_intel=false
@@ -102,27 +85,98 @@ jobs:
           linux=false
           android=false
           ios=false
+          create_prerelease=false
 
-          if $do_all || has "winall" || has "win" || has "winx86" || has "win32"; then
-            win32=true
-          fi
-          if $do_all || has "winall" || has "win" || has "winx64" || has "win64"; then
-            win64=true
-          fi
-          if $do_all || has "macall" || has "mac" || has "macin" || has "macintel"; then
-            mac_intel=true
-          fi
-          if $do_all || has "macall" || has "mac" || has "macar" || has "macarm"; then
-            mac_arm=true
-          fi
-          if $do_all || has "linx" || has "linux"; then
-            linux=true
-          fi
-          if $do_all || has "andr" || has "android"; then
-            android=true
-          fi
-          if $do_all || has "ios"; then
-            ios=true
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual workflow_dispatch detected - using input selections"
+
+            case "${{ inputs.build_windows }}" in
+              "win32")
+                win32=true
+                ;;
+              "win64")
+                win64=true
+                ;;
+              "winall")
+                win32=true
+                win64=true
+                ;;
+            esac
+
+            case "${{ inputs.build_mac }}" in
+              "macintel")
+                mac_intel=true
+                ;;
+              "macarm")
+                mac_arm=true
+                ;;
+              "macall")
+                mac_intel=true
+                mac_arm=true
+                ;;
+            esac
+
+            if [ "${{ inputs.build_linux }}" = "true" ]; then
+              linux=true
+            fi
+
+            if [ "${{ inputs.build_android }}" = "true" ]; then
+              android=true
+            fi
+
+            if [ "${{ inputs.build_ios }}" = "true" ]; then
+              ios=true
+            fi
+
+            if [ "${{ inputs.create_prerelease }}" = "true" ]; then
+              create_prerelease=true
+            fi
+
+          else
+            TRIGGER_TEXT="${{ github.event.head_commit.message }}"
+            if [ -z "$TRIGGER_TEXT" ]; then
+              TRIGGER_TEXT="${{ github.event.pull_request.title }}"
+            fi
+            if [ -z "$TRIGGER_TEXT" ]; then
+              TRIGGER_TEXT="${{ github.event.pull_request.body }}"
+            fi
+
+            text=$(echo "$TRIGGER_TEXT" | tr '[:upper:]' '[:lower:]')
+            echo "Trigger text: $text"
+
+            has() {
+              case "$text" in
+                *"$1"*) return 0 ;;
+                *) return 1 ;;
+              esac
+            }
+
+            do_all=false
+            if has "all"; then
+              do_all=true
+            fi
+
+            if $do_all || has "winall" || has "win" || has "winx86" || has "win32"; then
+              win32=true
+            fi
+            if $do_all || has "winall" || has "win" || has "winx64" || has "win64"; then
+              win64=true
+            fi
+            if $do_all || has "macall" || has "mac" || has "macin" || has "macintel"; then
+              mac_intel=true
+            fi
+            if $do_all || has "macall" || has "mac" || has "macar" || has "macarm"; then
+              mac_arm=true
+            fi
+            if $do_all || has "linx" || has "linux"; then
+              linux=true
+            fi
+            if $do_all || has "andr" || has "android"; then
+              android=true
+            fi
+            if $do_all || has "ios"; then
+              ios=true
+            fi
           fi
 
           echo "win32=$win32" >> "$GITHUB_OUTPUT"
@@ -132,10 +186,7 @@ jobs:
           echo "linux=$linux" >> "$GITHUB_OUTPUT"
           echo "android=$android" >> "$GITHUB_OUTPUT"
           echo "ios=$ios" >> "$GITHUB_OUTPUT"
-
-  # ╔═══════════════════════════════════════════════════════════════════╗
-  # ║                        🪟 WINDOWS BUILDS                          ║
-  # ╚═══════════════════════════════════════════════════════════════════╝
+          echo "create_prerelease=$create_prerelease" >> "$GITHUB_OUTPUT"
 
   Windows-Setup:
     if: needs.targets.outputs.win32 == 'true' || needs.targets.outputs.win64 == 'true'
@@ -146,8 +197,7 @@ jobs:
       - name: Setup marker
         shell: cmd
         run: echo Windows setup complete
-  
-  # ├── Windows 32-bit (x86)
+
   Windows-x86:
     if: needs.targets.outputs.win32 == 'true'
     needs: [targets, Windows-Setup]
@@ -180,12 +230,11 @@ jobs:
         run: haxelib run lime build windows -32 -D 32bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: windowsBuild32
           path: export/32bit/windows/bin/*
-  
-  # └── Windows 64-bit (x64)
+
   Windows-x64:
     if: needs.targets.outputs.win64 == 'true'
     needs: [targets, Windows-Setup]
@@ -218,14 +267,10 @@ jobs:
         run: haxelib run lime build windows -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: windowsBuild64
           path: export/release/windows/bin/*
-
-  # ╔═══════════════════════════════════════════════════════════════════╗
-  # ║                          🍎 MAC BUILDS                            ║
-  # ╚═══════════════════════════════════════════════════════════════════╝
 
   Mac-Setup:
     if: needs.targets.outputs.mac_intel == 'true' || needs.targets.outputs.mac_arm == 'true' || needs.targets.outputs.ios == 'true'
@@ -235,8 +280,7 @@ jobs:
     steps:
       - name: Setup marker
         run: echo "Mac setup complete"
-  
-  # ├── Mac Intel (x64)
+
   Mac-Intel:
     if: needs.targets.outputs.mac_intel == 'true'
     needs: [targets, Mac-Setup]
@@ -267,12 +311,11 @@ jobs:
         run: haxelib run lime build mac -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: macBuildIntel
           path: export/release/macos/bin/*
 
-  # └── Mac ARM (Apple Silicon)
   Mac-ARM:
     if: needs.targets.outputs.mac_arm == 'true'
     needs: [targets, Mac-Setup]
@@ -303,14 +346,10 @@ jobs:
         run: haxelib run lime build mac -arm64 --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_ARM64
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: macBuildARM
           path: export/release/macos/bin/*
-
-  # ╔═══════════════════════════════════════════════════════════════════╗
-  # ║                    🐧📱 LINUX & MOBILE BUILDS                     ║
-  # ╚═══════════════════════════════════════════════════════════════════╝
 
   Linux-Setup:
     if: needs.targets.outputs.linux == 'true' || needs.targets.outputs.android == 'true'
@@ -320,8 +359,7 @@ jobs:
     steps:
       - name: Setup marker
         run: echo "Linux setup complete"
-  
-  # ├── Linux 64-bit
+
   Linux-x64:
     if: needs.targets.outputs.linux == 'true'
     needs: [targets, Linux-Setup]
@@ -357,12 +395,11 @@ jobs:
         run: haxelib run lime build linux -64bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: linuxBuild64
           path: export/release/linux/bin/*
 
-  # ├── Android (APK)
   Android:
     if: needs.targets.outputs.android == 'true'
     needs: [targets, Linux-Setup]
@@ -382,16 +419,13 @@ jobs:
           java-version: '21'
       
       - name: Setup Android SDK
-        uses: amyu/setup-android@v5.5
-        with:
-          sdk-version: 36
-          build-tools-version: 36.0.0
-          ndk-version: 27.3.13750724
-          generate-job-summary: false
+        uses: android-actions/setup-android@v4.0.1
       
-      - name: Install SDK components
+      - name: Install Android SDK 36 and NDK r27d
         run: |
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "cmdline-tools;latest"
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-36" "build-tools;36.0.0" "ndk;27.3.13750724" "cmdline-tools;latest"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.3.13750724" >> $GITHUB_ENV
       
       - name: Install Haxelib
         run: |
@@ -430,12 +464,11 @@ jobs:
           haxelib run lime build android --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: androidBuild
           path: export/release/android/bin/app/build/outputs/apk/release/*.apk
 
-  # └── iOS (Unsigned)
   iOS:
     if: needs.targets.outputs.ios == 'true'
     needs: [targets, Mac-Setup]
@@ -474,7 +507,113 @@ jobs:
           rm -rf Payload
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: iOSBuild
           path: export/release/ios/build/Release-iphoneos/*.ipa
+
+  Publish-PreRelease:
+    if: |
+      always() &&
+      (
+        (github.event_name == 'push' || github.event_name == 'pull_request') &&
+        (
+          needs.Windows-x86.result == 'success' ||
+          needs.Windows-x64.result == 'success' ||
+          needs.Mac-Intel.result == 'success' ||
+          needs.Mac-ARM.result == 'success' ||
+          needs.Linux-x64.result == 'success' ||
+          needs.Android.result == 'success' ||
+          needs.iOS.result == 'success'
+        )
+      ) ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        needs.targets.outputs.create_prerelease == 'true' &&
+        (
+          needs.Windows-x86.result == 'success' ||
+          needs.Windows-x64.result == 'success' ||
+          needs.Mac-Intel.result == 'success' ||
+          needs.Mac-ARM.result == 'success' ||
+          needs.Linux-x64.result == 'success' ||
+          needs.Android.result == 'success' ||
+          needs.iOS.result == 'success'
+        )
+      )
+    needs: [targets, Windows-x86, Windows-x64, Mac-Intel, Mac-ARM, Linux-x64, Android, iOS]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          path: artifacts/
+
+      - name: Generate release notes
+        run: |
+          LAST_TAG=$(git tag --list --sort=-version:refname | grep -vE '^(dev-build|nightly)$' | grep -vEi 'pre|alpha|beta|rc' | head -1 || true)
+
+          if [ -z "$LAST_TAG" ]; then
+            FROM=$(git rev-list --max-parents=0 HEAD)
+            TAG_DISPLAY="the beginning"
+          else
+            FROM="$LAST_TAG"
+            TAG_DISPLAY="\`$LAST_TAG\`"
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MANUAL_NOTE="\n> **Manual trigger** — Built with custom platform selection\n"
+          else
+            MANUAL_NOTE=""
+          fi
+
+          {
+            echo "> [!WARNING]"
+            echo "> **This is an automated development build.** It may contain bugs, crashes, or incomplete features. It is not recommended for general use."
+            echo "$MANUAL_NOTE"
+            echo ""
+            echo "## Changes since $TAG_DISPLAY"
+            echo ""
+            git log "${FROM}..HEAD" --pretty=format:"- **%s** (\`%h\`) — %an" --no-merges
+            echo ""
+            echo ""
+            echo "---"
+            echo "> Built from commit \`${{ github.sha }}\` on branch \`${{ github.ref_name }}\`"
+            echo "> Run ID: \`${{ github.run_id }}\`"
+          } > release_notes.md
+
+          cat release_notes.md
+
+      - name: Package artifacts
+        run: |
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+          [ -d artifacts/windowsBuild32  ] && zip -r artifacts/PlusEngine-Windows-x32.zip  artifacts/windowsBuild32/
+          [ -d artifacts/windowsBuild64  ] && zip -r artifacts/PlusEngine-Windows-x64.zip  artifacts/windowsBuild64/
+          [ -d artifacts/macBuildIntel   ] && zip -r artifacts/PlusEngine-Mac-Intel.zip     artifacts/macBuildIntel/
+          [ -d artifacts/macBuildARM     ] && zip -r artifacts/PlusEngine-Mac-ARM.zip       artifacts/macBuildARM/
+          [ -d artifacts/linuxBuild64    ] && zip -r artifacts/PlusEngine-Linux-x64.zip     artifacts/linuxBuild64/
+          [ -d artifacts/androidBuild    ] && zip -r artifacts/PlusEngine-Android-x64-v7a.zip artifacts/androidBuild/
+          [ -d artifacts/iOSBuild        ] && zip -r artifacts/PlusEngine-iOS.zip           artifacts/iOSBuild/
+
+      - name: Delete previous dev pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete dev-build --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Publish dev pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create dev-build \
+            --prerelease \
+            --title "Dev Build — ${{ env.BUILD_DATE }}" \
+            --notes-file release_notes.md \
+            --target "${{ github.sha }}" \
+            artifacts/PlusEngine-*.zip

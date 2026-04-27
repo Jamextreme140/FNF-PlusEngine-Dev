@@ -112,7 +112,7 @@ class DebugButton extends Sprite
 	private function toggleDebugDisplay():Void {
 		if (Main.fpsVar != null) {
 			// Ciclar entre los 3 modos de debug
-			Main.fpsVar.debugLevel = (Main.fpsVar.debugLevel + 1) % 3;
+			Main.fpsVar.debugLevel = (Main.fpsVar.debugLevel + 1) % 4;
 			Main.fpsVar.updateText();
 		}
 	}

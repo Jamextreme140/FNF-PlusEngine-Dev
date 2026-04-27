@@ -42,14 +42,6 @@ class MaterialTabs extends FlxSpriteGroup
 	static inline var LABEL_SIZE_PRIMARY:Int = 14;
 	static inline var LABEL_SIZE_SECONDARY:Int = 14;
 
-	// Colors (MD3)
-	static inline var BG_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var ACTIVE_COLOR:FlxColor = 0xFF6750A4;
-	static inline var INACTIVE_COLOR:FlxColor = 0xFF49454F;
-	static inline var INDICATOR_COLOR:FlxColor = 0xFF6750A4;
-	static inline var SURFACE_TINT:FlxColor = 0xFFECE6F0;
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-
 	// Animation
 	var indicatorTween:FlxTween;
 	var tabWidth:Float = 0;
@@ -67,7 +59,7 @@ class MaterialTabs extends FlxSpriteGroup
 		// Background
 		background = new FlxSprite(0, 0);
 		background.makeGraphic(Std.int(tabsWidth), TAB_HEIGHT, FlxColor.WHITE);
-		background.color = MD3Theme.surface;
+		background.color = MD3Theme.surfaceContainerLow;
 		add(background);
 
 		// Tab containers and labels
@@ -81,7 +73,7 @@ class MaterialTabs extends FlxSpriteGroup
 			add(container);
 
 			var label = new FlxText(tabX, 0, tabWidth, tabs[i], tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY);
-			label.setFormat(Paths.font("phantom.ttf"), tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY, MD3Theme.onSurfaceVariant, CENTER);
+			label.setFormat(Paths.font("inter.otf"), tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY, MD3Theme.onSurfaceVariant, CENTER);
 			label.antialiasing = ClientPrefs.data.antialiasing;
 			label.y = (TAB_HEIGHT - label.height) / 2;
 			tabLabels.push(label);
@@ -138,7 +130,7 @@ class MaterialTabs extends FlxSpriteGroup
 
 	function _onThemeChange():Void
 	{
-		if (background != null) background.color = MD3Theme.surface;
+		if (background != null) background.color = MD3Theme.surfaceContainerLow;
 		if (indicator != null) indicator.color = MD3Theme.primary;
 		for (i in 0...tabLabels.length)
 			tabLabels[i].color = i == selectedIndex ? MD3Theme.primary : MD3Theme.onSurfaceVariant;

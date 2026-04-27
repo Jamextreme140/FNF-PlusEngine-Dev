@@ -1,6 +1,13 @@
 package funkin.ui;
 
 import haxe.Json;
+import openfl.utils.Assets;
+import openfl.utils.AssetType;
+
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 
 enum Alignment
 {
@@ -281,21 +288,36 @@ class AlphaCharacter extends FlxSprite
 	public static function loadAlphabetData(request:String = 'alphabet')
 	{
 		var path:String = Paths.getPath('images/$request.json');
+		
+		// Check if file exists (mods or APK)
+		var fileExists:Bool = false;
 		#if MODS_ALLOWED
-		if(!FileSystem.exists(path))
-		#else
-		if(!Assets.exists(path, TEXT))
+		fileExists = FileSystem.exists(path);
 		#end
+		if (!fileExists && !Assets.exists(path))
 			path = Paths.getPath('images/alphabet.json');
 
 		allLetters = new Map<String, Null<Letter>>();
 		try
 		{
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
-			var data:Dynamic = Json.parse(File.getContent(path));
-			#else
-			var data:Dynamic = Json.parse(Assets.getText(path));
+			if (FileSystem.exists(path))
+				jsonContent = File.getContent(path);
 			#end
+			
+			if (jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if (jsonContent == null)
+			{
+				FlxG.log.error('Alphabet JSON not found: $path');
+				trace('Alphabet JSON not found: $path');
+				return;
+			}
+			
+			var data:Dynamic = Json.parse(jsonContent);
 
 			if(data.allowed != null && data.allowed.length > 0)
 			{

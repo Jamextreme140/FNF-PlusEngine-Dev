@@ -23,6 +23,7 @@ import crowplexus.hscript.Tools;
 import crowplexus.iris.utils.UsingEntry;
 
 import haxe.ValueException;
+import openfl.utils.Assets as OpenFlAssets;
 
 typedef HScriptInfos = {
 	> haxe.PosInfos,
@@ -154,6 +155,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("objects.StrumNote", funkin.play.notes.StrumNote);
 		Iris.proxyImports.set("objects.NoteSplash", funkin.play.notes.NoteSplash);
 		Iris.proxyImports.set("objects.BGSprite", funkin.play.stage.BGSprite);
+		Iris.proxyImports.set("objects.HealthIcon", funkin.play.HealthIcon);
 		
 		// States compatibility (old 0.7.3 paths)
 		Iris.proxyImports.set("states.PlayState", PlayState);
@@ -162,6 +164,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("states.FreeplayState", funkin.ui.freeplay.FreeplayState);
 		Iris.proxyImports.set("states.TitleState", funkin.ui.title.TitleState);
 		Iris.proxyImports.set("states.LoadingState", funkin.ui.LoadingState);
+		Iris.proxyImports.set("states.CustomState", funkin.modding.CustomState);
 		Iris.proxyImports.set("states.CreditsState", funkin.ui.credits.CreditsState);
 		Iris.proxyImports.set("states.ModsMenuState", funkin.modding.ModsMenuState);
 		
@@ -205,9 +208,17 @@ class HScript extends Iris
 		{
 			this.origin = filePath;
 			#if MODS_ALLOWED
-			var myFolder:Array<String> = filePath.split('/');
-			if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1]))) //is inside mods folder
-				this.modFolder = myFolder[1];
+			var normalizedFilePath:String = filePath.replace('\\', '/');
+			var resolvedModName:String = Paths.getModFolderNameFromPath(normalizedFilePath);
+			if(resolvedModName != null) {
+				if(Mods.currentModDirectory == resolvedModName || Mods.getGlobalMods().contains(resolvedModName))
+					this.modFolder = resolvedModName;
+			} else {
+				// Fallback for relative paths (e.g. 'mods/ModName/...')
+				var myFolder:Array<String> = normalizedFilePath.split('/');
+				if(myFolder[0] + '/' == 'mods/' && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
+					this.modFolder = myFolder[1];
+			}
 			#end
 		}
 		var scriptThing:String = file;
@@ -216,7 +227,13 @@ class HScript extends Iris
 		{
 			var f:String = file.replace('\\', '/');
 			if(f.contains('/') && !f.contains('\n')) {
-				scriptThing = File.getContent(f);
+				#if sys
+				if (sys.FileSystem.exists(f))
+					scriptThing = File.getContent(f);
+				else
+				#end
+				if (OpenFlAssets.exists(f))
+					scriptThing = OpenFlAssets.getText(f);
 				scriptName = f;
 			}
 		}
@@ -303,10 +320,22 @@ class HScript extends Iris
 
 		// Some very commonly used classes
 		set('Type', Type);
+		set('Reflect', Reflect);
+		set('Lambda', Lambda);
+		set('Json', haxe.Json);
+		set('TJSON', tjson.TJSON);
+		set('Array', Array);
+		set('EReg', EReg);
+		set('IntMap', haxe.ds.IntMap);
 		set('Map', haxe.ds.StringMap);
+		set('StringMap', haxe.ds.StringMap);
+		set('ObjectMap', haxe.ds.ObjectMap);
+		set('FlxSave', flixel.util.FlxSave);
+		set('FlxSpriteUtil', flixel.util.FlxSpriteUtil);
 		#if sys
 		set('File', File);
 		set('FileSystem', FileSystem);
+		set('Sys', Sys);
 		#end
 		set('FlxG', CustomFlxG);
 		set('FlxMath', CustomFlxMath);
@@ -339,22 +368,73 @@ class HScript extends Iris
 		set('FlxTypedGroup', flixel.group.FlxTypedGroup);
 		set('FlxGroup', flixel.group.FlxGroup);
 		set('FlxPoint', CustomFlxPoint);
+		set('FlxKey', flixel.input.keyboard.FlxKey.fromStringMap);
+		set('FlxGamepadInputID', CustomFlxGamepadInputID);
 		set('Capabilities', openfl.system.Capabilities);
 		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		set('Lib', openfl.Lib);
 		#if windows
 		set('WindowTweens', funkin.modding.scripting.psychlua.WindowTweens);
 		#end
+		set('TouchScroll', funkin.mobile.backend.TouchScroll);
+		set('TouchUtil', funkin.mobile.backend.TouchUtil);
+		set('MobileControlSelectSubState', funkin.mobile.substates.MobileControlSelectSubState);
+		set('MobileSettingsSubState', funkin.mobile.options.MobileSettingsSubState);
+		set('MobileScaleMode', funkin.mobile.backend.MobileScaleMode);
+		set('StorageUtil', funkin.mobile.backend.StorageUtil);
+		#if mobile
+		set('__isMobile', true);
+		#else
+		set('__isMobile', false);
+		#end
+		// Platform detection flags — replaces compile-time #if flags for scripts
+		#if windows
+		set('__isWindows', true);
+		#else
+		set('__isWindows', false);
+		#end
+		#if linux
+		set('__isLinux', true);
+		#else
+		set('__isLinux', false);
+		#end
+		#if mac
+		set('__isMac', true);
+		#else
+		set('__isMac', false);
+		#end
+		#if android
+		set('__isAndroid', true);
+		#else
+		set('__isAndroid', false);
+		#end
+		#if ios
+		set('__isIOS', true);
+		#else
+		set('__isIOS', false);
+		#end
+		#if html5
+		set('__isHTML5', true);
+		#else
+		set('__isHTML5', false);
+		#end
+		#if desktop
+		set('__isDesktop', true);
+		#else
+		set('__isDesktop', false);
+		#end
 		set('Alphabet', funkin.ui.Alphabet);
 		set('AlphaCharacter', funkin.ui.AlphaCharacter);
 		set('Countdown', funkin.play.stage.BaseStage.Countdown);
+		set('HealthIcon', funkin.play.HealthIcon);
 		set('Language', funkin.ui.Language);
 		set('Difficulty', funkin.data.Difficulty);
 		set('WeekData', funkin.data.story.level.WeekData);
 		#if DISCORD_ALLOWED
 		set('Discord', funkin.api.discord.DiscordClient);
 		#end
-		set('ModState', funkin.modding.ModState);
+		set('CustomState', funkin.modding.CustomState);
+		set('ScriptableState', funkin.modding.ScriptableState);
 		set('PlayState', PlayState);
 		set('TitleState', funkin.ui.title.TitleState);
 		set('MainMenuState', funkin.ui.mainmenu.MainMenuState);
@@ -363,8 +443,57 @@ class HScript extends Iris
 		set('LoadingState', funkin.ui.LoadingState);
 		set('CreditsState', funkin.ui.credits.CreditsState);
 		set('AchievementsMenuState', funkin.ui.AchievementsMenuState);
+		set('MasterEditorMenu', funkin.ui.debug.MasterEditorMenu);
+		set('FlashingState', funkin.ui.FlashingState);
+		set('OptionsState', funkin.ui.options.OptionsState);
+		set('ResultsState', funkin.play.ResultsState);
+		set('AttachedSprite', funkin.play.AttachedSprite);
+		set('MenuItem', funkin.ui.MenuItem);
+		set('MenuCharacter', funkin.ui.MenuCharacter);
+		set('FlxTransitionableState', flixel.addons.transition.FlxTransitionableState);
 		set('MusicBeatState', MusicBeatState);
 		set('GameplayChangersSubstate', funkin.ui.options.GameplayChangersSubstate);
+		set('ResetScoreSubState', funkin.play.substates.ResetScoreSubState);
+		set('CoolUtil', funkin.util.CoolUtil);
+		set('Cursor', funkin.input.Cursor);
+		set('ColorblindFilter', funkin.graphics.shaders.ColorblindFilter);
+		set('ColorSwap', funkin.graphics.shaders.ColorSwap);
+		set('WindowMode', funkin.util.WindowMode);
+		set('StageData', funkin.data.stage.StageData);
+		set('NotesColorSubState', funkin.ui.options.NotesColorSubState);
+		set('ControlsSubState', funkin.ui.options.ControlsSubState);
+		set('GraphicsSettingsSubState', funkin.ui.options.GraphicsSettingsSubState);
+		set('VisualsSettingsSubState', funkin.ui.options.VisualsSettingsSubState);
+		set('GameplaySettingsSubState', funkin.ui.options.GameplaySettingsSubState);
+		set('LegacySettingsSubState', funkin.ui.options.LegacySettingsSubState);
+		set('NoteOffsetState', funkin.ui.options.NoteOffsetState);
+		#if MODCHARTS_NOTITG_ALLOWED
+		set('ModchartSettingsSubState', funkin.ui.options.ModchartSettingsSubState);
+		#end
+		#if TRANSLATIONS_ALLOWED
+		set('LanguageSubState', funkin.ui.options.LanguageSubState);
+		#end
+		set('Mods', funkin.modding.Mods);
+		set('ModsMenuState', funkin.modding.ModsMenuState);
+		set('ModItem', funkin.modding.ModsMenuState.ModItem);
+		set('MenuButton', funkin.modding.ModsMenuState.MenuButton);
+		set('ModSettingsSubState', funkin.ui.options.ModSettingsSubState);
+		set('FlxObject', flixel.FlxObject);
+		set('TEXT',   cast openfl.utils.AssetType.TEXT);
+		set('IMAGE',  cast openfl.utils.AssetType.IMAGE);
+		set('SOUND',  cast openfl.utils.AssetType.SOUND);
+		set('MUSIC',  cast openfl.utils.AssetType.MUSIC);
+		set('BINARY', cast openfl.utils.AssetType.BINARY);
+		set('FONT',   cast openfl.utils.AssetType.FONT);
+		set('X',        cast flixel.util.FlxAxes.X);
+		set('Y',        cast flixel.util.FlxAxes.Y);
+		set('XY',       cast flixel.util.FlxAxes.XY);
+		set('LEFT',     cast flixel.text.FlxText.FlxTextAlign.LEFT);
+		set('RIGHT',    cast flixel.text.FlxText.FlxTextAlign.RIGHT);
+		set('CENTER',   cast flixel.text.FlxText.FlxTextAlign.CENTER);
+		set('JUSTIFY',  cast flixel.text.FlxText.FlxTextAlign.JUSTIFY);
+		set('CENTERED', funkin.ui.Alignment.CENTERED);
+		set('Alignment', CustomAlignment);
 		set('Paths', Paths);
 		set('Conductor', Conductor);
 		set('ClientPrefs', ClientPrefs);
@@ -423,7 +552,8 @@ class HScript extends Iris
 			StoryMenuState: funkin.ui.story.StoryMenuState,
 			FreeplayState: funkin.ui.freeplay.FreeplayState,
 			TitleState: funkin.ui.title.TitleState,
-			LoadingState: funkin.ui.LoadingState
+			LoadingState: funkin.ui.LoadingState,
+			CustomState: funkin.modding.CustomState
 		};
 		set('states', statesCompat);
 		
@@ -815,6 +945,42 @@ class HScript extends Iris
 		return null;
 	}
 
+	/**
+	 * Returns the ScriptClassHandler for a user-defined class by name,
+	 * or null if the script did not define such a class.
+	 * Used by ScriptableState to find and instantiate scripted state classes.
+	 */
+	public function getScriptedClass(name:String):funkin.modding.scripting.ScriptedClass.ScriptClassHandler {
+		@:privateAccess
+		var v:Dynamic = interp.customClasses.get(name);
+		if (v != null && (v is funkin.modding.scripting.ScriptedClass.ScriptClassHandler))
+			return cast v;
+		return null;
+	}
+
+	/**
+	 * Executes an additional HScript file in this same interpreter context,
+	 * so variables and functions from it become available to the main script.
+	 * Used to inject a shared preset before loading a state script.
+	 */
+	public function executeFile(path:String):Void
+	{
+		var code:String = null;
+		#if sys
+		if (sys.FileSystem.exists(path))
+			code = sys.io.File.getContent(path);
+		#end
+		// Fallback: read from OpenFL assets (APK builds)
+		if (code == null && OpenFlAssets.exists(path))
+			code = OpenFlAssets.getText(path);
+		if (code == null) return;
+		@:privateAccess
+		{
+			var expr = parser.parseString(code, path);
+			interp.execute(expr);
+		}
+	}
+
 	override public function destroy()
 	{
 		origin = null;
@@ -858,12 +1024,14 @@ class CustomFlxG {
 	public static var signals(get, never):Dynamic;
 	public static var random(get, never):Dynamic;
 	public static var log(get, never):Dynamic;
-	// Exposes FlxG.scaleMode so scripts can access FlxG.scaleMode.scale.x / .y
 	public static var scaleMode(get, never):Dynamic;
-	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
 	public static var elapsed(get, never):Float;
-	// Exposes FlxG.bitmap for direct access to bitmap cache and _cache field
 	public static var bitmap(get, never):Dynamic;
+	public static var save(get, never):Dynamic;
+	public static var fixedTimestep(get, set):Bool;
+	public static var timeScale(get, set):Float;
+	public static var drawFramerate(get, never):Int;
+	public static var updateFramerate(get, never):Int;
 	
 	// Getters
 	static function get_state():Dynamic return FlxG.state;
@@ -888,6 +1056,13 @@ class CustomFlxG {
 		// Return a wrapper that exposes both BitmapFrontEnd methods and _cache
 		return BitmapFrontEndWrapper.instance;
 	}
+	static function get_save():Dynamic return FlxG.save;
+	static function get_fixedTimestep():Bool return FlxG.fixedTimestep;
+	static function set_fixedTimestep(v:Bool):Bool return FlxG.fixedTimestep = v;
+	static function get_timeScale():Float return FlxG.timeScale;
+	static function set_timeScale(v:Float):Float return FlxG.timeScale = v;
+	static function get_drawFramerate():Int return FlxG.drawFramerate;
+	static function get_updateFramerate():Int return FlxG.updateFramerate;
 
 	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
@@ -964,6 +1139,9 @@ class CustomFlxMath {
 	
 	public static inline function inBounds(value:Float, min:Float, max:Float):Bool
 		return flixel.math.FlxMath.inBounds(value, min, max);
+
+	public static inline function fastSin(angle:Float):Float
+		return flixel.math.FlxMath.fastSin(angle);
 }
 
 class CustomFlxColor {
@@ -1018,6 +1196,49 @@ class CustomFlxAxes {
 	public static var XY(default, null):flixel.util.FlxAxes = flixel.util.FlxAxes.XY;
 }
 
+class CustomFlxGamepadInputID {
+	public static var ANY(default, null):Int            = flixel.input.gamepad.FlxGamepadInputID.ANY;
+	public static var NONE(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.NONE;
+	public static var A(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.A;
+	public static var B(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.B;
+	public static var X(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.X;
+	public static var Y(default, null):Int              = flixel.input.gamepad.FlxGamepadInputID.Y;
+	public static var LEFT_SHOULDER(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_SHOULDER;
+	public static var RIGHT_SHOULDER(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_SHOULDER;
+	public static var BACK(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.BACK;
+	public static var START(default, null):Int          = flixel.input.gamepad.FlxGamepadInputID.START;
+	public static var LEFT_STICK_CLICK(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_CLICK;
+	public static var RIGHT_STICK_CLICK(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_CLICK;
+	public static var GUIDE(default, null):Int          = flixel.input.gamepad.FlxGamepadInputID.GUIDE;
+	public static var DPAD_UP(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.DPAD_UP;
+	public static var DPAD_DOWN(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.DPAD_DOWN;
+	public static var DPAD_LEFT(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.DPAD_LEFT;
+	public static var DPAD_RIGHT(default, null):Int     = flixel.input.gamepad.FlxGamepadInputID.DPAD_RIGHT;
+	public static var LEFT_TRIGGER_BUTTON(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_TRIGGER_BUTTON;
+	public static var RIGHT_TRIGGER_BUTTON(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_TRIGGER_BUTTON;
+	public static var LEFT_TRIGGER(default, null):Int   = flixel.input.gamepad.FlxGamepadInputID.LEFT_TRIGGER;
+	public static var RIGHT_TRIGGER(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_TRIGGER;
+	public static var LEFT_ANALOG_STICK(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_ANALOG_STICK;
+	public static var RIGHT_ANALOG_STICK(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_ANALOG_STICK;
+	public static var DPAD(default, null):Int           = flixel.input.gamepad.FlxGamepadInputID.DPAD;
+	public static var TILT_PITCH(default, null):Int     = flixel.input.gamepad.FlxGamepadInputID.TILT_PITCH;
+	public static var TILT_ROLL(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.TILT_ROLL;
+	public static var POINTER_X(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.POINTER_X;
+	public static var POINTER_Y(default, null):Int      = flixel.input.gamepad.FlxGamepadInputID.POINTER_Y;
+	public static var EXTRA_0(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_0;
+	public static var EXTRA_1(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_1;
+	public static var EXTRA_2(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_2;
+	public static var EXTRA_3(default, null):Int        = flixel.input.gamepad.FlxGamepadInputID.EXTRA_3;
+	public static var LEFT_STICK_DIGITAL_UP(default, null):Int    = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_UP;
+	public static var LEFT_STICK_DIGITAL_RIGHT(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_RIGHT;
+	public static var LEFT_STICK_DIGITAL_DOWN(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_DOWN;
+	public static var LEFT_STICK_DIGITAL_LEFT(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.LEFT_STICK_DIGITAL_LEFT;
+	public static var RIGHT_STICK_DIGITAL_UP(default, null):Int    = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_UP;
+	public static var RIGHT_STICK_DIGITAL_RIGHT(default, null):Int = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_RIGHT;
+	public static var RIGHT_STICK_DIGITAL_DOWN(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_DOWN;
+	public static var RIGHT_STICK_DIGITAL_LEFT(default, null):Int  = flixel.input.gamepad.FlxGamepadInputID.RIGHT_STICK_DIGITAL_LEFT;
+}
+
 class CustomFlxTextAlign {
 	public static var LEFT(default, null):flixel.text.FlxText.FlxTextAlign = flixel.text.FlxText.FlxTextAlign.LEFT;
 	public static var CENTER(default, null):flixel.text.FlxText.FlxTextAlign = flixel.text.FlxText.FlxTextAlign.CENTER;
@@ -1048,6 +1269,13 @@ class CustomFlxPoint {
 	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
 		return flixel.math.FlxPoint.weak(x, y);
 	}
+}
+
+// Wrapper for funkin.ui.Alignment so scripts can use Alignment.LEFT / Alignment.CENTERED etc.
+class CustomAlignment {
+	public static var LEFT(default,    null):funkin.ui.Alignment = funkin.ui.Alignment.LEFT;
+	public static var CENTERED(default, null):funkin.ui.Alignment = funkin.ui.Alignment.CENTERED;
+	public static var RIGHT(default,   null):funkin.ui.Alignment = funkin.ui.Alignment.RIGHT;
 }
 
 @:privateAccess(flixel.system.frontEnds.BitmapFrontEnd)
@@ -1237,6 +1465,11 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return v;
 		}
 
+		// Check user-defined scripted classes
+		if (customClasses.exists(id)) {
+			return customClasses.get(id);
+		}
+
 		// Check parent instance fields (Psych Engine compatibility)
 		if(parentInstance != null && _instanceFields.contains(id)) {
 			var v = Reflect.getProperty(parentInstance, id);
@@ -1274,6 +1507,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return null;
 		}
 		
+		// Scripted class instance: route all field access through hget()
+		if ((o is funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour))
+			return cast(o, funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour).hget(field);
+
 		// Verificar si es un Map primero (compatible con SScript)
 		// Importante: Acceder a métodos del Map como 'exists', 'get', 'set', etc.
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
@@ -1292,7 +1529,12 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return null; // Maps devuelven null si no existe la key
 		}
 		
-		// Intentar acceso directo primero (más rápido y funciona con fields privados como _cache)
+		// Try getProperty first so overridden getters (e.g. FlxSpriteGroup.get_width) are invoked,
+		// then fall back to field for private/backing fields not exposed via getter.
+		try {
+			var value = Reflect.getProperty(o, field);
+			if (value != null) return value;
+		} catch(e:Dynamic) {}
 		try {
 			var value = Reflect.field(o, field);
 			if (value != null) return value;
@@ -1317,12 +1559,12 @@ class CustomInterp extends crowplexus.hscript.Interp
 			if (instanceFields != null && instanceFields.contains(field)) {
 				// El field/método existe en la clase
 				try {
-					// Intentar field directo primero
-					var value = Reflect.field(o, field);
+					// Try getProperty first to properly invoke overridden getters
+					var value = Reflect.getProperty(o, field);
 					if (value != null) return value;
 					
-					// Si es null, intentar getProperty (para getters)
-					return Reflect.getProperty(o, field);
+					// Fall back to field for backing/private fields
+					return Reflect.field(o, field);
 				} catch(e:Dynamic) {
 					// Si falla, buscar en variables globales como fallback
 					if(MusicBeatState.getVariables().exists(field))
@@ -1395,6 +1637,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return value;
 		}
 		
+		// Scripted class instance: route all field writes through hset()
+		if ((o is funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour))
+			return cast(o, funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour).hset(field, value);
+
 		// Verificar si es un Map primero (compatible con SScript)
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
 			var map:haxe.Constraints.IMap<String, Dynamic> = cast o;

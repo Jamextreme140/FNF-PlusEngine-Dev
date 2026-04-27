@@ -31,9 +31,12 @@ class Rating
 
 	public static function loadDefault():Array<Rating>
 	{
-		var ratingsData:Array<Rating> = [new Rating('flawless')]; // flawlesss primero
+		var ratingsData:Array<Rating> = [];
 
 		var isCodenameSystem:Bool = (ClientPrefs.data.systemScoreMultiplier == 'Codename'); // Check if it the System Score Multiplier was Codename
+
+		if (ClientPrefs.data.flawlessRating)
+			ratingsData.push(new Rating('flawless'));
 
 		var rating:Rating = new Rating('sick');
 		rating.ratingMod = 0.9;

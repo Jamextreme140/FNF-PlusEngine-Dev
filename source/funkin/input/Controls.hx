@@ -86,37 +86,87 @@ class Controls
 	public var keyboardBinds:Map<String, Array<FlxKey>>;
 	public var gamepadBinds:Map<String, Array<FlxGamepadInputID>>;
 	public var mobileBinds:Map<String, Array<MobileInputID>>;
+	private var temporaryKeyboardBinds:Map<String, Array<FlxKey>> = [];
+	public static final GAMEPLAY_KEY_NAMES:Array<String> = ['note_left', 'note_down', 'note_up', 'note_right'];
+
+	public inline function getKeyboardBind(key:String):Array<FlxKey>
+	{
+		final temporaryBind = temporaryKeyboardBinds.get(key);
+		return temporaryBind != null ? temporaryBind : keyboardBinds[key];
+	}
+
+	public function setTemporaryKeyboardBind(key:String, keys:Array<FlxKey>):Void
+	{
+		if (keys == null || keys.length <= 0)
+		{
+			temporaryKeyboardBinds.remove(key);
+			return;
+		}
+
+		temporaryKeyboardBinds.set(key, keys.copy());
+	}
+
+	public inline function clearTemporaryKeyboardBind(key:String):Void
+		temporaryKeyboardBinds.remove(key);
+
+	public function clearTemporaryGameplayBinds():Void
+	{
+		for (key in GAMEPLAY_KEY_NAMES)
+			temporaryKeyboardBinds.remove(key);
+	}
+
 	public function justPressed(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyJustPressed(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyJustPressed(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
+
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.justPressed.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
 
 		return result
 			|| _myGamepadJustPressed(gamepadBinds[key]) == true
 			|| mobileCJustPressed(mobileBinds[key]) == true
-			|| touchPadJustPressed(mobileBinds[key]) == true;
+			|| touchPadJustPressed(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public function pressed(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyPressed(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyPressed(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
+
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.pressed.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
 
 		return result
 			|| _myGamepadPressed(gamepadBinds[key]) == true
 			|| mobileCPressed(mobileBinds[key]) == true
-			|| touchPadPressed(mobileBinds[key]) == true;
+			|| touchPadPressed(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public function justReleased(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyJustReleased(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyJustReleased(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
+
+		#if android
+		var androidResult:Bool = (key == 'back' && FlxG.android.justReleased.BACK);
+		#else
+		var androidResult:Bool = false;
+		#end
 
 		return result
 			|| _myGamepadJustReleased(gamepadBinds[key]) == true
 			|| mobileCJustReleased(mobileBinds[key]) == true
-			|| touchPadJustReleased(mobileBinds[key]) == true;
+			|| touchPadJustReleased(mobileBinds[key]) == true
+			|| androidResult;
 	}
 
 	public var controllerMode:Bool = false;
@@ -173,8 +223,9 @@ class Controls
 
 	private function touchPadPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyPressed(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyPressed(keys) == true)
 				return true;
 
 		return false;
@@ -182,8 +233,9 @@ class Controls
 
 	private function touchPadJustPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyJustPressed(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyJustPressed(keys) == true)
 				return true;
 
 		return false;
@@ -191,8 +243,9 @@ class Controls
 
 	private function touchPadJustReleased(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyJustReleased(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyJustReleased(keys) == true)
 				return true;
 
 		return false;
@@ -200,8 +253,9 @@ class Controls
 
 	private function mobileCPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyPressed(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyPressed(keys))
 				return true;
 
 		return false;
@@ -209,8 +263,9 @@ class Controls
 
 	private function mobileCJustPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyJustPressed(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyJustPressed(keys))
 				return true;
 
 		return false;
@@ -218,8 +273,9 @@ class Controls
 
 	private function mobileCJustReleased(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyJustReleased(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyJustReleased(keys))
 				return true;
 
 		return false;
@@ -237,7 +293,9 @@ class Controls
 	@:noCompletion
 	private function get_requestedMobileC():IMobileControls
 	{
-		return requestedInstance.mobileControls;
+		var inst = requestedInstance;
+		if (inst == null) return null;
+		return inst.mobileControls;
 	}
 
 	@:noCompletion

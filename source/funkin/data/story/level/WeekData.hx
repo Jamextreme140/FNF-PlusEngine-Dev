@@ -4,6 +4,11 @@ import lime.utils.Assets;
 import openfl.utils.Assets as OpenFlAssets;
 import haxe.Json;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 typedef WeekFile =
 {
 	// JSON variables
@@ -73,14 +78,25 @@ class WeekData {
 
 	public static function reloadWeekFiles(isStoryMode:Null<Bool> = false)
 	{
+		#if MODS_ALLOWED
+		Mods.refreshStorageTypeContext();
+		#end
 		weeksList = [];
 		weeksLoaded.clear();
 		#if MODS_ALLOWED
-		var directories:Array<String> = [Paths.mods(), Paths.getSharedPath()];
+		var directories:Array<String> = [];
+		for (modsRoot in Paths.getModsRootDirectories())
+			if (!directories.contains(modsRoot))
+				directories.push(modsRoot);
+		directories.push(Paths.getSharedPath());
 		var originalLength:Int = directories.length;
 
 		for (mod in Mods.parseList().enabled)
-			directories.push(Paths.mods(mod + '/'));
+		{
+			var modDirectory:String = haxe.io.Path.addTrailingSlash(Paths.getModDirectory(mod));
+			if (FileSystem.exists(modDirectory) && FileSystem.isDirectory(modDirectory) && !directories.contains(modDirectory))
+				directories.push(modDirectory);
+		}
 		#else
 		var directories:Array<String> = [Paths.getSharedPath()];
 		var originalLength:Int = directories.length;
@@ -97,7 +113,9 @@ class WeekData {
 
 						#if MODS_ALLOWED
 						if(j >= originalLength) {
-							weekFile.folder = directories[j].substring(Paths.mods().length, directories[j].length-1);
+							var folderName:String = Paths.getModFolderNameFromPath(directories[j]);
+							if (folderName != null)
+								weekFile.folder = folderName;
 						}
 						#end
 
@@ -148,7 +166,9 @@ class WeekData {
 				if(i >= originalLength)
 				{
 					#if MODS_ALLOWED
-					weekFile.folder = directory.substring(Paths.mods().length, directory.length-1);
+					var folderName:String = Paths.getModFolderNameFromPath(directory);
+					if (folderName != null)
+						weekFile.folder = folderName;
 					#end
 				}
 				if((PlayState.isStoryMode && !weekFile.hideStoryMode) || (!PlayState.isStoryMode && !weekFile.hideFreeplay))
@@ -161,16 +181,15 @@ class WeekData {
 	}
 
 	private static function getWeekFile(path:String):WeekFile {
+		// Try loading from mods first (FileSystem), then from APK (OpenFlAssets)
 		var rawJson:String = null;
 		#if MODS_ALLOWED
-		if(FileSystem.exists(path)) {
+		if(FileSystem.exists(path))
 			rawJson = File.getContent(path);
-		}
-		#else
-		if(OpenFlAssets.exists(path)) {
-			rawJson = Assets.getText(path);
-		}
 		#end
+		
+		if(rawJson == null && OpenFlAssets.exists(path))
+			rawJson = Assets.getText(path);
 
 		if(rawJson != null && rawJson.length > 0) {
 			return cast tjson.TJSON.parse(rawJson);

@@ -1,142 +1,80 @@
 package funkin.ui.components;
 
-import funkin.ui.components.PsychUIBox.UIStyleData;
 #if android
 import funkin.mobile.backend.native.AndroidNativeDropDown;
 #end
 
-class PsychUIDropDownMenu extends PsychUIInputText
+class PsychUIDropDownMenu extends FlxSpriteGroup
 {
 	public static final CLICK_EVENT = "dropdown_click";
 
+	public var name:String;
 	public var list(default, set):Array<String> = [];
+	public var displayFunction(default, set):String->String = null;
 	public var button:FlxSprite;
+	public var buttonIcon:FlxText;
+	public var bg:FlxSprite;
+	public var fieldBg:FlxSprite;
+	public var textObj:FlxText;
 	public var onSelect:Int->String->Void;
 
 	public var selectedIndex(default, set):Int = -1;
 	public var selectedLabel(default, set):String = null;
+	public var useDynamicTheme:Bool = true;
 
-	var _curFilter:Array<String>;
-	var _itemWidth:Float = 0;
+	var _width:Int = 100;
+	var _height:Int = 20;
+	var _buttonPressed:Bool = false;
+	var _dialogOpen:Bool = false;
+	var _themeSignature:String = null;
+	var _hovered:Bool = false;
+	var _lastVisualState:String = '';
+
+	#if android
+	var waitingNativeSelection:Bool = false;
+	#end
+
 	public function new(x:Float, y:Float, list:Array<String>, callback:Int->String->Void, ?width:Float = 100)
 	{
 		super(x, y);
-		if(list == null) list = [];
 
-		_itemWidth = width - 2;
-		setGraphicSize(width, 20);
-		updateHitbox();
-		textObj.y += 2;
+		bg = new FlxSprite();
+		add(bg);
 
-		button = new FlxSprite(behindText.width + 1, 0).loadGraphic(Paths.image('psych-ui/dropdown_button', 'embed'), true, 20, 20);
-		button.animation.add('normal', [0], false);
-		button.animation.add('pressed', [1], false);
-		button.animation.play('normal', true);
+		fieldBg = new FlxSprite(1, 1);
+		add(fieldBg);
+
+		textObj = new FlxText(6, 2, Math.max(1, Std.int(width) - 30), '', 8);
+		textObj.alignment = LEFT;
+		add(textObj);
+
+		button = new FlxSprite();
 		add(button);
 
+		buttonIcon = new FlxText(0, 0, 20, 'v', 10);
+		buttonIcon.alignment = CENTER;
+		add(buttonIcon);
+
 		onSelect = callback;
-
-		onChange = function(old:String, cur:String)
-		{
-			if(old != cur)
-			{
-				_curFilter = this.list.filter(function(str:String) return str.startsWith(cur));
-				showDropDown(true, 0, _curFilter);
-			}
-		}
-		unfocus = function()
-		{
-			showDropDownClickFix();
-			showDropDown(false);
-		}
-
-		for (option in list)
-			addOption(option);
-
-		selectedIndex = 0;
-		showDropDown(false);
+		setSize(Std.int(width), 20);
+		@:bypassAccessor this.list = list != null ? list.copy() : [];
+		selectedIndex = this.list.length > 0 ? 0 : -1;
+		applyTheme(true);
 	}
 
-	function set_selectedIndex(v:Int)
-	{
-		selectedIndex = v;
-		if(selectedIndex < 0 || selectedIndex >= list.length) selectedIndex = -1;
-
-		@:bypassAccessor selectedLabel = list[selectedIndex];
-		text = (selectedLabel != null) ? selectedLabel : '';
-		return selectedIndex;
-	}
-
-	function set_selectedLabel(v:String)
-	{
-		var id:Int = list.indexOf(v);
-		if(id >= 0)
-		{
-			@:bypassAccessor selectedIndex = id;
-			selectedLabel = v;
-			text = selectedLabel;
-		}
-		else
-		{
-			@:bypassAccessor selectedIndex = -1;
-			selectedLabel = null;
-			text = '';
-		}
-		return selectedLabel;
-	}
-
-
-	// It would be nice to borrow code from other engines, but then they complain saying "don't touch my code,
-	// WOULD YOU JUST PUT YOUR REPO IN PRIVATE :V
-	// Praise be to the programmers of Funkin Crew, I hope they live long and best wishes.
-	var _items:Array<PsychUIDropDownItem> = [];
-	public var curScroll:Int = 0;
-	#if mobile
-	var _touchScrollAccum:Float = 0;
-	var _prevMouseY:Float = 0;
-	var _touchDragDist:Float = 0;
-	#end
-	#if android
-	var waitingNativeSelection:Bool = false;
-	inline function tryOpenNativeDropDown():Bool
-	{
-		if(list == null || list.length <= 0)
-			return false;
-
-		var nativeSelectedIndex:Int = selectedIndex >= 0 ? selectedIndex : 0;
-		if(AndroidNativeDropDown.show('Select option', list, nativeSelectedIndex))
-		{
-			waitingNativeSelection = true;
-			PsychUIInputText.focusOn = null;
-			FlxG.stage.window.textInputEnabled = false;
-			showDropDown(false);
-			return true;
-		}
-
-		return false;
-	}
-	#end
 	override function update(elapsed:Float)
 	{
-		#if android
-		if(FlxG.mouse.justPressed)
-		{
-			var pressedButton:Bool = FlxG.mouse.overlaps(button, camera);
-			var pressedField:Bool = FlxG.mouse.overlaps(behindText, camera);
-
-			if(pressedButton || pressedField)
-			{
-				button.animation.play('pressed', true);
-				if(tryOpenNativeDropDown())
-				{
-					return;
-				}
-			}
-		}
-		#end
-
-		var lastFocus = PsychUIInputText.focusOn;
 		super.update(elapsed);
+		layout();
+		refreshTheme();
+
+		var hovered:Bool = isMouseOverControl();
+
+		if (hovered != _hovered)
+		{
+			_hovered = hovered;
+			applyTheme();
+		}
 
 		#if android
 		if(waitingNativeSelection)
@@ -147,233 +85,216 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				waitingNativeSelection = false;
 				if(nativeSelection < list.length)
 					clickedOn(nativeSelection, list[nativeSelection]);
+				_dialogOpen = false;
+				_buttonPressed = false;
+				applyTheme(true);
 			}
 			else if(nativeSelection == AndroidNativeDropDown.CANCELED || !AndroidNativeDropDown.isDialogVisible())
 			{
 				waitingNativeSelection = false;
+				_dialogOpen = false;
+				_buttonPressed = false;
+				applyTheme(true);
 			}
 		}
 		#end
 
-		if(FlxG.mouse.justPressed)
+		if (FlxG.mouse.justPressed && hovered)
 		{
-			if(FlxG.mouse.overlaps(button, camera))
-			{
-				button.animation.play('pressed', true);
-				if(lastFocus != this)
-					PsychUIInputText.focusOn = this;
-				else if(PsychUIInputText.focusOn == this)
-					PsychUIInputText.focusOn = null;
-			}
-		}
-		else if(FlxG.mouse.released && button.animation.curAnim != null && button.animation.curAnim.name != 'normal') button.animation.play('normal', true);
+			_buttonPressed = true;
+			applyTheme();
 
-		if(lastFocus != PsychUIInputText.focusOn)
-		{
-			showDropDown(PsychUIInputText.focusOn == this);
-		}
-		else if(PsychUIInputText.focusOn == this)
-		{
-			var wheel:Int = FlxG.mouse.wheel;
-			if(FlxG.keys.justPressed.UP) wheel++;
-			if(FlxG.keys.justPressed.DOWN) wheel--;
-			#if mobile
-			if (FlxG.mouse.justPressed)
-			{
-				_prevMouseY = FlxG.mouse.y;
-				_touchScrollAccum = 0;
-				_touchDragDist = 0;
-			}
-			else if (FlxG.mouse.pressed)
-			{
-				var dy:Float = _prevMouseY - FlxG.mouse.y; // positive when swiping up
-				_touchDragDist += Math.abs(dy);
-				_touchScrollAccum += dy;
-				_prevMouseY = FlxG.mouse.y;
-				PsychUIDropDownItem.isDragging = _touchDragDist > 8;
-				while (_touchScrollAccum > 30) { wheel--; _touchScrollAccum -= 30; }
-				while (_touchScrollAccum < -30) { wheel++; _touchScrollAccum += 30; }
-			}
-			else if (FlxG.mouse.justReleased)
-			{
-				PsychUIDropDownItem.isDragging = false;
-			}
+			#if android
+			if (tryOpenNativeDropDown())
+				return;
 			#end
-			if(wheel != 0) showDropDown(true, curScroll - wheel, _curFilter);
+
+			if (!_dialogOpen)
+				openSelectionDialog();
+		}
+		else if (FlxG.mouse.released && _buttonPressed)
+		{
+			_buttonPressed = false;
+			applyTheme();
 		}
 	}
 
-	private function showDropDownClickFix()
+	function isMouseOverControl():Bool
 	{
-		#if mobile
-		if(FlxG.mouse.justReleased)
-		#else
-		if(FlxG.mouse.justPressed)
-		#end
-		{
-			for (item in _items) //extra update to fix a little bug where it wouldnt click on any option if another input text was behind the drop down
-				if(item != null && item.active && item.visible)
-					item.update(0);
-		}
+		if (camera == null || !visible || !active)
+			return false;
+
+		var screenPos:FlxPoint = getScreenPosition(null, camera);
+		var mousePos:FlxPoint = FlxG.mouse.getPositionInCameraView(camera);
+		return (mousePos.x >= screenPos.x && mousePos.x < screenPos.x + _width)
+			&& (mousePos.y >= screenPos.y && mousePos.y < screenPos.y + _height);
 	}
 
-	public function showDropDown(vis:Bool = true, scroll:Int = 0, onlyAllowed:Array<String> = null)
+	override public function setSize(width:Float, height:Float):Void
 	{
-		if(!vis)
-		{
-			text = selectedLabel;
-			_curFilter = null;
-		}
+		super.setSize(width, height);
+		_width = Std.int(Math.max(36, width));
+		_height = Std.int(Math.max(20, height));
+		layout();
+		applyTheme(true);
+	}
 
-		curScroll = Std.int(Math.max(0, Math.min(onlyAllowed != null ? (onlyAllowed.length - 1) : (list.length - 1), scroll)));
-		if(vis)
-		{
-			var n:Int = 0;
-			for (item in _items)
+	function layout():Void
+	{
+		bg.x = x;
+		bg.y = y;
+		fieldBg.x = x + 1;
+		fieldBg.y = y + 1;
+		button.x = x + _width - 21;
+		button.y = y;
+		textObj.x = fieldBg.x + 6;
+		textObj.y = fieldBg.y + (_height - textObj.height) / 2 - 1;
+		textObj.fieldWidth = Math.max(1, _width - 32);
+		buttonIcon.x = button.x;
+		buttonIcon.y = button.y + (_height - buttonIcon.height) / 2 - 1;
+	}
+
+	function refreshTheme(force:Bool = false):Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		var signature:String = PsychUISkin.signature();
+		if (force || _themeSignature != signature)
+			applyTheme(true);
+	}
+
+	function applyTheme(force:Bool = false):Void
+	{
+		var state:String = (_buttonPressed ? 'pressed' : (_hovered ? 'hover' : 'normal')) + ':' + (_dialogOpen ? 'open' : 'closed') + ':' + PsychUISkin.signature();
+		if (!force && _lastVisualState == state)
+			return;
+
+		PsychUISkin.drawStyledRect(bg, _width, _height, PsychUISkin.inputOuterStyle(_dialogOpen, _hovered));
+		PsychUISkin.drawStyledRect(fieldBg, _width - 22, _height - 2, {
+			bgColor: PsychUISkin.inputInnerColor(_dialogOpen),
+			textColor: PsychUISkin.textPrimary(),
+			bgAlpha: 1.0,
+			radius: PsychUISkin.CONTROL_RADIUS - 1
+		});
+		PsychUISkin.drawStyledRect(button, 20, _height, PsychUISkin.navButtonStyle(_buttonPressed));
+		textObj.color = selectedLabel != null ? PsychUISkin.textPrimary() : PsychUISkin.textSecondary();
+		buttonIcon.color = PsychUISkin.navButtonStyle(_buttonPressed).textColor;
+		buttonIcon.text = 'v';
+		_themeSignature = PsychUISkin.signature();
+		_lastVisualState = state;
+	}
+
+	function openSelectionDialog():Void
+	{
+		_dialogOpen = true;
+		applyTheme();
+		PsychUISelectionDialog.open(new PsychUISelectionDialog(name != null && name.length > 0 ? name : 'Select an option', list, selectedIndex,
+			function(index:Int, label:String)
 			{
-				if(onlyAllowed != null)
-				{
-					if(onlyAllowed.contains(item.label))
-					{
-						item.active = item.visible = (n >= curScroll);
-						n++;
-					}
-					else item.active = item.visible = false;
-				}
-				else
-				{
-					item.active = item.visible = (n >= curScroll);
-					n++;
-				}
-			}
-
-			var txtY:Float = behindText.y + behindText.height + 1;
-			for (num => item in _items)
+				clickedOn(index, label);
+			},
+			function()
 			{
-				if(!item.visible) continue;
-				item.x = behindText.x;
-				item.y = txtY;
-				txtY += item.height;
-				item.forceNextUpdate = true;
-			}
-			bg.scale.y = txtY - behindText.y + 2;
-			bg.updateHitbox();
-		}
-		else
-		{
-			for (item in _items)
-				item.active = item.visible = false;
-
-			bg.scale.y = 20;
-			bg.updateHitbox();
-		}
+				_dialogOpen = false;
+				_buttonPressed = false;
+				applyTheme(true);
+			},
+			buildDisplayOptions()));
 	}
 
 	public var broadcastDropDownEvent:Bool = true;
-	function clickedOn(num:Int, label:String)
+	function clickedOn(num:Int, label:String):Void
 	{
 		selectedIndex = num;
-		showDropDown(false);
-		if(onSelect != null) onSelect(num, label);
-		if(broadcastDropDownEvent) PsychUIEventHandler.event(CLICK_EVENT, this);
+		if (onSelect != null)
+			onSelect(num, label);
+		if (broadcastDropDownEvent)
+			PsychUIEventHandler.event(CLICK_EVENT, this);
 	}
 
-	function addOption(option:String)
+	function set_selectedIndex(v:Int):Int
 	{
-		@:bypassAccessor list.push(option);
-		var curID:Int = list.length - 1;
-		var item:PsychUIDropDownItem = cast recycle(PsychUIDropDownItem, () -> new PsychUIDropDownItem(1, 1, this._itemWidth), true);
-		item.cameras = cameras;
-		item.label = option;
-		item.visible = item.active = false;
-		item.onClick = function() clickedOn(curID, option);
-		item.forceNextUpdate = true;
-		_items.push(item);
-		insert(1, item);
+		selectedIndex = v;
+		if (selectedIndex < 0 || selectedIndex >= list.length)
+			selectedIndex = -1;
+
+		@:bypassAccessor selectedLabel = selectedIndex >= 0 ? list[selectedIndex] : null;
+		textObj.text = selectedLabel != null ? getDisplayLabel(selectedLabel) : '';
+		applyTheme(true);
+		return selectedIndex;
 	}
 
-	function set_list(v:Array<String>)
+	function set_selectedLabel(v:String):String
+	{
+		var id:Int = list.indexOf(v);
+		if (id >= 0)
+		{
+			@:bypassAccessor selectedIndex = id;
+			selectedLabel = v;
+		}
+		else
+		{
+			@:bypassAccessor selectedIndex = -1;
+			selectedLabel = null;
+		}
+
+		textObj.text = selectedLabel != null ? getDisplayLabel(selectedLabel) : '';
+		applyTheme(true);
+		return selectedLabel;
+	}
+
+	function buildDisplayOptions():Array<String>
+	{
+		var result:Array<String> = [];
+		for (value in list)
+			result.push(getDisplayLabel(value));
+		return result;
+	}
+
+	inline function getDisplayLabel(value:String):String
+	{
+		if (value == null)
+			return '';
+		return displayFunction != null ? displayFunction(value) : value;
+	}
+
+	function set_list(v:Array<String>):Array<String>
 	{
 		var selected:String = selectedLabel;
-		showDropDown(false);
+		list = v != null ? v.copy() : [];
 
-		for (item in _items)
-			item.kill();
+		if (selected != null && list.contains(selected))
+			selectedLabel = selected;
+		else
+			selectedIndex = list.length > 0 ? 0 : -1;
 
-		_items = [];
-		list = [];
-		for (option in v)
-			addOption(option);
-
-		if(selectedLabel != null) selectedLabel = selected;
 		return v;
 	}
-}
 
-class PsychUIDropDownItem extends FlxSpriteGroup
-{
-	public var hoverStyle:UIStyleData = {
-		bgColor: 0xFF0066FF,
-		textColor: FlxColor.WHITE,
-		bgAlpha: 1
-	};
-	public var normalStyle:UIStyleData = {
-		bgColor: FlxColor.WHITE,
-		textColor: FlxColor.BLACK,
-		bgAlpha: 1
-	};
-
-	public var bg:FlxSprite;
-	public var text:FlxText;
-	public function new(x:Float = 0, y:Float = 0, width:Float = 100)
+	function set_displayFunction(v:String->String):String->String
 	{
-		super(x, y);
-
-		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
-		bg.setGraphicSize(width, 20);
-		bg.updateHitbox();
-		add(bg);
-
-		text = new FlxText(0, 0, width, 8);
-		text.color = FlxColor.BLACK;
-		add(text);
+		displayFunction = v;
+		textObj.text = selectedLabel != null ? getDisplayLabel(selectedLabel) : '';
+		return v;
 	}
 
-	public var onClick:Void->Void;
-	public var forceNextUpdate:Bool = false;
-	public static var isDragging:Bool = false;
-	override function update(elapsed:Float)
+	#if android
+	inline function tryOpenNativeDropDown():Bool
 	{
-		super.update(elapsed);
-		if(FlxG.mouse.justMoved || FlxG.mouse.justPressed || FlxG.mouse.justReleased || forceNextUpdate)
+		if (list == null || list.length <= 0)
+			return false;
+
+		var nativeSelectedIndex:Int = selectedIndex >= 0 ? selectedIndex : 0;
+		if (AndroidNativeDropDown.show(name != null ? name : 'Select option', list, nativeSelectedIndex))
 		{
-			var overlapped:Bool = (FlxG.mouse.overlaps(bg, camera));
-
-			var style = overlapped ? hoverStyle : normalStyle;
-			bg.color = style.bgColor;
-			text.color = style.textColor;
-			bg.alpha = style.bgAlpha;
-			forceNextUpdate = false;
-
-			#if mobile
-			if(overlapped && FlxG.mouse.justReleased && !isDragging)
-			#else
-			if(overlapped && FlxG.mouse.justPressed)
-			#end
-				onClick();
+			waitingNativeSelection = true;
+			_dialogOpen = true;
+			FlxG.stage.window.textInputEnabled = false;
+			return true;
 		}
-		
-		text.x = bg.x;
-		text.y = bg.y + bg.height/2 - text.height/2;
-	}
 
-	public var label(default, set):String;
-	function set_label(v:String)
-	{
-		label = v;
-		text.text = v;
-		bg.scale.y = text.height + 6;
-		bg.updateHitbox();
-		return v;
+		return false;
 	}
+	#end
 }

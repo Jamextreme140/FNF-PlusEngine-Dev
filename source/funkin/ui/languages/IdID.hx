@@ -13,8 +13,6 @@ class IdID
         ["jiwa yang", "bersedih"],
         ["sial sialnya", "ku bertemu dengan cinta semu"],
         ["kisah tanpa", "dirimu"],
-        ["berbukalah dengan", "yang manis"],
-        ["liburan ke", "luar kota saat lebaran"],
     ];
     
     public static var translations:Map<String, String> = [
@@ -29,6 +27,8 @@ class IdID
         // Gameplay
         "score_text" => "Skor: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
         "score_text_instakill" => "Skor: {1} | Rating: {2} | TPS: {3}/{4}",
+        "score_text_legacy" => "Skor: {1} | Misses: {2} | Rating: {3}",
+        "score_text_instakill_legacy" => "Skor: {1} | Rating: {2}",
         "practice_mode" => "Mode Latihan",
         "perfect_mode" => "Mode Sempurna",
         "opponent_mode" => "Mode Lawan",
@@ -269,6 +269,8 @@ class IdID
         "description_gradient_time_bar" => "Jika dicentang, bar waktu akan diarsir sesuai dengan warna ikon karakter.",
         "setting_flashing_lights" => "Lampu Berkedip",
         "description_flashing_lights" => "Hilangkan centang pada opsi ini jika Anda sensitif terhadap cahaya berkedip!",
+        "setting_experimental_native_wavy_time_bar" => "Bilah Waktu Bergelombang Asli EKSPERIMENTAL",
+        "description_experimental_native_wavy_time_bar" => "PERINGATAN: (Fitur Eksperimental) Jika diaktifkan, fitur ini akan menggunakan bilah waktu bergelombang bawaan Android dan menyembunyikan pengisian bilah waktu mesin.",
         "setting_show_key_viewer" => "Tampilkan Key Viewer",
         "description_show_key_viewer" => "Jika dicentang, menampilkan sebuah key viewer yang menunjukkan tombol mana yang sedang ditekan.",
         "setting_key_viewer_color" => "Warna Key Viewer:",
@@ -388,6 +390,14 @@ class IdID
         "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
         "setting_legacy_shader_init" => "Inisialisasi Shader Warisan",
         "description_legacy_shader_init" => "Jika dicentang, menggunakan sistem inisialisasi shader Psych 0.7.3.\nMenggunakan parameter glslVersion dan langsung menggunakan FlxRuntimeShader alih-alih\nErrorHandledRuntimeShader. Aktifkan jika mod shader lama tidak berfungsi.",
+        "setting_use_wavy_time_bar" => "Gunakan Bilah Waktu Bergelombang",
+        "description_use_wavy_time_bar" => "Jika dicentang, gunakan bilah waktu bergelombang yang baru di gameplay dan layar loading. Biarkan mati jika kamu ingin bilah klasik bawaan engine.",
+        "setting_vanilla_transition" => "Transisi Vanilla",
+        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi standar alih-alih transisi khusus Plus Engine.",
+        "setting_use_psych_score_text" => "Gunakan Teks Skor Psych",
+        "description_use_psych_score_text" => "Jika dicentang, format teks skor Psych Engine yang asli akan digunakan di antarmuka game.",
+        "setting_use_new_freeplay" => "Gunakan Freeplay yang Baru",
+        "description_use_new_freeplay" => "Jika opsi ini tidak dicentang, permainan akan menggunakan mode Freeplay klasik Psych alih-alih mode Freeplay Plus Engine yang baru.",
 
         // Modchart Settings
         "setting_enable_3d_cameras" => "Aktifkan Kamera 3D",
@@ -400,12 +410,8 @@ class IdID
         "description_render_arrow_paths" => "Jika dicentang: Menampilkan garis lintasan panah.\nPERINGATAN: Dapat mempengaruhi kinerja secara signifikan.",
         "setting_styled_arrow_paths" => "Jalur Panah Berdesain",
         "description_styled_arrow_paths" => "Menerapkan warna, transparansi, dan skala pada jalur panah.\nMembutuhkan opsi \"Render Arrow Paths\" untuk diaktifkan.",
-        "setting_arrow_path_boundary" => "Batas Jalur Panah",
-        "description_arrow_path_boundary" => "Jarak dalam piksel di luar tepi layar untuk merender jalur.\nLebih rendah = Kinerja lebih baik | Lebih tinggi = Lebih sedikit pop-in visual",
         "setting_hold_end_scale" => "Skala Akhir Hold",
         "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran default",
-        "setting_prevent_scaled_hold_ends" => "Mencegah Ujung Pegangan yang Terkelupas",
-        "description_prevent_scaled_hold_ends" => "Menjaga ujung pegangan tetap berukuran konstan terlepas dari modifikasi.\nPERINGATAN: Menambahkan perhitungan tambahan, dapat mengurangi FPS jika ada banyak pegangan.",
         "setting_column_specific_modifiers" => "Modifikator Spesifik Kolom",
         "description_column_specific_modifiers" => "Memungkinkan modifikator untuk memengaruhi jalur note individu.\nMenonaktifkan fitur ini meningkatkan kinerja dengan mengurangi perhitungan per jalur.",
         "setting_holds_behind_strums" => "Hold di Belakang Petikan",
@@ -452,11 +458,11 @@ class IdID
         "storage_type_name_media" => "Penyimpanan Media",
         "storage_type_name_obb" => "Penyimpanan OBB",
         "storage_type_name_global" => "Data Aplikasi Global",
-        "description_storage_type" => "Pilih tempat untuk menyimpan data permainan.\nLihat deskripsi detail saat mengubah opsi.\n\nMengubah ini memerlukan restart game!",
+        "description_storage_type" => "Pilih tempat untuk menyimpan data game.\nLihat deskripsi detail saat mengubah opsi.\n\nMengubah ini memerlukan restart game!",
         "setting_show_debug_buttons" => "Tampilkan Tombol Debug",
         "description_show_debug_buttons" => "Jika dicentang, menampilkan tombol T (Trace) dan D (Debug) di pojok kanan atas.\nT mengaktifkan/menonaktifkan tampilan trace, D mengganti tingkat debug FPS.",
-        "setting_open_file_manager" => "Buka Pengelola Berkas",
-        "description_open_file_manager" => "Telusuri dan edit berkas game menggunakan pengelola berkas bawaan Android.\nTekan ACCEPT untuk membuka.",
+        "setting_open_data_folder" => "Buka Folder Data",
+        "description_open_data_folder" => "Membuka penjelajah file sistem Android untuk menelusuri folder data game.\nLokasi: Android/data/com.leninasto.plusengine/files/",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",

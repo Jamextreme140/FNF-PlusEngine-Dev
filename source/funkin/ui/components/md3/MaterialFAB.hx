@@ -40,13 +40,6 @@ class MaterialFAB extends FlxSpriteGroup
 	static inline var EXTENDED_PADDING_H:Int = 16;
 	static inline var LABEL_SIZE:Int = 14;
 
-	// Colors (MD3 — Primary Container surface tint)
-	static inline var CONTAINER_COLOR:FlxColor = 0xFFFFD8E4; // Primary container (pinkish)
-	static inline var ICON_COLOR:FlxColor = 0xFF31111D;
-	static inline var SHADOW_COLOR:FlxColor = 0x33000000;
-	static inline var HOVER_OVERLAY:FlxColor = 0x14000000;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F000000;
-
 	// Extended FAB
 	var isExtended:Bool = false;
 	var _label:String = "";
@@ -95,8 +88,9 @@ class MaterialFAB extends FlxSpriteGroup
 
 		// Shadow (elevation simulation)
 		shadow = new FlxSprite(3, 5);
-		shadow.makeGraphic(containerW, containerH, SHADOW_COLOR);
+		shadow.makeGraphic(containerW, containerH, FlxColor.TRANSPARENT, true);
 		drawRoundedRect(shadow, containerW, containerH, cornerRadius);
+		shadow.color = MD3Theme.shadowColor();
 		add(shadow);
 
 		// Container
@@ -125,7 +119,7 @@ class MaterialFAB extends FlxSpriteGroup
 		if (isExtended)
 		{
 			labelText = new FlxText(EXTENDED_PADDING_H + iconSize + 8, 0, 0, label, LABEL_SIZE);
-			labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, MD3Theme.onTertiaryContainer, LEFT);
+			labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.onTertiaryContainer, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
 			labelText.y = (containerH - labelText.height) / 2;
 			add(labelText);
@@ -186,7 +180,7 @@ class MaterialFAB extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.onTertiaryContainer);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -200,14 +194,14 @@ class MaterialFAB extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.onTertiaryContainer, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.onTertiaryContainer) : FlxColor.TRANSPARENT;
 			pressTween = FlxTween.num(stateLayer.alpha, isHovered ? 1.0 : 0.0, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 
@@ -218,6 +212,7 @@ class MaterialFAB extends FlxSpriteGroup
 
 	function _onThemeChange():Void
 	{
+		if (shadow != null) shadow.color = MD3Theme.shadowColor();
 		if (container != null) container.color = MD3Theme.tertiaryContainer;
 		if (iconSprite != null) iconSprite.color = MD3Theme.onTertiaryContainer;
 		if (labelText != null) labelText.color = MD3Theme.onTertiaryContainer;

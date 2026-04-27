@@ -1,5 +1,6 @@
 package funkin.ui.mainmenu;
 
+import haxe.Json;
 import flixel.FlxObject;
 import flixel.effects.FlxFlicker;
 import funkin.ui.debug.MasterEditorMenu;
@@ -16,12 +17,19 @@ enum MainMenuColumn {
 	RIGHT;
 }
 
+typedef MainMenuButtonModifier = {
+	?x:Dynamic,
+	?y:Dynamic,
+	?scale:Dynamic,
+	?FPS:Dynamic
+}
+
 class MainMenuState extends MusicBeatState
 {
 	public static var fnfVersion:String = '0.2.8';
-	public static var plusEngineBaseVersion:String = '1.2.7'; // Stable semantic version
+	public static var plusEngineBaseVersion:String = '1.3'; // Stable semantic version
 	#if DEV_BUILD
-	public static var devUpdate:String = 'Build 0'; // Build xxx or Beta x
+	public static var devUpdate:String = 'Beta 4'; // Build 249
 	public static var plusEngineVersion:String = plusEngineBaseVersion + ' (' + devUpdate + ')';
 	#else
 	public static var plusEngineVersion:String = plusEngineBaseVersion;
@@ -34,6 +42,8 @@ class MainMenuState extends MusicBeatState
 	var menuItems:FlxTypedGroup<FlxSprite>;
 	var leftItem:FlxSprite;
 	var rightItem:FlxSprite;
+	var mainMenuButtonModifiers:Map<String, MainMenuButtonModifier> = [];
+	var buttonIdBySprite:Map<FlxSprite, String> = [];
 
 	//Centered/Text options
 	var optionShit:Array<String> = [
@@ -79,6 +89,7 @@ class MainMenuState extends MusicBeatState
 	override function create()
 	{
 		super.create();
+		loadMainMenuButtonModifiers();
 
 		#if MODS_ALLOWED
 		Mods.pushGlobalMods();
@@ -145,14 +156,19 @@ class MainMenuState extends MusicBeatState
 			var item:FlxSprite = createMenuItem(option, 0, (num * 140) + 90);
 			item.y += (4 - optionShit.length) * 70; // Offsets for when you have anything other than 4 items
 			item.screenCenter(X);
+			applyMenuButtonModifier(option, item);
 		}
 
 		if (leftOption != null)
+		{
 			leftItem = createMenuItem(leftOption, 60, 490);
+			applyMenuButtonModifier(leftOption, leftItem);
+		}
 		if (rightOption != null)
 		{
 			rightItem = createMenuItem(rightOption, FlxG.width - 60, 490);
 			rightItem.x -= rightItem.width;
+			applyMenuButtonModifier(rightOption, rightItem);
 		}
 
 		#if DEV_BUILD
@@ -211,7 +227,122 @@ class MainMenuState extends MusicBeatState
 		menuItem.antialiasing = ClientPrefs.data.antialiasing;
 		menuItem.scrollFactor.set();
 		menuItems.add(menuItem);
+		buttonIdBySprite.set(menuItem, name);
 		return menuItem;
+	}
+
+	function loadMainMenuButtonModifiers():Void
+	{
+		mainMenuButtonModifiers.clear();
+
+		var path:String = 'data/menuButtonsModifier.json';
+		if (!Paths.fileExists(path, TEXT))
+			return;
+
+		try
+		{
+			var raw:String = Paths.getTextFromFile(path);
+			if (raw == null || raw.trim().length == 0)
+				return;
+
+			var data:Dynamic = Json.parse(raw);
+			for (field in Reflect.fields(data))
+			{
+				var modifier:MainMenuButtonModifier = cast Reflect.field(data, field);
+				if (modifier != null)
+					mainMenuButtonModifiers.set(normalizeMenuButtonKey(field), modifier);
+			}
+		}
+		catch (e:Dynamic)
+		{
+			trace('[MainMenuState] Failed to load menuButtonsModifier.json: ' + e);
+		}
+	}
+
+	function normalizeMenuButtonKey(key:String):String
+	{
+		if (key == null)
+			return '';
+
+		return key.toLowerCase().replace(' ', '').replace('_', '');
+	}
+
+	function getModifierForButton(buttonId:String):MainMenuButtonModifier
+	{
+		var normalizedId:String = normalizeMenuButtonKey(buttonId);
+		if (mainMenuButtonModifiers.exists(normalizedId))
+			return mainMenuButtonModifiers.get(normalizedId);
+
+		var displayKey:String = switch (buttonId)
+		{
+			case 'story_mode': 'StoryMode';
+			case 'freeplay': 'Freeplay';
+			case 'mods': 'Mods';
+			case 'credits': 'Credits';
+			case 'options': 'Settings';
+			case 'achievements': 'Achievements';
+			default: buttonId;
+		};
+
+		var normalizedDisplayKey:String = normalizeMenuButtonKey(displayKey);
+		return mainMenuButtonModifiers.exists(normalizedDisplayKey) ? mainMenuButtonModifiers.get(normalizedDisplayKey) : null;
+	}
+
+	function parseModifierNumber(value:Dynamic):Null<Float>
+	{
+		if (value == null)
+			return null;
+
+		if (Std.isOfType(value, Int))
+			return value;
+		if (Std.isOfType(value, Float))
+			return value;
+		if (Std.isOfType(value, String))
+		{
+			var str:String = cast value;
+			if (str.toLowerCase().trim() == 'default')
+				return null;
+			return Std.parseFloat(str);
+		}
+
+		return null;
+	}
+
+	function parseModifierInt(value:Dynamic):Null<Int>
+	{
+		var parsed:Null<Float> = parseModifierNumber(value);
+		return parsed == null || Math.isNaN(parsed) ? null : Std.int(parsed);
+	}
+
+	function applyMenuButtonModifier(buttonId:String, button:FlxSprite):Void
+	{
+		var modifier = getModifierForButton(buttonId);
+		if (modifier == null || button == null)
+			return;
+
+		var scaleValue:Null<Float> = parseModifierNumber(modifier.scale);
+		if (scaleValue != null && !Math.isNaN(scaleValue) && scaleValue > 0)
+		{
+			button.scale.set(scaleValue, scaleValue);
+			button.updateHitbox();
+		}
+
+		var fpsValue:Null<Int> = parseModifierInt(modifier.FPS);
+		if (fpsValue != null && fpsValue > 0)
+		{
+			var idleAnim = button.animation.getByName('idle');
+			var selectedAnim = button.animation.getByName('selected');
+			if (idleAnim != null) idleAnim.frameRate = fpsValue;
+			if (selectedAnim != null) selectedAnim.frameRate = fpsValue;
+		}
+
+		var xValue:Null<Float> = parseModifierNumber(modifier.x);
+		if (xValue != null && !Math.isNaN(xValue))
+			button.x = xValue;
+
+		var yValue:Null<Float> = parseModifierNumber(modifier.y);
+		if (yValue != null && !Math.isNaN(yValue))
+			button.y = yValue;
 	}
 
 	var selectedSomethin:Bool = false;

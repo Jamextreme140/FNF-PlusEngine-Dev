@@ -28,25 +28,25 @@ class MaterialDialog extends FlxSpriteGroup
 	var bodyText:FlxText;
 	var confirmButton:MaterialButton;
 	var dismissButton:MaterialButton;
-
-	// Dimensions (MD3 specs)
-	static inline var DIALOG_WIDTH:Int = 312;
-	static inline var CORNER_RADIUS:Int = 28;
-	static inline var PADDING:Int = 24;
-	static inline var TITLE_SIZE:Int = 24;
-	static inline var BODY_SIZE:Int = 14;
-	static inline var BUTTON_SPACING:Int = 8;
-	static inline var BUTTON_WIDTH:Float = 120;
-
-	// Colors (MD3)
-	static inline var PANEL_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var SCRIM_COLOR:FlxColor = 0x52000000;
-	static inline var TITLE_COLOR:FlxColor = 0xFF1C1B1F;
-	static inline var BODY_COLOR:FlxColor = 0xFF49454F;
+	var panelWidth:Int = 0;
+	var panelHeight:Int = 0;
+	var buttonWidth:Int = 0;
+	var buttonHeight:Int = 0;
+	var confirmBaseX:Float = 0;
+	var confirmBaseY:Float = 0;
+	var dismissBaseX:Float = 0;
+	var dismissBaseY:Float = 0;
+	var focusedAction:Int = 1;
 
 	// Animation
 	var openTween:FlxTween;
 	var scrimTween:FlxTween;
+
+	inline function dialogPadding():Int return MD3Metrics.margin(20);
+	inline function dialogTitleSize():Int return MD3Metrics.text(20);
+	inline function dialogBodySize():Int return MD3Metrics.text(15);
+	inline function dialogSpacing():Int return MD3Metrics.size(12);
+	inline function dialogRadius():Int return MD3Metrics.corner(20, panelWidth, panelHeight);
 
 	public function new(?title:String = "Dialog", ?body:String = "", ?confirmLabel:String = "Confirm", ?dismissLabel:String = "Cancel",
 		?onConfirm:Void->Void = null, ?onDismiss:Void->Void = null)
@@ -56,53 +56,66 @@ class MaterialDialog extends FlxSpriteGroup
 		this.onConfirm = onConfirm;
 		this.onDismiss = onDismiss;
 
-		// Compute panel height dynamically based on body text
-		var bodyTextTemp = new FlxText(0, 0, DIALOG_WIDTH - PADDING * 2, body, BODY_SIZE);
-		var bodyHeight = Std.int(bodyTextTemp.height);
-		var panelHeight = PADDING + TITLE_SIZE + 16 + bodyHeight + 16 + 40 + PADDING;
-		bodyTextTemp.destroy();
-
 		var screenW = FlxG.width;
 		var screenH = FlxG.height;
-		var panelX = (screenW - DIALOG_WIDTH) / 2;
-		var panelY = (screenH - panelHeight) / 2;
+		var padding = dialogPadding();
+		var spacing = dialogSpacing();
+		var titleSize = dialogTitleSize();
+		var bodySize = dialogBodySize();
+		buttonHeight = MD3Metrics.size(44);
+		panelWidth = MD3Metrics.dialogWidth(420, screenW);
+
+		// Compute panel height dynamically based on body text.
+		var bodyTextTemp = new FlxText(0, 0, panelWidth - padding * 2, body, bodySize);
+		var bodyHeight = Std.int(bodyTextTemp.height);
+		panelHeight = padding + titleSize + spacing + bodyHeight + spacing + buttonHeight + padding;
+		bodyTextTemp.destroy();
+		var minMargin = MD3Metrics.margin(24);
+		var panelX = Std.int((screenW - panelWidth) / 2);
+		var panelY = Std.int(Math.max(minMargin, (screenH - panelHeight) / 2));
 
 		// Scrim (full-screen overlay)
 		scrim = new FlxSprite(0, 0);
-		scrim.makeGraphic(screenW, screenH, SCRIM_COLOR);
+		scrim.makeGraphic(screenW, screenH, MD3Theme.scrimColor());
 		scrim.alpha = 0;
 		add(scrim);
 
 		// Panel
 		panel = new FlxSprite(panelX, panelY);
-		panel.makeGraphic(DIALOG_WIDTH, panelHeight, FlxColor.WHITE);
-		drawRoundedRect(panel, DIALOG_WIDTH, panelHeight, CORNER_RADIUS);
+		panel.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(panel, panelWidth, panelHeight, dialogRadius());
 		panel.color = MD3Theme.surfaceContainerHigh;
 		panel.alpha = 0;
 		add(panel);
 
 		// Title
-		var titleY = panelY + PADDING;
-		titleText = new FlxText(panelX + PADDING, titleY, DIALOG_WIDTH - PADDING * 2, title, TITLE_SIZE);
-		titleText.setFormat(Paths.font("phantom.ttf"), TITLE_SIZE, MD3Theme.onSurface, LEFT);
+		var titleY = panelY + padding;
+		titleText = new FlxText(panelX + padding, titleY, panelWidth - padding * 2, title, titleSize);
+		titleText.setFormat(Paths.font("inter.otf"), titleSize, MD3Theme.onSurface, LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		titleText.alpha = 0;
 		add(titleText);
 
 		// Body text
-		var bodyY = titleY + TITLE_SIZE + 16;
-		bodyText = new FlxText(panelX + PADDING, bodyY, DIALOG_WIDTH - PADDING * 2, body, BODY_SIZE);
-		bodyText.setFormat(Paths.font("phantom.ttf"), BODY_SIZE, MD3Theme.onSurfaceVariant, LEFT);
+		var bodyY = titleY + titleSize + spacing;
+		bodyText = new FlxText(panelX + padding, bodyY, panelWidth - padding * 2, body, bodySize);
+		bodyText.setFormat(Paths.font("inter.otf"), bodySize, MD3Theme.onSurfaceVariant, LEFT);
 		bodyText.antialiasing = ClientPrefs.data.antialiasing;
 		bodyText.alpha = 0;
 		add(bodyText);
 
 		// Buttons row (bottom-right aligned)
-		var buttonRowY = panelY + panelHeight - PADDING - 40;
+		var buttonSpacing = MD3Metrics.size(8);
+		buttonWidth = Std.int(Math.min(MD3Metrics.size(140), (panelWidth - padding * 2 - buttonSpacing) / 2));
+		var buttonRowY = panelY + panelHeight - padding - buttonHeight;
+		dismissBaseX = panelX + panelWidth - padding - buttonWidth * 2 - buttonSpacing;
+		dismissBaseY = buttonRowY;
+		confirmBaseX = panelX + panelWidth - padding - buttonWidth;
+		confirmBaseY = buttonRowY;
 
 		dismissButton = new MaterialButton(
-			panelX + DIALOG_WIDTH - PADDING - BUTTON_WIDTH * 2 - BUTTON_SPACING,
-			buttonRowY, dismissLabel, TEXT, BUTTON_WIDTH,
+			dismissBaseX,
+			buttonRowY, dismissLabel, TEXT, buttonWidth,
 			function()
 			{
 				close();
@@ -113,8 +126,8 @@ class MaterialDialog extends FlxSpriteGroup
 		add(dismissButton);
 
 		confirmButton = new MaterialButton(
-			panelX + DIALOG_WIDTH - PADDING - BUTTON_WIDTH,
-			buttonRowY, confirmLabel, FILLED, BUTTON_WIDTH,
+			confirmBaseX,
+			buttonRowY, confirmLabel, FILLED, buttonWidth,
 			function()
 			{
 				close();
@@ -127,50 +140,15 @@ class MaterialDialog extends FlxSpriteGroup
 		// Start hidden
 		visible = false;
 		MD3Theme.addListener(_onThemeChange);
+		refreshActionFocus();
 	}
 
 	function _onThemeChange():Void
 	{
+		if (scrim != null) scrim.makeGraphic(FlxG.width, FlxG.height, MD3Theme.scrimColor());
 		if (panel != null) panel.color = MD3Theme.surfaceContainerHigh;
 		if (titleText != null) titleText.color = MD3Theme.onSurface;
 		if (bodyText != null) bodyText.color = MD3Theme.onSurfaceVariant;
-	}
-
-	function drawRoundedRect(sprite:FlxSprite, width:Int, height:Int, radius:Int):Void
-	{
-		var graphics = sprite.pixels;
-		graphics.fillRect(graphics.rect, FlxColor.TRANSPARENT);
-
-		for (py in 0...height)
-		{
-			for (px in 0...width)
-			{
-				var inRect = true;
-				if (px < radius && py < radius)
-				{
-					var dx = radius - px; var dy = radius - py;
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px >= width - radius && py < radius)
-				{
-					var dx = px - (width - radius); var dy = radius - py;
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px < radius && py >= height - radius)
-				{
-					var dx = radius - px; var dy = py - (height - radius);
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-				else if (px >= width - radius && py >= height - radius)
-				{
-					var dx = px - (width - radius); var dy = py - (height - radius);
-					inRect = (dx * dx + dy * dy) <= radius * radius;
-				}
-
-				if (inRect)
-					graphics.setPixel32(px, py, 0xFFFFFFFF);
-			}
-		}
 	}
 
 	public function open():Void
@@ -178,6 +156,8 @@ class MaterialDialog extends FlxSpriteGroup
 		if (isOpen) return;
 		isOpen = true;
 		visible = true;
+		focusedAction = 1;
+		refreshActionFocus();
 
 		if (openTween != null) openTween.cancel();
 		if (scrimTween != null) scrimTween.cancel();
@@ -209,6 +189,96 @@ class MaterialDialog extends FlxSpriteGroup
 		FlxTween.tween(dismissButton, {alpha: 0}, 0.15, {ease: FlxEase.cubeIn});
 	}
 
+	public function focusConfirm():Void
+	{
+		focusedAction = 1;
+		refreshActionFocus();
+	}
+
+	public function focusDismiss():Void
+	{
+		focusedAction = 0;
+		refreshActionFocus();
+	}
+
+	public function moveFocus(direction:Int):Void
+	{
+		if (direction == 0) return;
+		focusedAction = focusedAction == 1 ? 0 : 1;
+		refreshActionFocus();
+	}
+
+	public function activateFocused():Void
+	{
+		if (focusedAction == 1)
+		{
+			if (confirmButton.onClick != null) confirmButton.onClick();
+		}
+		else if (dismissButton.onClick != null)
+		{
+			dismissButton.onClick();
+		}
+	}
+
+	public function handlePointerTap(screenX:Float, screenY:Float):Bool
+	{
+		if (!isOpen) return false;
+
+		if (isPointInsideButton(confirmButton, screenX, screenY))
+		{
+			if (confirmButton.onClick != null) confirmButton.onClick();
+			return true;
+		}
+
+		if (isPointInsideButton(dismissButton, screenX, screenY))
+		{
+			if (dismissButton.onClick != null) dismissButton.onClick();
+			return true;
+		}
+
+		if (!containsPoint(screenX, screenY))
+		{
+			close();
+			if (onDismiss != null) onDismiss();
+			return true;
+		}
+
+		return false;
+	}
+
+	public function containsPoint(screenX:Float, screenY:Float):Bool
+	{
+		return screenX >= panel.x && screenX <= panel.x + panelWidth && screenY >= panel.y && screenY <= panel.y + panelHeight;
+	}
+
+	inline function isPointInsideButton(button:MaterialButton, screenX:Float, screenY:Float):Bool
+	{
+		if (button == null) return false;
+
+		var buttonWidthScaled:Float = buttonWidth * button.scale.x;
+		var buttonHeightScaled:Float = buttonHeight * button.scale.y;
+		return screenX >= button.x && screenX <= button.x + buttonWidthScaled && screenY >= button.y && screenY <= button.y + buttonHeightScaled;
+	}
+
+	function refreshActionFocus():Void
+	{
+		if (confirmButton == null || dismissButton == null) return;
+
+		applyButtonFocus(confirmButton, focusedAction == 1, confirmBaseX, confirmBaseY);
+		applyButtonFocus(dismissButton, focusedAction == 0, dismissBaseX, dismissBaseY);
+	}
+
+	function applyButtonFocus(button:MaterialButton, isFocused:Bool, baseX:Float, baseY:Float):Void
+	{
+		var scaleValue:Float = isFocused ? 1.05 : 1.0;
+		button.scale.set(scaleValue, scaleValue);
+		button.alpha = isFocused ? 1.0 : 0.88;
+		var scaledWidth:Float = buttonWidth * scaleValue;
+		var scaledHeight:Float = buttonHeight * scaleValue;
+		button.x = baseX - (scaledWidth - buttonWidth) * 0.5;
+		button.y = baseY - (scaledHeight - buttonHeight) * 0.5;
+	}
+
 	override function update(elapsed:Float):Void
 	{
 		super.update(elapsed);
@@ -222,8 +292,8 @@ class MaterialDialog extends FlxSpriteGroup
 			var mousePos = FlxG.mouse.getScreenPosition();
 			var panelX = panel.x;
 			var panelY = panel.y;
-			var isOverPanel = mousePos.x >= panelX && mousePos.x <= panelX + DIALOG_WIDTH
-				&& mousePos.y >= panelY && mousePos.y <= panelY + panel.height;
+			var isOverPanel = mousePos.x >= panelX && mousePos.x <= panelX + panelWidth
+				&& mousePos.y >= panelY && mousePos.y <= panelY + panelHeight;
 
 			if (!isOverPanel)
 			{

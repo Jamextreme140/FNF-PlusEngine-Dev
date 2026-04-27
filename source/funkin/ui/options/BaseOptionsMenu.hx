@@ -33,6 +33,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 	public function new()
 	{
 		controls.isInSubstate = true;
+		Cursor.hide();
 
 		super();
 

@@ -68,38 +68,54 @@ class FunkinLua {
 		
 		// Configure Lua package.path for 0.7.3 mods compatibility on Android
 		#if (android && MODS_ALLOWED)
-		var modsPath:String = StorageUtil.getExternalStorageDirectory() + 'mods/';
-		var packagePathConfig:String = 'package.path = package.path .. ";' + modsPath + '?.lua;' + modsPath + '?/init.lua"';
-		LuaL.dostring(lua, packagePathConfig);
+		var packageSearchPaths:Array<String> = [];
+		for (modsRoot in Paths.getModsRootDirectories())
+		{
+			packageSearchPaths.push(modsRoot + '?.lua');
+			packageSearchPaths.push(modsRoot + '?/init.lua');
+		}
+		if (packageSearchPaths.length > 0)
+		{
+			var packagePathConfig:String = 'package.path = package.path .. ";' + packageSearchPaths.join(';') + '"';
+			LuaL.dostring(lua, packagePathConfig);
+		}
 		#end
 
 		this.scriptName = scriptName.trim();
 		
-		// Support both PlayState and ModState
+		// Support both PlayState and CustomState
 		var game:PlayState = PlayState.instance;
 		if(game != null) 
 		{
 			game.luaArray.push(this);
 		}
-		else if(FlxG.state != null) // Only try ModState if FlxG.state exists
+		else if(FlxG.state != null) // Only try CustomState if FlxG.state exists
 		{
-			// Try ModState if PlayState is not available
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			// Try CustomState if PlayState is not available
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
-				var ms:funkin.modding.ModState = cast modState;
+				var cs:funkin.modding.CustomState = cast curState;
 				#if LUA_ALLOWED
-				ms.luaArray.push(this);
+				cs.luaArray.push(this);
 				#end
 			}
 		}
 		// If neither PlayState nor a state exists, this is likely a global script
 		// Don't add to any array, it will be managed separately
 
-		var myFolder:Array<String> = this.scriptName.split('/');
 		#if MODS_ALLOWED
-		if(myFolder[0] + '/' == Paths.mods() && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1]))) //is inside mods folder
-			this.modFolder = myFolder[1];
+		var normalizedScriptName:String = this.scriptName.replace('\\', '/');
+		var resolvedModName:String = Paths.getModFolderNameFromPath(normalizedScriptName);
+		if(resolvedModName != null) {
+			if(Mods.currentModDirectory == resolvedModName || Mods.getGlobalMods().contains(resolvedModName))
+				this.modFolder = resolvedModName;
+		} else {
+			// Fallback for relative paths (e.g. 'mods/ModName/...')
+			var myFolder:Array<String> = normalizedScriptName.split('/');
+			if(myFolder[0] + '/' == 'mods/' && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
+				this.modFolder = myFolder[1];
+		}
 		#end
 
 		// Lua shit
@@ -169,6 +185,9 @@ class FunkinLua {
 			set('misses', game.songMisses);
 			set('hits', game.songHits);
 			set('combo', game.combo);
+			set('lastJudgement', 'none');
+			set('lastHitMs', 0);
+			set('lastHitScoreGain', 0);
 			set('deaths', PlayState.deathCounter);
 	
 			set('rating', game.ratingPercent);
@@ -351,12 +370,11 @@ class FunkinLua {
 			return MusicBeatState.getVariables().get(varName);
 		});
 		
-		// ModState Variable Functions
+		// CustomState Variable Functions
 		Lua_helper.add_callback(lua, "setSharedVar", function(varName:String, value:Dynamic) {
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
-				var ms:funkin.modding.ModState = cast modState;
 				#if HSCRIPT_ALLOWED
 				MusicBeatState.globalVariables.set(varName, value);
 				#end
@@ -369,8 +387,8 @@ class FunkinLua {
 			return value;
 		});
 		Lua_helper.add_callback(lua, "getSharedVar", function(varName:String, ?defaultValue:Dynamic = null) {
-			var modState:Dynamic = FlxG.state;
-			if(Std.isOfType(modState, funkin.modding.ModState))
+			var curState:Dynamic = FlxG.state;
+			if(Std.isOfType(curState, funkin.modding.CustomState))
 			{
 				#if HSCRIPT_ALLOWED
 				if(MusicBeatState.globalVariables.exists(varName))
@@ -1804,7 +1822,6 @@ class FunkinLua {
 		CustomSubstate.implement(this);
 		ShaderFunctions.implement(this);
 		CameraFunctions.implement(this);
-		CharacterFunctions.implement(this);
 		MiscellaneousFunctions.implement(this);
 		DeprecatedFunctions.implement(this);
 		#if MODCHARTS_NOTITG_ALLOWED LuaModchart.implement(this); #end

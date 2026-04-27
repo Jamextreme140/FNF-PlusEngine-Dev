@@ -19,6 +19,8 @@ import funkin.ui.components.md3.MD3Theme;
  */
 class MaterialNumericStepper extends FlxSpriteGroup
 {
+	static inline var TRACE_LAYOUT:Bool = false;
+
 	// -----------------------------------------------------------------------
 	// Public API
 	// -----------------------------------------------------------------------
@@ -31,6 +33,7 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	public var step:Float      = 1;
 	public var decimals:Int    = 0;
 	public var enabled:Bool    = true;
+	public var allowMouseInput:Bool = true;
 
 	/** Called with the new value only when the user presses − or +. */
 	public var onChange:Float->Void = null;
@@ -41,11 +44,13 @@ class MaterialNumericStepper extends FlxSpriteGroup
 
 	public var stepperWidth:Float = 120;
 
-	static inline var HEIGHT:Int         = 40;
-	static inline var BTN_AREA:Int       = 36;   // px wide for each −/+ zone
-	static inline var CORNER_RADIUS:Int  = 20;   // full pill
-	static inline var VALUE_SIZE:Int     = 13;
-	static inline var ICON_SIZE:Int      = 18;
+	inline function controlHeight():Int return MD3Metrics.size(44);
+	inline function buttonArea():Int return MD3Metrics.size(42);
+	inline function cornerRadius():Int return MD3Metrics.corner(22, stepperWidth, controlHeight());
+	inline function valueSize():Int return MD3Metrics.text(15);
+	inline function iconSize():Int return MD3Metrics.text(20);
+	inline function dividerInset():Int return MD3Metrics.size(9);
+	inline function hitHeight():Int return MD3Metrics.touch(controlHeight());
 
 	// -----------------------------------------------------------------------
 	// Visual components
@@ -104,63 +109,81 @@ class MaterialNumericStepper extends FlxSpriteGroup
 		this.stepperWidth = width;
 
 		var w = Std.int(width);
+		var h = controlHeight();
+		var area = buttonArea();
 
 		// Outlined background
 		background = new FlxSprite(0, 0);
-		background.makeGraphic(w, HEIGHT, FlxColor.TRANSPARENT, true);
-		_drawOutlinedPill(background, w, HEIGHT, CORNER_RADIUS);
+		background.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillAndStrokeRoundRect(background, w, h, cornerRadius(), 1, MD3Theme.surface, MD3Theme.outline);
 		add(background);
 
 		// Decrement state layer (hover / press)
 		decrState = new FlxSprite(0, 0);
-		decrState.makeGraphic(BTN_AREA, HEIGHT, FlxColor.WHITE, true);
-		_drawLeftPill(decrState, BTN_AREA, HEIGHT, CORNER_RADIUS);
-		decrState.color = MD3Theme.primary;
+		decrState.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(decrState, area, h, cornerRadius());
+		decrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		decrState.alpha = 0;
 		add(decrState);
 
 		// Increment state layer (hover / press)
-		incrState = new FlxSprite(w - BTN_AREA, 0);
-		incrState.makeGraphic(BTN_AREA, HEIGHT, FlxColor.WHITE, true);
-		_drawRightPill(incrState, BTN_AREA, HEIGHT, CORNER_RADIUS);
-		incrState.color = MD3Theme.primary;
+		incrState = new FlxSprite(w - area, 0);
+		incrState.antialiasing = ClientPrefs.data.antialiasing;
+		MD3ShapeTools.fillRoundRect(incrState, area, h, cornerRadius());
+		incrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		incrState.alpha = 0;
 		add(incrState);
 
 		// Vertical dividers
-		divL = new FlxSprite(BTN_AREA, 7);
-		divL.makeGraphic(1, HEIGHT - 14, 0xFFCAC4D0);
+		divL = new FlxSprite(area, dividerInset());
+		divL.makeGraphic(1, h - dividerInset() * 2, MD3Theme.outlineVariant);
 		add(divL);
 
-		divR = new FlxSprite(w - BTN_AREA - 1, 7);
-		divR.makeGraphic(1, HEIGHT - 14, 0xFFCAC4D0);
+		divR = new FlxSprite(w - area - 1, dividerInset());
+		divR.makeGraphic(1, h - dividerInset() * 2, MD3Theme.outlineVariant);
 		add(divR);
 
 		// Decrement glyph
-		decrText = new FlxText(0, 0, BTN_AREA, "\u2212", ICON_SIZE);
-		decrText.setFormat(Paths.font("phantom.ttf"), ICON_SIZE, MD3Theme.primary, CENTER);
+		decrText = new FlxText(0, 0, area, "\u2212", iconSize());
+		decrText.setFormat(Paths.font("inter.otf"), iconSize(), MD3Theme.primary, CENTER);
 		decrText.antialiasing = ClientPrefs.data.antialiasing;
-		decrText.y = (HEIGHT - decrText.height) / 2 + 1;
+		decrText.y = (h - decrText.height) * 0.5 - 1;
 		add(decrText);
 
 		// Increment glyph
-		incrText = new FlxText(w - BTN_AREA, 0, BTN_AREA, "+", ICON_SIZE);
-		incrText.setFormat(Paths.font("phantom.ttf"), ICON_SIZE, MD3Theme.primary, CENTER);
+		incrText = new FlxText(w - area, 0, area, "+", iconSize());
+		incrText.setFormat(Paths.font("inter.otf"), iconSize(), MD3Theme.primary, CENTER);
 		incrText.antialiasing = ClientPrefs.data.antialiasing;
-		incrText.y = (HEIGHT - incrText.height) / 2 + 1;
+		incrText.y = (h - incrText.height) * 0.5 - 1;
 		add(incrText);
 
 		// Value display
-		valueText = new FlxText(BTN_AREA + 2, 0, w - BTN_AREA * 2 - 4, "", VALUE_SIZE);
-		valueText.setFormat(Paths.font("phantom.ttf"), VALUE_SIZE, MD3Theme.onSurface, CENTER);
+		valueText = new FlxText(area + 2, 0, w - area * 2 - 4, "", valueSize());
+		valueText.setFormat(Paths.font("inter.otf"), valueSize(), MD3Theme.onSurface, CENTER);
 		valueText.antialiasing = ClientPrefs.data.antialiasing;
-		valueText.y = (HEIGHT - valueText.height) / 2;
+		valueText.y = (h - valueText.height) * 0.5;
 		add(valueText);
 
 		// Assign value after all sprites are ready
 		this.value = value;
 
 		MD3Theme.addListener(_onThemeChange);
+		traceLayout('create');
+	}
+
+	function traceLayout(reason:String):Void
+	{
+		if (!TRACE_LAYOUT) return;
+	}
+
+	public function getDebugLayout():String
+	{
+		return 'group=(' + x + ', ' + y + ')'
+			+ ' width=' + stepperWidth
+			+ ' decrLocal=(' + (decrState.x - x) + ', ' + (decrState.y - y) + ', ' + decrState.width + 'x' + decrState.height + ')'
+			+ ' incrLocal=(' + (incrState.x - x) + ', ' + (incrState.y - y) + ', ' + incrState.width + 'x' + incrState.height + ')'
+			+ ' valueTextLocal=(' + (valueText.x - x) + ', ' + (valueText.y - y) + ', ' + valueText.width + 'x' + valueText.height + ')'
+			+ ' value=' + value;
 	}
 
 	// -----------------------------------------------------------------------
@@ -178,7 +201,9 @@ class MaterialNumericStepper extends FlxSpriteGroup
 			valueText.text = decimals > 0
 				? Std.string(FlxMath.roundDecimal(v, decimals))
 				: Std.string(Std.int(v));
+			valueText.y = y + (controlHeight() - valueText.height) * 0.5;
 		}
+		traceLayout('set_value');
 		return value;
 	}
 
@@ -190,6 +215,7 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	{
 		var prev = value;
 		value += dir * step;
+		traceLayout('step(' + dir + ')');
 		if (value != prev && onChange != null) onChange(value);
 	}
 
@@ -201,13 +227,26 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	{
 		super.update(elapsed);
 		if (!enabled) return;
+		if (!allowMouseInput)
+		{
+			hoverDecr = false;
+			hoverIncr = false;
+			holdDecr = false;
+			holdIncr = false;
+			decrState.alpha = 0;
+			incrState.alpha = 0;
+			return;
+		}
 
-		// Mouse position relative to this group
-		var mx:Float = FlxG.mouse.x - x;
-		var my:Float = FlxG.mouse.y - y;
+		var area = buttonArea();
+		var h = controlHeight();
+		var mousePos = FlxG.mouse.getScreenPosition();
+		var mx:Float = mousePos.x - x;
+		var my:Float = mousePos.y - y;
+		var hitPadY = (hitHeight() - h) * 0.5;
 
-		var overDecr = (mx >= 0 && mx < BTN_AREA        && my >= 0 && my < HEIGHT);
-		var overIncr = (mx >= stepperWidth - BTN_AREA && mx < stepperWidth && my >= 0 && my < HEIGHT);
+		var overDecr = (mx >= 0 && mx < area && my >= -hitPadY && my < h + hitPadY);
+		var overIncr = (mx >= stepperWidth - area && mx < stepperWidth && my >= -hitPadY && my < h + hitPadY);
 
 		// Hover effect
 		if (overDecr != hoverDecr)
@@ -253,11 +292,17 @@ class MaterialNumericStepper extends FlxSpriteGroup
 
 	function _onThemeChange():Void
 	{
+		if (background != null)
+		{
+			MD3ShapeTools.fillAndStrokeRoundRect(background, Std.int(stepperWidth), controlHeight(), cornerRadius(), 1, MD3Theme.surface, MD3Theme.outline);
+		}
 		if (decrText  != null) decrText.color  = MD3Theme.primary;
 		if (incrText  != null) incrText.color  = MD3Theme.primary;
 		if (valueText != null) valueText.color = MD3Theme.onSurface;
-		if (decrState != null) decrState.color = MD3Theme.primary;
-		if (incrState != null) incrState.color = MD3Theme.primary;
+		if (decrState != null) decrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
+		if (incrState != null) incrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
+		if (divL != null) divL.color = MD3Theme.outlineVariant;
+		if (divR != null) divR.color = MD3Theme.outlineVariant;
 	}
 
 	override function destroy():Void
@@ -266,83 +311,4 @@ class MaterialNumericStepper extends FlxSpriteGroup
 		super.destroy();
 	}
 
-	// -----------------------------------------------------------------------
-	// Pixel-drawing helpers
-	// -----------------------------------------------------------------------
-
-	function _drawOutlinedPill(spr:FlxSprite, w:Int, h:Int, r:Int):Void
-	{
-		var gfx = spr.pixels;
-		gfx.fillRect(gfx.rect, FlxColor.TRANSPARENT);
-		var outline:Int = MD3Theme.outline;
-		var fill:Int    = MD3Theme.surface;
-		for (py in 0...h)
-			for (px in 0...w)
-			{
-				if (!_inRR(px, py, w, h, r)) continue;
-				gfx.setPixel32(px, py, _inRR(px, py, w, h, r, 1) ? fill : outline);
-			}
-	}
-
-	function _drawLeftPill(spr:FlxSprite, w:Int, h:Int, r:Int):Void
-	{
-		var gfx = spr.pixels;
-		gfx.fillRect(gfx.rect, FlxColor.TRANSPARENT);
-		for (py in 0...h)
-			for (px in 0...w)
-				if (_inLeftRR(px, py, w, h, r)) gfx.setPixel32(px, py, 0xFFFFFFFF);
-	}
-
-	function _drawRightPill(spr:FlxSprite, w:Int, h:Int, r:Int):Void
-	{
-		var gfx = spr.pixels;
-		gfx.fillRect(gfx.rect, FlxColor.TRANSPARENT);
-		for (py in 0...h)
-			for (px in 0...w)
-				if (_inRightRR(px, py, w, h, r)) gfx.setPixel32(px, py, 0xFFFFFFFF);
-	}
-
-	/** True if (px, py) is inside a rounded rectangle with uniform corner radius r,
-	 *  optionally shrunk inward by `shrink` pixels. */
-	inline function _inRR(px:Int, py:Int, w:Int, h:Int, r:Int, shrink:Int = 0):Bool
-	{
-		var rs = r - shrink;
-		if (rs <= 0) return true;
-		var x1 = rs; var x2 = w - rs;
-		var y1 = rs; var y2 = h - rs;
-		if (px >= x1 && px < x2) return (py >= shrink && py < h - shrink);
-		if (py >= y1 && py < y2) return (px >= shrink && px < w - shrink);
-		var cx = (px < r) ? rs : w - rs;
-		var cy = (py < r) ? rs : h - rs;
-		var dx = px - cx + 0.5;
-		var dy = py - cy + 0.5;
-		return dx * dx + dy * dy <= rs * rs;
-	}
-
-	/** Rounded on the left side only (right edge is straight). */
-	inline function _inLeftRR(px:Int, py:Int, w:Int, h:Int, r:Int):Bool
-	{
-		if (px >= r) return (py >= 0 && py < h);
-		if (py >= r && py < h - r) return _circleX(px, r, r);
-		var cy = (py < r) ? r : h - r;
-		var dx = px - r + 0.5; var dy = py - cy + 0.5;
-		return dx * dx + dy * dy <= r * r;
-	}
-
-	/** Rounded on the right side only (left edge is straight). */
-	inline function _inRightRR(px:Int, py:Int, w:Int, h:Int, r:Int):Bool
-	{
-		var cx2 = w - r;
-		if (px < cx2) return (py >= 0 && py < h);
-		if (py >= r && py < h - r) return _circleX(px - cx2, 0, r);
-		var cy = (py < r) ? r : h - r;
-		var dx = px - cx2 + 0.5; var dy = py - cy + 0.5;
-		return dx * dx + dy * dy <= r * r;
-	}
-
-	inline function _circleX(dx:Int, cx:Int, r:Int):Bool
-	{
-		var d = dx - cx + 0.5;
-		return d * d <= r * r;
-	}
 }

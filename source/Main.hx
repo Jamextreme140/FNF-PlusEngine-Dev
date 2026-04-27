@@ -4,6 +4,7 @@ import funkin.ui.debug.FPSCounter;
 import funkin.ui.debug.TraceDisplay;
 import funkin.ui.debug.TraceButton;
 import funkin.ui.debug.DebugButton;
+import funkin.ui.MaterialVolumeTray;
 import funkin.Preferences as ClientPrefs;
 import funkin.util.Screenshot;
 import flixel.FlxGame;
@@ -25,9 +26,10 @@ import openfl.events.KeyboardEvent;
 #if (linux || mac)
 import lime.graphics.Image;
 #end
-#if COPYSTATE_ALLOWED
-import funkin.mobile.backend.CopyState;
-#end
+// CopyState removed - assets are read directly from APK
+// #if COPYSTATE_ALLOWED
+// import funkin.mobile.backend.CopyState;
+// #end
 import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
 import funkin.input.Cursor;
@@ -56,19 +58,23 @@ class Main extends Sprite
 	public static var traceDisplay:TraceDisplay;
 	public static var traceButton:TraceButton;
 	public static var debugButton:DebugButton;
+	public static var materialVolumeTray:MaterialVolumeTray;
 
 	public static final platform:String = #if mobile "Phones" #else "PCs" #end;
 	public static var watermarkSprite:Sprite = null;
 	public static var watermark:Bitmap = null;
 
-	// Window focus management
 	public static var focused:Bool = true;
 	var oldVol:Float = 1.0;
 	var newVol:Float = 0.2;
 	var focusStateTimer:FlxTimer;
 	var windowHasFocus:Bool = true;
 	var restoringFocusVolume:Bool = false;
+	var lastReportedVolume:Float = 1.0;
 	public static var focusMusicTween:FlxTween;
+	#if android
+	var startupOrientationFixAttempts:Int = 0;
+	#end
 
 	// You can pretty much ignore everything from here on - your code should go in your states.
 
@@ -89,11 +95,10 @@ class Main extends Sprite
 		#if android
 		ClientPrefs.loadStorageTypeEarly();
 		StorageUtil.requestPermissions();
-		trace('[Main] Current storage type: ' + ClientPrefs.data.storageType);
-		trace('[Main] Storage directory: ' + StorageUtil.getStorageDirectory());
 		#end
-		Sys.setCwd(StorageUtil.getStorageDirectory());
+		// iOS doesn't need working directory change either
 		#end
+		funkin.util.NativeCrashHandler.install(); // SEH filter for C++ level crashes (ACCESS_VIOLATION, STACK_OVERFLOW)
 		funkin.util.CrashHandler.init();
 		
 		// Initialize optimization systems EARLY
@@ -204,58 +209,25 @@ class Main extends Sprite
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
-			FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
+			FlxG.scaleMode = new MobileScaleMode();
+			#if android
+			ensureAndroidLandscapeOrientation(true);
+			#end
 		});
 		#end
 		
 		// Determine initial state. InitialState will load mods and redirect accordingly.
+		// Assets are read directly from APK, no need for CopyState
 		var initialState:Class<FlxState> = InitialState;
-		#if COPYSTATE_ALLOWED
-		// For Android < 11 with EXTERNAL storage, we need to check if permissions were granted
-		// before we can properly check existing files
-		#if android
-		var needsPermissions:Bool = false;
-		var grantedPerms = AndroidPermissions.getGrantedPermissions();
-		
-		if (ClientPrefs.data.storageType == "EXTERNAL") {
-			// Check permissions based on Android version
-			if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU) {
-				// Android 12 and below use legacy storage permissions
-				needsPermissions = !grantedPerms.contains('android.permission.WRITE_EXTERNAL_STORAGE');
-			} else {
-				// Android 13+ use granular media permissions
-				// For file operations, we need at least one media permission
-				needsPermissions = !grantedPerms.contains('android.permission.READ_MEDIA_IMAGES') &&
-								   !grantedPerms.contains('android.permission.READ_MEDIA_VIDEO') &&
-								   !grantedPerms.contains('android.permission.READ_MEDIA_AUDIO');
-				trace('[Main] Android 13+ detected, checking media permissions: ' + !needsPermissions);
-			}
-		}
-		
-		// If we need permissions and don't have them yet, always go to CopyState
-		// CopyState will handle the file checking after permissions are granted
-		if (needsPermissions || !CopyState.checkExistingFiles()) {
-			initialState = CopyState;
-			if (needsPermissions) {
-				trace('[Main] Permissions not granted yet for EXTERNAL storage (SDK: ' + AndroidVersion.SDK_INT + '), going to CopyState');
-			}
-		} else {
-			trace('[Main] All files exist, skipping CopyState');
-		}
-		#else
-		if (!CopyState.checkExistingFiles()) {
-			initialState = CopyState;
-		} else {
-			trace('[Main] All files exist, skipping CopyState');
-		}
-		#end
-		#else
-		// Preloader removed: always start at InitialState
-		#end
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
+		initializeMaterialVolumeTray();
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
+		funkin.graphics.RenderInterpolation.install();
+		#if android
+		funkin.mobile.AndroidOptimizer.applyRuntimeFramePacing();
+		#end
 		
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		fpsVar.visible = ClientPrefs.data.showFPS;
@@ -297,7 +269,7 @@ class Main extends Sprite
 		Cursor.hide();
 		#end
 
-		FlxG.fixedTimestep = false;
+		ClientPrefs.applyFramePacing();
 		FlxG.game.focusLostFramerate = #if mobile 30 #else 60 #end;
 		#if web
 		FlxG.keys.preventDefaultKeys.push(TAB);
@@ -330,6 +302,10 @@ class Main extends Sprite
 		// shader coords fix
 		var resizeDebounceTimer:FlxTimer = null;
 		function handleGameResized():Void {
+			#if android
+			ensureAndroidLandscapeOrientation();
+			#end
+
 			// Reposition the FPS counter relative to FlxGame (accounts for letterboxing)
 			if(fpsVar != null) {
 				var marginX = 10;
@@ -376,6 +352,68 @@ class Main extends Sprite
 		});
 
 		setupGame();
+	}
+
+	#if android
+	function ensureAndroidLandscapeOrientation(force:Bool = false):Void
+	{
+		if (!force && startupOrientationFixAttempts >= 3)
+			return;
+
+		var currentOrientation = funkin.mobile.backend.PsychJNI.getCurrentOrientationAsString();
+		var isLandscape = currentOrientation.indexOf('Landscape') == 0;
+		if (!force && isLandscape)
+			return;
+
+		startupOrientationFixAttempts++;
+		funkin.mobile.backend.PsychJNI.setOrientation(game.width, game.height, false, 'LandscapeLeft LandscapeRight');
+	}
+	#end
+
+	function initializeMaterialVolumeTray():Void
+	{
+		if (FlxG.game == null || Lib.current == null || Lib.current.stage == null)
+			return;
+
+		FlxG.sound.soundTrayEnabled = false;
+		lastReportedVolume = FlxG.sound.muted ? 0 : FlxG.sound.volume;
+
+		if (materialVolumeTray == null)
+			materialVolumeTray = new MaterialVolumeTray();
+
+		if (materialVolumeTray.parent != Lib.current.stage)
+		{
+			if (materialVolumeTray.parent != null)
+				materialVolumeTray.parent.removeChild(materialVolumeTray);
+			Lib.current.stage.addChild(materialVolumeTray);
+		}
+		Lib.current.stage.setChildIndex(materialVolumeTray, Lib.current.stage.numChildren - 1);
+
+		var self = this;
+		FlxG.sound.volumeHandler = function(volume:Float)
+		{
+			self.onVolumeChanged(volume);
+		};
+	}
+
+	function onVolumeChanged(volume:Float):Void
+	{
+		if (materialVolumeTray == null)
+			return;
+
+		lastReportedVolume = volume;
+		materialVolumeTray.showVolume(volume);
+	}
+
+	function preserveSavedMasterVolume(targetVolume:Float, ?flush:Bool = false):Void
+	{
+		if (FlxG.save == null)
+			return;
+
+		FlxG.save.data.volume = targetVolume;
+		FlxG.save.data.mute = FlxG.sound.muted;
+		if (flush)
+			FlxG.save.flush();
 	}
 
 	static function resetSpriteCache(sprite:Sprite):Void {
@@ -446,7 +484,10 @@ class Main extends Sprite
 		}
 
 		if (focusMusicTween != null) focusMusicTween.cancel();
-		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: newVol}, 0.5);
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: newVol}, 0.5, {
+			onUpdate: function(_) preserveSavedMasterVolume(oldVol),
+			onComplete: function(_) preserveSavedMasterVolume(oldVol, true)
+		});
 	}
 
 	function onWindowFocusIn():Void
@@ -467,8 +508,10 @@ class Main extends Sprite
 		// Normal global volume when focused
 		if (focusMusicTween != null) focusMusicTween.cancel();
 		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5, {
+			onUpdate: function(_) preserveSavedMasterVolume(oldVol),
 			onComplete: function(_)
 			{
+				preserveSavedMasterVolume(oldVol, true);
 				restoringFocusVolume = false;
 			}
 		});

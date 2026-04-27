@@ -26,7 +26,11 @@ package com.leninasto.plusengine.components
 
 import android.text.Editable
 import android.text.TextWatcher
+import android.os.SystemClock
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.widget.AbsListView
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.ListView
@@ -50,6 +54,7 @@ object DropDown {
 
 	const val NO_SELECTION: Int = -1
 	const val CANCELED: Int = -2
+	private const val ITEM_CLICK_SCROLL_GUARD_MS = 180L
 
 	private val pendingSelection: AtomicInteger = AtomicInteger(NO_SELECTION)
 	private val dialogVisible: AtomicBoolean = AtomicBoolean(false)
@@ -75,6 +80,11 @@ object DropDown {
 			}
 			val adapter = ArrayAdapter(activity, android.R.layout.simple_list_item_single_choice, filteredItems)
 			listView.adapter = adapter
+			val touchSlop = ViewConfiguration.get(activity).scaledTouchSlop
+			var touchDownX = 0f
+			var touchDownY = 0f
+			var tapCandidate = false
+			var suppressItemClickUntilMs = 0L
 
 			val searchInput = TextInputEditText(activity)
 			val searchLayout = TextInputLayout(activity).apply {
@@ -128,7 +138,58 @@ object DropDown {
 				override fun afterTextChanged(s: Editable?) {}
 			})
 
+			listView.setOnTouchListener { _, event ->
+				when (event.actionMasked) {
+					MotionEvent.ACTION_DOWN -> {
+						touchDownX = event.x
+						touchDownY = event.y
+						tapCandidate = true
+					}
+
+					MotionEvent.ACTION_MOVE -> {
+						if (tapCandidate) {
+							val movedX = kotlin.math.abs(event.x - touchDownX)
+							val movedY = kotlin.math.abs(event.y - touchDownY)
+							if (movedX > touchSlop || movedY > touchSlop) {
+								tapCandidate = false
+								suppressItemClickUntilMs = SystemClock.uptimeMillis() + ITEM_CLICK_SCROLL_GUARD_MS
+							}
+						}
+					}
+
+					MotionEvent.ACTION_CANCEL -> {
+						tapCandidate = false
+						suppressItemClickUntilMs = SystemClock.uptimeMillis() + ITEM_CLICK_SCROLL_GUARD_MS
+					}
+				}
+
+				false
+			}
+
+			listView.setOnScrollListener(object : AbsListView.OnScrollListener {
+				override fun onScrollStateChanged(view: AbsListView?, scrollState: Int) {
+					if (scrollState != AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+						tapCandidate = false
+						suppressItemClickUntilMs = SystemClock.uptimeMillis() + ITEM_CLICK_SCROLL_GUARD_MS
+					}
+				}
+
+				override fun onScroll(
+					view: AbsListView?,
+					firstVisibleItem: Int,
+					visibleItemCount: Int,
+					totalItemCount: Int
+				) {
+				}
+			})
+
 			listView.setOnItemClickListener { _, _, position, _ ->
+				if (!tapCandidate || SystemClock.uptimeMillis() < suppressItemClickUntilMs) {
+					listView.clearChoices()
+					adapter.notifyDataSetChanged()
+					return@setOnItemClickListener
+				}
+
 				if (position >= 0 && position < filteredIndices.size) {
 					pendingSelection.set(filteredIndices[position])
 					dialogRef?.dismiss()

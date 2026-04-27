@@ -3,6 +3,11 @@ package funkin.play.cutscene.dialogue;
 import haxe.Json;
 import openfl.utils.Assets;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 import funkin.ui.TypedAlphabet;
 import funkin.play.cutscene.dialogue.DialogueCharacter;
 
@@ -384,11 +389,20 @@ class DialogueBoxPsych extends FlxSpriteGroup
 	}
 
 	inline public static function parseDialogue(path:String):DialogueFile {
+		// Try loading from mods first, then from APK
+		var jsonContent:String = null;
 		#if MODS_ALLOWED
-		return cast (FileSystem.exists(path)) ? Json.parse(File.getContent(path)) : dummy();
-		#else
-		return cast (Assets.exists(path, TEXT)) ? Json.parse(Assets.getText(path)) : dummy();
+		if(FileSystem.exists(path))
+			jsonContent = File.getContent(path);
 		#end
+		
+		if(jsonContent == null && Assets.exists(path, TEXT))
+			jsonContent = Assets.getText(path);
+		
+		if(jsonContent != null)
+			return cast Json.parse(jsonContent);
+		
+		return dummy();
 	}
 
 	inline public static function dummy():DialogueFile

@@ -18,6 +18,11 @@ import openfl.utils.Assets;
 
 import haxe.Json;
 
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
+
 class FreeplayState_Psych extends MusicBeatState
 {
 	var songs:Array<PsychSongMetadata> = [];
@@ -213,6 +218,26 @@ class FreeplayState_Psych extends MusicBeatState
 		}
 		#end
 		super.closeSubState();
+	}
+
+	function refreshSelectedScoreData(?immediate:Bool = false):Void
+	{
+		if (songs.length == 0) return;
+
+		#if !switch
+		intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
+		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
+		#else
+		intendedScore = 0;
+		intendedRating = 0;
+		#end
+
+		if (immediate)
+		{
+			lerpScore = intendedScore;
+			lerpRating = intendedRating;
+			updateTexts();
+		}
 	}
 
 	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int)
@@ -475,7 +500,9 @@ class FreeplayState_Psych extends MusicBeatState
 		else if((controls.RESET || (touchPad != null && touchPad.buttonY != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
 		{
 			persistentUpdate = false;
-			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
+			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter, -1, function() {
+				refreshSelectedScoreData(true);
+			}));
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
 
@@ -488,11 +515,20 @@ class FreeplayState_Psych extends MusicBeatState
 		try
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			
+			// Try loading from mods first, then from APK
+			var jsonContent:String = null;
 			#if MODS_ALLOWED
-			var character:Dynamic = Json.parse(File.getContent(path));
-			#else
-			var character:Dynamic = Json.parse(Assets.getText(path));
+			if(FileSystem.exists(path))
+				jsonContent = File.getContent(path);
 			#end
+			
+			if(jsonContent == null && Assets.exists(path))
+				jsonContent = Assets.getText(path);
+			
+			if(jsonContent == null) return null;
+			
+			var character:Dynamic = Json.parse(jsonContent);
 			return character.vocals_file;
 		}
 		catch (e:Dynamic) {}

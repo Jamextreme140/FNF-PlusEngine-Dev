@@ -1,15 +1,84 @@
 package funkin.modding.scripting.psychlua;
 
 import funkin.modding.modchart.Manager;
+import funkin.modding.modchart.backend.core.ArrowData;
 import funkin.modding.modchart.backend.standalone.Adapter;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier.PathNode;
 import funkin.modding.scripting.FunkinLua;
 import funkin.data.song.Song;
+import funkin.input.Controls;
 import flixel.tweens.FlxEase;
+import flixel.input.keyboard.FlxKey;
+
+using StringTools;
 
 class LuaModchart
 {
+    static final __luaArrowPoint:FlxPoint = FlxPoint.get();
+    static final __luaArrowData:ArrowData = {
+        hitTime: 0,
+        distance: 0,
+        sourceTime: 0,
+        lane: 0,
+        player: 0,
+        isTapArrow: false,
+        straightHolds: false
+    };
+
+    public static function getRenderedStrumPosition(strum:FlxSprite, ?field:Int = -1):Null<FlxPoint> {
+        if (strum == null || Manager.instance == null || Adapter.instance == null)
+            return null;
+
+        final playfields = Manager.instance.playfields;
+        if (playfields == null || playfields.length == 0)
+            return null;
+
+        final player = Adapter.instance.getPlayerFromArrow(strum);
+        var targetField = field;
+        if (targetField < 0)
+            targetField = playfields.length > 1 ? Std.int(Math.min(player, playfields.length - 1)) : 0;
+
+        if (targetField < 0 || targetField >= playfields.length)
+            return null;
+
+        final playfield = playfields[targetField];
+        if (playfield == null)
+            return null;
+
+        final lane = Adapter.instance.getLaneFromArrow(strum);
+        final songPos = Adapter.instance.getSongPosition();
+        var arrowTime = Adapter.instance.getTimeFromArrow(strum);
+        var arrowDiff = arrowTime - songPos;
+        final centered2 = playfield.getPercent('centered2', player);
+        final isTapArrow = Adapter.instance.isTapNote(strum);
+
+        if (isTapArrow) {
+            arrowDiff += FlxG.height * 0.25 * centered2;
+        } else {
+            arrowTime = songPos + (FlxG.height * 0.25 * centered2);
+            arrowDiff = arrowTime - songPos;
+        }
+
+        __luaArrowData.hitTime = arrowTime;
+        __luaArrowData.distance = arrowDiff;
+        __luaArrowData.sourceTime = Adapter.instance.getTimeFromArrow(strum);
+        __luaArrowData.lane = lane;
+        __luaArrowData.player = player;
+        __luaArrowData.hitten = Adapter.instance.arrowHit(strum);
+        __luaArrowData.isTapArrow = isTapArrow;
+
+        final arrowPosition = new openfl.geom.Vector3D(
+            Adapter.instance.getDefaultReceptorX(lane, player) + Manager.ARROW_SIZEDIV2,
+            Adapter.instance.getDefaultReceptorY(lane, player) + Manager.ARROW_SIZEDIV2,
+            0
+        );
+        final output = playfield.modifiers.getPath(arrowPosition, __luaArrowData);
+
+        __luaArrowPoint.set(output.pos.x - Manager.ARROW_SIZEDIV2, output.pos.y - Manager.ARROW_SIZEDIV2);
+        return __luaArrowPoint;
+    }
+
     public static function implement(funk:FunkinLua) {
         var lua:State = funk.lua;
         
@@ -287,6 +356,50 @@ class LuaModchart
 
 			cast(mod, PathModifier).setPathBound(bound);
 		});
+
+        Lua_helper.add_callback(lua, "changeControls", function(bindings:Dynamic) {
+            if (PlayState.instance == null || Controls.instance == null || bindings == null)
+                return;
+
+            for (fieldName in Reflect.fields(bindings)) {
+                final controlName = normalizeGameplayControlName(fieldName);
+                if (controlName == null) {
+                    PlayState.instance.addTextToDebug('changeControls: invalid control "' + fieldName + '"', 0xFFFF0000);
+                    continue;
+                }
+
+                final parsedKeys = parseLuaKeyList(Reflect.field(bindings, fieldName), fieldName);
+                if (parsedKeys == null)
+                    continue;
+
+                if (parsedKeys.length <= 0)
+                    Controls.instance.clearTemporaryKeyboardBind(controlName);
+                else
+                    Controls.instance.setTemporaryKeyboardBind(controlName, parsedKeys);
+            }
+        });
+
+        Lua_helper.add_callback(lua, "restoreControls", function() {
+            if (Controls.instance != null)
+                Controls.instance.clearTemporaryGameplayBinds();
+        });
+
+        Lua_helper.add_callback(lua, "getGameplayControls", function():Dynamic {
+            final result:Dynamic = {};
+            if (Controls.instance == null)
+                return result;
+
+            for (controlName in Controls.GAMEPLAY_KEY_NAMES) {
+                final keys = Controls.instance.getKeyboardBind(controlName);
+                final keyNames:Array<String> = [];
+                if (keys != null)
+                    for (key in keys)
+                        keyNames.push(Std.string(key));
+                Reflect.setField(result, controlName, keyNames);
+            }
+
+            return result;
+        });
         
         // ===== "NOW" VARIANTS FOR USE IN CALLBACKS =====
         // These functions automatically calculate the current beat,
@@ -491,6 +604,53 @@ class LuaModchart
             return value;
         final f = Std.parseFloat(Std.string(value));
         return Math.isNaN(f) ? defaultValue : f;
+    }
+
+    private static function normalizeGameplayControlName(value:String):Null<String> {
+        if (value == null)
+            return null;
+
+        switch (value.toLowerCase()) {
+            case 'left', 'noteleft', 'note_left':
+                return 'note_left';
+            case 'down', 'notedown', 'note_down':
+                return 'note_down';
+            case 'up', 'noteup', 'note_up':
+                return 'note_up';
+            case 'right', 'noteright', 'note_right':
+                return 'note_right';
+            default:
+                return null;
+        }
+    }
+
+    private static function parseLuaKeyList(rawValue:Dynamic, fieldName:String):Null<Array<FlxKey>> {
+        if (rawValue == null)
+            return [];
+
+        final values:Array<Dynamic> = Std.isOfType(rawValue, Array) ? cast rawValue : [rawValue];
+        final parsed:Array<FlxKey> = [];
+
+        for (value in values) {
+            if (value == null)
+                continue;
+
+            final text = Std.string(value).trim();
+            if (text.length <= 0)
+                continue;
+
+            final key = FlxKey.fromString(text.toUpperCase());
+            if (key == NONE) {
+                if (PlayState.instance != null)
+                    PlayState.instance.addTextToDebug('changeControls: invalid key "' + text + '" for ' + fieldName, 0xFFFF0000);
+                return null;
+            }
+
+            if (!parsed.contains(key))
+                parsed.push(key);
+        }
+
+        return parsed;
     }
 
     private static function parsePathNodes(nodes:Array<Dynamic>):Array<PathNode> {

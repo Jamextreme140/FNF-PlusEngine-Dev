@@ -36,11 +36,6 @@ class MaterialSnackbar extends FlxSpriteGroup
 	static inline var LABEL_SIZE:Int = 14;
 	static inline var ACTION_SIZE:Int = 14;
 
-	// Colors (MD3)
-	static inline var SURFACE_COLOR:FlxColor = 0xFF313033;
-	static inline var TEXT_COLOR:FlxColor = 0xFFE6E1E5;
-	static inline var ACTION_COLOR:FlxColor = 0xFFCEC0FF;
-
 	// Layout
 	var snackWidth:Float = 320;
 	var _autoHideTimer:Float = 0;
@@ -74,13 +69,13 @@ class MaterialSnackbar extends FlxSpriteGroup
 
 		// Message text — starts at screen position, re-set on each show()
 		messageText = new FlxText(_bx + PADDING_H, _by, 0, "", LABEL_SIZE);
-		messageText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
+		messageText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
 		messageText.antialiasing = ClientPrefs.data.antialiasing;
 		add(messageText);
 
 		// Action button text
 		actionButton = new FlxText(_bx, _by, 0, "", ACTION_SIZE);
-		actionButton.setFormat(Paths.font("phantom.ttf"), ACTION_SIZE, MD3Theme.inversePrimary, LEFT);
+		actionButton.setFormat(Paths.font("inter.otf"), ACTION_SIZE, MD3Theme.inversePrimary, LEFT);
 		actionButton.antialiasing = ClientPrefs.data.antialiasing;
 		actionButton.visible = false;
 		add(actionButton);

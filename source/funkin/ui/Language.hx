@@ -26,7 +26,7 @@ class Language
         //ZhCN,    // Chinese (Mainland) - needs more support
         //ZhHK,    // Chinese (Hong Kong) - needs more support
         //JpJP,     // Japanese (Japan) - needs more support
-		IdID      // Indonesian (Bahasa Indonesia)
+		// IdID      // Indonesian (Bahasa Indonesia) - Sorry i was tried for translating Indonesian - sirthegamercoder
     ];
 
 	public static function reloadPhrases()

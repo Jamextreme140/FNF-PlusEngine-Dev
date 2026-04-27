@@ -46,18 +46,6 @@ class MaterialChip extends FlxSpriteGroup
 	static inline var CHECK_SIZE:Int = 18;
 	static inline var DELETE_SIZE:Int = 18;
 
-	// Colors (MD3)
-	static inline var SURFACE_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var SELECTED_COLOR:FlxColor = 0xFFE8DEF8;
-	static inline var OUTLINE_COLOR:FlxColor = 0xFF79747E;
-	static inline var TEXT_COLOR:FlxColor = 0xFF1C1B1F;
-	static inline var SELECTED_TEXT:FlxColor = 0xFF1D192B;
-	static inline var PRIMARY_COLOR:FlxColor = 0xFF6750A4;
-	static inline var DISABLED_SURFACE:FlxColor = 0x0F1C1B1F;
-	static inline var DISABLED_TEXT:FlxColor = 0x611C1B1F;
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-
 	// State
 	var isHovered:Bool = false;
 	var isPressed:Bool = false;
@@ -118,7 +106,7 @@ class MaterialChip extends FlxSpriteGroup
 		// Label text
 		var labelOffsetX:Float = leftPad + (hasCheck ? CHECK_SIZE + 8 : 0);
 		labelText = new FlxText(labelOffsetX, 0, labelW + 2, label, LABEL_SIZE);
-		labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, TEXT_COLOR, LEFT);
+		labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.onSurfaceVariant, LEFT);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		labelText.y = (CHIP_HEIGHT - labelText.height) / 2;
 		add(labelText);
@@ -269,9 +257,10 @@ class MaterialChip extends FlxSpriteGroup
 
 		if (!enabled)
 		{
-			container.color = DISABLED_SURFACE;
+			container.color = MD3Theme.disabledContainerColor();
 			outline.visible = false;
-			labelText.color = DISABLED_TEXT;
+			labelText.color = MD3Theme.disabledContentColor();
+			if (deleteIcon != null) deleteIcon.color = MD3Theme.disabledContentColor();
 			if (checkMark != null) checkMark.visible = false;
 			return;
 		}
@@ -280,17 +269,28 @@ class MaterialChip extends FlxSpriteGroup
 		{
 			container.color = MD3Theme.secondaryContainer;
 			outline.visible = false;
-			labelText.color = SELECTED_TEXT;
-			if (checkMark != null) checkMark.visible = true;
+			labelText.color = MD3Theme.onSecondaryContainer;
+			if (checkMark != null)
+			{
+				checkMark.color = MD3Theme.onSecondaryContainer;
+				checkMark.visible = true;
+			}
 		}
 		else
 		{
 			container.color = MD3Theme.surface;
 			outline.visible = true;
 			drawOutline(outline, Std.int(_calcWidth), CHIP_HEIGHT, CORNER_RADIUS);
-			labelText.color = TEXT_COLOR;
-			if (checkMark != null) checkMark.visible = false;
+			labelText.color = MD3Theme.onSurfaceVariant;
+			if (checkMark != null)
+			{
+				checkMark.color = MD3Theme.primary;
+				checkMark.visible = false;
+			}
 		}
+
+		if (deleteIcon != null)
+			deleteIcon.color = selected ? MD3Theme.onSecondaryContainer : MD3Theme.primary;
 	}
 
 	// -----------------------------------------------------------------------
@@ -330,7 +330,7 @@ class MaterialChip extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -344,14 +344,14 @@ class MaterialChip extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.primary) : FlxColor.TRANSPARENT;
 			pressTween = FlxTween.num(stateLayer.alpha, isHovered ? 1.0 : 0.0, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 

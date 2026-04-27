@@ -21,8 +21,14 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 
 	public var arrowUp:FlxSprite;
 	public var arrowDown:FlxSprite;
+	public var arrowUpText:FlxText;
+	public var arrowDownText:FlxText;
 
 	public var onClick:Void->Void;
+
+	var _arrowUpPressed:Bool = false;
+	var _arrowDownPressed:Bool = false;
+	var _arrowThemeSignature:String = null;
 
 	var _hitbox:FlxObject;
 	public function new(x:Float, y:Float, labels:Array<String>, space:Float = 25, maxItems:Int = 0, ?isHorizontal:Bool = false, ?textWidth:Int = 100)
@@ -31,16 +37,15 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 		
 		_hitbox = new FlxObject();
 
-		arrowUp = new FlxSprite().loadGraphic(Paths.image('psych-ui/arrow_up', 'embed'), true, 24, 18);
-		arrowUp.animation.add('normal', [0]);
-		arrowUp.animation.add('press', [1]);
-		arrowUp.animation.play('normal');
+		arrowUp = new FlxSprite();
 		arrowUp.visible = false;
-		arrowDown = new FlxSprite().loadGraphic(Paths.image('psych-ui/arrow_down', 'embed'), true, 24, 18);
-		arrowDown.animation.add('normal', [0]);
-		arrowDown.animation.add('press', [1]);
-		arrowDown.animation.play('normal');
+		arrowDown = new FlxSprite();
 		arrowDown.visible = false;
+		arrowUpText = new FlxText(0, 0, 24, '^', 10);
+		arrowUpText.alignment = CENTER;
+		arrowDownText = new FlxText(0, 0, 24, 'v', 10);
+		arrowDownText.alignment = CENTER;
+		redrawArrows();
 
 		this.space = space;
 		this.textWidth = textWidth;
@@ -52,6 +57,7 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		refreshArrowTheme();
 
 		_hitbox.x = x;
 		_hitbox.y = y;
@@ -83,26 +89,31 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 			if(hasArrowDown)
 				arrowDown.x += arrowUp.width + 8;
 		}
+		layoutArrowLabels();
 
 		if(FlxG.mouse.justPressed)
 		{
 			if(hasArrowUp && maxItems > 0 && curScroll > 0 && FlxG.mouse.overlaps(arrowUp, camera))
 			{
 				curScroll--;
-				arrowUp.animation.play('press');
+				_arrowUpPressed = true;
+				redrawArrows();
 			}
 			else if(hasArrowDown && maxItems > 0 && curScroll < (labels.length - maxItems) && FlxG.mouse.overlaps(arrowDown, camera))
 			{
 				curScroll++;
-				arrowDown.animation.play('press');
+				_arrowDownPressed = true;
+				redrawArrows();
 			}
 		}
 		else if(FlxG.mouse.released)
 		{
-			if(hasArrowUp && arrowUp.animation.curAnim != null && arrowUp.animation.curAnim.name != 'normal')
-				arrowUp.animation.play('normal');
-			if(hasArrowDown && arrowDown.animation.curAnim != null && arrowDown.animation.curAnim.name != 'normal')
-				arrowDown.animation.play('normal');
+			if(_arrowUpPressed || _arrowDownPressed)
+			{
+				_arrowUpPressed = false;
+				_arrowDownPressed = false;
+				redrawArrows();
+			}
 		}
 	}
 
@@ -111,10 +122,16 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 		super.draw();
 
 		if(arrowUp != null && arrowUp.exists && arrowUp.active)
+		{
 			arrowUp.draw();
+			arrowUpText.draw();
+		}
 
 		if(arrowDown != null && arrowDown.exists && arrowDown.active)
+		{
 			arrowDown.draw();
+			arrowDownText.draw();
+		}
 	}
 
 	override function destroy()
@@ -122,6 +139,8 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 		_hitbox = FlxDestroyUtil.destroy(_hitbox);
 		arrowUp = FlxDestroyUtil.destroy(arrowUp);
 		arrowDown = FlxDestroyUtil.destroy(arrowDown);
+		arrowUpText = FlxDestroyUtil.destroy(arrowUpText);
+		arrowDownText = FlxDestroyUtil.destroy(arrowDownText);
 		super.destroy();
 	}
 
@@ -136,11 +155,15 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 			{
 				arrowUp.visible = arrowUp.active = true;
 				arrowUp.alpha = (curScroll != 0) ? 1 : 0.4;
+				arrowUpText.visible = arrowUp.visible;
+				arrowUpText.alpha = arrowUp.alpha;
 			}
 			if(arrowDown != null && arrowDown.exists) 
 			{
 				arrowDown.visible = arrowDown.active = true;
 				arrowDown.alpha = (curScroll != (labels.length - maxItems)) ? 1 : 0.4;
+				arrowDownText.visible = arrowDown.visible;
+				arrowDownText.alpha = arrowDown.alpha;
 			}
 		}
 		else
@@ -150,11 +173,15 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 			{
 				arrowUp.visible = arrowUp.active = false;
 				arrowUp.alpha = 1;
+				arrowUpText.visible = false;
+				arrowUpText.alpha = 1;
 			}
 			if(arrowDown != null && arrowDown.exists) 
 			{
 				arrowDown.visible = arrowDown.active = false;
 				arrowDown.alpha = 1;
+				arrowDownText.visible = false;
+				arrowDownText.alpha = 1;
 			}
 		}
 		if(curScroll != lastScroll)
@@ -293,6 +320,8 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 	{
 		if(arrowUp != null && arrowUp.exists) arrowUp.cameras = v;
 		if(arrowDown != null && arrowDown.exists) arrowDown.cameras = v;
+		if(arrowUpText != null && arrowUpText.exists) arrowUpText.cameras = v;
+		if(arrowDownText != null && arrowDownText.exists) arrowDownText.cameras = v;
 		return super.set_cameras(v);
 	}
 
@@ -300,6 +329,8 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 	{
 		if(arrowUp != null && arrowUp.exists) arrowUp.camera = v;
 		if(arrowDown != null && arrowDown.exists) arrowDown.camera = v;
+		if(arrowUpText != null && arrowUpText.exists) arrowUpText.camera = v;
+		if(arrowDownText != null && arrowDownText.exists) arrowDownText.camera = v;
 		return super.set_camera(v);
 	}
 
@@ -317,6 +348,34 @@ class PsychUIRadioGroup extends FlxSpriteGroup
 		radios.push(radio);
 		return insert(0, radio);
 	}
+
+	function refreshArrowTheme():Void
+	{
+		if (_arrowThemeSignature != PsychUISkin.signature())
+			redrawArrows();
+	}
+
+	function redrawArrows():Void
+	{
+		var upEnabled:Bool = curScroll > 0;
+		var downEnabled:Bool = maxItems <= 0 || curScroll < (labels.length - maxItems);
+		var upStyle = PsychUISkin.navButtonStyle(_arrowUpPressed, upEnabled);
+		var downStyle = PsychUISkin.navButtonStyle(_arrowDownPressed, downEnabled);
+		PsychUISkin.drawStyledRect(arrowUp, 24, 18, upStyle);
+		PsychUISkin.drawStyledRect(arrowDown, 24, 18, downStyle);
+		arrowUpText.color = upStyle.textColor;
+		arrowDownText.color = downStyle.textColor;
+		layoutArrowLabels();
+		_arrowThemeSignature = PsychUISkin.signature();
+	}
+
+	function layoutArrowLabels():Void
+	{
+		arrowUpText.x = arrowUp.x;
+		arrowUpText.y = arrowUp.y + arrowUp.height / 2 - arrowUpText.height / 2;
+		arrowDownText.x = arrowDown.x;
+		arrowDownText.y = arrowDown.y + arrowDown.height / 2 - arrowDownText.height / 2;
+	}
 }
 
 class PsychUIRadioItem extends PsychUICheckBox
@@ -328,9 +387,11 @@ class PsychUIRadioItem extends PsychUICheckBox
 	}
 	override function boxGraphic()
 	{
-		box.loadGraphic(Paths.image('psych-ui/radio', 'embed'), true, 16, 16);
-		box.animation.add('false', [0]);
-		box.animation.add('true', [1]);
-		box.animation.play('false');
+		redrawControl(false);
+	}
+
+	override function isRadioControl():Bool
+	{
+		return true;
 	}
 }

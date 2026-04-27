@@ -53,20 +53,6 @@ class FilledTextField extends FlxSpriteGroup
 	static inline var LABEL_Y_FLOATING:Int = 8; // Label position when floating
 	static inline var LABEL_SCALE_SMALL:Float = 0.75;
 	
-	// Colors (MD3)
-	static inline var BG_COLOR:FlxColor = 0xFFE7E0EC;
-	static inline var BG_COLOR_HOVER:FlxColor = 0xFFD7CDE2;
-	static inline var LINE_COLOR:FlxColor = 0xFF79747E;
-	static inline var LINE_COLOR_FOCUSED:FlxColor = 0xFF6750A4;
-	static inline var LINE_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var LABEL_COLOR:FlxColor = 0xFF49454F;
-	static inline var LABEL_COLOR_FOCUSED:FlxColor = 0xFF6750A4;
-	static inline var LABEL_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var TEXT_COLOR:FlxColor = 0xFF1C1B1F;
-	static inline var SUPPORTING_COLOR:FlxColor = 0xFF49454F;
-	static inline var SUPPORTING_COLOR_ERROR:FlxColor = 0xFFB3261E;
-	static inline var CURSOR_COLOR:FlxColor = 0xFF6750A4;
-	
 	// State
 	var isFocused:Bool = false;
 	var isHovered:Bool = false;
@@ -93,25 +79,25 @@ class FilledTextField extends FlxSpriteGroup
 		background.makeGraphic(Std.int(fieldWidth), FIELD_HEIGHT, FlxColor.WHITE);
 		drawRoundedRectTop(background, Std.int(fieldWidth), FIELD_HEIGHT, 4);
 		add(background);
-		background.color = BG_COLOR;
+		background.color = MD3Theme.filledFieldColor();
 		
 		// Create bottom line (relative to group)
 		bottomLine = new FlxSprite(0, 0);
-		bottomLine.makeGraphic(Std.int(fieldWidth), BOTTOM_LINE_HEIGHT, LINE_COLOR);
+		bottomLine.makeGraphic(Std.int(fieldWidth), BOTTOM_LINE_HEIGHT, MD3Theme.outline);
 		bottomLine.offset.y = -(FIELD_HEIGHT - BOTTOM_LINE_HEIGHT);
 		add(bottomLine);
 		
 		// Create label text (relative to group)
 		labelYPos = LABEL_Y_NORMAL;
 		labelText = new FlxText(PADDING_HORIZONTAL, 0, fieldWidth - PADDING_HORIZONTAL * 2, this.label, 16);
-		labelText.setFormat(Paths.font("phantom.ttf"), 16, LABEL_COLOR, LEFT);
+		labelText.setFormat(Paths.font("inter.otf"), 16, MD3Theme.onSurfaceVariant, LEFT);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		labelText.offset.y = -labelYPos; // Use negative offset to position downward
 		add(labelText);
 		
 		// Create input text (relative to group)
 		inputText = new FlxText(PADDING_HORIZONTAL, 28, fieldWidth - PADDING_HORIZONTAL * 2, "", 16);
-		inputText.setFormat(Paths.font("phantom.ttf"), 16, TEXT_COLOR, LEFT);
+		inputText.setFormat(Paths.font("inter.otf"), 16, MD3Theme.onSurface, LEFT);
 		inputText.antialiasing = ClientPrefs.data.antialiasing;
 		inputText.alpha = 0;
 		add(inputText);
@@ -125,7 +111,7 @@ class FilledTextField extends FlxSpriteGroup
 		
 		// Create supporting text (relative to group)
 		supportingText = new FlxText(PADDING_HORIZONTAL, FIELD_HEIGHT + 4, fieldWidth - PADDING_HORIZONTAL * 2, "", 12);
-		supportingText.setFormat(Paths.font("phantom.ttf"), 12, SUPPORTING_COLOR, LEFT);
+		supportingText.setFormat(Paths.font("inter.otf"), 12, MD3Theme.onSurfaceVariant, LEFT);
 		supportingText.antialiasing = ClientPrefs.data.antialiasing;
 		add(supportingText);
 		
@@ -234,7 +220,7 @@ class FilledTextField extends FlxSpriteGroup
 	function updateBottomLine():Void
 	{
 		var height = isFocused ? BOTTOM_LINE_HEIGHT_FOCUSED : BOTTOM_LINE_HEIGHT;
-		var color = hasError ? LINE_COLOR_ERROR : (isFocused ? MD3Theme.primary : LINE_COLOR);
+		var color = hasError ? MD3Theme.error : (isFocused ? MD3Theme.primary : MD3Theme.outline);
 		
 		bottomLine.makeGraphic(Std.int(fieldWidth), height, color);
 		bottomLine.offset.y = -(FIELD_HEIGHT - height);
@@ -245,12 +231,12 @@ class FilledTextField extends FlxSpriteGroup
 		if (hasError && errorText.length > 0)
 		{
 			supportingText.text = errorText;
-			supportingText.color = SUPPORTING_COLOR_ERROR;
+			supportingText.color = MD3Theme.error;
 		}
 		else if (helperText.length > 0)
 		{
 			supportingText.text = helperText;
-			supportingText.color = SUPPORTING_COLOR;
+			supportingText.color = MD3Theme.onSurfaceVariant;
 		}
 		else
 		{
@@ -270,7 +256,7 @@ class FilledTextField extends FlxSpriteGroup
 		cursor.offset.x = -(PADDING_HORIZONTAL + (inputText.textField != null ? inputText.textField.textWidth : 0) + 2);
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : MD3Theme.primary;
+		labelText.color = hasError ? MD3Theme.error : MD3Theme.primary;
 		
 		if (onFocus != null)
 			onFocus();
@@ -287,7 +273,7 @@ class FilledTextField extends FlxSpriteGroup
 		cursorVisible = false;
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : LABEL_COLOR;
+		labelText.color = hasError ? MD3Theme.error : MD3Theme.onSurfaceVariant;
 		
 		if (onBlur != null)
 			onBlur();
@@ -360,13 +346,13 @@ class FilledTextField extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (bgTween != null) bgTween.cancel();
-			bgTween = FlxTween.color(background, 0.2, background.color, BG_COLOR_HOVER, {ease: FlxEase.cubeOut});
+			bgTween = FlxTween.color(background, 0.2, background.color, MD3Theme.filledFieldColor(true), {ease: FlxEase.cubeOut});
 		}
 		else if (!isOver && isHovered)
 		{
 			isHovered = false;
 			if (bgTween != null) bgTween.cancel();
-			bgTween = FlxTween.color(background, 0.2, background.color, BG_COLOR, {ease: FlxEase.cubeOut});
+			bgTween = FlxTween.color(background, 0.2, background.color, MD3Theme.filledFieldColor(), {ease: FlxEase.cubeOut});
 		}
 		
 		if (FlxG.mouse.justPressed && isOver)
@@ -403,7 +389,7 @@ class FilledTextField extends FlxSpriteGroup
 		updateSupportingText();
 		
 		// Update label color
-		labelText.color = hasError ? LABEL_COLOR_ERROR : (isFocused ? MD3Theme.primary : LABEL_COLOR);
+		labelText.color = hasError ? MD3Theme.error : (isFocused ? MD3Theme.primary : MD3Theme.onSurfaceVariant);
 		
 		return hasError;
 	}
@@ -411,7 +397,10 @@ class FilledTextField extends FlxSpriteGroup
 	function _onThemeChange():Void
 	{
 		if (cursor != null) cursor.color = MD3Theme.primary;
+		if (background != null) background.color = MD3Theme.filledFieldColor(isHovered);
+		if (inputText != null) inputText.color = MD3Theme.onSurface;
 		updateBottomLine();
+		updateSupportingText();
 	}
 
 	override function destroy():Void

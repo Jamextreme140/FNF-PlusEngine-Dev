@@ -1,143 +1,111 @@
 package funkin.play.substates;
 
+import flixel.FlxG;
+import flixel.util.FlxDestroyUtil;
+import funkin.data.Difficulty;
 import funkin.data.story.level.WeekData;
 import funkin.save.Highscore;
-
-import funkin.play.HealthIcon;
+import funkin.ui.Language;
+import funkin.ui.components.md3.MaterialDialog;
 
 class ResetScoreSubState extends MusicBeatSubstate
 {
-	var bg:FlxSprite;
-	var alphabetArray:Array<Alphabet> = [];
-	var icon:HealthIcon;
-	var onYes:Bool = false;
-	var yesText:Alphabet;
-	var noText:Alphabet;
+	var dialog:MaterialDialog;
+	var onReset:Void->Void;
 
 	var song:String;
 	var difficulty:Int;
 	var week:Int;
 
 	// Week -1 = Freeplay
-	public function new(song:String, difficulty:Int, character:String, week:Int = -1)
+	public function new(song:String, difficulty:Int, character:String, week:Int = -1, ?onReset:Void->Void)
 	{
 		this.song = song;
 		this.difficulty = difficulty;
 		this.week = week;
-
-                controls.isInSubstate = true;
-
+		this.onReset = onReset;
 		super();
-
-		var name:String = song;
-		if(week > -1) {
-			name = WeekData.weeksLoaded.get(WeekData.weeksList[week]).weekName;
-		}
-		name += ' (' + Difficulty.getString(difficulty) + ')?';
-
-		bg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
-		bg.alpha = 0;
-		bg.scrollFactor.set();
-		add(bg);
-
-		var tooLong:Float = (name.length > 18) ? 0.8 : 1; //Fucking Winter Horrorland
-		var text:Alphabet = new Alphabet(0, 180, Language.getPhrase('reset_score', 'Reset the score of'), true);
-		text.screenCenter(X);
-		alphabetArray.push(text);
-		text.alpha = 0;
-		add(text);
-		var text:Alphabet = new Alphabet(0, text.y + 90, name, true);
-		text.scaleX = tooLong;
-		text.screenCenter(X);
-		if(week == -1) text.x += 60 * tooLong;
-		alphabetArray.push(text);
-		text.alpha = 0;
-		add(text);
-		if(week == -1) {
-		icon = new HealthIcon(character, false, false);
-			icon.setGraphicSize(Std.int(icon.width * tooLong));
-			icon.updateHitbox();
-			icon.setPosition(text.x - icon.width + (10 * tooLong), text.y - 30);
-			icon.alpha = 0;
-			add(icon);
-		}
-
-		yesText = new Alphabet(0, text.y + 150, Language.getPhrase('Yes'), true);
-		yesText.screenCenter(X);
-		yesText.x -= 200;
-		add(yesText);
-		noText = new Alphabet(0, text.y + 150, Language.getPhrase('No'), true);
-		noText.screenCenter(X);
-		noText.x += 200;
-		add(noText);
-		
-		for(letter in yesText.letters) letter.color = FlxColor.RED;
-		updateOptions();
-
-		addTouchPad('LEFT_RIGHT', 'A_B');
-		addTouchPadCamera();
 	}
 
-	override function update(elapsed:Float)
+	override function create():Void
 	{
-		bg.alpha += elapsed * 1.5;
-		if(bg.alpha > 0.6) bg.alpha = 0.6;
+		super.create();
 
-		for (i in 0...alphabetArray.length) {
-			var spr = alphabetArray[i];
-			spr.alpha += elapsed * 2.5;
+		var name:String = song;
+		if (week > -1)
+		{
+			name = WeekData.weeksLoaded.get(WeekData.weeksList[week]).weekName;
 		}
-		if(week == -1) icon.alpha += elapsed * 2.5;
 
-		if(controls.UI_LEFT_P || controls.UI_RIGHT_P) {
-			FlxG.sound.play(Paths.sound('scrollMenu'), 1);
-			onYes = !onYes;
-			updateOptions();
+		var body:String = Language.getPhrase('reset_score_dialog_body', 'This will remove the saved score and accuracy for {1} ({2}).', [name, Difficulty.getString(difficulty)]);
+		dialog = new MaterialDialog(
+			Language.getPhrase('reset_score', 'Reset score'),
+			body,
+			Language.getPhrase('Yes', 'Yes'),
+			Language.getPhrase('No', 'No'),
+			confirmReset,
+			close
+		);
+		add(dialog);
+		dialog.open();
+		dialog.focusConfirm();
+	}
+
+	override function update(elapsed:Float):Void
+	{
+		#if mobile
+		for (touch in FlxG.touches.list)
+		{
+			if (touch != null && touch.justPressed && dialog.handlePointerTap(touch.screenX, touch.screenY))
+				return;
 		}
-		if(controls.BACK) {
+		#end
+
+		if (controls.UI_LEFT_P)
+		{
+			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+			dialog.focusDismiss();
+		}
+		else if (controls.UI_RIGHT_P)
+		{
+			FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+			dialog.focusConfirm();
+		}
+		else if (controls.BACK)
+		{
 			FlxG.sound.play(Paths.sound('cancelMenu'), 1);
 			ClientPrefs.saveSettings();
 			close();
-			controls.isInSubstate = false;
-		} else if(controls.ACCEPT) {
-			if(onYes) {
-				if(week == -1) {
-					Highscore.resetSong(song, difficulty);
-				} else {
-					Highscore.resetWeek(WeekData.weeksList[week], difficulty);
-				}
-			}
-			FlxG.sound.play(Paths.sound('cancelMenu'), 1);
-			ClientPrefs.saveSettings();
-			controls.isInSubstate = false;
-			close();
 		}
-		if (touchPad == null){ //sometimes it dosent add the tpad, hopefully this fixes it
-		addTouchPad('LEFT_RIGHT', 'A_B');
-		addTouchPadCamera();
+		else if (controls.ACCEPT)
+		{
+			FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
+			dialog.activateFocused();
 		}
+
 		super.update(elapsed);
 	}
 
-	function updateOptions() {
-		var scales:Array<Float> = [0.75, 1];
-		var alphas:Array<Float> = [0.6, 1.25];
-		var confirmInt:Int = onYes ? 1 : 0;
+	function confirmReset():Void
+	{
+		if (week == -1)
+		{
+			Highscore.resetSong(song, difficulty);
+		}
+		else
+		{
+			Highscore.resetWeek(WeekData.weeksList[week], difficulty);
+		}
 
-		yesText.alpha = alphas[confirmInt];
-		yesText.scale.set(scales[confirmInt], scales[confirmInt]);
-		noText.alpha = alphas[1 - confirmInt];
-		noText.scale.set(scales[1 - confirmInt], scales[1 - confirmInt]);
-		if(week == -1) icon.animation.curAnim.curFrame = confirmInt;
+		if (onReset != null) onReset();
+		ClientPrefs.saveSettings();
+		close();
 	}
 
-	override function destroy(){
-		bg = FlxDestroyUtil.destroy(bg);
-		alphabetArray = FlxDestroyUtil.destroyArray(alphabetArray);
-		icon = FlxDestroyUtil.destroy(icon);
-                yesText = FlxDestroyUtil.destroy(yesText);
-		noText = FlxDestroyUtil.destroy(noText);
-
+	override function destroy():Void
+	{
+		dialog = FlxDestroyUtil.destroy(dialog);
+		onReset = null;
 		super.destroy();
 	}
 }

@@ -36,16 +36,6 @@ class MaterialCard extends FlxSpriteGroup
 	static inline var CORNER_RADIUS:Int = 12;
 	static inline var OUTLINE_WIDTH:Int = 1;
 
-	// Colors (MD3)
-	static inline var ELEVATED_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var ELEVATED_TINT:FlxColor = 0xFFECE6F0;
-	static inline var FILLED_COLOR:FlxColor = 0xFFE6E0E9;
-	static inline var OUTLINED_COLOR:FlxColor = 0xFFFEF7FF;
-	static inline var OUTLINE_COLOR:FlxColor = 0xFFCAC4D0;
-	static inline var SHADOW_COLOR:FlxColor = 0x33000000;
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-
 	// State
 	var isHovered:Bool = false;
 	var isPressed:Bool = false;
@@ -66,8 +56,9 @@ class MaterialCard extends FlxSpriteGroup
 
 		// Shadow (only for elevated)
 		shadow = new FlxSprite(3, 5);
-		shadow.makeGraphic(w, h, SHADOW_COLOR);
+		shadow.makeGraphic(w, h, FlxColor.TRANSPARENT, true);
 		drawRoundedRect(shadow, w, h, CORNER_RADIUS);
+		shadow.color = MD3Theme.shadowColor();
 		shadow.visible = cardType == ELEVATED;
 		add(shadow);
 
@@ -187,6 +178,7 @@ class MaterialCard extends FlxSpriteGroup
 		{
 			case ELEVATED:
 				background.color = MD3Theme.surfaceContainerLow;
+				shadow.color = MD3Theme.shadowColor();
 				shadow.visible = true;
 				outline.visible = false;
 			case FILLED:
@@ -220,7 +212,7 @@ class MaterialCard extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -234,14 +226,14 @@ class MaterialCard extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.primary) : FlxColor.TRANSPARENT;
 			pressTween = FlxTween.num(stateLayer.alpha, isHovered ? 1.0 : 0.0, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 

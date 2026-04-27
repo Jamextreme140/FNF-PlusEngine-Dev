@@ -5,6 +5,7 @@ import flixel.FlxCamera;
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.tile.FlxDrawTrianglesItem;
 import flixel.math.FlxPoint;
+import flixel.math.FlxRect;
 import flixel.system.FlxAssets.FlxShader;
 import flixel.util.FlxSignal;
 import flixel.util.FlxSort;
@@ -15,7 +16,6 @@ import funkin.modding.modchart.engine.PlayField;
 import openfl.display.BlendMode;
 
 using funkin.modding.modchart.backend.util.SortUtil;
-using funkin.modding.modchart.backend.util.VectorUtil;
 
 class CtxRenderer {
 	var ctx:Context;
@@ -24,6 +24,13 @@ class CtxRenderer {
 
 	var queue:Vector<DrawCommand>;
 	var count:Int = 0;
+
+	/** Debug stats — populated each frame by emit(). */
+	public var dbgDrawCmds:Int = 0;
+	public var dbgHoldCmds:Int = 0;
+	public var dbgVertices:Int = 0;
+	public var dbgEmitMs:Float = 0.0;
+	public var dbgActiveHolds:Int = 0;
 
 	public function alloc(n:Int) {
 		queue = new Vector<DrawCommand>(n);
@@ -39,8 +46,10 @@ class CtxRenderer {
 
 	public function emitHoldCmd(item:FlxSprite) {
 		final dc = ctx.holdRenderer.prepare(item);
-		if (dc != null)
+		if (dc != null) {
 			dc.zIndex = Std.int(item._z * 1000);
+			dbgHoldCmds++;
+		}
 		return dc;
 	}
 
@@ -53,7 +62,47 @@ class CtxRenderer {
 
 	var emptyVec:openfl.Vector<Int> = new openfl.Vector<Int>(8, true, [for (i in 0...8) 0]);
 
+	/** Target subdivisions set by the user (restored when FPS recovers). */
+	var __targetSubdivisions:Int = 4;
+	/** Adaptive FPS tracking: running average of the last N frame times. */
+	var __fpsSum:Float = 0;
+	var __fpsFrames:Int = 0;
+	static final FPS_WINDOW:Int = 30;
+
+	/**
+	 * Adaptively lower or restore hold subdivisions based on FPS.
+	 * Below 45 FPS → reduce to 2; above 55 FPS → restore to the last
+	 * user-set value (respects Lua overrides when performance is fine).
+	 */
+	private inline function updateAdaptiveSubdivisions():Void {
+		final elapsed = flixel.FlxG.elapsed;
+		if (elapsed <= 0)
+			return;
+		__fpsSum += elapsed;
+		__fpsFrames++;
+		if (__fpsFrames < FPS_WINDOW)
+			return;
+		final avgFps = __fpsFrames / __fpsSum;
+		__fpsSum = 0;
+		__fpsFrames = 0;
+		final cur = Adapter.instance.getHoldSubdivisions(null);
+		if (avgFps < 45 && cur > 2) {
+			__targetSubdivisions = cur; // save before lowering
+			Adapter.instance.setHoldSubdivisions(2);
+		} else if (avgFps >= 55) {
+			if (cur == 2 && __targetSubdivisions > 2)
+				Adapter.instance.setHoldSubdivisions(__targetSubdivisions);
+			else
+				__targetSubdivisions = cur; // keep in sync with Lua overrides
+		}
+	}
+
 	public function emit(items:Array<Array<Array<FlxSprite>>>, playfields:Array<PlayField>) {
+		final __emitStart = haxe.Timer.stamp();
+
+		// Adaptively throttle hold subdivisions when FPS is consistently low.
+		updateAdaptiveSubdivisions();
+
 		// used for preallocate
 		var playfieldCount = playfields.length;
 
@@ -82,6 +131,12 @@ class CtxRenderer {
 
 		if (Config.RENDER_ARROW_PATHS)
 			pathCount = receptorCount;
+
+		// Reset per-frame debug stats
+		dbgDrawCmds = 0;
+		dbgHoldCmds = 0;
+		dbgVertices = 0;
+		dbgActiveHolds = holdCount * playfieldCount;
 
 		alloc((arrowCount + receptorCount + attachmentCount + holdCount + pathCount) * playfieldCount);
 
@@ -171,25 +226,45 @@ class CtxRenderer {
 		var i = 0;
 		while (i < count) {
 			var item = queue[i];
+			if (item == null || item.graphic == null || item.cameras == null || item.cameras.length == 0 || item.vertices == null || item.indices == null || item.uvs == null) {
+				i++;
+				continue;
+			}
 			for (camera in item.cameras) {
+				if (camera == null)
+					continue;
 				var dc = camera.startTrianglesBatch(item.graphic, item.antialiasing, item.isColored, item.blend, item.hasColorOffsets, item.shader);
-				@:privateAccess final cameraBounds = camera._bounds.set(camera.viewMarginLeft, camera.viewMarginTop, camera.viewWidth, camera.viewHeight);
+				if (dc == null)
+					continue;
+				@:privateAccess var cameraBounds:FlxRect = camera._bounds;
+				if (cameraBounds == null) {
+					cameraBounds = new FlxRect();
+					@:privateAccess camera._bounds = cameraBounds;
+				}
+				cameraBounds.set(camera.viewMarginLeft, camera.viewMarginTop, camera.viewWidth, camera.viewHeight);
 
-				final point = FlxPoint.weak(camera.scroll.x * -item.parent.scrollFactor.x, camera.scroll.y * -item.parent.scrollFactor.y);
+				final scrollFactorX = item.parent != null ? item.parent.scrollFactor.x : 0;
+				final scrollFactorY = item.parent != null ? item.parent.scrollFactor.y : 0;
+				final cameraScrollX = camera.scroll != null ? camera.scroll.x : 0;
+				final cameraScrollY = camera.scroll != null ? camera.scroll.y : 0;
+				final point = FlxPoint.weak(cameraScrollX * -scrollFactorX, cameraScrollY * -scrollFactorY);
 
 				if (item.color != null)
-					dc.addTriangles(item.vertices.toFloatFlash(), item.indices.toIntFlash(), item.uvs.toFloatFlash(), emptyVec, point, cameraBounds,
+					dc.addTriangles(item.vertices, item.indices, item.uvs, emptyVec, point, cameraBounds,
 						item.color);
 				else if (item.colors != null)
-					dc.addGradientTriangles(item.vertices.toFloatFlash(), item.indices.toIntFlash(), item.uvs.toFloatFlash(), point, cameraBounds, item.colors);
+					dc.addGradientTriangles(item.vertices, item.indices, item.uvs, point, cameraBounds, item.colors);
 			}
 			i++;
 		}
+		dbgEmitMs = (haxe.Timer.stamp() - __emitStart) * 1000.0;
 	}
 
 	public function append(dc:DrawCommand) {
 		@:privateAccess
 		queue[count++] = ctx.parent.transformCmd(dc);
+		dbgDrawCmds++;
+		dbgVertices += dc.vertices != null ? Std.int(dc.vertices.length / 2) : 0;
 	}
 
 	private function getVisibility(obj:flixel.FlxObject) {

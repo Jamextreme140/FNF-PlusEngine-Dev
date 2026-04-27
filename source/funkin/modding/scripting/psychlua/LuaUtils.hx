@@ -133,7 +133,6 @@ class LuaUtils
 				var data:String = File.getContent(path);
 				try
 				{
-					//FunkinLua.luaTrace('getModSetting: Trying to find default value for "$saveTag" in Mod: "$modName"');
 					var parsedJson:Dynamic = tjson.TJSON.parse(data);
 					for (i in 0...parsedJson.length)
 					{
@@ -144,13 +143,11 @@ class LuaUtils
 							{
 								if(sub.value != null)
 								{
-									//FunkinLua.luaTrace('getModSetting: Found unsaved value "${sub.save}" in Mod: "$modName"');
 									settings.set(sub.save, sub.value);
 								}
 							}
 							else
 							{
-								//FunkinLua.luaTrace('getModSetting: Found unsaved keybind "${sub.save}" in Mod: "$modName"');
 								settings.set(sub.save, {keyboard: (sub.keyboard != null ? sub.keyboard : 'NONE'), gamepad: (sub.gamepad != null ? sub.gamepad : 'NONE')});
 							}
 						}
@@ -176,7 +173,10 @@ class LuaUtils
 			return null;
 		}
 
-		if(settings.exists(saveTag)) return settings.get(saveTag);
+		if(settings.exists(saveTag))
+		{
+			return settings.get(saveTag);
+		}
 		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		PlayState.instance.addTextToDebug('getModSetting: "$saveTag" could not be found inside $modName\'s settings!', FlxColor.RED);
 		#else
@@ -448,36 +448,60 @@ class LuaUtils
 
 	public static function getTweenEaseByString(?ease:String = '') {
 		switch(ease.toLowerCase().trim()) {
+			case 'accelerate': return FlxEase.accelerate;
 			case 'backin': return FlxEase.backIn;
 			case 'backinout': return FlxEase.backInOut;
 			case 'backout': return FlxEase.backOut;
+			case 'backoutin': return FlxEase.backOutIn;
+			case 'bell': return FlxEase.bell;
+			case 'bounce': return FlxEase.bounce;
 			case 'bouncein': return FlxEase.bounceIn;
 			case 'bounceinout': return FlxEase.bounceInOut;
 			case 'bounceout': return FlxEase.bounceOut;
+			case 'bounceoutin': return FlxEase.bounceOutIn;
 			case 'circin': return FlxEase.circIn;
 			case 'circinout': return FlxEase.circInOut;
 			case 'circout': return FlxEase.circOut;
+			case 'circoutin': return FlxEase.circOutIn;
 			case 'cubein': return FlxEase.cubeIn;
 			case 'cubeinout': return FlxEase.cubeInOut;
 			case 'cubeout': return FlxEase.cubeOut;
+			case 'cubicoutin': return FlxEase.cubicOutIn;
+			case 'decelerate': return FlxEase.decelerate;
 			case 'elasticin': return FlxEase.elasticIn;
 			case 'elasticinout': return FlxEase.elasticInOut;
 			case 'elasticout': return FlxEase.elasticOut;
+			case 'elasticoutin': return FlxEase.elasticOutIn;
+			case 'emphasizedaccelerate': return FlxEase.emphasizedAccelerate;
+			case 'emphasizeddecelerate': return FlxEase.emphasizedDecelerate;
 			case 'expoin': return FlxEase.expoIn;
 			case 'expoinout': return FlxEase.expoInOut;
 			case 'expoout': return FlxEase.expoOut;
+			case 'expooutin': return FlxEase.expoOutIn;
+			case 'instant': return FlxEase.instant;
+			case 'inverse': return FlxEase.inverse;
+			case 'pop': return FlxEase.pop;
+			case 'tap': return FlxEase.tap;
+			case 'pulse': return FlxEase.pulse;
+			case 'spike': return FlxEase.spike;
+			case 'standard': return FlxEase.standard;
+			case 'tri': return FlxEase.tri;
 			case 'quadin': return FlxEase.quadIn;
 			case 'quadinout': return FlxEase.quadInOut;
 			case 'quadout': return FlxEase.quadOut;
+			case 'quadoutin': return FlxEase.quadOutIn;
 			case 'quartin': return FlxEase.quartIn;
 			case 'quartinout': return FlxEase.quartInOut;
 			case 'quartout': return FlxEase.quartOut;
+			case 'quartoutin': return FlxEase.quartOutIn;
 			case 'quintin': return FlxEase.quintIn;
 			case 'quintinout': return FlxEase.quintInOut;
 			case 'quintout': return FlxEase.quintOut;
+			case 'quintoutin': return FlxEase.quintOutIn;
 			case 'sinein': return FlxEase.sineIn;
 			case 'sineinout': return FlxEase.sineInOut;
 			case 'sineout': return FlxEase.sineOut;
+			case 'sineoutin': return FlxEase.sineOutIn;
 			case 'smoothstepin': return FlxEase.smoothStepIn;
 			case 'smoothstepinout': return FlxEase.smoothStepInOut;
 			case 'smoothstepout': return FlxEase.smoothStepOut;

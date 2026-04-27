@@ -33,15 +33,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 	static inline var STATE_LAYER_SIZE:Int = 40;
 	static inline var LABEL_SPACING:Int = 8;
 	
-	// Colors (MD3)
-	static inline var PRIMARY_COLOR:FlxColor = 0xFF6750A4;
-	static inline var ON_SURFACE_VARIANT:FlxColor = 0xFF49454F;
-	static inline var DISABLED_COLOR:FlxColor = 0x611C1B1F;
-	
-	// State layers
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-	
 	// State
 	var isHovered:Bool = false;
 	var isPressed:Bool = false;
@@ -57,7 +48,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 	public function new(x:Float = 0, y:Float = 0, ?label:String = "", ?value:String = "", ?groupName:String = "default", ?selected:Bool = false, ?onChange:String->Void = null)
 	{
 		super(x, y);
-		trace('[MaterialRadioButton] new() start label="$label" group="$groupName" selected=$selected');
 		
 		this.label = label;
 		this.value = value.length > 0 ? value : label;
@@ -70,7 +60,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 		radioGroups.get(groupName).push(this);
 		
 		// Create state layer (for hover/press effects)
-		trace('[MaterialRadioButton] creating stateLayer');
 		var layerOffset = (STATE_LAYER_SIZE - ICON_SIZE) / 2;
 		stateLayer = new FlxSprite(-layerOffset, -layerOffset);
 		stateLayer.makeGraphic(STATE_LAYER_SIZE, STATE_LAYER_SIZE, FlxColor.TRANSPARENT);
@@ -79,13 +68,11 @@ class MaterialRadioButton extends FlxSpriteGroup
 		add(stateLayer);
 		
 		// Create outer circle
-		trace('[MaterialRadioButton] creating outerCircle');
 		outerCircle = new FlxSprite(0, 0);
 		outerCircle.makeGraphic(ICON_SIZE, ICON_SIZE, FlxColor.TRANSPARENT, true);
 		add(outerCircle);
 		
 		// Create inner circle (selected indicator)
-		trace('[MaterialRadioButton] creating innerCircle');
 		var innerOffset = (ICON_SIZE - INNER_CIRCLE_SIZE) / 2;
 		innerCircle = new FlxSprite(innerOffset, innerOffset);
 		innerCircle.makeGraphic(INNER_CIRCLE_SIZE, INNER_CIRCLE_SIZE, FlxColor.TRANSPARENT);
@@ -96,24 +83,20 @@ class MaterialRadioButton extends FlxSpriteGroup
 		// Create label text if provided
 		if (label.length > 0)
 		{
-			trace('[MaterialRadioButton] creating labelText');
 			labelText = new FlxText(ICON_SIZE + LABEL_SPACING, 0, 0, label, 14);
-			labelText.setFormat(Paths.font("phantom.ttf"), 14, MD3Theme.onSurfaceVariant, LEFT);
+			labelText.setFormat(Paths.font("inter.otf"), 14, MD3Theme.onSurfaceVariant, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
 			labelText.y = (ICON_SIZE - labelText.height) / 2;
 			add(labelText);
 		}
 		
-		trace('[MaterialRadioButton] calling updateAppearance');
 		updateAppearance();
 		
 		// Set selected after all components are created
 		if (selected)
 		{
-			trace('[MaterialRadioButton] calling selectThis() for initial selection');
 			selectThis();
 		}
-		trace('[MaterialRadioButton] new() complete');
 		MD3Theme.addListener(updateAppearance);
 	}
 	
@@ -161,17 +144,16 @@ class MaterialRadioButton extends FlxSpriteGroup
 	{
 		if (outerCircle == null || innerCircle == null)
 		{
-			trace('[MaterialRadioButton] updateAppearance: outerCircle=${outerCircle != null ? "ok" : "NULL"} innerCircle=${innerCircle != null ? "ok" : "NULL"} — skipping');
 			return;
 		}
 		
 		if (!enabled)
 		{
-			drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, DISABLED_COLOR);
-			innerCircle.color = DISABLED_COLOR;
+			drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, MD3Theme.disabledContentColor());
+			innerCircle.color = MD3Theme.disabledContentColor();
 			innerCircle.alpha = selected ? 0.38 : 0;
 			if (labelText != null)
-				labelText.color = DISABLED_COLOR;
+				labelText.color = MD3Theme.disabledContentColor();
 		}
 		else
 		{
@@ -209,7 +191,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -224,14 +206,14 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.primary) : FlxColor.TRANSPARENT;
 			var targetAlpha = isHovered ? 1.0 : 0.0;
 			pressTween = FlxTween.num(stateLayer.alpha, targetAlpha, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
@@ -261,13 +243,11 @@ class MaterialRadioButton extends FlxSpriteGroup
 	
 	function set_selected(value:Bool):Bool
 	{
-		trace('[MaterialRadioButton] set_selected value=$value innerCircle=${innerCircle != null ? "ok" : "NULL"}');
 		var oldValue = selected;
 		selected = value;
 		
 		if (innerCircle == null)
 		{
-			trace('[MaterialRadioButton] set_selected: innerCircle is null, skipping tween');
 			return selected;
 		}
 		

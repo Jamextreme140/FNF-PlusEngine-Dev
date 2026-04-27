@@ -13,6 +13,7 @@ class PsychUIButton extends FlxSpriteGroup
 
 	public var onChangeState:String->Void;
 	public var onClick:Void->Void;
+	public var useDynamicTheme:Bool = true;
 	
 	public var clickStyle:UIStyleData = {
 		bgColor: FlxColor.BLACK,
@@ -33,14 +34,13 @@ class PsychUIButton extends FlxSpriteGroup
 	public function new(x:Float = 0, y:Float = 0, label:String = '', ?onClick:Void->Void = null, ?wid:Int = 80, ?hei:Int = 20)
 	{
 		super(x, y);
-		bg = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
+		bg = new FlxSprite();
 		add(bg);
-		bg.color = 0xFFAAAAAA;
-		bg.alpha = 0.6;
 
 		text = new FlxText(0, 0, 1, '');
 		text.alignment = CENTER;
 		add(text);
+		applyThemeDefaults();
 		resize(wid, hei);
 		this.label = label;
 		
@@ -52,9 +52,12 @@ class PsychUIButton extends FlxSpriteGroup
 	public var forceCheckNext:Bool = false;
 	public var broadcastButtonEvent:Bool = true;
 	var _firstFrame:Bool = true;
+	var _themeSignature:String = null;
+	var _lastVisualState:String = '';
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		refreshTheme();
 
 		// Prevent updates if camera or background sprite is null/destroyed
 		if(camera == null || bg == null || !bg.exists || !bg.alive)
@@ -66,9 +69,7 @@ class PsychUIButton extends FlxSpriteGroup
 
 		if(_firstFrame)
 		{
-			bg.color = normalStyle.bgColor;
-			bg.alpha = normalStyle.bgAlpha;
-			text.color = normalStyle.textColor;
+			applyStyle(normalStyle, 'normal');
 			_firstFrame = false;
 		}
 		
@@ -95,17 +96,13 @@ class PsychUIButton extends FlxSpriteGroup
 			if(!isClicked)
 			{
 				var style:UIStyleData = (overlapped) ? hoverStyle : normalStyle;
-				bg.color = style.bgColor;
-				bg.alpha = style.bgAlpha;
-				text.color = style.textColor;
+				applyStyle(style, overlapped ? 'hover' : 'normal');
 			}
 
 			if(overlapped && FlxG.mouse.justPressed)
 			{
 				isClicked = true;
-				bg.color = clickStyle.bgColor;
-				bg.alpha = clickStyle.bgAlpha;
-				text.color = clickStyle.textColor;
+				applyStyle(clickStyle, 'click');
 				if(onClick != null) onClick();
 				if(broadcastButtonEvent) PsychUIEventHandler.event(CLICK_EVENT, this);
 			}
@@ -114,11 +111,47 @@ class PsychUIButton extends FlxSpriteGroup
 
 	public function resize(width:Int, height:Int)
 	{
-		bg.setGraphicSize(width, height);
-		bg.updateHitbox();
+		PsychUISkin.drawStyledRect(bg, width, height, normalStyle);
 		text.fieldWidth = width;
 		text.x = bg.x;
 		text.y = bg.y + height/2 - text.height/2;
+		_lastVisualState = '';
+		applyStyle(isClicked ? clickStyle : normalStyle, isClicked ? 'click' : 'normal');
+	}
+
+	function applyThemeDefaults():Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		normalStyle = PsychUISkin.buttonNormalStyle();
+		hoverStyle = PsychUISkin.buttonHoverStyle();
+		clickStyle = PsychUISkin.buttonPressedStyle();
+		_themeSignature = PsychUISkin.signature();
+	}
+
+	function refreshTheme(force:Bool = false):Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		var signature:String = PsychUISkin.signature();
+		if (force || _themeSignature != signature)
+		{
+			applyThemeDefaults();
+			_lastVisualState = '';
+			applyStyle(isClicked ? clickStyle : normalStyle, isClicked ? 'click' : 'normal');
+		}
+	}
+
+	function applyStyle(style:UIStyleData, state:String):Void
+	{
+		if (_lastVisualState == state && state.length > 0)
+			return;
+
+		PsychUISkin.drawStyledRect(bg, Std.int(Math.max(1, bg.width)), Std.int(Math.max(1, bg.height)), style);
+		text.color = style.textColor;
+		_lastVisualState = state;
 	}
 
 	function set_label(v:String)

@@ -33,18 +33,6 @@ class MaterialIconButton extends FlxSpriteGroup
 	static inline var ICON_SIZE:Int = 24;
 	static inline var CORNER_RADIUS:Int = 20; // fully circular
 
-	// Colors (MD3)
-	static inline var FILLED_COLOR:FlxColor = 0xFF6750A4;
-	static inline var FILLED_ICON_COLOR:FlxColor = 0xFFFFFFFF;
-	static inline var FILLED_TONAL_COLOR:FlxColor = 0xFFE8DEF8;
-	static inline var FILLED_TONAL_ICON_COLOR:FlxColor = 0xFF1D192B;
-	static inline var OUTLINED_ICON_COLOR:FlxColor = 0xFF6750A4;
-	static inline var OUTLINED_BORDER_COLOR:FlxColor = 0xFF79747E;
-	static inline var STANDARD_ICON_COLOR:FlxColor = 0xFF6750A4;
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-	static inline var DISABLED_COLOR:FlxColor = 0x611C1B1F;
-
 	// State
 	var isHovered:Bool = false;
 	var isPressed:Bool = false;
@@ -135,11 +123,11 @@ class MaterialIconButton extends FlxSpriteGroup
 
 		if (!enabled)
 		{
-			container.color = DISABLED_COLOR;
+			container.color = MD3Theme.disabledContainerColor();
 			container.alpha = 0.12;
 			container.visible = buttonType != STANDARD && buttonType != OUTLINED;
 			outline.visible = false;
-			iconSprite.color = DISABLED_COLOR;
+			iconSprite.color = MD3Theme.disabledContentColor();
 			iconSprite.alpha = 0.38;
 			return;
 		}
@@ -153,21 +141,25 @@ class MaterialIconButton extends FlxSpriteGroup
 				container.visible = false;
 				outline.visible = false;
 				iconSprite.color = MD3Theme.primary;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			case FILLED:
 				container.visible = true;
 				container.color = MD3Theme.primary;
 				outline.visible = false;
 				iconSprite.color = MD3Theme.onPrimary;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.onPrimary);
 			case FILLED_TONAL:
 				container.visible = true;
 				container.color = MD3Theme.secondaryContainer;
 				outline.visible = false;
 				iconSprite.color = MD3Theme.onSecondaryContainer;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.onSecondaryContainer);
 			case OUTLINED:
 				container.visible = false;
 				outline.visible = true;
 				drawCircleOutline(outline, BUTTON_SIZE, MD3Theme.outline);
 				iconSprite.color = MD3Theme.primary;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		}
 	}
 
@@ -189,7 +181,6 @@ class MaterialIconButton extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -203,14 +194,19 @@ class MaterialIconButton extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(
+				buttonType == FILLED ? MD3Theme.onPrimary : (buttonType == FILLED_TONAL ? MD3Theme.onSecondaryContainer : MD3Theme.primary),
+				true
+			);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(
+					buttonType == FILLED ? MD3Theme.onPrimary : (buttonType == FILLED_TONAL ? MD3Theme.onSecondaryContainer : MD3Theme.primary)
+				) : FlxColor.TRANSPARENT;
 			pressTween = FlxTween.num(stateLayer.alpha, isHovered ? 1.0 : 0.0, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 

@@ -4,19 +4,37 @@ import flixel.math.FlxMath;
 import funkin.modding.modchart.backend.core.ModifierParameters;
 import funkin.modding.modchart.backend.util.ModchartUtil;
 class Boost extends Modifier {
+	// Pre-computed IDs to avoid Std.string(lane) allocations in hot path
+	var _boostID:Int;
+	var _brakeID:Int;
+	var _waveID:Int;
+	var _waveMult:Int;
+	var _boostIDs:Array<Int>;
+	var _brakeIDs:Array<Int>;
+	var _waveIDs:Array<Int>;
+
 	public function new(pf) {
 		super(pf);
 
 		setPercent('waveMult', 1, -1);
+
+		final maxKeys = 16;
+		_boostID = findID('boost');
+		_brakeID = findID('brake');
+		_waveID = findID('wave');
+		_waveMult = findID('waveMult');
+		_boostIDs = [for (i in 0...maxKeys) findID('boost' + i)];
+		_brakeIDs = [for (i in 0...maxKeys) findID('brake' + i)];
+		_waveIDs = [for (i in 0...maxKeys) findID('wave' + i)];
 	}
 
 	override public function render(curPos:Vector3, params:ModifierParameters) {
 		var player = params.player;
-		var lane = Std.string(params.lane);
+		var lane = params.lane;
 
 		var fYOffset = params.distance;
 
-		final boost = (getPercent('boost', params.player) + getPercent('boost' + lane, params.player));
+		final boost = (getUnsafe(_boostID, player) + getUnsafe(_boostIDs[lane], player));
 		if (boost != 0) {
 			var fEffectHeight = HEIGHT;
 			var fNewYOffset = fYOffset * 1.5 / ((fYOffset + fEffectHeight / 1.2) / fEffectHeight);
@@ -26,7 +44,7 @@ class Boost extends Modifier {
 			curPos.y += fAccelYAdjust;
 		}
 
-		final brake = (getPercent('brake', params.player) + getPercent('brake' + lane, params.player));
+		final brake = (getUnsafe(_brakeID, player) + getUnsafe(_brakeIDs[lane], player));
 
 		if (brake != 0) {
 			var fEffectHeight = HEIGHT;
@@ -36,7 +54,7 @@ class Boost extends Modifier {
 			fBrakeYAdjust = ModchartUtil.clamp(fBrakeYAdjust, -400., 400.);
 			curPos.y += fBrakeYAdjust;
 		}
-		final wave = (getPercent('wave', params.player) + getPercent('wave' + lane, params.player));
+		final wave = (getUnsafe(_waveID, player) + getUnsafe(_waveIDs[lane], player));
 
 		if (wave != 0) {
 			curPos.y += wave * 20.0 * sin(fYOffset / 96.);

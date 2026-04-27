@@ -1,7 +1,8 @@
 package funkin;
 
-#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-import funkin.modding.ModState;
+#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
+import funkin.modding.ScriptableState;
+import funkin.modding.CustomState;
 #end
 import funkin.modding.Mods;
 import funkin.save.Highscore;
@@ -9,6 +10,7 @@ import funkin.ui.Language;
 import lime.app.Application;
 import flixel.FlxG;
 import funkin.util.CoolUtil;
+import funkin.ui.FlashingState;
 import funkin.ui.title.TitleState;
 
 /**
@@ -38,18 +40,34 @@ class InitialState extends MusicBeatState
 		#if !html5
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
-		
-		// Check if top mod has custom state scripts
-		#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-		if (ModState.hasScript('FlashingState')) {
-			MusicBeatState.switchState(new ModState('FlashingState'));
-			return;
-		} else if (ModState.hasScript('TitleState')) {
-			MusicBeatState.switchState(new ModState('TitleState'));
-			return;
+
+		// ScriptableState.tryCreate checks mods then engine assets automatically.
+		// CustomState is kept as a fallback for old flat-callback scripts.
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
+		if (ScriptableState.overridesEnabled()) {
+			var shouldAskFlashing = FlxG.save.data != null && FlxG.save.data.flashing == null && !FlashingState.leftState;
+			if (shouldAskFlashing) {
+				var flashingScript = ScriptableState.tryCreate('FlashingState', new FlashingState());
+				if (flashingScript != null) {
+					MusicBeatState.switchState(flashingScript);
+					return;
+				} else if (CustomState.hasScript('FlashingState')) {
+					MusicBeatState.switchState(new CustomState('FlashingState'));
+					return;
+				}
+			}
+
+			var titleScript = ScriptableState.tryCreate('TitleState', new TitleState());
+			if (titleScript != null) {
+				MusicBeatState.switchState(titleScript);
+				return;
+			} else if (CustomState.hasScript('TitleState')) {
+				MusicBeatState.switchState(new CustomState('TitleState'));
+				return;
+			}
 		}
 		#end
-		
+
 		// No mod states found, use default TitleState
 		MusicBeatState.switchState(new TitleState());
 	}

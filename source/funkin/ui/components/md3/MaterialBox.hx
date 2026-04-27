@@ -102,7 +102,6 @@ class MaterialBox extends FlxSpriteGroup
 		// Shadow (offset slightly for elevation-2 feel)
 		shadow = new FlxSprite(SHADOW_BLUR, SHADOW_BLUR);
 		shadow.makeGraphic(width + SHADOW_BLUR * 2, height + SHADOW_BLUR * 2, FlxColor.TRANSPARENT, true);
-		shadow.alpha = 0.18;
 		add(shadow);
 
 		// Panel background
@@ -125,7 +124,7 @@ class MaterialBox extends FlxSpriteGroup
 
 		// Title text
 		titleText = new FlxText(TITLE_PADDING, 0, width - TITLE_PADDING * 2 - CLOSE_AREA, title, TITLE_FONT_SIZE);
-		titleText.setFormat(Paths.font("phantom.ttf"), TITLE_FONT_SIZE, MD3Theme.onSurface, LEFT);
+		titleText.setFormat(Paths.font("inter.otf"), TITLE_FONT_SIZE, MD3Theme.onSurface, LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		titleText.y = (TITLE_BAR_HEIGHT - titleText.height) / 2;
 		add(titleText);
@@ -280,7 +279,8 @@ class MaterialBox extends FlxSpriteGroup
 		if (titleText != null) titleText.color = MD3Theme.onSurface;
 		if (closeIcon != null)
 			drawCloseIcon(closeIcon, CLOSE_ICON_SIZE, MD3Theme.onSurfaceVariant);
-		if (shadow != null) shadow.alpha = 0.18;
+		if (shadow != null)
+			drawShadow(shadow, panelWidth + SHADOW_BLUR * 2, panelHeight + SHADOW_BLUR * 2, CORNER_RADIUS + SHADOW_BLUR);
 	}
 
 	// -----------------------------------------------------------------------
@@ -385,7 +385,9 @@ class MaterialBox extends FlxSpriteGroup
 		if (sprite == null || sprite.pixels == null) return;
 		var g = sprite.pixels;
 		g.fillRect(g.rect, FlxColor.TRANSPARENT);
-		var shadowColor:FlxColor = 0xFF000000;
+		var shadowColor = MD3Theme.shadowColor();
+		var shadowRgb = shadowColor & 0x00FFFFFF;
+		var maxAlpha = Std.int(shadowColor.alphaFloat * 255);
 
 		for (py in 0...height)
 		{
@@ -393,8 +395,7 @@ class MaterialBox extends FlxSpriteGroup
 			{
 				var inside = true;
 				var edge = SHADOW_BLUR;
-				var ax = px, ay = py;
-				if (px < radius && py < radius) { var dx = radius - px; var dy = radius - py; inside = (dx*dx+dy*dy) <= radius * radius; ax = px; ay = py; }
+				if (px < radius && py < radius) { var dx = radius - px; var dy = radius - py; inside = (dx*dx+dy*dy) <= radius * radius; }
 				else if (px >= width - radius && py < radius) { var dx = px-(width-radius); var dy = radius-py; inside = (dx*dx+dy*dy) <= radius*radius; }
 				else if (px < radius && py >= height - radius) { var dx = radius-px; var dy = py-(height-radius); inside = (dx*dx+dy*dy) <= radius*radius; }
 				else if (px >= width - radius && py >= height - radius) { var dx = px-(width-radius); var dy = py-(height-radius); inside = (dx*dx+dy*dy) <= radius*radius; }
@@ -403,12 +404,13 @@ class MaterialBox extends FlxSpriteGroup
 				{
 					// Compute distance to the nearest edge (for alpha falloff)
 					var distToEdge = Std.int(Math.min(Math.min(px, width - px - 1), Math.min(py, height - py - 1)));
-					var alpha = distToEdge < edge ? Std.int(200 * distToEdge / edge) : 0;
+					var alpha = distToEdge < edge ? Std.int(maxAlpha * distToEdge / edge) : 0;
 					if (alpha > 0)
-						g.setPixel32(px, py, (alpha << 24) | (shadowColor & 0x00FFFFFF));
+						g.setPixel32(px, py, (alpha << 24) | shadowRgb);
 				}
 			}
 		}
+		sprite.dirty = true;
 	}
 
 	/** Draw a simple × icon. */
